@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Platforms>AnyCPU;x64;x86</Platforms>	
+	
+	<!-- NuGet package properties -->
+	<PackageId>FiftyOne.Pipeline.Engines.TestHelpers</PackageId>
+	<Title>Helper classes to assist with writing unit tests for engines for the 51Degrees Pipeline API</Title>
+	<PackageDescription>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. The package contains helper classes to make writing unit tests easier when developing a custom engine using FiftyOne.Pipeline.Engines.</PackageDescription>
+	<Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+    <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
+	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
+	<Copyright>51Degrees Mobile Experts Limited</Copyright>
+	<PackageTags>51degrees,pipeline,data service</PackageTags>
+	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.13.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
+  </ItemGroup>
+
+</Project>

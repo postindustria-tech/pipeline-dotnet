@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>FiftyOne.Pipeline.Web</id>
+        <version>$version$</version>
+		<description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. The package contains components that integrate the 51Degrees Pipeline API into ASP.NET and ASP.NET Core web projects.</description>
+        <authors>51D_Steve,Ben51Degrees,Joseph51Degrees</authors>
+		<owners>51Degrees.mobi Limited</owners>
+		<license type="expression">EUPL-1.2</license>
+		<icon>images\51d-logo.png</icon>
+		<iconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</iconUrl>
+		<copyright>51Degrees Mobile Experts Limited</copyright>
+		<language>en-GB</language>
+		<tags>51degrees,pipeline,aggregate,data service,web</tags>
+		<repository type="git" url="https://github.com/51Degrees/pipeline-dotnet" />
+		<dependencies>
+			<group targetFramework="netcoreapp2.1">
+				<dependency id="FiftyOne.Pipeline.Engines.FiftyOne" version="$version$" />
+				<dependency id="FiftyOne.Pipeline.Web.Shared" version="$version$" />
+				<dependency id="Microsoft.AspNetCore.Http" version="2.0.3" />
+				<dependency id="Microsoft.AspNetCore.Mvc" version="2.0.4" />
+				<dependency id="Microsoft.Extensions.FileProviders.Embedded" version="2.0.1" />
+			</group>
+			<group targetFramework="net461">
+				<dependency id="FiftyOne.Pipeline.Web.Shared" version="$version$" />
+			</group>
+		</dependencies>
+    </metadata>
+	<files>
+		<file src="..\images\51d-logo.png" target="images\" />
+		<file src="FiftyOne.Pipeline.Web\bin\$platform$\$config$\netcoreapp2.1\FiftyOne.Pipeline.Web.dll" target="lib\netcoreapp2.1" />
+		<file src="FiftyOne.Pipeline.Web.Framework\bin\$platform$\$config$\FiftyOne.Pipeline.Web.Framework.dll" target="lib\net461" />
+		<file src="FiftyOne.Pipeline.Web.Framework\Web.config.transform" target="content/net461/Web.config.transform" />
+		<file src="FiftyOne.Pipeline.Web.Framework\51Degrees.json" target="content/net461/App_Data/51Degrees.json" />
+	</files>
+</package>

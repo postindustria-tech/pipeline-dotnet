@@ -1,0 +1,13 @@
+﻿{
+  "PipelineOptions": {
+    "Elements": [
+      {
+        "BuilderName": "math"
+      },
+      {
+        "BuilderName": "JavaScriptBundlerElement"
+      }
+    ],
+    "ClientSideEnabled":  true
+  }
+}

@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+	
+	<!-- NuGet package properties -->
+	<PackageId>FiftyOne.Pipeline.Web</PackageId>
+	<Title>ASP.NET integration for the 51Degrees Pipeline API</Title>
+	<PackageDescription>
+		The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. 
+		The package contains components that integrate the 51Degrees Pipeline API into ASP.NET and ASP.NET Core web projects.
+	</PackageDescription>
+	<Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+    <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
+	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
+	<Copyright>51Degrees Mobile Experts Limited</Copyright>
+	<PackageTags>51degrees,pipeline,aggregate,data service,web</PackageTags>
+	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Views\Shared\Components\FiftyOneJS\Default.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Views\Shared\Components\FiftyOneJS\Default.cshtml" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.Vsts.Git" Version="1.0.0-beta2-19367-01">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+	<!-- If these package references are updated or modified then don't forget to also 
+	     update the dependencies in the nuspec file in the parent directory. -->
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.4" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="2.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines.FiftyOne\FiftyOne.Pipeline.Engines.FiftyOne.csproj" />
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Web.Shared\FiftyOne.Pipeline.Web.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
