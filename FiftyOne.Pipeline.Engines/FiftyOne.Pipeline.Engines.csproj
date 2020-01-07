@@ -30,8 +30,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FiftyOne.Caching" Version="4.1.3" />
-    <PackageReference Include="FiftyOne.Common" Version="4.1.1" />
+    <PackageReference Include="FiftyOne.Caching" Version="4.1.8" />
+    <PackageReference Include="FiftyOne.Common" Version="4.1.5" />
     <PackageReference Include="Microsoft.SourceLink.Vsts.Git" Version="1.0.0-beta2-19367-01">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
