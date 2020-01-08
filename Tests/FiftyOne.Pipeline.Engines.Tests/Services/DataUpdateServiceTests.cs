@@ -1240,6 +1240,31 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Once());
         }
 
+        /// <summary>
+        /// Check that unregistering a data file works without exception.
+        /// </summary>
+        [TestMethod]
+        public void DataUpdateService_Unregister()
+        {
+            Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
+            var config = new DataFileConfiguration()
+            {
+                AutomaticUpdatesEnabled = true,
+                PollingIntervalSeconds = int.MaxValue
+            };
+            var file = new AspectEngineDataFile()
+            {
+                Engine = engine.Object,
+                Configuration = config,
+            };
+
+            // Act
+            _dataUpdate.RegisterDataFile(file);
+
+            // Assert
+            _dataUpdate.UnRegisterDataFile(file);
+        }
+
         #region Private methods
         private void ConfigureNoFileSystem()
         {

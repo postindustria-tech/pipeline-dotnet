@@ -235,7 +235,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 		{
 			lock (_configurations)
 			{
-				var configs = _configurations.Where(c => c == dataFile);
+				var configs = _configurations.Where(c => c == dataFile).ToList();
 				foreach (var config in configs)
 				{
 					_configurations.Remove(config);
