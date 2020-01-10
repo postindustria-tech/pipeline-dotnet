@@ -3,7 +3,7 @@
 ![51Degrees](https://51degrees.com/DesktopModules/FiftyOne/Distributor/Logo.ashx?utm_source=github&utm_medium=repository&utm_content=readme_main&utm_campaign=dotnet-open-source "Data rewards the curious") **Pipeline API**
 
 
-[Reference Documentation](https://51degrees.github.io/ "Reference documentation")
+[Developer Documentation](https://docs.51degrees.com?utm_source=github&utm_medium=repository&utm_content=documentation&utm_campaign=dotnet-open-source "developer documentation")
 
 # Introduction
 This repository contains all the projects required to build the .NET implementation of the Pipeline API.
@@ -24,12 +24,30 @@ The Pipeline projects are written in C# and target .NET Standard 2.0.3 and .NET 
 - **FiftyOne.Pipeline.Web** - Projects that are relevant to the Pipeline API ASP.NET integration.
   - *FiftyOne.Pipeline.Web* - ASP.NET Core integration.
   - *FiftyOne.Pipeline.Web.Framework* - ASP.NET Framework integration.
+  - *FiftyOne.Pipeline.Web.Minify* - FlowElement which takes the JavaScript function from the JavaScriptBundler element and minifies it.
   - *FiftyOne.Pipeline.Web.Shared* - Shared code that is used by both Core and Framework ASP.NET integrations.
 - **FiftyOne.Pipeline.Elements** - Projects for various common Flow Elements that are used by multiple other solutions.
   - *FiftyOne.Pipeline.JavaScriptBuilder* - An element that packages values from all 'JavaScript' properties from all engines into a single JavaScript function.
   - *FiftyOne.Pipeline.JsonBuilder* - An element that serializes all properties from all engines into JSON format.
 - **FiftyOne.CloudRequestEngine** - Projects related to making general requests to the 51Degrees cloud.
   - *FiftyOne.Pipeline.CloudRequestEngine* - An engine that makes requests to the 51Degrees cloud service.
+
+## Installation
+
+You can either reference the projects in this repository or you can reference the [NuGet][nuget] packages in your project:
+
+```
+Install-Package FiftyOne.Pipeline.Core -Version 4.1.0
+Install-Package FiftyOne.Pipeline.Engines -Version 4.1.0
+Install-Package FiftyOne.Pipeline.Engines.FiftyOne -Version 4.1.0
+Install-Package FiftyOne.Pipeline.Web -Version 4.1.0
+Install-Package FiftyOne.Pipeline.Web.Minify -Version 4.1.0
+Install-Package FiftyOne.Pipeline.JsonBuilder -Version 4.1.0
+Install-Package FiftyOne.Pipeline.JavaScriptBuilder -Version 4.1.0
+Install-Package FiftyOne.Pipeline.CloudRequestEngine -Version 4.1.0
+```
+
+Make sure to select the latest version from [NuGet.][nuget]
 
 ## Examples
 
@@ -50,31 +68,19 @@ The Pipeline projects are written in C# and target .NET Standard 2.0.3 and .NET 
   - *Example Website* - Shows how to use the Pipeline ASP.NET Core integration.
   - *Example Website Framework* - Shows how to use the Pipeline ASP.NET integration.
 
+## Tests
+
+- **FiftyOne.Pipeline.CloudRequestEngine.Tests** - Tests for the CloudRequestEngine and builder.
+- **FiftyOne.Pipeline.Core.Tests** - Tests for FlowElement and FlowData base classes.
+- **FiftyOne.Pipeline.Engines.Tests** - Tests for AspectEngines and AspectData base classes.
+- **FiftyOne.Pipeline.Engines.FiftyOne.Tests** - Tests for 51Degrees specific aspect engines.
+- **FiftyOne.Pipeline.Examples.Tests** - Tests for developer examples.
+
+The tests can be run from within Visual Studio.
+
 ## Project documentation
 
-For complete documentation on the Pipeline API and associated engines, see the [51Degrees documentation site][Documenation].
+For complete documentation on the Pipeline API and associated engines, see the [51Degrees documentation site][Documentation].
 
-## Enable debugging of NuGet packages
-
-In order to debug into NuGet packages, you must be using packages that reference debug symbols. By default, this includes all alpha packages but not beta or final versions.
-If you have a debuggable package then you will need to configure Visual Studio to allow you to step into it:
-
-- In tools -> options -> debugging -> symbols, add the Azure DevOps symbol server: 
-![Visual Studio 2017 screenshot with symbol server added][ImageAddSymbolServer]
-- Select the ‘Load only specified modules’ option at the bottom and configure it to only load Symbols for 51Degrees modules as shown below:
-![Visual Studio 2017 configured to only load external symbols for 51Degrees libraries][ImageLoadOnlyFiftyone]
-- In tools -> options -> debugging -> general, ensure that:
-  - Enable Just My Code is off. Having this on will prevent VS stepping into any NuGet packages.
-  - Enable source server support is on.
-  - Example Source Link support is on.
-![Visual Studio 2017 configured for debugging external packages][ImageConfigureDebugger]
-
-When stepping into a method from a relevant NuGet package, you should now see the following warning message:
-![Visual Studio 2017 Source Link download warning][ImageSourceLinkDownload]
-
-
-[Documentation]: https://51degrees.github.io
-[ImageAddSymbolServer]: file://Images/vs2017-add-symbol-server.png
-[ImageConfigureDebugger]: file://Images/vs2017-configure-debugger.png
-[ImageLoadOnlyFiftyone]: file://Images/vs2017-load-only-fiftyone.png
-[ImageSourceLinkDownload]: file://Images/vs2017-source-link-download.png
+[Documentation]: https://docs.51degrees.com
+[nuget]: https://www.nuget.org/profiles/51Degrees
