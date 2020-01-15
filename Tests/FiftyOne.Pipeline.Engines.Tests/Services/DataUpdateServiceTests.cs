@@ -40,7 +40,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
     public class DataUpdateServiceTests
     {
         private TestLogger<DataUpdateService> _logger;
+        private Mock<IFileSystem> _fileSystem;
         private Mock<IFileWrapper> _fileWrapper;
+        private Mock<IDirectoryWrapper> _directoryWarpper;
         private Mock<Func<TimerCallback, object, TimeSpan, Timer>> _timerFactory;
 
         private Mock<MockHttpMessageHandler> _httpHandler;
@@ -60,6 +62,10 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Create mocks
             _logger = new TestLogger<DataUpdateService>();
             _fileWrapper = new Mock<IFileWrapper>();
+            _directoryWarpper = new Mock<IDirectoryWrapper>();
+            _fileSystem = new Mock<IFileSystem>();
+            _fileSystem.Setup(f => f.File).Returns(_fileWrapper.Object);
+            _fileSystem.Setup(f => f.Directory).Returns(_directoryWarpper.Object);
             _timerFactory = new Mock<Func<TimerCallback, object, TimeSpan, Timer>>();
 
             // Create the HttpClient using the mock handler
@@ -80,7 +86,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             _dataUpdate = new DataUpdateService(
                 _logger,
                 _httpClient,
-                _fileWrapper.Object,
+                _fileSystem.Object,
                 _timerFactory.Object);
 
         }
@@ -351,6 +357,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                     Configuration = config
                 };
                 engine.Setup(e => e.GetDataFileMetaData(It.IsAny<string>())).Returns(file);
+
                 _fileWrapper.Setup(w => w.GetCreationTimeUtc(It.IsAny<string>()))
                     .Returns((string tempFile) => { return File.GetCreationTimeUtc(tempFile); });
                 // Configure a ManualResetEvent to be set when processing
@@ -602,7 +609,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             // For this test we want to use the real FileWrapper to allow
             // the test to perform file system read/write operations.
-            IFileWrapper fileWrapper = ConfigureRealFileSystem();
+            IFileSystem fileSystem = ConfigureRealFileSystem();
             // Configure the timer to execute immediately. 
             // When subsequent timers are created, they will not execute.
             ConfigureTimerImmediateCallbackOnce();
@@ -698,7 +705,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             // For this test we want to use the real FileWrapper to allow
             // the test to perform file system read/write operations.
-            IFileWrapper fileWrapper = ConfigureRealFileSystem();
+            IFileSystem fileSystem = ConfigureRealFileSystem();
             // Configure the timer to execute immediately. 
             // When subsequent timers are created, they will not execute.
             ConfigureTimerImmediateCallbackOnce();
@@ -795,7 +802,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             // For this test we want to use the real FileWrapper to allow
             // the test to perform file system read/write operations.
-            IFileWrapper fileWrapper = ConfigureRealFileSystem();
+            IFileSystem fileSystem = ConfigureRealFileSystem();
             // Configure the timer to execute immediately. 
             // When subsequent timers are created, they will not execute.
             ConfigureTimerImmediateCallbackOnce();
@@ -874,7 +881,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         public void DataUpdateService_UpdateAllEnabled_NoUpdates()
         {
             // Arrange
-            IFileWrapper fileWrapper = ConfigureRealFileSystem();
+            IFileSystem fileSystem = ConfigureRealFileSystem();
             ConfigureTimerImmediateCallbackOnce();
             ConfigureHttpNoUpdateAvailable();
             // Getting no data from the URL will cause an error to be logged
@@ -1052,7 +1059,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             // For this test we want to use the real FileWrapper to allow
             // the test to perform file system read/write operations.
-            IFileWrapper fileWrapper = ConfigureRealFileSystem();
+            IFileSystem fileSystem = ConfigureRealFileSystem();
             // Configure the timer to execute as normal
             ConfigureTimerAccurateCallback();
 
@@ -1268,29 +1275,25 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         #region Private methods
         private void ConfigureNoFileSystem()
         {
-            // Configure the file wrapper to be 'strict'. This means that 
-            // any calls to methods that have not been set up will throw
-            // an exception.
+            // Configure the file system wrappers to be 'strict'. 
+            // This means that any calls to methods that have not been 
+            // set up will throw an exception.
             // We use this behavior to verify there is no interaction 
             // with the file system.
             _fileWrapper = new Mock<IFileWrapper>(MockBehavior.Strict);
-            _dataUpdate = new DataUpdateService(
-                _logger,
-                _httpClient,
-                _fileWrapper.Object,
-                _timerFactory.Object);
+            _directoryWarpper = new Mock<IDirectoryWrapper>(MockBehavior.Strict);
         }
-        private IFileWrapper ConfigureRealFileSystem()
+        private IFileSystem ConfigureRealFileSystem()
         {
-            // For this test we want to use the real FileWrapper to allow
+            // For this test we want to use the real file system wrappers to allow
             // the test to perform file system read/write operations.
-            IFileWrapper fileWrapper = new FileWrapper();
+            var fileSystem = new RealFileSystem();
             _dataUpdate = new DataUpdateService(
                 _logger,
                 _httpClient,
-                fileWrapper,
+                fileSystem,
                 _timerFactory.Object);
-            return fileWrapper;
+            return fileSystem;
         }
 
         private void ConfigureTimerImmediateCallback()

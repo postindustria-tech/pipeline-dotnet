@@ -56,11 +56,11 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// </summary>
 		private HttpClient _httpClient;
 
-		// System wrappers
-		private IFileWrapper _fileWrapper;
+        // System wrappers
+        private IFileSystem _fileSystem;
 
-		// random number generator
-		private Random _rnd = new Random();
+        // random number generator
+        private Random _rnd = new Random();
 
 		// All registered configurations
 		private List<AspectEngineDataFile> _configurations;
@@ -92,45 +92,48 @@ namespace FiftyOne.Pipeline.Engines.Services
 			HttpClient httpClient) : this(logger, httpClient, null, null)
 		{ }
 
-		/// <summary>
-		/// Internal constructor. Should only be called directly 
-		/// by unit tests 
-		/// </summary>
-		/// <param name="logger">
-		/// The logger to use
-		/// </param>
-		/// <param name="httpClient">
-		/// The <see cref="HttpClient"/> to use when requesting an update
-		/// from a URL.
-		/// Note that only one HttpClient instance should be used throughout 
-		/// the application, as described in the documentation: 
-		/// https://msdn.microsoft.com/library/system.net.http.httpclient(v=vs.110).aspx
-		/// </param>
-		/// <param name="fileWrapper">
-		/// A wrapper for file system operations on individual files.
-		/// </param>
-		/// <param name="timerFactory">
-		/// A factory method for creating <see cref="Timer"/> instances.
-		/// Parameters are: callback method, state, time until callback 
-		/// triggered.
-		/// </param>
-		internal DataUpdateService(
+        /// <summary>
+        /// Internal constructor. Should only be called directly 
+        /// by unit tests 
+        /// </summary>
+        /// <param name="logger">
+        /// The logger to use
+        /// </param>
+        /// <param name="httpClient">
+        /// The <see cref="HttpClient"/> to use when requesting an update
+        /// from a URL.
+        /// Note that only one HttpClient instance should be used throughout 
+        /// the application, as described in the documentation: 
+        /// https://msdn.microsoft.com/library/system.net.http.httpclient(v=vs.110).aspx
+        /// </param>
+        /// <param name="fileSystemWrapper">
+        /// A wrapper for file system.
+        /// In normal operation this will usually be a <see cref="RealFileSystem"/>
+        /// instance. If null is passed, a new <see cref="RealFileSystem"/>
+        /// instance is created.
+        /// </param>
+        /// <param name="timerFactory">
+        /// A factory method for creating <see cref="Timer"/> instances.
+        /// Parameters are: callback method, state, time until callback 
+        /// triggered.
+        /// </param>
+        internal DataUpdateService(
 			ILogger<DataUpdateService> logger,
 			HttpClient httpClient,
-			IFileWrapper fileWrapper,
+			IFileSystem fileSystemWrapper,
 			Func<TimerCallback, object, TimeSpan, Timer> timerFactory)
 		{
 			_logger = logger;
 			_httpClient = httpClient;
 			_configurations = new List<AspectEngineDataFile>();
 
-			if(fileWrapper == null)
+			if(fileSystemWrapper == null)
 			{
-				_fileWrapper = new FileWrapper();
+                _fileSystem = new RealFileSystem();
 			}
 			else
 			{
-				_fileWrapper = fileWrapper;
+                _fileSystem = fileSystemWrapper;
 			}
 			if (timerFactory == null)
 			{
@@ -158,8 +161,9 @@ namespace FiftyOne.Pipeline.Engines.Services
 
 			bool alreadyRegistered = dataFile.IsRegistered;
 			dataFile.SetDataUpdateService(this);
+            LogInfoMessage("Registering file with auto update service", dataFile);
 
-			if (dataFile != null)
+            if (dataFile != null)
 			{
 				// If the data file is configured to refresh the data
 				// file on startup then download an update immediately.
@@ -167,8 +171,9 @@ namespace FiftyOne.Pipeline.Engines.Services
 				// will block until the engine is ready.
 				if (dataFile.Configuration.UpdateOnStartup &&
 					alreadyRegistered == false)
-				{
-					var result = CheckForUpdate(dataFile, true);
+                {
+                    LogInfoMessage("Updating on startup", dataFile);
+                    var result = CheckForUpdate(dataFile, true);
                     if(result != AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
                     {
                         throw new DataUpdateException("Update on startup failed. See log for details.");
@@ -181,8 +186,10 @@ namespace FiftyOne.Pipeline.Engines.Services
 					// timer.
 					if (dataFile.AutomaticUpdatesEnabled &&
 						dataFile.Timer == null)
-					{
-						TimeSpan timeToUpdate = GetInterval(dataFile.Configuration);
+                    {
+                        LogInfoMessage("Creating update check timer", dataFile);
+
+                        TimeSpan timeToUpdate = GetInterval(dataFile.Configuration);
                         if (dataFile.UpdateAvailableTime > DateTime.UtcNow)
                         {
                             timeToUpdate = dataFile.UpdateAvailableTime
@@ -203,8 +210,10 @@ namespace FiftyOne.Pipeline.Engines.Services
 					if (dataFile.Configuration.FileSystemWatcherEnabled &&
 						dataFile.FileWatcher == null &&
 						string.IsNullOrEmpty(dataFile.DataFilePath) == false)
-					{
-						FileSystemWatcher watcher = new FileSystemWatcher(
+                    {
+                        LogInfoMessage("Creating file system watcher", dataFile);
+
+                        FileSystemWatcher watcher = new FileSystemWatcher(
 							Path.GetDirectoryName(dataFile.DataFilePath),
 							Path.GetFileName(dataFile.DataFilePath));
 						watcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -297,7 +306,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 				// The engine has an associated data file so update it first.
 				try
 				{
-					_fileWrapper.WriteAllBytes(dataFile.DataFilePath, data);
+					_fileSystem.File.WriteAllBytes(dataFile.DataFilePath, data);
 				}
 				catch (Exception ex)
 				{
@@ -392,7 +401,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			if (dataFile != null)
 			{
 				// Get the creation time of the new data file
-				DateTime createTime = _fileWrapper.GetCreationTimeUtc(e.FullPath);
+				DateTime createTime = _fileSystem.File.GetCreationTimeUtc(e.FullPath);
 				// Use a lock with a double check on file creation time to make
 				// sure we only run the update once even if multiple events fire
 				// for a single file.
@@ -412,7 +421,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 							{
 								try
 								{
-									using (_fileWrapper.OpenRead(e.FullPath)) { }
+									using (_fileSystem.File.OpenRead(e.FullPath)) { }
 									fileLockable = true;
 								}
 								catch { }
@@ -481,15 +490,19 @@ namespace FiftyOne.Pipeline.Engines.Services
             {
                 if (dataFile != null)
                 {
+                    LogInfoMessage("Checking for update", dataFile);
+
                     // Only check the file system if the file system watcher
                     // is not enabled and the engine is using a temporary file.
                     if (dataFile.Configuration.FileSystemWatcherEnabled == false &&
                         string.IsNullOrEmpty(dataFile.DataFilePath) == false &&
                         string.IsNullOrEmpty(dataFile.TempDataFilePath) == false)
                     {
-                        var fileCreateTime = _fileWrapper.GetCreationTimeUtc(
+                        LogInfoMessage("Checking file system", dataFile);
+
+                        var fileCreateTime = _fileSystem.File.GetCreationTimeUtc(
                             dataFile.DataFilePath);
-                        var tempFileCreateTime = _fileWrapper.GetCreationTimeUtc(
+                        var tempFileCreateTime = _fileSystem.File.GetCreationTimeUtc(
                             dataFile.TempDataFilePath);
 
                         // If the data file is newer than the temp file currently
@@ -625,11 +638,15 @@ namespace FiftyOne.Pipeline.Engines.Services
 					$"{dataFile.Identifier}-{Guid.NewGuid()}.tmp");
 				string uncompressedTempFile = Path.Combine(dataFile.TempDataDirPath,
 					$"{dataFile.Identifier}-{Guid.NewGuid()}.tmp");
+                if(_fileSystem.Directory.Exists(dataFile.TempDataDirPath) == false)
+                {
+                    _fileSystem.Directory.CreateDirectory(dataFile.TempDataDirPath);
+                }                
 
 				try
 				{
-					using (var compressedStream = _fileWrapper.Create(compressedTempFile))
-					using (var uncompressedStream = _fileWrapper.Create(uncompressedTempFile))
+					using (var compressedStream = _fileSystem.File.Create(compressedTempFile))
+					using (var uncompressedStream = _fileSystem.File.Create(uncompressedTempFile))
 					{
 						result = CheckForUpdateFromUrl(dataFile,
 							compressedStream,
@@ -648,9 +665,9 @@ namespace FiftyOne.Pipeline.Engines.Services
 
 						try
 						{
-							// Copy the uncompressed file to the engine's 
-							// data file location
-							_fileWrapper.Copy(uncompressedTempFile,
+                            // Copy the uncompressed file to the engine's 
+                            // data file location
+                            _fileSystem.File.Copy(uncompressedTempFile,
 								dataFile.DataFilePath, true);
 						}
 						catch (Exception ex)
@@ -675,13 +692,13 @@ namespace FiftyOne.Pipeline.Engines.Services
 				finally
 				{
 					// Make sure the temp files are cleaned up
-					if (_fileWrapper.Exists(compressedTempFile))
+					if (_fileSystem.File.Exists(compressedTempFile))
 					{
-						_fileWrapper.Delete(compressedTempFile);
+                        _fileSystem.File.Delete(compressedTempFile);
 					}
-					if (_fileWrapper.Exists(uncompressedTempFile))
+					if (_fileSystem.File.Exists(uncompressedTempFile))
 					{
-						_fileWrapper.Delete(uncompressedTempFile);
+                        _fileSystem.File.Delete(uncompressedTempFile);
 					}
 				}
 			}
@@ -762,11 +779,13 @@ namespace FiftyOne.Pipeline.Engines.Services
 			Exception exception = null;
 			int tries = 0;
 
-			if (dataFile.Engine != null)
-			{
-				// Try to update the file multiple times to ensure the file is not 
-				// locked.
-				while (result != AutoUpdateStatus.AUTO_UPDATE_SUCCESS && tries < 10)
+            if (dataFile.Engine != null)
+            {
+                LogInfoMessage($"Attempting to refresh engine with new data", dataFile);
+
+                // Try to update the file multiple times to ensure the file is not 
+                // locked.
+                while (result != AutoUpdateStatus.AUTO_UPDATE_SUCCESS && tries < 10)
 				{
 					try
 					{
@@ -829,8 +848,9 @@ namespace FiftyOne.Pipeline.Engines.Services
 			expectedMd5Hash = null;
 			
 			string url = dataFile.FormattedUrl;
+            LogInfoMessage($"Checking for update from {url}", dataFile);
 
-			HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, url);
+            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, url);
 
             // Get data file published date from meta-data.
             // If it's not been set for some reason then use the 
@@ -838,9 +858,9 @@ namespace FiftyOne.Pipeline.Engines.Services
             DateTime publishDate = dataFile.DataPublishedDateTime;
             if(dataFile.DataPublishedDateTime <= DateTime.MinValue &&
                 string.IsNullOrEmpty(dataFile.DataFilePath) == false &&
-                _fileWrapper.Exists(dataFile.DataFilePath))
+                 _fileSystem.File.Exists(dataFile.DataFilePath))
             {
-                publishDate = _fileWrapper.GetCreationTimeUtc(dataFile.DataFilePath);
+                publishDate = _fileSystem.File.GetCreationTimeUtc(dataFile.DataFilePath);
             }
 
             // Set last-modified header to ensure that a file will only
@@ -1087,6 +1107,27 @@ namespace FiftyOne.Pipeline.Engines.Services
 			}
 			return interval.Add(TimeSpan.FromSeconds(seconds));
 		}
+
+        private void LogInfoMessage(
+            string message, 
+            IAspectEngineDataFile dataFile)
+        {
+            StringBuilder fullMessage = new StringBuilder();
+            if (dataFile != null)
+            {
+                fullMessage.Append($"Data file '{dataFile.Identifier}' ");
+                if (dataFile.Engine != null)
+                {
+                    fullMessage.Append($"for engine '{dataFile.Engine.GetType().Name}' ");
+                }
+            }
+            else
+            {
+                int x = 0;
+            }
+            fullMessage.Append(message);
+            _logger.LogInformation(fullMessage.ToString());
+        }
 		#endregion
 	}
 }
