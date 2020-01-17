@@ -1272,6 +1272,75 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             _dataUpdate.UnRegisterDataFile(file);
         }
 
+        /// <summary>
+        /// Check that a failure when updating does not prevent the next
+        /// update check from occurring.
+        /// </summary>
+        [TestMethod]
+        public void DataUpdateService_Register_TimerSetAfter429()
+        {
+            // Arrange
+            Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
+            var config = new DataFileConfiguration()
+            {
+                AutomaticUpdatesEnabled = true,
+                PollingIntervalSeconds = 10,
+                MaxRandomisationSeconds = 0,
+                DataUpdateUrl = "https://test.com"
+            };
+            var file = new AspectEngineDataFile()
+            {
+                Engine = engine.Object,
+                Configuration = config,
+                UpdateAvailableTime = DateTime.UtcNow.AddDays(-1)
+            };
+            ConfigureHttpTooManyRequests();
+            ConfigureTimerImmediateCallbackOnce();
+            // Configure a ManualResetEvent to be set when processing
+            // is complete.
+            ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
+            {
+                completeFlag.Set();
+            };
+
+            // Act
+            _dataUpdate.RegisterDataFile(file);
+            // Wait until processing is complete.
+            completeFlag.Wait(1000);
+
+            // Assert
+            Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
+                "event was never fired");
+            // Ignore the error that is logged due to the 429
+            _ignoreErrors = 1;
+            // Check that the timer has been set to go off again.
+            Assert.IsNotNull(file.Timer);
+            // We use reflection to get the due time of the new check 
+            // from the update timer.
+            // This is because we can only access the value through private
+            // fields.
+            // If this test fails in future, it may be because the internal 
+            // implementation of the timer has changed and the field names 
+            // are different.
+            // At time of writing we're looking at an unsigned integer field:
+            //   file.Timer.m_timer.m_timer.m_dueTime
+            // This is the number of milliseconds until the next update
+            // will fire.
+            var privateFlags =
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance;
+            var field = file.Timer.GetType().GetField("m_timer", privateFlags);
+            var fieldValue = field.GetValue(file.Timer);
+            field = fieldValue.GetType().GetField("m_timer", privateFlags);
+            fieldValue = field.GetValue(fieldValue);
+            field = fieldValue.GetType().GetField("m_dueTime", privateFlags);
+            fieldValue = field.GetValue(fieldValue);
+            var dueTime = TimeSpan.FromMilliseconds((uint)fieldValue);
+            // Check that the timer has been set to expire in 10 seconds.
+            Assert.AreEqual(10, dueTime.TotalSeconds);
+        }
+
         #region Private methods
         private void ConfigureNoFileSystem()
         {
@@ -1397,6 +1466,20 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 {
                 })
                 .Returns(new HttpResponseMessage(System.Net.HttpStatusCode.NotModified)
+                {
+                    Content = new StringContent("<empty />", Encoding.UTF8, "application/xml"),
+                });
+        }
+
+        private void ConfigureHttpTooManyRequests()
+        {
+            // Configure the mock HTTP handler to return a 429 
+            // 'TooManyRequests' status code.
+            _httpHandler.Setup(h => h.Send(It.IsAny<HttpRequestMessage>()))
+                .Callback((HttpRequestMessage request) =>
+                {
+                })
+                .Returns(new HttpResponseMessage(System.Net.HttpStatusCode.TooManyRequests)
                 {
                     Content = new StringContent("<empty />", Encoding.UTF8, "application/xml"),
                 });

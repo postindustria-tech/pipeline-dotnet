@@ -531,23 +531,6 @@ namespace FiftyOne.Pipeline.Engines.Services
                         result = UpdatedFileAvailable(dataFile);
                     }
 
-                    if (newDataAvailable == false)
-                    {
-                        // No update available.
-                        // If this was a manual call to update then do nothing.
-                        // If it was triggered by the timer expiring then modify
-                        // the timer to check again after the configured interval.
-                        // This will repeat until the update is acquired.
-                        if (manualUpdate == false &&
-                            dataFile != null &&
-                            dataFile.Timer != null)
-                        {
-                            dataFile.Timer.Change(
-                                GetInterval(dataFile.Configuration),
-                                TimeSpan.FromMilliseconds(-1));
-                        }
-                    }
-
                     if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS ||
                         result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
                     {
@@ -560,6 +543,23 @@ namespace FiftyOne.Pipeline.Engines.Services
             }
             finally
             {
+                if (newDataAvailable == false)
+                {
+                    // No update available.
+                    // If this was a manual call to update then do nothing.
+                    // If it was triggered by the timer expiring then modify
+                    // the timer to check again after the configured interval.
+                    // This will repeat until the update is acquired.
+                    if (manualUpdate == false &&
+                        dataFile != null &&
+                        dataFile.Timer != null)
+                    {
+                        dataFile.Timer.Change(
+                            GetInterval(dataFile.Configuration),
+                            TimeSpan.FromMilliseconds(-1));
+                    }
+                }
+
                 OnUpdateComplete(new DataUpdateCompleteArgs()
                 {
                     DataFile = dataFile,
