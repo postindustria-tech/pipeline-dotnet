@@ -174,9 +174,13 @@ namespace FiftyOne.Pipeline.Engines.Services
                 {
                     LogInfoMessage("Updating on startup", dataFile);
                     var result = CheckForUpdate(dataFile, true);
-                    if(result != AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
+                    if(result != AutoUpdateStatus.AUTO_UPDATE_SUCCESS &&
+                        result != AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED)
                     {
-                        throw new DataUpdateException("Update on startup failed. See log for details.");
+                        throw new DataUpdateException($"Update on startup " +
+                            $"failed for {dataFile.Identifier} with status " +
+                            $"{Enum.GetName(typeof(AutoUpdateStatus), result)}. " +
+                            $"See log for details.");
                     }
 				}
 				else
