@@ -72,7 +72,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         
         /// <summary>
         /// The root endpoint which the CloudRequestsEngine will query.
-        /// This will set the data, properites and evidence keys endpoints.
+        /// This will set the data, properties and evidence keys endpoints.
         /// </summary>
         /// <param name="uri"></param>
         /// <returns></returns>
@@ -83,7 +83,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 uri += '/';
             }
             return SetDataEndpoint(uri + (_resourceKey != null ? _resourceKey + "." : "") + "json")
-                .SetPropertiesEndpoint(uri + "accessibleproperties")
+                .SetPropertiesEndpoint(uri + "accessibleproperties" + (_resourceKey != null ? "?Resource=" + _resourceKey : ""))
                 .SetEvidenceKeysEndpoint(uri + "evidencekeys");
 
         }

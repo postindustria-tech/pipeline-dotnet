@@ -33,9 +33,13 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         where TBuilder : CloudPipelineBuilderBase<TBuilder>
     {
         /// <summary>
-        /// The URL to the JSON resource on the cloud service.
+        /// The base URL on the cloud service.
         /// </summary>
         protected string Url { get; set; } = string.Empty;
+        /// <summary>
+        /// The URL to the JSON resource on the cloud service.
+        /// </summary>
+        protected string JsonEndpoint { get; set; } = string.Empty;
         /// <summary>
         /// The URL for the AccessileProperties endpoint on the cloud service.
         /// </summary>
@@ -75,12 +79,8 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>This builder</returns>
         public TBuilder SetEndPoint(string url)
         {
-            if (url[url.Length - 1] != '/') {
-                url += '/';
-            }
-            return SetJSONEndpoint(url + "json")
-                .SetPropertiesEndpoint(url + "accessibleproperties")
-                .SetEvidenceKeysEndpoint(url + "evidencekeys");
+            Url = url;
+            return this as TBuilder;
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>This builder</returns>
         public TBuilder SetJSONEndpoint(string url)
         {
-            Url = url;
+            JsonEndpoint = url;
             return this as TBuilder;
         }
 

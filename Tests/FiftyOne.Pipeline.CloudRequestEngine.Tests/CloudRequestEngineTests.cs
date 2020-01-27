@@ -49,12 +49,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         {
             // ARRANGE
             _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            // Set up the JSON response.
             _handlerMock
                .Protected()
                // Setup the PROTECTED method to mock
                .Setup<Task<HttpResponseMessage>>(
                   "SendAsync",
-                  ItExpr.IsAny<HttpRequestMessage>(),
+                  ItExpr.Is<HttpRequestMessage>(r =>
+                      r.RequestUri.AbsolutePath.ToLower().EndsWith("json")),
                   ItExpr.IsAny<CancellationToken>()
                )
                // prepare the expected response of the mocked http call
@@ -62,6 +64,40 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                {
                    StatusCode = HttpStatusCode.OK,
                    Content = new StringContent("{'device':{'value':'1'}}"),
+               })
+               .Verifiable();
+            // Set up the evidencekeys response.
+            _handlerMock
+               .Protected()
+               // Setup the PROTECTED method to mock
+               .Setup<Task<HttpResponseMessage>>(
+                  "SendAsync",
+                  ItExpr.Is<HttpRequestMessage>(r =>
+                      r.RequestUri.AbsolutePath.ToLower().EndsWith("evidencekeys")),
+                  ItExpr.IsAny<CancellationToken>()
+               )
+               // prepare the expected response of the mocked http call
+               .ReturnsAsync(new HttpResponseMessage()
+               {
+                   StatusCode = HttpStatusCode.OK,
+                   Content = new StringContent("['query.User-Agent']"),
+               })
+               .Verifiable();
+            // Set up the accessibleproperties response.
+            _handlerMock
+               .Protected()
+               // Setup the PROTECTED method to mock
+               .Setup<Task<HttpResponseMessage>>(
+                  "SendAsync",
+                  ItExpr.Is<HttpRequestMessage>(r =>
+                      r.RequestUri.AbsolutePath.ToLower().EndsWith("accessibleproperties")),
+                  ItExpr.IsAny<CancellationToken>()
+               )
+               // prepare the expected response of the mocked http call
+               .ReturnsAsync(new HttpResponseMessage()
+               {
+                   StatusCode = HttpStatusCode.OK,
+                   Content = new StringContent("{'Products': {'device': {'DataTier': 'tier','Properties': [{'Name': 'value','Type': 'String','Category': 'Device'}]}}}"),
                })
                .Verifiable();
 
