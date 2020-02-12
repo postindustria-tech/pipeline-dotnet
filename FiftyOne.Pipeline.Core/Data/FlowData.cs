@@ -581,7 +581,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// Existing data matching the key, or newly added data.
         /// </returns>
-        public T GetOrAdd<T>(string elementDataKey, Func<IFlowData, T> dataFactory)
+        public T GetOrAdd<T>(string elementDataKey, Func<IPipeline, T> dataFactory)
             where T : IElementData
         {
             T result = default(T);
@@ -594,14 +594,14 @@ namespace FiftyOne.Pipeline.Core.Data
                     {
                         if (_data.AsStringKeyDictionary().TryGetValue(elementDataKey, out data) == false)
                         {
-                            data = dataFactory(this);
+                            data = dataFactory(Pipeline);
                             _data.AsStringKeyDictionary().Add(elementDataKey, data);
                         }
                     }
                 }
                 else
                 {
-                    data = dataFactory(this);
+                    data = dataFactory(Pipeline);
                     _data.AsStringKeyDictionary().Add(elementDataKey, data);
                 }
             }
@@ -636,7 +636,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// Existing data matching the key, or newly added data.
         /// </returns>
-        public T GetOrAdd<T>(ITypedKey<T> key, Func<IFlowData, T> dataFactory)
+        public T GetOrAdd<T>(ITypedKey<T> key, Func<IPipeline, T> dataFactory)
              where T : IElementData
         {
             T data = default(T);
@@ -648,14 +648,14 @@ namespace FiftyOne.Pipeline.Core.Data
                     {
                         if (_data.TryGetValue(key, out data) == false)
                         {
-                            data = dataFactory(this);
+                            data = dataFactory(Pipeline);
                             _data.Add(key, data);
                         }
                     }
                 }
                 else
                 {
-                    data = dataFactory(this);
+                    data = dataFactory(Pipeline);
                     _data.Add(key, data);
                 }
             }
@@ -700,6 +700,12 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </returns>
         public DataKey GenerateKey(IEvidenceKeyFilter filter)
         {
+            if(filter == null)
+            {
+                throw new ArgumentNullException("filter",
+                    "Cannot generate a key if a filter is not supplied");
+            }
+
             var evidence = _evidence.AsDictionary();
             // We could use DataKeyBuilder here but instead use Linq
             // directly for better performance.

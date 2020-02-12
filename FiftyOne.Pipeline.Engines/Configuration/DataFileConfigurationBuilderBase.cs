@@ -389,28 +389,24 @@ namespace FiftyOne.Pipeline.Engines.Configuration
             return config;
         }
 
-
         /// <summary>
         /// Called to indicate that configuration of this file is complete
         /// and the user can continue to configure the engine that the
         /// data file will be used by.
         /// </summary>
         /// <param name="data">
-        /// A byte array containing the data that would normally be in a 
-        /// data file. 
-        /// If this argument is null then, before starting processing, 
-        /// the engine will download the latest version of the datafile 
-        /// using the configured auto-update settings. 
+        /// A <see cref="Stream"/> containing the data.
         /// </param>
         /// <returns>
         /// The new <see cref="DataFileConfiguration"/> instance
         /// </returns>
-        public TConfig Build(byte[] data)
+        public TConfig Build(Stream data)
         {
             var config = new TConfig();
 
             ConfigureCommonOptions(config);
-            config.Data = data;
+            config.DataStream = data;
+            config.MemoryOnly = true;
 
             return config;
         }

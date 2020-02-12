@@ -61,7 +61,7 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
         {
             TestElementData elementData = data.GetOrAdd(
                 ElementDataKeyTyped,
-                (f) => new TestElementData(f));
+                (p) => new TestElementData(p));
             int value = (int)data.GetEvidence()[EvidenceKeys[0]];
             elementData.Result = value * _multiple;
         }

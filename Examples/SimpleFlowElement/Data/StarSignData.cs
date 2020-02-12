@@ -34,8 +34,8 @@ namespace SimpleFlowElement.Data
     {
         public StarSignData(
             ILogger<ElementDataBase> logger,
-            IFlowData flowData)
-            : base(logger, flowData)
+            IPipeline pipeline)
+            : base(logger, pipeline)
         {
         }
 

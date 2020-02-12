@@ -101,8 +101,8 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// Also registers the data file with the data update service.
         /// </summary>
         /// <param name="data">
-        /// A byte array containing the data that would normally be in a 
-        /// data file. 
+        /// A <see cref="Stream"/> containing the data that would normally 
+        /// be in a data file. 
         /// If this argument is null then, before starting processing, 
         /// the engine will download the latest version of the datafile 
         /// using the configured auto-update settings. 
@@ -110,7 +110,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// An <see cref="IAspectEngine"/>.
         /// </returns>
-        public virtual TEngine Build(byte[] data)
+        public virtual TEngine Build(Stream data)
         {
             var config = _dataFileBuilder.Build(data);
             AddDataFile(config);

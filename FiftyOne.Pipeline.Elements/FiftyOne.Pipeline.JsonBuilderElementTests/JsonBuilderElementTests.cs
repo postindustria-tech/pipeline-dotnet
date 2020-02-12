@@ -86,11 +86,11 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             flowData.Setup(d => d.ElementDataAsDictionary()).Returns(new Dictionary<string, object>() { { "test", _elementDataMock.Object } });
             flowData.Setup(d => d.GetOrAdd(
                 It.IsAny<TypedKey<IJsonBuilderElementData>>(),
-                It.IsAny<Func<IFlowData, IJsonBuilderElementData>>()))
-                .Returns<TypedKey<IJsonBuilderElementData>, Func<IFlowData, IJsonBuilderElementData>>(
+                It.IsAny<Func<IPipeline, IJsonBuilderElementData>>()))
+                .Returns<TypedKey<IJsonBuilderElementData>, Func<IPipeline, IJsonBuilderElementData>>(
                 (k, f) =>
                 {
-                    result = f(flowData.Object);
+                    result = f(flowData.Object.Pipeline);
                     return result;
                 });
 
@@ -159,11 +159,11 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             IJsonBuilderElementData result = null;
             flowData.Setup(d => d.GetOrAdd(
                 It.IsAny<TypedKey<IJsonBuilderElementData>>(),
-                It.IsAny<Func<IFlowData, IJsonBuilderElementData>>()))
-                .Returns<TypedKey<IJsonBuilderElementData>, Func<IFlowData, IJsonBuilderElementData>>(
+                It.IsAny<Func<IPipeline, IJsonBuilderElementData>>()))
+                .Returns<TypedKey<IJsonBuilderElementData>, Func<IPipeline, IJsonBuilderElementData>>(
                 (k, f) =>
                 {
-                    result = f(flowData.Object);
+                    result = f(flowData.Object.Pipeline);
                     return result;
                 });
 

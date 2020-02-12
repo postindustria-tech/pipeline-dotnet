@@ -29,6 +29,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
     public interface IFiftyOneDataFile : IAspectEngineDataFile
     {
-        string DataUpdateDownloadType { get; set; }
+        string DataDownloadType { get; set; }
     }
 }

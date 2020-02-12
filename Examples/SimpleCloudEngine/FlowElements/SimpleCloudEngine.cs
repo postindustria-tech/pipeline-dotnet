@@ -47,7 +47,8 @@ namespace SimpleCloudEngine.FlowElements
 
         public SimpleCloudEngine(
             ILogger<SimpleCloudEngine> logger,
-            Func<IFlowData, FlowElementBase<IStarSignData, IAspectPropertyMetaData>, IStarSignData> deviceDataFactory,
+            Func<IPipeline, FlowElementBase<IStarSignData, IAspectPropertyMetaData>,
+                IStarSignData> deviceDataFactory,
             CloudRequestEngine engine)
             : base(logger, deviceDataFactory)
         {

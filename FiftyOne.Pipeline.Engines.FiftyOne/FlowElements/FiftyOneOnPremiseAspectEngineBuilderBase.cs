@@ -32,6 +32,10 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         where TBuilder : FiftyOneOnPremiseAspectEngineBuilderBase<TBuilder, TEngine>
         where TEngine : IFiftyOneAspectEngine
     {
+        private string _dataDownloadType;
+
+        protected abstract string DefaultDataDownloadType { get; }
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -44,14 +48,33 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             SetDataUpdateUrlFormatter(new FiftyOneUrlFormatter());
         }
 
-        protected override AspectEngineDataFile NewAspectEngineDataFile()
+        /// <summary>
+        /// Set the 'type' string that will be sent to the 'distributor' 
+        /// service when downloading a new data file.
+        /// Note that this is only needed if using UpdateOnStartup. 
+        /// Otherwise, the update service will use the type name from the 
+        /// existing data file.
+        /// The default value is provided by the specific engine builder 
+        /// implementation.
+        /// </summary>
+        /// <param name="typeName">
+        /// The download type to use. For example 'HashV4'.
+        /// </param>
+        /// <returns>
+        /// This builder.
+        /// </returns>
+        public TBuilder SetDataDownloadType(string typeName)
         {
-            return new FiftyOneDataFile()
-            {
-                DataUpdateDownloadType = DataFileType
-            };
+            _dataDownloadType = typeName;
+            return this as TBuilder;
         }
 
-        protected abstract string DataFileType { get; }
+        protected override AspectEngineDataFile NewAspectEngineDataFile()
+        {
+            return new FiftyOneDataFile(typeof(TEngine))
+            {
+                DataDownloadType = _dataDownloadType ?? DefaultDataDownloadType
+            };
+        }
     }
 }

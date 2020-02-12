@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Generic;
@@ -32,8 +33,8 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
     /// </summary>
     public class ListSplitterElementData : ElementDataBase
     {
-        public ListSplitterElementData(IFlowData flowData)
-            : base(new Mock<ILogger<ListSplitterElementData>>().Object, flowData)
+        public ListSplitterElementData(IPipeline pipeline)
+            : base(new Mock<ILogger<ListSplitterElementData>>().Object, pipeline)
         { }
 
         /// <summary>

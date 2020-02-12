@@ -50,7 +50,7 @@ namespace FiftyOne.Pipeline.Examples
         /// </param>
         public PrimeCheckerEngine(
             ILogger<AspectEngineBase<IPrimeCheckerData, AspectPropertyMetaData>> logger, 
-            Func<IFlowData, FlowElementBase<IPrimeCheckerData, AspectPropertyMetaData>, IPrimeCheckerData> aspectDataFactory) : 
+            Func<IPipeline, FlowElementBase<IPrimeCheckerData, AspectPropertyMetaData>, IPrimeCheckerData> aspectDataFactory) : 
             base(logger, aspectDataFactory)
         {
         }

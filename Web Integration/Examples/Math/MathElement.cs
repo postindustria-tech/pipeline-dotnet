@@ -75,7 +75,7 @@ namespace FiftyOne.Pipeline.Math
         /// </param>
         internal MathElement(
             ILogger<MathElement> logger,
-            Func<IFlowData, FlowElementBase<IMathData, IElementPropertyMetaData>, 
+            Func<IPipeline, FlowElementBase<IMathData, IElementPropertyMetaData>, 
                 IMathData> elementDataFactory)
             : base(logger, elementDataFactory)
         {

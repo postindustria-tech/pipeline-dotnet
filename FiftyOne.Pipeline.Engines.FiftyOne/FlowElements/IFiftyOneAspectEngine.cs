@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
-   
+
     /// <summary>
     /// 51Degrees specific Engine interface. This adds the concept of license
     /// keys to the standard Engine interface.
@@ -49,5 +49,12 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// using.
         /// </summary>
         IEnumerable<IValueMetaData> Values { get; }
+
+        /// <summary>
+        /// Get the type name of the data file being used by the engine.
+        /// This is used by the UpdateService to download the correct
+        /// data file updates.
+        /// </summary>
+        string GetDataDownloadType(string identifier);
     }
 }

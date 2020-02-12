@@ -94,7 +94,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// </param>
         public AspectEngineBase(
             ILogger<AspectEngineBase<T, TMeta>> logger,
-            Func<IFlowData, FlowElementBase<T, TMeta>, T> aspectDataFactory)
+            Func<IPipeline, FlowElementBase<T, TMeta>, T> aspectDataFactory)
             : base(logger, aspectDataFactory)
         {
         }

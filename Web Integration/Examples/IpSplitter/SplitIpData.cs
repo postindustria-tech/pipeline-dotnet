@@ -22,14 +22,15 @@
 
 using System;
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 
 namespace FiftyOne.Pipeline.IpSplitter
 {
     class SplitIpData : ElementDataBase, ISplitIpData
     {
-        public SplitIpData(ILogger<SplitIpData> logger, IFlowData flowData)
-            : base(logger, flowData)
+        public SplitIpData(ILogger<SplitIpData> logger, IPipeline pipeline)
+            : base(logger, pipeline)
         {
         }
 

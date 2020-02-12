@@ -55,7 +55,7 @@ namespace FiftyOne.Pipeline.Web.Shared.FlowElements
         /// </param>
         public JavaScriptBundlerElement(
             ILogger<FlowElementBase<JavaScriptData, IElementPropertyMetaData>> logger, 
-            Func<IFlowData, FlowElementBase<JavaScriptData, IElementPropertyMetaData>, JavaScriptData> elementDataFactory)
+            Func<IPipeline, FlowElementBase<JavaScriptData, IElementPropertyMetaData>, JavaScriptData> elementDataFactory)
             : base(logger, elementDataFactory)
         {
             _properties = new List<IElementPropertyMetaData>()

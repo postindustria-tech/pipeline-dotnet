@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Core.Tests.HelperClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -35,7 +36,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
     [TestClass]
     public class ElementDataTests
     {
-        private Mock<IFlowData> _flowData = new Mock<IFlowData>();
+        private Mock<IPipeline> _pipeline = new Mock<IPipeline>();
 
         /// <summary>
         /// Test storing and retrieving string data
@@ -43,7 +44,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_String()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = "key";
             data[key] = "value";
             var result = data[key];
@@ -57,7 +58,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_SimpleValueType()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = "key";
             data[key] = 1;
             var result = data[key];
@@ -71,7 +72,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_ComplexValueType()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = "key";
             data[key] = new KeyValuePair<string, int>("test", 1);
             var result = (KeyValuePair<string, int>)data[key];
@@ -86,7 +87,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_ComplexReferenceType()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = "key";
             data[key] = new List<string>() { "a", "b" };
             var result = data[key] as List<string>;
@@ -103,7 +104,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_CaseInsensitiveKey()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = "key";
             data[key] = "value";
             var result = data[key];
@@ -120,7 +121,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_CaseInsensitiveKeySet()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = "key";
             data[key] = "value";
             data["Key"] = "otherValue";
@@ -137,7 +138,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         public void ElementData_CaseSensitiveKey()
         {
             TestElementData data = new TestElementData(
-                _flowData.Object,
+                _pipeline.Object,
                 new Dictionary<string, object>());
             string key = "key";
             data[key] = "value";
@@ -157,7 +158,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         public void ElementData_CaseSensitiveKeySet()
         {
             TestElementData data = new TestElementData(
-                _flowData.Object,
+                _pipeline.Object,
                 new Dictionary<string, object>());
             string key = "key";
             data[key] = "value";
@@ -173,7 +174,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_AsIElementData()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = "key";
             data[key] = "value";
             var dataAsInterface = data as IElementData;
@@ -188,7 +189,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_AsDictionary()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = "key";
             data[key] = "value";
             var dataAsDict = data.AsDictionary();
@@ -205,7 +206,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_NoData()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = "key";
 
             var result = data[key];
@@ -221,7 +222,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [ExpectedException(typeof(ArgumentNullException))]
         public void ElementData_NullKey()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             string key = null;
 
             var result = data[key];
@@ -234,7 +235,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_PopulateFromDictionary_SingleValue()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             Dictionary<string, object> newData = new Dictionary<string, object>();
             newData.Add("key", "value");
             data.PopulateFromDictionary(newData);
@@ -249,7 +250,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_PopulateFromDictionary_SingleValueWithProperty()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             Dictionary<string, object> newData = new Dictionary<string, object>();
             newData.Add("result", "value");
             data.PopulateFromDictionary(newData);
@@ -264,7 +265,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_PopulateFromDictionary_TwoValues()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             Dictionary<string, object> newData = new Dictionary<string, object>();
             newData.Add("key1", "value1");
             newData.Add("key2", "value2");
@@ -281,7 +282,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void ElementData_PopulateFromDictionary_Overwrite()
         {
-            TestElementData data = new TestElementData(_flowData.Object);
+            TestElementData data = new TestElementData(_pipeline.Object);
             Dictionary<string, object> newData = new Dictionary<string, object>();
             data["key1"] = "valueA";
             newData.Add("key1", "valueB");

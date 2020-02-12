@@ -63,12 +63,12 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             // Configure the elements
             element1.Setup(e => e.Process(It.IsAny<IFlowData>())).Callback((IFlowData d) =>
             {
-                var tempdata = d.GetOrAdd("element1", (f) => new TestElementData(f));
+                var tempdata = d.GetOrAdd("element1", (p) => new TestElementData(p));
                 tempdata["key"] = "done";
             });
             element2.Setup(e => e.Process(It.IsAny<IFlowData>())).Callback((IFlowData d) =>
             {
-                var tempdata = d.GetOrAdd("element2", (f) => new TestElementData(f));
+                var tempdata = d.GetOrAdd("element2", (p) => new TestElementData(p));
                 tempdata["key"] = "done";
             });
 

@@ -48,6 +48,15 @@ namespace FiftyOne.Pipeline.Engines.Data
         IOnPremiseAspectEngine Engine { get; set; }
 
         /// <summary>
+        /// Get the type of the engine that this data file is for.
+        /// This exists in addition to the Engine property because Engine
+        /// can be null.
+        /// This then allows the user to identify which engine this file 
+        /// relates to.
+        /// </summary>
+        Type EngineType { get; }
+
+        /// <summary>
         /// The complete file path to the location of the data file.
         /// This value will be null if the file has been supplied from 
         /// a byte[] in memory. 

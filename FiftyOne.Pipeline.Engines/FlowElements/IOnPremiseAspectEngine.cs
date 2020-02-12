@@ -25,6 +25,7 @@ using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace FiftyOne.Pipeline.Engines.FlowElements
@@ -40,11 +41,11 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// Causes the engine to reload data from the file at 
         /// <see cref="IAspectEngineDataFile.DataFilePath"/> for the
         /// data file matching the given identifier.
-        /// Where the engine is built from a byte[], the overload with the 
-        /// byte[] parameter should be called instead.
-        /// This method is thread-safe so parallel calls to 'Process' will 
-        /// resolve as normal.
         /// </summary>
+        /// <remarks>
+        /// Implementors should consider thread-safety to ensure that
+        /// parallel calls to 'Process' will resolve as normal.
+        /// </remarks>
         /// <param name="dataFileIdentifier">
         /// The identifier of the data file to update. Must match the 
         /// value in <see cref="IAspectEngineDataFile.Identifier"/>.
@@ -55,23 +56,23 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         void RefreshData(string dataFileIdentifier);
 
         /// <summary>
-        /// Causes the engine to reload data from the specified byte[].
-        /// Where the engine is built from a data file on disk, this will
-        /// also update the data file with the new data.
-        /// This method is thread-safe so parallel calls to 'Process' will 
-        /// resolve as normal.
+        /// Causes the engine to reload data from the supplied
+        /// <see cref="Stream"/> for the file matching the given identifier.
         /// </summary>
+        /// <remarks>
+        /// Implementors should consider thread-safety to ensure that
+        /// parallel calls to 'Process' will resolve as normal.
+        /// </remarks>
         /// <param name="dataFileIdentifier">
         /// The identifier of the data file to update. Must match the 
         /// value in <see cref="IAspectEngineDataFile.Identifier"/>.
         /// If the engine only has a single data file, this parameter 
         /// is ignored.
-        /// If null is passed then all data files should be refreshed.
         /// </param>
         /// <param name="data">
-        /// An in-memory representation of the new data file contents.
+        /// A <see cref="Stream"/> containing the data to use when refreshing.
         /// </param>
-        void RefreshData(string dataFileIdentifier, byte[] data);
+        void RefreshData(string dataFileIdentifier, Stream data);
 
         /// <summary>
         /// The complete file path to the directory that is used by the

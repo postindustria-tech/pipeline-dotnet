@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 
@@ -30,8 +31,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Data
     {
         public JavaScriptBuilderElementData(
             ILogger<JavaScriptBuilderElementData> logger,
-            IFlowData flowData)
-            : base(logger, flowData)
+            IPipeline pipeline)
+            : base(logger, pipeline)
         { }
 
         public string JavaScript

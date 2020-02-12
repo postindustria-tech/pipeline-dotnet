@@ -64,7 +64,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="timeout"></param>
         public CloudRequestEngine(
             ILogger<AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>> logger,
-            Func<IFlowData, FlowElementBase<CloudRequestData, IAspectPropertyMetaData>, CloudRequestData> aspectDataFactory,
+            Func<IPipeline, FlowElementBase<CloudRequestData, IAspectPropertyMetaData>, 
+                CloudRequestData> aspectDataFactory,
             HttpClient httpClient,
             string dataEndpoint,
             string propertiesEndpoint,
@@ -88,7 +89,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="timeout"></param>
         public CloudRequestEngine(
             ILogger<AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>> logger, 
-            Func<IFlowData, FlowElementBase<CloudRequestData, IAspectPropertyMetaData>, CloudRequestData> aspectDataFactory,
+            Func<IPipeline, FlowElementBase<CloudRequestData, IAspectPropertyMetaData>, 
+                CloudRequestData> aspectDataFactory,
             HttpClient httpClient,
             string dataEndpoint,
             string resourceKey,

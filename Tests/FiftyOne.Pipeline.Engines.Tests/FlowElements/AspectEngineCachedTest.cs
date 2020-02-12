@@ -33,6 +33,7 @@ using FiftyOne.Pipeline.Engines.TestHelpers;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using System;
+using FiftyOne.Pipeline.Core.FlowElements;
 
 namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 {
@@ -85,12 +86,12 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             Mock<IFlowData> data = MockFlowData.CreateFromEvidence(evidence, false);
             EmptyEngineData aspectData = new EmptyEngineData(
                 _loggerFactory.CreateLogger<EmptyEngineData>(),
-                data.Object,
+                data.Object.Pipeline,
                 _engine,
                 MissingPropertyService.Instance);
             data.Setup(d => d.GetOrAdd(
                 It.IsAny<TypedKey<EmptyEngineData>>(),
-                It.IsAny<Func<IFlowData, EmptyEngineData>>()))
+                It.IsAny<Func<IPipeline, EmptyEngineData>>()))
                 .Returns(aspectData);
 
             _cache.Setup(c => c[It.IsAny<IFlowData>()])
@@ -128,7 +129,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             IFlowData data = mockData.Object;
             EmptyEngineData cachedData = new EmptyEngineData(
                 _loggerFactory.CreateLogger<EmptyEngineData>(),
-                data,
+                data.Pipeline,
                 _engine,
                 new Mock<IMissingPropertyService>().Object);
             cachedData.ValueOne = 2;
@@ -142,7 +143,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             // Verify that the cached result was added to the flow data.
             mockData.Verify(d => d.GetOrAdd(
                 It.IsAny<ITypedKey<EmptyEngineData>>(),
-                It.Is<Func<IFlowData, EmptyEngineData>>(f => f(mockData.Object) == cachedData)), Times.Once());
+                It.Is<Func<IPipeline, EmptyEngineData>>(f => f(mockData.Object.Pipeline) == cachedData)), Times.Once());
             // Verify that the cache was checked once.
             _cache.Verify(c => c[It.Is<IFlowData>(d => d == data)], Times.Once);
             // Verify that the Put method of the cache was not called.

@@ -1005,7 +1005,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
                 It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Never());
         }
-
+        
         /// <summary>
         /// Manual update check, URL returns no update available.
         /// </summary>
@@ -1052,9 +1052,13 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         /// whether auto updates and enabled or disabled.
         /// </remarks>
         [DataTestMethod]
-        [DataRow(true)]
-        [DataRow(false)]
-        public void DataUpdateService_Register_UpdateOnStartup_NoFile(bool autoUpdateEnabled)
+        [DataRow(true, false)]
+        [DataRow(false, false)]
+        [DataRow(true, true)]
+        [DataRow(false, true)]
+        public void DataUpdateService_Register_UpdateOnStartup_NoFile(
+            bool autoUpdateEnabled, 
+            bool engineSetNull)
         {
             // Arrange
             // For this test we want to use the real FileWrapper to allow
@@ -1109,12 +1113,14 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                     DecompressContent = true,
                     FileSystemWatcherEnabled = false,
                     VerifyModifiedSince = false,
-                    UpdateOnStartup = true
+                    UpdateOnStartup = true                    
+                    
                 };
                 var file = new AspectEngineDataFile()
                 {
-                    Engine = engine.Object,
-                    Configuration = config
+                    Engine = engineSetNull ? null : engine.Object,
+                    Configuration = config,
+                    TempDataDirPath = tempPath,
                 };
                 engine.Setup(e => e.GetDataFileMetaData(It.IsAny<string>())).Returns(file);
 
@@ -1132,7 +1138,10 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                     "event was never fired");
                 _httpHandler.Verify(h => h.Send(It.IsAny<HttpRequestMessage>()), Times.Once());
                 // Make sure engine was refreshed
-                engine.Verify(e => e.RefreshData(config.Identifier), Times.Once());
+                if (engineSetNull == false)
+                {
+                    engine.Verify(e => e.RefreshData(config.Identifier), Times.Once());
+                }
                 if (autoUpdateEnabled)
                 {
                     // If auto update is enabled then the timer factory 
@@ -1158,8 +1167,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         /// The update service should download the latest file and
         /// use it to refresh the engine.
         /// </summary>
-        [TestMethod]
-        public void DataUpdateService_Register_UpdateOnStartup_InMemory()
+        [DataTestMethod]
+        [DataRow(true)]
+        [DataRow(false)]
+        public void DataUpdateService_Register_UpdateOnStartup_InMemory(
+            bool engineSetNull)
         {
             // Arrange
             // Configure the test to have no file system. This will 
@@ -1200,6 +1212,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
             // Configure the engine to return the relevant paths.
             engine.Setup(e => e.TempDataDirPath).Returns(tempPath);
+            var initialStream = new MemoryStream();
             var config = new DataFileConfiguration()
             {
                 AutomaticUpdatesEnabled = true,
@@ -1209,11 +1222,12 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 FileSystemWatcherEnabled = false,
                 VerifyModifiedSince = false,
                 UpdateOnStartup = true,
-                Data = null
+                MemoryOnly = true,
+                DataStream = initialStream
             };
             var file = new AspectEngineDataFile()
             {
-                Engine = engine.Object,
+                Engine = engineSetNull ? null : engine.Object,
                 Configuration = config
             };
             engine.Setup(e => e.GetDataFileMetaData(It.IsAny<string>())).Returns(file);
@@ -1221,10 +1235,10 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Add a callback to check that the data passed to the engine
             // is the uncompressed file contents.
             string dataPassedToEngine = "";
-            engine.Setup(e => e.RefreshData(config.Identifier, It.IsAny<byte[]>()))
-                .Callback((string identifier, byte[] data) =>
+            engine.Setup(e => e.RefreshData(config.Identifier, It.IsAny<Stream>()))
+                .Callback((string identifier, Stream data) =>
             {
-                using (StreamReader reader = new StreamReader(new MemoryStream(data)))
+                using (StreamReader reader = new StreamReader(data))
                 {
                     dataPassedToEngine = reader.ReadToEnd();
                 }
@@ -1239,8 +1253,21 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                 "event was never fired");
             _httpHandler.Verify(h => h.Send(It.IsAny<HttpRequestMessage>()), Times.Once());
-            // Make sure engine was refreshed with the expected data.
-            engine.Verify(e => e.RefreshData(config.Identifier, It.IsAny<byte[]>()), Times.Once());
+            if (engineSetNull)
+            {
+                Assert.AreNotEqual(initialStream, file.Configuration.DataStream);
+                // Read the data from the stream.
+                using (StreamReader reader = new StreamReader(file.Configuration.DataStream))
+                {
+                    dataPassedToEngine = reader.ReadToEnd();
+                }
+            }
+            else
+            {
+                // Make sure engine was refreshed with the expected data.
+                engine.Verify(e => e.RefreshData(config.Identifier, It.IsAny<Stream>()), Times.Once());
+            }
+            // Check that the stream contained the expected data.
             Assert.AreEqual($"TESTING{Environment.NewLine}", dataPassedToEngine);
             // The timer factory should have been called once.
             _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),

@@ -73,10 +73,10 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// enum giving the reason and a developer-facing description of 
         /// the reason.
         /// </returns>
-        public MissingPropertyResult GetMissingPropertyReason(string propertyName, IList<IAspectEngine> engines)
+        public MissingPropertyResult GetMissingPropertyReason(string propertyName, IReadOnlyList<IAspectEngine> engines)
         {
             MissingPropertyResult result = null;
-            foreach (var engine in engines)
+            foreach (var engine in engines.Where(e => e != null))
             {
                 result = GetMissingPropertyReason(propertyName, engine);
                 if (result.Reason != MissingPropertyReason.Unknown)

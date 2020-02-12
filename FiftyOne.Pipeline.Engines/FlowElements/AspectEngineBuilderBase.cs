@@ -66,6 +66,22 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
+        /// Configure lazy loading of results.
+        /// </summary>
+        /// <param name="timeoutMs">
+        /// The timeout length in milliseconds.
+        /// </param>
+        /// <returns>
+        /// This engine builder instance.
+        /// </returns>
+        public TBuilder SetLazyLoadingTimeout(int timeoutMs)
+        {
+            if (_lazyLoadingConfig == null) _lazyLoadingConfig = new LazyLoadingConfiguration();
+            _lazyLoadingConfig.PropertyTimeoutMs = timeoutMs;
+            return this as TBuilder;
+        }
+
+        /// <summary>
         /// Configure the results cache that will be used by the Pipeline to
         /// cache results from this engine.
         /// </summary>
@@ -78,6 +94,23 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         public TBuilder SetCache(CacheConfiguration cacheConfig)
         {
             _cacheConfig = cacheConfig;
+            return this as TBuilder;
+        }
+
+        /// <summary>
+        /// Configure the results cache that will be used by the Pipeline to
+        /// cache results from this engine.
+        /// </summary>
+        /// <param name="cacheSize">
+        /// The cache size to use.
+        /// </param>
+        /// <returns>
+        /// This engine builder instance.
+        /// </returns>
+        public TBuilder SetCacheSize(int cacheSize)
+        {
+            if (_cacheConfig == null) _cacheConfig = new CacheConfiguration();
+            _cacheConfig.Size = cacheSize;
             return this as TBuilder;
         }
 

@@ -61,7 +61,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
         public JsonBuilderElement(
             ILogger<JsonBuilderElement> logger,
-            Func<IFlowData, FlowElementBase<IJsonBuilderElementData, IElementPropertyMetaData>,
+            Func<IPipeline, FlowElementBase<IJsonBuilderElementData, IElementPropertyMetaData>,
                 IJsonBuilderElementData> elementDataFactory)
             : base(logger, elementDataFactory)
         {

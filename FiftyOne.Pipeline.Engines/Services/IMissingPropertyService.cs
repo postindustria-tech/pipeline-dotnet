@@ -35,7 +35,7 @@ namespace FiftyOne.Pipeline.Engines.Services
     public interface IMissingPropertyService
     {
         MissingPropertyResult GetMissingPropertyReason(string propertyName, IAspectEngine engine);
-        MissingPropertyResult GetMissingPropertyReason(string propertyName, IList<IAspectEngine> engines);
+        MissingPropertyResult GetMissingPropertyReason(string propertyName, IReadOnlyList<IAspectEngine> engines);
     }
 
     /// <summary>

@@ -63,16 +63,16 @@ namespace FiftyOne.Pipeline.Web.Shared.FlowElements
         /// <summary>
         /// Method to create element data instances.
         /// </summary>
-        /// <param name="element">
-        /// The element that is creating the data instance.
+        /// <param name="pipeline">
+        /// The pipeline that is creating the data instance.
         /// </param>
         /// <returns>
         /// The new <see cref="JavaScriptBundlerData"/> instance.
         /// </returns>
-        private JavaScriptData CreateData(IFlowData flowData, 
+        private JavaScriptData CreateData(IPipeline pipeline, 
             FlowElementBase<JavaScriptData, IElementPropertyMetaData> element)
         {
-            return new JavaScriptData(_loggerFactory.CreateLogger<JavaScriptData>(), flowData);
+            return new JavaScriptData(_loggerFactory.CreateLogger<JavaScriptData>(), pipeline);
         }
     }
 }

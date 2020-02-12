@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
@@ -47,17 +48,17 @@ namespace FiftyOne.Pipeline.Examples
         /// <param name="logger">
         /// Used for logging.
         /// </param>
-        /// <param name="flowData">
-        /// The <see cref="IFlowData"/> this instance will be attached to.
+        /// <param name="pipeline">
+        /// The <see cref="IPipeline"/> this instance will be attached to.
         /// </param>
         /// <param name="engine">
         /// The <see cref="IAspectEngine"/> that created this instance.
         /// </param>
         public PrimeCheckerData(
             ILogger<AspectDataBase> logger, 
-            IFlowData flowData, 
+            IPipeline pipeline, 
             IAspectEngine engine) : 
-            base(logger, flowData, engine)
+            base(logger, pipeline, engine)
         {
         }
 
@@ -67,8 +68,8 @@ namespace FiftyOne.Pipeline.Examples
         /// <param name="logger">
         /// Used for logging.
         /// </param>
-        /// <param name="flowData">
-        /// The <see cref="IFlowData"/> this instance will be attached to.
+        /// <param name="pipeline">
+        /// The <see cref="IPipeline"/> this instance will be attached to.
         /// </param>
         /// <param name="engine">
         /// The <see cref="IAspectEngine"/> that created this instance.
@@ -79,10 +80,10 @@ namespace FiftyOne.Pipeline.Examples
         /// </param>
         public PrimeCheckerData(
             ILogger<AspectDataBase> logger, 
-            IFlowData flowData, 
+            IPipeline pipeline, 
             IAspectEngine engine, 
             IMissingPropertyService missingPropertyService) : 
-            base(logger, flowData, engine, missingPropertyService)
+            base(logger, pipeline, engine, missingPropertyService)
         {
         }
 
@@ -92,8 +93,8 @@ namespace FiftyOne.Pipeline.Examples
         /// <param name="logger">
         /// Used for logging.
         /// </param>
-        /// <param name="flowData">
-        /// The <see cref="IFlowData"/> this instance will be attached to.
+        /// <param name="pipeline">
+        /// The <see cref="IPipeline"/> this instance will be attached to.
         /// </param>
         /// <param name="engine">
         /// The <see cref="IAspectEngine"/> that created this instance.
@@ -107,11 +108,11 @@ namespace FiftyOne.Pipeline.Examples
         /// </param>
         public PrimeCheckerData(
             ILogger<AspectDataBase> logger, 
-            IFlowData flowData, 
+            IPipeline pipeline, 
             IAspectEngine engine, 
             IMissingPropertyService missingPropertyService, 
             IDictionary<string, object> dictionary) :
-            base(logger, flowData, engine, missingPropertyService, dictionary)
+            base(logger, pipeline, engine, missingPropertyService, dictionary)
         {
         }
     }

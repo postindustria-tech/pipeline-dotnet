@@ -290,71 +290,72 @@ namespace FiftyOne.Pipeline.Engines.Services
 			return result;
 		}
 
-		/// <summary>
-		/// Update the specified data file from a byte[] held in memory.
-		/// </summary>
-		/// <param name="dataFile">
-		/// The data file to update.
-		/// </param>
-		/// <param name="data">
-		/// The data file to update with.
-		/// </param>
+        /// <summary>
+        /// Update the specified data file from a <see cref="MemoryStream"/>
+        /// </summary>
+        /// <param name="dataFile">
+        /// The data file to update.
+        /// </param>
+        /// <param name="data">
+        /// The data to update with.
+        /// </param>
         /// <exception cref="DataUpdateException">
         /// Thrown if some problem occurs during the update process.
         /// </exception>
-		public AutoUpdateStatus UpdateFromMemory(AspectEngineDataFile dataFile, byte[] data)
-		{
-			AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
-			if (string.IsNullOrEmpty(dataFile.DataFilePath) == false)
-			{
-				// The engine has an associated data file so update it first.
-				try
-				{
-					_fileSystem.File.WriteAllBytes(dataFile.DataFilePath, data);
-				}
-				catch (Exception ex)
-				{
+        public AutoUpdateStatus UpdateFromMemory(AspectEngineDataFile dataFile,
+            MemoryStream data)
+        {
+            AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
+            if (string.IsNullOrEmpty(dataFile.DataFilePath) == false)
+            {
+                // The engine has an associated data file so update it first.
+                try
+                {
+                    _fileSystem.File.WriteAllBytes(dataFile.DataFilePath, data.GetBuffer());
+                }
+                catch (Exception ex)
+                {
                     throw new DataUpdateException($"An error occurred when writing to " +
-						$"'{dataFile.DataFilePath}'. The engine will be updated " +
-						$"to use the new data but the file on disk will still " +
-						$"contain old data.", ex);
-				}
-			}
+                        $"'{dataFile.DataFilePath}'. The engine will be updated " +
+                        $"to use the new data but the file on disk will still " +
+                        $"contain old data.", ex);
+                }
+            }
 
-			if (dataFile.Engine != null)
-			{
-				try
-				{
-					// Refresh the engine using the new data.
-					dataFile.Engine.RefreshData(dataFile.Identifier, data);
-					result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
-				}
-				catch (Exception ex)
-				{
-					result = AutoUpdateStatus.AUTO_UPDATE_REFRESH_FAILED;
+            if (dataFile.Engine != null)
+            {
+                try
+                {
+                    // Refresh the engine using the new data.
+                    dataFile.Engine.RefreshData(dataFile.Identifier, data);
+                    result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
+                }
+                catch (Exception ex)
+                {
+                    result = AutoUpdateStatus.AUTO_UPDATE_REFRESH_FAILED;
                     throw new DataUpdateException($"An error occurred when applying a " +
-						$"data update to engine '{dataFile.Engine.GetType().Name}'.", ex);
-				}
-			}
-			else
-			{
-				result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
-			}
+                        $"data update to engine '{dataFile.Engine.GetType().Name}'.", ex);
+                }
+            }
+            else
+            {
+                result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
+            }
 
-			return result;
-		}
-		#endregion
+            return result;
+        }
+        #endregion
 
-		#region Private methods
-		/// <summary>
-		/// Default method used to create Timer instances when a timer factory
-		/// is not provided in the constructor.
-		/// </summary>
-		/// <param name="callback"></param>
-		/// <param name="state"></param>
-		/// <param name="dueTime"></param>
-		/// <returns></returns>
-		private Timer TimerFactory(TimerCallback callback, object state, TimeSpan dueTime)
+        #region Private methods
+        /// <summary>
+        /// Default method used to create Timer instances when a timer factory
+        /// is not provided in the constructor.
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <param name="state"></param>
+        /// <param name="dueTime"></param>
+        /// <returns></returns>
+        private Timer TimerFactory(TimerCallback callback, object state, TimeSpan dueTime)
 		{
 			return new Timer(callback, state, dueTime, TimeSpan.FromMilliseconds(-1));
 		}
@@ -468,9 +469,9 @@ namespace FiftyOne.Pipeline.Engines.Services
             catch (Exception ex)
             {
                 AspectEngineDataFile dataFile = state as AspectEngineDataFile;
-                var engine = dataFile?.Engine == null ? "Unknown" : dataFile.Engine.GetType().Name;
                 _logger.LogError($"An unhandled error occurred while " +
-                    $"checking for automatic updates for engine '{engine}'", ex);
+                    $"checking for automatic updates for engine " +
+                    $"'{dataFile.EngineType?.Name}'", ex);
             }
         }
 
@@ -589,34 +590,26 @@ namespace FiftyOne.Pipeline.Engines.Services
 		{
 			AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
 
-			if (string.IsNullOrEmpty(dataFile.DataFilePath))
+			if (dataFile.Configuration.MemoryOnly)
 			{
-				// There is no data file path specified so perform the 
-				// update entirely in memory.
-				using (var compressedStream = new MemoryStream())
-				using (var uncompressedStream = new MemoryStream())
+                // Perform the update entirely in memory.
+                // The uncompressed stream may be read by the engine at a
+                // later time so we cannot put it in a using statement.
+                var uncompressedStream = new MemoryStream();
+                using (var compressedStream = new MemoryStream())
 				{
 					result = CheckForUpdateFromUrl(dataFile,
 						compressedStream,
 						uncompressedStream);
-
 					result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
-                    // Note that the uncompressed buffer will be longer 
-                    // than it needs to be so we can't just copy the whole 
-                    // thing.
-                    // The 'Length' property will get the true number
-                    // of elements we need to take from the buffer.
-                    var buffer = new byte[uncompressedStream.Length];
-                    Array.Copy(uncompressedStream.GetBuffer(),
-                        buffer, uncompressedStream.Length);
 
                     if (dataFile.Engine != null)
 					{
 						try
 						{
-							// Tell the engine to refresh itself with
-							// the new data.
-							dataFile.Engine.RefreshData(dataFile.Identifier, buffer);
+                            // Tell the engine to refresh itself with
+                            // the new data.
+                            dataFile.Engine.RefreshData(dataFile.Identifier, uncompressedStream);
 						}
 						catch (Exception ex)
 						{
@@ -624,21 +617,29 @@ namespace FiftyOne.Pipeline.Engines.Services
                             throw new DataUpdateException($"An error occurred when applying a " +
 									$"data update to engine '{dataFile.Engine.GetType().Name}'.", ex);
 						}
+                        uncompressedStream.Dispose();
 					}
 					else
 					{
                         // No associated engine at the moment so just set 
-                        // the value of the data array.
-                        dataFile.Configuration.Data = buffer;
+                        // the value of the data stream.
+                        dataFile.Configuration.DataStream = uncompressedStream;
                     }
 				}
 			}
 			else
 			{
-				// There is a data file path so use the temporary
-				// file location to store data while we work on downloading
-				// and decompressing it.
-				string compressedTempFile = Path.Combine(dataFile.TempDataDirPath,
+                if (string.IsNullOrEmpty(dataFile.TempDataDirPath))
+                {
+                    throw new DataUpdateException($"The data file " +
+                        $"'{dataFile.Identifier}' is checking for updates but " +
+                        $"does not have a temporary file path configured."); 
+                }
+
+                // There is a data file path so use the temporary
+                // file location to store data while we work on downloading
+                // and decompressing it.
+                string compressedTempFile = Path.Combine(dataFile.TempDataDirPath,
 					$"{dataFile.Identifier}-{Guid.NewGuid()}.tmp");
 				string uncompressedTempFile = Path.Combine(dataFile.TempDataDirPath,
 					$"{dataFile.Identifier}-{Guid.NewGuid()}.tmp");
@@ -760,7 +761,10 @@ namespace FiftyOne.Pipeline.Engines.Services
 					// the uncompressed stream object with the 'compressed' one
 					compressedDataStream.Seek(0, 0);
 					compressedDataStream.CopyTo(uncompressedDataStream);
-				}
+                    // Reset the position to the start of the uncompressed
+                    // stream
+                    uncompressedDataStream.Seek(0, SeekOrigin.Begin);
+                }
 			}
 
 			return result;
@@ -886,8 +890,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			{
 				result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
                 throw new DataUpdateException($"Error accessing data update service at " +
-					$"'{url}' for engine " +
-					$"'{(dataFile.Engine == null ? "Unknown" : dataFile.Engine.GetType().Name)}'", ex);
+					$"'{url}' for engine '{dataFile.EngineType?.Name}'", ex);
 			}
 
 			if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
@@ -896,8 +899,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 				{
 					result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
                     throw new DataUpdateException($"No response from data update service at " +
-						$"'{url}' for engine " +
-						$"'{(dataFile.Engine == null ? "Unknown" : dataFile.Engine.GetType().Name)}'");
+						$"'{url}' for engine '{dataFile.EngineType?.Name}'");
 				}
 				else
 				{
@@ -905,7 +907,7 @@ namespace FiftyOne.Pipeline.Engines.Services
                     {
                         _logger.LogInformation(
                             $"Downloaded new data from '{url}' for engine " +
-                            $"'{(dataFile.Engine == null ? "Unknown" : dataFile.Engine.GetType().Name)}'");
+                            $"'{dataFile.EngineType?.Name}'");
 
                         // If the response is successful then save the content to a 
                         // temporary file
@@ -938,25 +940,22 @@ namespace FiftyOne.Pipeline.Engines.Services
 								result = AutoUpdateStatus.
 									AUTO_UPDATE_ERR_429_TOO_MANY_ATTEMPTS;
                                 throw new DataUpdateException($"Too many requests to " +
-									$"'{url}' for engine " +
-									$"'{(dataFile.Engine == null ? "Unknown" : dataFile.Engine.GetType().Name)}'");
+									$"'{url}' for engine '{dataFile.EngineType?.Name}'");
 							case HttpStatusCode.NotModified:
 								result = AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED;
                                 _logger.LogInformation($"No data newer than " +
                                     $"{publishDate} found at '{url}' for engine " +
-									$"'{(dataFile.Engine == null ? "Unknown" : dataFile.Engine.GetType().Name)}'");
+                                    $"'{dataFile.EngineType?.Name}'"); ;
                                 break;
 							case HttpStatusCode.Forbidden:
 								result = AutoUpdateStatus.AUTO_UPDATE_ERR_403_FORBIDDEN;
                                 throw new DataUpdateException($"Access denied to data update service at " +
-									$"'{url}' for engine " +
-									$"'{(dataFile.Engine == null ? "Unknown" : dataFile.Engine.GetType().Name)}'");
-							default:
+									$"'{url}' for engine '{dataFile.EngineType?.Name}'");
+                            default:
 								result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
                                 throw new DataUpdateException($"HTTP status code '{response.StatusCode}' " +
 									$"from data update service at " +
-									$"'{url}' for engine " +
-									$"'{(dataFile.Engine == null ? "Unknown" : dataFile.Engine.GetType().Name)}'");
+									$"'{url}' for engine '{dataFile.EngineType?.Name}'"); ;
 						}
 					}
 				}
@@ -986,8 +985,10 @@ namespace FiftyOne.Pipeline.Engines.Services
 				compressedDataStream, CompressionMode.Decompress, true))
 			{
 				fis.CopyTo(uncompressedDataStream);
-			}
-			return status;
+            }
+            // Reset the position to the start of the uncompressed stream
+            uncompressedDataStream.Seek(0, SeekOrigin.Begin);
+            return status;
 		}
 
 		/// <summary>
@@ -1017,11 +1018,10 @@ namespace FiftyOne.Pipeline.Engines.Services
 				status = AutoUpdateStatus.AUTO_UPDATE_ERR_MD5_VALIDATION_FAILED;
                 throw new DataUpdateException(
 					$"Integrity check failed. MD5 hash in HTTP response " +
-					$"'{serverHash}' for " +
-					$"'{(dataFile.Engine == null ? "Unknown" : dataFile.Engine.GetType().Name)}' " +
-					$"data update does not match calculated hash for the " +
+					$"'{serverHash}' for '{dataFile.EngineType?.Name}'" +
+                    $"data update does not match calculated hash for the " +
 					$"downloaded file '{downloadHash}'.");
-			}
+			} 
 			return status;
 		}
 
@@ -1120,14 +1120,7 @@ namespace FiftyOne.Pipeline.Engines.Services
             if (dataFile != null)
             {
                 fullMessage.Append($"Data file '{dataFile.Identifier}' ");
-                if (dataFile.Engine != null)
-                {
-                    fullMessage.Append($"for engine '{dataFile.Engine.GetType().Name}' ");
-                }
-            }
-            else
-            {
-                int x = 0;
+                fullMessage.Append($"for engine '{dataFile.EngineType?.Name}'");
             }
             fullMessage.Append(message);
             _logger.LogInformation(fullMessage.ToString());

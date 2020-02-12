@@ -99,12 +99,12 @@ namespace FiftyOne.Pipeline.Examples
         /// <returns>
         /// A new <see cref="PrimeCheckerData"/> instances
         /// </returns>
-        private IPrimeCheckerData CreateElementData(IFlowData flowData,
+        private IPrimeCheckerData CreateElementData(IPipeline pipeline,
             FlowElementBase<IPrimeCheckerData, AspectPropertyMetaData> engine)
         {
             return new PrimeCheckerData(
                 _loggerFactory.CreateLogger<PrimeCheckerData>(),
-                flowData,
+                pipeline,
                 engine as IAspectEngine);
         }
     }

@@ -29,6 +29,7 @@ using FiftyOne.Pipeline.Engines.Services;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -77,7 +78,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// </param>
         public OnPremiseAspectEngineBase(
             ILogger<AspectEngineBase<T, TMeta>> logger,
-            Func<IFlowData, FlowElementBase<T, TMeta>, T> aspectDataFactory,
+            Func<IPipeline, FlowElementBase<T, TMeta>, T> aspectDataFactory,
             string tempDataFilePath)
             : base(logger, aspectDataFactory)
         {
@@ -117,11 +118,11 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// Causes the engine to reload data from the file at 
         /// <see cref="IAspectEngineDataFile.DataFilePath"/> for the
         /// data file matching the given identifier.
-        /// Where the engine is built from a byte[], the overload with the 
-        /// byte[] parameter should be called instead.
-        /// This method is thread-safe so parallel calls to 'Process' will 
-        /// resolve as normal.
         /// </summary>
+        /// <remarks>
+        /// Implementors should consider thread-safety to ensure that
+        /// parallel calls to 'Process' will resolve as normal.
+        /// </remarks>
         /// <param name="dataFileIdentifier">
         /// The identifier of the data file to update. Must match the 
         /// value in <see cref="IAspectEngineDataFile.Identifier"/>.
@@ -132,23 +133,23 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         public abstract void RefreshData(string dataFileIdentifier);
 
         /// <summary>
-        /// Causes the engine to reload data from the specified byte[].
-        /// Where the engine is built from a data file on disk, this will
-        /// also update the data file with the new data.
-        /// This method is thread-safe so parallel calls to 'Process' will 
-        /// resolve as normal.
+        /// Causes the engine to reload data from the supplied
+        /// <see cref="Stream"/> for the file matching the given identifier.
         /// </summary>
+        /// <remarks>
+        /// Implementors should consider thread-safety to ensure that
+        /// parallel calls to 'Process' will resolve as normal.
+        /// </remarks>
         /// <param name="dataFileIdentifier">
         /// The identifier of the data file to update. Must match the 
         /// value in <see cref="IAspectEngineDataFile.Identifier"/>.
         /// If the engine only has a single data file, this parameter 
         /// is ignored.
-        /// If null is passed then all data files should be refreshed.
         /// </param>
         /// <param name="data">
-        /// An in-memory representation of the new data file contents.
+        /// A <see cref="Stream"/> containing the data to use when refreshing.
         /// </param>
-        public abstract void RefreshData(string dataFileIdentifier, byte[] data);
+        public abstract void RefreshData(string dataFileIdentifier, Stream data);
 
         /// <summary>
         /// Called when this instance is being disposed
@@ -175,21 +176,15 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
                 dataFile.Engine = this;
                 _dataFiles.Add(dataFile);
             }
-
-            if (string.IsNullOrEmpty(dataFile.DataFilePath) == false)
+            if (dataFile.Configuration.DataStream != null)
             {
-                RefreshData(dataFile.Identifier);
-            }
-            else if (dataFile.Configuration.Data != null)
-            {
-                RefreshData(dataFile.Identifier, dataFile.Configuration.Data);
+                // The DataStream has been set so call the relevant overload
+                // to be clear about our intent.
+                RefreshData(dataFile.Identifier, dataFile.Configuration.DataStream);
             }
             else
             {
-                throw new PipelineConfigurationException(
-                    "This engine requires the configured data file " +
-                    "to have either the 'Data' property or 'DataFilePath' " +
-                    "property populated but it has neither.");
+                RefreshData(dataFile.Identifier);
             }
         }
     }

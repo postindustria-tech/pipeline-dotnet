@@ -44,7 +44,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
                 {
                 "LicenseKeys=" + String.Join("|", dataFile.Configuration.DataUpdateLicenseKeys),
                 "Download=True",
-                "Type=" + fiftyOneDataFile.DataUpdateDownloadType,
+                "Type=" + fiftyOneDataFile.DataDownloadType,
                 };
                 return $"{dataFile.Configuration.DataUpdateUrl}?{string.Join("&", parameters)}";
             }

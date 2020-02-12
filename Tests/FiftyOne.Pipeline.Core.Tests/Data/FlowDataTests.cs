@@ -121,7 +121,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             string key = "key";
             var data = _flowData.GetOrAdd(
                 key,
-                (f) => new TestElementData(_flowData));
+                (p) => new TestElementData(p));
 
             var result = _flowData.Get(key);
 
@@ -140,7 +140,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             var typedKey = new TypedKey<TestElementData>(key);
             var data = _flowData.GetOrAdd(
                 key,
-                (f) => new TestElementData(_flowData));
+                (p) => new TestElementData(p));
 
             var result = _flowData.Get(typedKey);
 
@@ -159,7 +159,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             var element = new TestElement();
             var data = _flowData.GetOrAdd(
                 element.ElementDataKey,
-                (f) => new TestElementData(_flowData));
+                (p) => new TestElementData(p));
             var result = _flowData.GetFromElement(element);
 
             Assert.AreSame(data, result);
@@ -177,7 +177,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             var typedKey = new TypedKey<TestElementData>(key);
             TestElementData data = _flowData.GetOrAdd(
                 typedKey,
-                (f) => new TestElementData(_flowData));
+                (p) => new TestElementData(p));
 
             var result = _flowData.Get(key);
 
@@ -196,7 +196,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             var typedKey = new TypedKey<TestElementData>(key);
             TestElementData data = _flowData.GetOrAdd(
                 typedKey,
-                (f) => new TestElementData(_flowData));
+                (p) => new TestElementData(p));
 
             var result = _flowData.Get(typedKey);
 
@@ -215,7 +215,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             var typedKey = new TypedKey<TestElementData>(element.ElementDataKey);
             TestElementData data = _flowData.GetOrAdd(
                 typedKey,
-                (f) => new TestElementData(_flowData));
+                (p) => new TestElementData(p));
 
             var result = _flowData.GetFromElement(element);
 
@@ -231,7 +231,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             string key = "key";
             TestElementData data = _flowData.GetOrAdd(
                 key,
-                (f) => new TestElementData(_flowData));
+                (p) => new TestElementData(p));
 
             var result = _flowData.ElementDataAsDictionary();
 
@@ -249,7 +249,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             string key = "key";
             TestElementData data = _flowData.GetOrAdd(
                 key,
-                (f) => new TestElementData(_flowData));
+                (p) => new TestElementData(p));
 
             var result = _flowData.ElementDataAsEnumerable();
 
@@ -271,7 +271,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         {
             _flowData.Process();
             string key = "key";
-            TestElementData data = new TestElementData(_flowData);
+            TestElementData data = new TestElementData(_pipeline.Object);
             var dataAsDict = _flowData.ElementDataAsDictionary();
 
             dataAsDict.Add(key, data);
@@ -583,11 +583,13 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             };
             element2.Setup(e => e.Properties).Returns(metaData2);
             
-            DictionaryElementData elementData1 = new DictionaryElementData(new TestLogger<DictionaryElementData>(), _flowData);
+            DictionaryElementData elementData1 = new DictionaryElementData(
+                new TestLogger<DictionaryElementData>(), _pipeline.Object);
             elementData1[INT_PROPERTY] = INT_PROPERTY_VALUE;
             elementData1[NULL_STRING_PROPERTY] = null;
             elementData1[LIST_PROPERTY] = LIST_PROPERTY_VALUE;
-            DictionaryElementData elementData2 = new DictionaryElementData(new TestLogger<DictionaryElementData>(), _flowData);
+            DictionaryElementData elementData2 = new DictionaryElementData(
+                new TestLogger<DictionaryElementData>(), _pipeline.Object);
             elementData2[STRING_PROPERTY] = STRING_PROPERTY_VALUE;
 
             List<IFlowElement> elements = new List<IFlowElement>()
@@ -599,8 +601,8 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             _pipeline.Setup(p => p.Process(It.IsAny<IFlowData>()))
                 .Callback((IFlowData data) =>
                 {
-                    data.GetOrAdd("element1", (f) => elementData1);
-                    data.GetOrAdd("element2", (f) => elementData2);
+                    data.GetOrAdd("element1", (p) => elementData1);
+                    data.GetOrAdd("element2", (p) => elementData2);
                 });
             _pipeline.Setup(p => p.GetMetaDataForProperty(It.IsAny<string>())).Returns((string propertyName) =>
             {
@@ -638,7 +640,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
                     new ElementPropertyMetaData(element1.Object, "nocategory", typeof(string), true)
                 });
             // Set up the values for the available properties
-            DictionaryElementData elementData1 = new DictionaryElementData(new TestLogger<DictionaryElementData>(), _flowData);
+            DictionaryElementData elementData1 = new DictionaryElementData(new TestLogger<DictionaryElementData>(), _pipeline.Object);
             elementData1["available"] = "a value";
             elementData1["anotheravailable"] = "a value";
             elementData1["differentcategory"] = "a value";
@@ -647,7 +649,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             _pipeline.Setup(p => p.Process(It.IsAny<IFlowData>()))
                 .Callback((IFlowData data) =>
                 {
-                    data.GetOrAdd("element1", (f) => elementData1);
+                    data.GetOrAdd("element1", (p) => elementData1);
                 });
             // Set up the element in the pipeline
             _pipeline.SetupGet(i => i.FlowElements).Returns(new List<IFlowElement>() { element1.Object });

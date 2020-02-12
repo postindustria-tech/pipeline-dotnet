@@ -22,6 +22,7 @@
 
 using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Core.TypedMap;
 using FiftyOne.Pipeline.Engines.Caching;
 using FiftyOne.Pipeline.Engines.Configuration;
@@ -92,12 +93,12 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             // engine data from the call to process.
             EmptyEngineData engineData = null;
             mockData.Setup(d => d.GetOrAdd(It.IsAny<ITypedKey<EmptyEngineData>>(),
-                It.IsAny<Func<IFlowData, EmptyEngineData>>()))
-                .Callback((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                It.IsAny<Func<IPipeline, EmptyEngineData>>()))
+                .Callback((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
-                    engineData = f(mockData.Object);
+                    engineData = f(mockData.Object.Pipeline);
                 })
-                .Returns((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                .Returns((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
                     return engineData;
                 });
@@ -141,12 +142,12 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             var mockData = MockFlowData.CreateFromEvidence(evidence, false);
             EmptyEngineData engineData = null;
             mockData.Setup(d => d.GetOrAdd(It.IsAny<ITypedKey<EmptyEngineData>>(),
-                It.IsAny<Func<IFlowData, EmptyEngineData>>()))
-                .Callback((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                It.IsAny<Func<IPipeline, EmptyEngineData>>()))
+                .Callback((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
-                    engineData = f(mockData.Object);
+                    engineData = f(mockData.Object.Pipeline);
                 })
-                .Returns((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                .Returns((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
                     return engineData;
                 });
@@ -185,12 +186,12 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             var mockData = MockFlowData.CreateFromEvidence(evidence, false);
             EmptyEngineData engineData = null;
             mockData.Setup(d => d.GetOrAdd(It.IsAny<ITypedKey<EmptyEngineData>>(),
-                It.IsAny<Func<IFlowData, EmptyEngineData>>()))
-                .Callback((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                It.IsAny<Func<IPipeline, EmptyEngineData>>()))
+                .Callback((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
-                    engineData = f(mockData.Object);
+                    engineData = f(mockData.Object.Pipeline);
                 })
-                .Returns((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                .Returns((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
                     return engineData;
                 });
@@ -231,12 +232,12 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             var mockData = MockFlowData.CreateFromEvidence(evidence, false);
             EmptyEngineData engineData = null;
             mockData.Setup(d => d.GetOrAdd(It.IsAny<ITypedKey<EmptyEngineData>>(),
-                It.IsAny<Func<IFlowData, EmptyEngineData>>()))
-                .Callback((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                It.IsAny<Func<IPipeline, EmptyEngineData>>()))
+                .Callback((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
-                    engineData = f(mockData.Object);
+                    engineData = f(mockData.Object.Pipeline);
                 })
-                .Returns((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                .Returns((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
                     return engineData;
                 });
@@ -288,15 +289,15 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             var mockData = MockFlowData.CreateFromEvidence(evidence, false);
             EmptyEngineData engineData = null;
             mockData.Setup(d => d.GetOrAdd(It.IsAny<ITypedKey<EmptyEngineData>>(),
-                It.IsAny<Func<IFlowData, EmptyEngineData>>()))
-                .Callback((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                It.IsAny<Func<IPipeline, EmptyEngineData>>()))
+                .Callback((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
                     if (engineData == null)
                     {
-                        engineData = f(mockData.Object);
+                        engineData = f(mockData.Object.Pipeline);
                     }
                 })
-                .Returns((ITypedKey<EmptyEngineData> k, Func<IFlowData, EmptyEngineData> f) =>
+                .Returns((ITypedKey<EmptyEngineData> k, Func<IPipeline, EmptyEngineData> f) =>
                 {
                     return engineData;
                 });

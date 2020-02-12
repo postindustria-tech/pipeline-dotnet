@@ -20,9 +20,13 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines.Configuration;
+using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
+using System.Net.Http;
 
-namespace FiftyOne.Pipeline.Engines.FlowElements
+namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
     /// <summary>
     /// Base class for cloud pipeline builders. Sets the options required to
@@ -32,6 +36,8 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
     public abstract class CloudPipelineBuilderBase<TBuilder> : PrePackagedPipelineBuilderBase<TBuilder>
         where TBuilder : CloudPipelineBuilderBase<TBuilder>
     {
+        protected HttpClient _httpClient;
+        
         /// <summary>
         /// The base URL on the cloud service.
         /// </summary>
@@ -56,6 +62,14 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// Optional license keys for additional products.
         /// </summary>
         protected string LicenceKey { get; set; } = string.Empty;
+        /// <summary>
+        /// Cache configuration to use for the <see cref="CloudRequestEngine"/>.
+        /// </summary>
+        protected CacheConfiguration CacheConfig { get; set; }        
+        /// <summary>
+        /// Lazy loading configuration
+        /// </summary>
+        protected LazyLoadingConfiguration LazyLoadingConfig { get; set; }
 
         /// <summary>
         /// Constructor
@@ -63,10 +77,13 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <param name="loggerFactory">
         /// The logger factory to use.
         /// </param>
+        /// <param name="httpClient">
+        /// </param>
         public CloudPipelineBuilderBase(
-            ILoggerFactory loggerFactory) : base(loggerFactory)
+            ILoggerFactory loggerFactory,
+            HttpClient httpClient) : base(loggerFactory)
         {
-
+            _httpClient = httpClient;
         }
 
         /// <summary>
@@ -148,5 +165,56 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
             LicenceKey = key;
             return this as TBuilder;
         }
+
+        /// <summary>
+        /// Create and return a new pipeline based on the configuration
+        /// so far.
+        /// </summary>
+        /// <returns>
+        /// A new <see cref="IPipeline"/>.
+        /// </returns>
+        public override IPipeline Build()
+        {
+            // Configure and build the cloud request engine
+            var cloudRequestEngineBuilder = new CloudRequestEngineBuilder(LoggerFactory, _httpClient);
+            if (LazyLoading)
+            {
+                cloudRequestEngineBuilder.SetLazyLoading(new LazyLoadingConfiguration(
+                    (int)LazyLoadingTimeout.TotalMilliseconds,
+                    LazyLoadingCancellationToken));
+            }
+            if (ResultsCache)
+            {
+                cloudRequestEngineBuilder.SetCache(new CacheConfiguration() { Size = ResultsCacheSize });
+            }
+            if (string.IsNullOrEmpty(Url) == false)
+            {
+                cloudRequestEngineBuilder.SetDataEndpoint(Url);
+            }
+            if (string.IsNullOrEmpty(EvidenceKeysEndpoint) == false)
+            {
+                cloudRequestEngineBuilder.SetEvidenceKeysEndpoint(EvidenceKeysEndpoint);
+            }
+            if (string.IsNullOrEmpty(PropertiesEndpoint) == false)
+            {
+                cloudRequestEngineBuilder.SetPropertiesEndpoint(PropertiesEndpoint);
+            }
+            if (string.IsNullOrEmpty(ResourceKey) == false)
+            {
+                cloudRequestEngineBuilder.SetResourceKey(ResourceKey);
+            }
+            if (string.IsNullOrEmpty(LicenceKey) == false)
+            {
+                cloudRequestEngineBuilder.SetLicenseKey(LicenceKey);
+            }
+            var cloudRequestEngine = cloudRequestEngineBuilder.Build();
+
+            // Add the cloud request engine as the first element.
+            FlowElements.Insert(0, cloudRequestEngine);
+
+            // Build and return the pipeline
+            return base.Build();
+        }
+
     }
 }

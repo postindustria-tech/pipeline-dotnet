@@ -170,12 +170,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             return BuildEngine();
         }
 
-        private CloudRequestData CreateAspectData(IFlowData flowData, 
+        private CloudRequestData CreateAspectData(IPipeline pipeline, 
             FlowElementBase<CloudRequestData, IAspectPropertyMetaData> engine)
         {
             return new CloudRequestData(
                 _loggerFactory.CreateLogger<CloudRequestData>(),
-                flowData,
+                pipeline,
                 (IAspectEngine)engine);
         }
 

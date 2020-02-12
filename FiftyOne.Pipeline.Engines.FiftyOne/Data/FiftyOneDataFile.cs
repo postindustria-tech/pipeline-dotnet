@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Engines.Data;
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using System;
 using System.Collections.Generic;
@@ -30,11 +31,39 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
     public class FiftyOneDataFile : AspectEngineDataFile, IFiftyOneDataFile
     {
-        public FiftyOneDataFile() : 
-            base()
+        public FiftyOneDataFile(Type engineType) : 
+            base(engineType)
         {
         }
 
-        public string DataUpdateDownloadType { get; set; }
+        private string _dataDownloadTypeFromEngine;
+        private string _dataDownloadType;
+        /// <summary>
+        /// Get the type name to send when checking for data file updates.
+        /// </summary>
+        /// <remarks>
+        /// In general, this value should be pulled from the Engine, which
+        /// will have read it from the data file.
+        /// However, in some cases, we want to know the type name before
+        /// the engine is created. (e.g. when UpdateOnStartup is set)
+        /// This is why the value can also be set.
+        /// </remarks>
+        public string DataDownloadType
+        {
+            get
+            {
+                if(_dataDownloadTypeFromEngine == null &&
+                    Engine != null)
+                {
+                    _dataDownloadTypeFromEngine = (Engine as IFiftyOneAspectEngine)
+                        .GetDataDownloadType(Identifier);
+                }
+                return _dataDownloadTypeFromEngine ?? _dataDownloadType;
+            }
+            set
+            {
+                _dataDownloadType = value;
+            }
+        }
     }
 }

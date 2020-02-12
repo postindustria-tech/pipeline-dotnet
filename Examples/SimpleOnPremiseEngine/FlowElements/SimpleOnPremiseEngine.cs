@@ -40,7 +40,8 @@ namespace SimpleOnPremiseEngine.FlowElements
         public SimpleOnPremiseEngine(
             string dataFilePath,
             ILogger<AspectEngineBase<IStarSignData, IAspectPropertyMetaData>> logger,
-            Func<IFlowData, FlowElementBase<IStarSignData, IAspectPropertyMetaData>, IStarSignData> aspectDataFactory,
+            Func<IPipeline, FlowElementBase<IStarSignData, IAspectPropertyMetaData>, 
+                IStarSignData> aspectDataFactory,
             string tempDataFilePath)
             : base(logger, aspectDataFactory, tempDataFilePath)
         {
@@ -102,7 +103,7 @@ namespace SimpleOnPremiseEngine.FlowElements
             Init();
         }
 
-        public override void RefreshData(string dataFileIdentifier, byte[] data)
+        public override void RefreshData(string dataFileIdentifier, Stream data)
         {
             // We won't implement this logic in this example.
             throw new NotImplementedException();

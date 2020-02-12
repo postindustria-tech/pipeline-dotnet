@@ -79,7 +79,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// A factory function used to create the element data instances
         /// that are populated by this flow element.
         /// </summary>
-        private Func<IFlowData, FlowElementBase<T, TMeta>, T> _elementDataFactory;
+        private Func<IPipeline, FlowElementBase<T, TMeta>, T> _elementDataFactory;
 
         /// <summary>
         /// Get a read only list of the pipelines that this element has
@@ -185,7 +185,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </param>
         public FlowElementBase(
             ILogger<FlowElementBase<T, TMeta>> logger,
-            Func<IFlowData, FlowElementBase<T, TMeta>, T> elementDataFactory)
+            Func<IPipeline, FlowElementBase<T, TMeta>, T> elementDataFactory)
         {
             _logger = logger;
             _logger.LogInformation($"FlowElement '{GetType().Name}'-'{GetHashCode()}' created.");
@@ -247,14 +247,14 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// by this flow element
         /// </summary>
         /// <returns></returns>
-        protected virtual T CreateElementData(IFlowData flowData)
+        protected virtual T CreateElementData(IPipeline pipeline)
         {
             if(_elementDataFactory == null)
             {
                 _logger.LogError($"Need to specify an elementDataFactory " +
                     $"in constructor for '{GetType().Name}'.");
             }
-            return _elementDataFactory(flowData, this);
+            return _elementDataFactory(pipeline, this);
         }
 
         #region IDisposable Support

@@ -60,10 +60,10 @@ namespace FiftyOne.Pipeline.IpSplitter
         /// </summary>
         /// <param name="element">IpSplitter element</param>
         /// <returns>New SplitIpData instance</returns>
-        private ISplitIpData CreateAspectData(IFlowData flowData, 
+        private ISplitIpData CreateAspectData(IPipeline pipeline, 
             FlowElementBase<ISplitIpData, IElementPropertyMetaData> element)
         {
-            return new SplitIpData(_loggerFactory.CreateLogger<SplitIpData>(), flowData);
+            return new SplitIpData(_loggerFactory.CreateLogger<SplitIpData>(), pipeline);
         }
     }
 }

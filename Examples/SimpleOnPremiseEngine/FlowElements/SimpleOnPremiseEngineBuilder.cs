@@ -65,12 +65,12 @@ namespace SimpleOnPremiseEngine.FlowElements
                 TempDir);
         }
         public IStarSignData CreateData(
-            IFlowData flowData,
+            IPipeline pipeline,
             FlowElementBase<IStarSignData, IAspectPropertyMetaData> aspectEngine)
         {
             return new StarSignData(
                 _loggerFactory.CreateLogger<StarSignData>(),
-                flowData,
+                pipeline,
                 (SimpleOnPremiseEngine)aspectEngine,
                 MissingPropertyService.Instance);
         }

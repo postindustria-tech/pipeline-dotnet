@@ -100,7 +100,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <param name="objectName"></param>
 		public JavaScriptBuilderElement(
 			ILogger<JavaScriptBuilderElement> logger,
-			Func<IFlowData, 
+			Func<IPipeline, 
                 FlowElementBase<IJavaScriptBuilderElementData, IElementPropertyMetaData>,
 			    IJavaScriptBuilderElementData> elementDataFactory,
             string host,

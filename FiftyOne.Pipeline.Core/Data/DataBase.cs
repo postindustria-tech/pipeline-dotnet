@@ -67,6 +67,10 @@ namespace FiftyOne.Pipeline.Core.Data
         public DataBase(ILogger<DataBase> logger,
             IDictionary<string, object> dictionary)
         {
+            if (dictionary == null)
+            {
+                dictionary = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            }
             _data = dictionary;
             _logger = logger;
         }

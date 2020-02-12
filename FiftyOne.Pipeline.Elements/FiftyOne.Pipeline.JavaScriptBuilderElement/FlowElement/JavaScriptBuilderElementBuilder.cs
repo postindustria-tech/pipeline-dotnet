@@ -129,13 +129,13 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         }
 
         private IJavaScriptBuilderElementData CreateData(
-            IFlowData flowData,
+            IPipeline pipeline,
             FlowElementBase<IJavaScriptBuilderElementData, IElementPropertyMetaData> 
                 javaScriptBuilderElement)
         {
             return new JavaScriptBuilderElementData(
                 _loggerFactory.CreateLogger<JavaScriptBuilderElementData>(),
-                flowData);
+                pipeline);
         }
     }
 }

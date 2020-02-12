@@ -24,6 +24,7 @@ using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using System;
+using System.IO;
 
 namespace FiftyOne.Pipeline.Engines.Services
 {
@@ -47,6 +48,7 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// The data file to unregister
         /// </param>
         void UnRegisterDataFile(AspectEngineDataFile dataFile);
+
         /// <summary>
         /// Check if there are updates for the specified engine.
         /// </summary>
@@ -60,19 +62,27 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// <returns>
         /// The result of the update check.
         /// </returns>
+        /// <exception cref="DataUpdateException">
+        /// Thrown if some problem occurs during the update process.
+        /// </exception>
         AutoUpdateStatus CheckForUpdate(
             IOnPremiseAspectEngine engine,
             string dataFileIdentifier = null);
+
         /// <summary>
-        /// Update the specified data file from a byte[] held in memory.
+        /// Update the specified data file from a <see cref="MemoryStream"/>
         /// </summary>
         /// <param name="dataFile">
         /// The data file to update.
         /// </param>
         /// <param name="data">
-        /// The data file to update with.
+        /// The data to update with.
         /// </param>
-        AutoUpdateStatus UpdateFromMemory(AspectEngineDataFile dataFile, byte[] data);
+        /// <exception cref="DataUpdateException">
+        /// Thrown if some problem occurs during the update process.
+        /// </exception>
+        AutoUpdateStatus UpdateFromMemory(AspectEngineDataFile dataFile, 
+            MemoryStream data);
     }
 
 

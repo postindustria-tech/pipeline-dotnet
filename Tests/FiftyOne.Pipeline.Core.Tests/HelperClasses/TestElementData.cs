@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections;
@@ -34,12 +35,12 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
     /// </summary>
     public class TestElementData : ElementDataBase
     {
-        public TestElementData(IFlowData flowData)
-            : base(new Mock<ILogger<TestElementData>>().Object, flowData)
+        public TestElementData(IPipeline pipeline)
+            : base(new Mock<ILogger<TestElementData>>().Object, pipeline)
         { }
 
-        public TestElementData(IFlowData flowData, IDictionary<string, object> dictionary)
-            : base(new Mock<ILogger<TestElementData>>().Object, flowData, dictionary)
+        public TestElementData(IPipeline pipeline, IDictionary<string, object> dictionary)
+            : base(new Mock<ILogger<TestElementData>>().Object, pipeline, dictionary)
         { }
 
         public object Result

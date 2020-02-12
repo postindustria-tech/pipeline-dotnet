@@ -48,9 +48,10 @@ namespace SimpleFlowElement.FlowElements
         }
 
         // This is the element data factory, and is called in the Process method of the element.
-        public IStarSignData CreateData(IFlowData flowData, FlowElementBase<IStarSignData,IElementPropertyMetaData> element)
+        private IStarSignData CreateData(IPipeline pipeline, 
+            FlowElementBase<IStarSignData,IElementPropertyMetaData> element)
         {
-            return new StarSignData(_loggerFactory.CreateLogger<StarSignData>(), flowData);
+            return new StarSignData(_loggerFactory.CreateLogger<StarSignData>(), pipeline);
         }
     }
     //! [class]

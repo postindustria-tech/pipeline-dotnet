@@ -48,12 +48,12 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         }
 
         private IJsonBuilderElementData CreateData(
-            IFlowData flowData,
+            IPipeline pipeline,
             FlowElementBase<IJsonBuilderElementData, IElementPropertyMetaData> jsonBuilderElement)
         {
             return new JsonBuilderElementData(
                 _loggerFactory.CreateLogger<JsonBuilderElementData>(),
-                flowData);
+                pipeline);
         }
 
     }

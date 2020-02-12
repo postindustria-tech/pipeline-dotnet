@@ -55,8 +55,8 @@ namespace FiftyOne.Pipeline.Engines.Configuration
 
         /// <summary>
         /// The complete file path to the location of the data file.
-        /// This value will be null if the file has been supplied from 
-        /// a byte[] in memory. 
+        /// This value will be null if the instance has the MemoryOnly 
+        /// flag set. 
         /// </summary>
         public string DataFilePath { get; set; }
 
@@ -69,12 +69,17 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         public bool CreateTempCopy { get; set; }
 
         /// <summary>
-        /// If set, this byte array contains an in-memory representation 
-        /// of the data used by the engine.
-        /// This will be null unless this instance has specifically been
-        /// created from a byte array.
+        /// True if data for this file should only exist in memory. 
+        /// I.e. Assume there is no file system.
         /// </summary>
-        public byte[] Data { get; set; }
+        public bool MemoryOnly { get; set; }
+
+        /// <summary>
+        /// The <see cref="Stream"/> containing the data.
+        /// Note that this will be set to null after being read by the engine
+        /// in order to reduce memory usage.
+        /// </summary>
+        public Stream DataStream { get; set; }
 
         /// <summary>
         /// The URL to check when looking for updates to the data file.

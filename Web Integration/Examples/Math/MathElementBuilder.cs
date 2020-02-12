@@ -57,10 +57,10 @@ namespace FiftyOne.Pipeline.Math
         /// </summary>
         /// <param name="element">MathElement instance</param>
         /// <returns>New MathData instance</returns>
-        private IMathData CreateAspectData(IFlowData flowData, 
+        private IMathData CreateAspectData(IPipeline pipeline, 
             FlowElementBase<IMathData, IElementPropertyMetaData> element)
         {
-            return new MathData(_loggerFactory.CreateLogger<MathData>(), flowData);
+            return new MathData(_loggerFactory.CreateLogger<MathData>(), pipeline);
         }
     }
 }

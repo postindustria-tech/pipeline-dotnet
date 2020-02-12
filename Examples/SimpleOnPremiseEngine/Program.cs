@@ -40,6 +40,8 @@ namespace SimpleOnPremiseEngine
             // updates as we have not implemented it in this example engine.
             var starSignEngine = new SimpleOnPremiseEngineBuilder(_loggerFactory, null)
                 .SetAutoUpdate(false)
+                .SetDataUpdateOnStartup(false)
+                .SetDataFileSystemWatcher(false)
                 .Build("starsigns.csv", false);
             // Construct the pipeline with the example engine.
             var pipeline = new PipelineBuilder(_loggerFactory)

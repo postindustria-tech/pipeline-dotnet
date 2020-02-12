@@ -38,7 +38,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// If the timeout is exceeded then a 
         /// <see cref="TimeoutException"/> will be thrown.
         /// </summary>
-        public int PropertyTimeoutMs { get; private set; }
+        public int PropertyTimeoutMs { get; set; }
 
         /// <summary>
         /// The <see cref="System.Threading.CancellationToken"/> to use 
@@ -47,7 +47,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// If the cancellation token is triggered then the call to the 
         /// property will return immediately with a null value. 
         /// </summary>
-        public CancellationToken CancellationToken { get; private set; }
+        public CancellationToken? CancellationToken { get; set; }
 
         /// <summary>
         /// Constructor
@@ -66,8 +66,8 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// property will return immediately with a null value. 
         /// </param>
         public LazyLoadingConfiguration(
-            int propertyTimeoutMs,
-            CancellationToken cancellationToken)
+            int propertyTimeoutMs = 1000,
+            CancellationToken? cancellationToken = null)
         {
             PropertyTimeoutMs = propertyTimeoutMs;
             CancellationToken = cancellationToken;

@@ -46,7 +46,20 @@ namespace FiftyOne.Pipeline.Engines.Data
 
         public string Identifier { get; set;  }
 
+        /// <summary>
+        /// Get or set the <see cref="IOnPremiseAspectEngine"/> associated 
+        /// with this data file.
+        /// </summary>
         public IOnPremiseAspectEngine Engine { get; set; }
+
+        /// <summary>
+        /// Get or set the type of the engine that this data file is for.
+        /// This exists in addition to the Engine property because Engine
+        /// can be null.
+        /// This then allows the user to identify which engine this file 
+        /// relates to.
+        /// </summary>
+        public Type EngineType { get; private set; }
 
         /// <summary>
         /// The complete file path to the location of the data file.
@@ -95,13 +108,12 @@ namespace FiftyOne.Pipeline.Engines.Data
             get
             {
                 if (_tempDataFilePath == null &&
-                    Engine != null &&
-                    Engine.TempDataDirPath != null &&
+                    TempDataDirPath != null &&
                     DataFilePath != null)
                 {
                     // By default, use the temp path from the engine
                     // combined with the name of the data file.
-                    _tempDataFilePath = Path.Combine(Engine.TempDataDirPath,
+                    _tempDataFilePath = Path.Combine(TempDataDirPath,
                         Path.GetFileName(DataFilePath));
                 }
                 return _tempDataFilePath;
@@ -162,8 +174,12 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// <summary>
         /// Constructor
         /// </summary>
-        public AspectEngineDataFile()
+        /// <param name="engineType">
+        /// The type of the engine that this data file is used by.
+        /// </param>
+        public AspectEngineDataFile(Type engineType = null)
         {
+            EngineType = engineType;
         }
 
         /// <summary>

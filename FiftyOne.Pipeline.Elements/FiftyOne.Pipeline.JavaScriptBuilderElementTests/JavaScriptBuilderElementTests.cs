@@ -33,6 +33,7 @@ using FiftyOne.Pipeline.JavaScriptBuilder.Data;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using System;
+using FiftyOne.Pipeline.Core.FlowElements;
 
 namespace FiftyOne.Pipeline.JavaScript.Tests
 {
@@ -99,7 +100,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
             flowData.Setup(d => d.Get<IJsonBuilderElementData>()).Returns(() =>
             {
-                var d = new JsonBuilderElementData(new Mock<ILogger<JsonBuilderElementData>>().Object, flowData.Object);
+                var d = new JsonBuilderElementData(new Mock<ILogger<JsonBuilderElementData>>().Object, flowData.Object.Pipeline);
                 d.Json = json.ToString();
                 return d;
             });
@@ -113,10 +114,10 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             flowData.Setup(d => d.Get(It.IsAny<string>())).Returns(_elementDataMock.Object);
             flowData.Setup(d => d.GetOrAdd(
                 It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
-                It.IsAny<Func<IFlowData, IJavaScriptBuilderElementData>>()))
-                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IFlowData, IJavaScriptBuilderElementData>>((k, f) =>
+                It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
+                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
                 {
-                    result = f(flowData.Object);
+                    result = f(flowData.Object.Pipeline);
                     return result;
                 });
             _javaScriptBuilderElement.Process(flowData.Object);

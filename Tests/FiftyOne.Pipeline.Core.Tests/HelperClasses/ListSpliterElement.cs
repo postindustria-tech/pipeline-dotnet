@@ -91,7 +91,7 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
         {
             ListSplitterElementData elementData = data.GetOrAdd(
                 ElementDataKeyTyped,
-                (f) => new ListSplitterElementData(f));
+                (p) => new ListSplitterElementData(p));
             // Get the source string
             string source = (string)data.GetEvidence()[EvidenceKeys[0]];
             // Split the source string using the configured delimiter.

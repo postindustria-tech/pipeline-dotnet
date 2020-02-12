@@ -37,7 +37,8 @@ namespace SimpleClientSideElement.FlowElements
     {
         public SimpleClientSideElement(
             ILogger<FlowElementBase<IStarSignData, IElementPropertyMetaData>> logger,
-            Func<IFlowData, FlowElementBase<IStarSignData, IElementPropertyMetaData>, IStarSignData> elementDataFactory)
+            Func<IPipeline, FlowElementBase<IStarSignData, IElementPropertyMetaData>, 
+                IStarSignData> elementDataFactory)
             : base(logger, elementDataFactory)
         {
             Init();

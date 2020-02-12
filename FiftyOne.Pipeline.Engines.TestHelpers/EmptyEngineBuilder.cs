@@ -48,11 +48,11 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
             return BuildEngine();
         }
         
-        private EmptyEngineData CreateAspectData(IFlowData flowData, FlowElementBase<EmptyEngineData, IAspectPropertyMetaData> engine)
+        private EmptyEngineData CreateAspectData(IPipeline pipeline, FlowElementBase<EmptyEngineData, IAspectPropertyMetaData> engine)
         {
             return new EmptyEngineData(
                 _loggerFactory.CreateLogger<EmptyEngineData>(),
-                flowData,
+                pipeline,
                 engine as IAspectEngine,
                 MissingPropertyService.Instance);
         }

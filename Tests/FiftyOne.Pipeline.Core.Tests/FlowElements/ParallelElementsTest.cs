@@ -71,7 +71,7 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
 
             element1.Setup(e => e.Process(It.IsAny<IFlowData>())).Callback((IFlowData d) =>
             {
-                var tempdata = d.GetOrAdd("element1", (f) => new TestElementData(f));
+                var tempdata = d.GetOrAdd("element1", (p) => new TestElementData(p));
                 tempdata["start"] = DateTime.UtcNow;
                 DateTime end = DateTime.UtcNow.AddSeconds(1);
                 SpinWait.SpinUntil(() => DateTime.UtcNow >= end);
@@ -79,7 +79,7 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             });
             element2.Setup(e => e.Process(It.IsAny<IFlowData>())).Callback((IFlowData d) =>
             {
-                var tempdata = d.GetOrAdd("element2", (f) => new TestElementData(f));
+                var tempdata = d.GetOrAdd("element2", (p) => new TestElementData(p));
                 tempdata["start"] = DateTime.UtcNow;
                 DateTime end = DateTime.UtcNow.AddSeconds(1);
                 SpinWait.SpinUntil(() => DateTime.UtcNow >= end);
@@ -87,7 +87,7 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             });
             element3.Setup(e => e.Process(It.IsAny<IFlowData>())).Callback((IFlowData d) =>
             {
-                var tempdata = d.GetOrAdd("element3", (f) => new TestElementData(f));
+                var tempdata = d.GetOrAdd("element3", (p) => new TestElementData(p));
                 tempdata["start"] = DateTime.UtcNow;
                 DateTime end = DateTime.UtcNow.AddSeconds(1);
                 SpinWait.SpinUntil(() => DateTime.UtcNow >= end);

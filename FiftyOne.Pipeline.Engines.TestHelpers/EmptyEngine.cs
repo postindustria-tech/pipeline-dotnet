@@ -43,7 +43,7 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
 
         public EmptyEngine(
             ILogger<AspectEngineBase<EmptyEngineData, IAspectPropertyMetaData>> logger,
-            Func<IFlowData, FlowElementBase<EmptyEngineData, IAspectPropertyMetaData>, EmptyEngineData> aspectDataFactory) :
+            Func<IPipeline, FlowElementBase<EmptyEngineData, IAspectPropertyMetaData>, EmptyEngineData> aspectDataFactory) :
             base(logger, aspectDataFactory)
         {
             _properties = new List<IAspectPropertyMetaData>()

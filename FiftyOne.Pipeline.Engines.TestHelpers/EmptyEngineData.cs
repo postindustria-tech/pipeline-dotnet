@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
@@ -35,10 +36,10 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
     {
         public EmptyEngineData(
             ILogger<EmptyEngineData> logger,
-            IFlowData flowData,
-            IAspectEngine engine, 
-            IMissingPropertyService missingPropertyService) : 
-            base(logger, flowData, engine, missingPropertyService)
+            IPipeline pipeline,
+            IAspectEngine engine,
+            IMissingPropertyService missingPropertyService) :
+            base(logger, pipeline, engine, missingPropertyService)
         {
         }
 

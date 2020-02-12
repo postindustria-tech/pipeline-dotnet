@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using System.Text;
 using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 
 namespace FiftyOne.Pipeline.Engines.Tests.Data
 {
@@ -41,16 +42,16 @@ namespace FiftyOne.Pipeline.Engines.Tests.Data
         {
             public TestData(
                 ILogger<AspectDataBase> logger,
-                IFlowData flowData,
+                IPipeline pipeline,
                 IAspectEngine engine,
                 IMissingPropertyService missingPropertyService)
-                : base(logger, flowData, engine, missingPropertyService) { }
+                : base(logger, pipeline, engine, missingPropertyService) { }
         }
 
         private TestData _data;
         private TestLogger<TestData> _logger;
         private Mock<IAspectEngine> _engine;
-        private Mock<IFlowData> _flowData;
+        private Mock<IPipeline> _pipeline;
         private Mock<IMissingPropertyService> _missingPropertyService;
 
         [TestInitialize]
@@ -58,10 +59,10 @@ namespace FiftyOne.Pipeline.Engines.Tests.Data
         {
             _logger = new TestLogger<TestData>();
             _engine = new Mock<IAspectEngine>();
-            _flowData = new Mock<IFlowData>();
+            _pipeline = new Mock<IPipeline>();
             _missingPropertyService = new Mock<IMissingPropertyService>();
             _missingPropertyService.Setup(m => m.GetMissingPropertyReason(
-                It.IsAny<string>(), It.IsAny<IList<IAspectEngine>>()))
+                It.IsAny<string>(), It.IsAny<IReadOnlyList<IAspectEngine>>()))
                 .Returns(new MissingPropertyResult()
                 {
                     Description = "TEST",
@@ -69,7 +70,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Data
                 });
             _data = new TestData(
                 _logger,
-                _flowData.Object,
+                _pipeline.Object,
                 _engine.Object,
                 _missingPropertyService.Object);
 

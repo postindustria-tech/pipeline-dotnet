@@ -62,7 +62,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </param>
         public FiftyOneOnPremiseAspectEngineBase(
             ILogger<FiftyOneOnPremiseAspectEngineBase<T>> logger, 
-            Func<IFlowData, FlowElementBase<T, IFiftyOneAspectPropertyMetaData>, T> aspectDataFactory, 
+            Func<IPipeline, FlowElementBase<T, IFiftyOneAspectPropertyMetaData>, T> aspectDataFactory, 
             string tempDataFilePath) : 
             base(logger, aspectDataFactory, tempDataFilePath)
         {
@@ -77,7 +77,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         public abstract IEnumerable<IComponentMetaData> Components { get; }
 
         public abstract IEnumerable<IValueMetaData> Values { get; }
-        
+
+        public abstract string GetDataDownloadType(string identifier);        
         #endregion
     }
 }

@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -30,8 +31,8 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
 {
     public class DictionaryElementData : ElementDataBase
     {
-        public DictionaryElementData(ILogger<ElementDataBase> logger, IFlowData flowData)
-            : base(logger, flowData)
+        public DictionaryElementData(ILogger<ElementDataBase> logger, IPipeline pipeline)
+            : base(logger, pipeline)
         {
         }
     }

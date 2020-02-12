@@ -300,7 +300,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// Existing data matching the key, or newly added data.
         /// </returns>
-        T GetOrAdd<T>(string elementDataKey, Func<IFlowData, T> createData)
+        T GetOrAdd<T>(string elementDataKey, Func<IPipeline, T> createData)
             where T : IElementData;
 
         /// <summary>
@@ -319,7 +319,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// Existing data matching the key, or newly added data.
         /// </returns>
-        T GetOrAdd<T>(ITypedKey<T> key, Func<IFlowData, T> createData)
+        T GetOrAdd<T>(ITypedKey<T> key, Func<IPipeline, T> createData)
              where T : IElementData;
         
         /// <summary>

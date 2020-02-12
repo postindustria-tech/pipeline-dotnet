@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
 using Microsoft.Extensions.Logging;
@@ -79,14 +80,18 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// <param name="logger">
         /// Used for logging
         /// </param>
+        /// <param name="pipeline">
+        /// The <see cref="IPipeline"/> instance this element data will
+        /// be associated with.
+        /// </param>
         /// <param name="engine">
         /// The <see cref="IAspectEngine"/> that created this instance
         /// </param>
         public AspectDataBase(
             ILogger<AspectDataBase> logger,
-            IFlowData flowData,
+            IPipeline pipeline,
             IAspectEngine engine)
-            : this(logger, flowData, engine, null)
+            : this(logger, pipeline, engine, null)
         { }
 
         /// <summary>
@@ -94,6 +99,10 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// </summary>
         /// <param name="logger">
         /// Used for logging
+        /// </param>
+        /// <param name="pipeline">
+        /// The <see cref="IPipeline"/> instance this element data will
+        /// be associated with.
         /// </param>
         /// <param name="engine">
         /// The <see cref="IAspectEngine"/> that created this instance
@@ -104,10 +113,10 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// </param>
         public AspectDataBase(
             ILogger<AspectDataBase> logger,
-            IFlowData flowData,
+            IPipeline pipeline,
             IAspectEngine engine,
             IMissingPropertyService missingPropertyService)
-            : base (logger, flowData)
+            : base (logger, pipeline)
         {
             Logger = logger;
             _engines = new List<IAspectEngine>() { engine };
@@ -119,6 +128,10 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// </summary>
         /// <param name="logger">
         /// Used for logging
+        /// </param>
+        /// <param name="pipeline">
+        /// The <see cref="IPipeline"/> instance this element data will
+        /// be associated with.
         /// </param>
         /// <param name="engine">
         /// The <see cref="IAspectEngine"/> that created this instance
@@ -132,11 +145,11 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// </param>
         public AspectDataBase(
             ILogger<AspectDataBase> logger,
-            IFlowData flowData,
+            IPipeline pipeline,
             IAspectEngine engine,
             IMissingPropertyService missingPropertyService,
             IDictionary<string, object> dictionary)
-            : base(logger, flowData, dictionary)
+            : base(logger, pipeline, dictionary)
         {
             Logger = logger;
             _engines = new List<IAspectEngine>() { engine };
@@ -191,7 +204,7 @@ namespace FiftyOne.Pipeline.Engines.Data
             // Check parameter
             if (key == null) throw new ArgumentNullException("key");
             // Log the request
-            if (Logger.IsEnabled(LogLevel.Debug))
+            if (Logger != null && Logger.IsEnabled(LogLevel.Debug))
             {
                 Logger.LogDebug($"AspectData '{GetType().Name}'-'{GetHashCode()}' " +
                     $"property value requested for key '{key}'.");
@@ -199,14 +212,17 @@ namespace FiftyOne.Pipeline.Engines.Data
 
             // Attempt to get the property value.
             T propertyValue = default(T);
-            bool lazyLoad = Engines.Any(e => e.LazyLoadingConfiguration != null);
+            var lazyLoadEngines = Engines.Where(e => e != null &&
+                e.LazyLoadingConfiguration != null);
+            bool lazyLoad = lazyLoadEngines.Any();
             CancellationTokenSource tokenSource = null;
 
             if (lazyLoad == true)
             {
-                tokenSource = CancellationTokenSource.CreateLinkedTokenSource(Engines
-                    .Where(e => e.LazyLoadingConfiguration != null)
-                    .Select(e => e.LazyLoadingConfiguration.CancellationToken)
+                tokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+                    lazyLoadEngines
+                    .Where(e => e.LazyLoadingConfiguration.CancellationToken.HasValue)
+                    .Select(e => e.LazyLoadingConfiguration.CancellationToken.Value)
                     .ToArray());
             }
 
@@ -216,7 +232,7 @@ namespace FiftyOne.Pipeline.Engines.Data
             // 2. The process task has finished
             if (lazyLoad == false ||
                 (errors = WaitOnAllProcessTasks(
-                    Engines.Max(e => e.LazyLoadingConfiguration.PropertyTimeoutMs),
+                    lazyLoadEngines.Max(e => e.LazyLoadingConfiguration.PropertyTimeoutMs),
                     tokenSource.Token)).Count == 0)
             {
                 if (TryGetValue(key, out propertyValue) == false &&
@@ -225,10 +241,13 @@ namespace FiftyOne.Pipeline.Engines.Data
                     // If there was no entry for the key then use the missing
                     // property service to find out why.
                     var missingReason = MissingPropertyService
-                        .GetMissingPropertyReason(key, Engines as IList<IAspectEngine>);
-                    Logger.LogWarning($"Property '{key}' missing from aspect " +
+                        .GetMissingPropertyReason(key, Engines);
+                    if (Logger != null && Logger.IsEnabled(LogLevel.Warning))
+                    {
+                        Logger.LogWarning($"Property '{key}' missing from aspect " +
                         $"data '{GetType().Name}'-'{GetHashCode()}'. " +
                         $"{missingReason.Reason}");
+                    }
                     throw new PropertyMissingException(missingReason.Reason,
                         key, missingReason.Description);
                 }

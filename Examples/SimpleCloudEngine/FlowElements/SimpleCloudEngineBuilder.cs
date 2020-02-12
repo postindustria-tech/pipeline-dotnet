@@ -64,11 +64,12 @@ namespace SimpleCloudEngine.FlowElements
                 _engine);
         }
 
-        private IStarSignData CreateData(IFlowData flowData, FlowElementBase<IStarSignData, IAspectPropertyMetaData> engine)
+        private IStarSignData CreateData(IPipeline pipeline, 
+            FlowElementBase<IStarSignData, IAspectPropertyMetaData> engine)
         {
             return new StarSignData(
                 _loggerFactory.CreateLogger<StarSignData>(),
-                flowData,
+                pipeline,
                 (IAspectEngine)engine,
                 MissingPropertyService.Instance);
         }

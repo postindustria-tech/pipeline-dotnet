@@ -78,7 +78,7 @@ namespace FiftyOne.Pipeline.IpSplitter
         /// </param>
         internal IpSplitterElement(
             ILogger<IpSplitterElement> logger,
-            Func<IFlowData, FlowElementBase<ISplitIpData, IElementPropertyMetaData>, 
+            Func<IPipeline, FlowElementBase<ISplitIpData, IElementPropertyMetaData>, 
                 ISplitIpData> elementDataFactory)
             : base(logger, elementDataFactory)
         {

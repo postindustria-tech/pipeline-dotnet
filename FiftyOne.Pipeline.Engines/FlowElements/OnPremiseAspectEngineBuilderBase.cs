@@ -126,7 +126,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// </returns>
         protected virtual AspectEngineDataFile NewAspectEngineDataFile()
         {
-            return new AspectEngineDataFile();
+            return new AspectEngineDataFile(typeof(TEngine));
         }
 
         /// <summary>
@@ -191,6 +191,13 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
                 if (engine != null)
                 {
                     engine.AddDataFile(dataFile);
+                }
+                // The data stream will have been read by now so dispose 
+                // of it if this has not already been done.
+                if(dataFile.Configuration.DataStream != null)
+                {
+                    dataFile.Configuration.DataStream.Dispose();
+                    dataFile.Configuration.DataStream = null;
                 }
             }
         }

@@ -33,6 +33,10 @@ namespace FiftyOne.Pipeline.Core.Data
     /// </summary>
     public abstract class ElementDataBase : DataBase, IElementData
     {
+        /// <summary>
+        /// The <see cref="IPipeline"/> instance this element data will
+        /// be associated with.
+        /// </summary>
         public IPipeline Pipeline { get; set; }
 
         /// <summary>
@@ -43,12 +47,12 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <param name="logger">
         /// Used for logging
         /// </param>
-        /// <param name="flowData">
-        /// The <see cref="IFlowData"/> instance this element data will
+        /// <param name="pipeline">
+        /// The <see cref="IPipeline"/> instance this element data will
         /// be associated with.
         /// </param>
-        public ElementDataBase(ILogger<ElementDataBase> logger, IFlowData flowData) :
-            this(logger, flowData, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase))
+        public ElementDataBase(ILogger<ElementDataBase> logger, IPipeline pipeline) :
+            this(logger, pipeline, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase))
         {
         }
 
@@ -58,19 +62,19 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <param name="logger">
         /// Used for logging
         /// </param>
-        /// <param name="flowData">
-        /// The <see cref="IFlowData"/> instance this element data will
+        /// <param name="pipeline">
+        /// The <see cref="IPipeline"/> instance this element data will
         /// be associated with.
         /// </param>
         /// <param name="dictionary">
         /// The dictionary instance to use internally when storing data values.
         /// </param>
         public ElementDataBase(ILogger<ElementDataBase> logger,
-            IFlowData flowData,
+            IPipeline pipeline,
             IDictionary<string, object> dictionary)
             : base(logger, dictionary)
         {
-            Pipeline = flowData.Pipeline;
+            Pipeline = pipeline;
         }
     }
 }

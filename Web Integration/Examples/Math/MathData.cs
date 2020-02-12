@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 
@@ -28,8 +29,8 @@ namespace FiftyOne.Pipeline.Math
 {
     class MathData : ElementDataBase, IMathData
     {
-        public MathData(ILogger<MathData> logger, IFlowData flowData)
-            : base(logger, flowData)
+        public MathData(ILogger<MathData> logger, IPipeline pipeline)
+            : base(logger, pipeline)
         {
         }
 

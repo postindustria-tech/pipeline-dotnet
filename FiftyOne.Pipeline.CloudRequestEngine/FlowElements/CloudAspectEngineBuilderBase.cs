@@ -20,34 +20,28 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.Data;
-using FiftyOne.Pipeline.Core.FlowElements;
-using FiftyOne.Pipeline.Engines.Data;
-using Microsoft.Extensions.Logging;
+using FiftyOne.Pipeline.Engines.FlowElements;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace FiftyOne.Pipeline.Engines.FlowElements
+namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
     /// <summary>
-    /// Base class for 51Degrees cloud aspect engines. 
+    /// Abstract base class that exposes the common options that all
+    /// 51Degrees cloud engine builders should make use of.
     /// </summary>
-    /// <typeparam name="T">
-    /// The type of data that the engine will return. Must implement 
-    /// <see cref="IAspectData"/>.
+    /// <typeparam name="TBuilder">
+    /// The specific builder type to use as the return type from the fluent 
+    /// builder methods.
     /// </typeparam>
-    /// <typeparam name="TMeta">
-    /// The type of meta data that the flow element will supply 
-    /// about the properties it populates.
+    /// <typeparam name="TEngine">
+    /// The type of the engine that this builder will build
     /// </typeparam>
-    public abstract class CloudAspectEngineBase<T, TMeta> : AspectEngineBase<T, TMeta>
-        where T : IAspectData
-        where TMeta : IAspectPropertyMetaData
+    public abstract class CloudAspectEngineBuilderBase<TBuilder, TEngine> : 
+        AspectEngineBuilderBase<TBuilder, TEngine>
+        where TBuilder : CloudAspectEngineBuilderBase<TBuilder, TEngine>
+        where TEngine : IAspectEngine
     {
-        public CloudAspectEngineBase(ILogger<AspectEngineBase<T, TMeta>> logger, 
-            Func<IFlowData, FlowElementBase<T, TMeta>, T> aspectDataFactory) : base(logger, aspectDataFactory)
-        {
-        }
     }
 }
