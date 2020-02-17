@@ -82,8 +82,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 uri += '/';
             }
-            return SetDataEndpoint(uri + (_resourceKey != null ? _resourceKey + "." : "") + "json")
-                .SetPropertiesEndpoint(uri + "accessibleproperties" + (_resourceKey != null ? "?Resource=" + _resourceKey : ""))
+            return SetDataEndpoint(uri + "json")
+                .SetPropertiesEndpoint(uri + "accessibleproperties")
                 .SetEvidenceKeysEndpoint(uri + "evidencekeys");
 
         }

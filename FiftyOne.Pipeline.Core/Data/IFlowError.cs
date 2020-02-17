@@ -38,5 +38,10 @@ namespace FiftyOne.Pipeline.Core.Data
         /// The flow element that the exception occurred in or is related to.
         /// </summary>
         IFlowElement FlowElement { get; set; }
+
+        /// <summary>
+        /// Flag for if the pipeline should throw the exception.
+        /// </summary>
+        bool ShouldThrow { get; set; }
     }
 }

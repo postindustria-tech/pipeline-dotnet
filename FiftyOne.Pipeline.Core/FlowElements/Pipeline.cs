@@ -276,7 +276,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 data.Errors.Count > 0 &&
                 _suppressProcessExceptions == false)
             {
-                throw new AggregateException(data.Errors.Select(e => e.ExceptionData));
+                throw new AggregateException(data.Errors
+                    .Where(e => e.ShouldThrow == true)
+                    .Select(e => e.ExceptionData));
             }
 
             _logger.LogDebug($"Pipeline '{GetHashCode()}' finished processing.");

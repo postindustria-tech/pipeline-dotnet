@@ -40,10 +40,14 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <param name="flowElement">
         /// The flow element that the exception occurred in or is related to.
         /// </param>
-        public FlowError(Exception ex, IFlowElement flowElement)
+        /// <param name="shouldThrow">
+        /// Should the pipeline throw this exception?
+        /// </param>
+        public FlowError(Exception ex, IFlowElement flowElement, bool shouldThrow = true)
         {
             ExceptionData = ex;
             FlowElement = flowElement;
+            ShouldThrow = shouldThrow;
         }
 
         /// <summary>
@@ -55,5 +59,10 @@ namespace FiftyOne.Pipeline.Core.Data
         /// The flow element that the exception occurred in or is related to.
         /// </summary>
         public IFlowElement FlowElement { get; set; }
+
+        /// <summary>
+        /// Flag for if the pipeline should throw the exception.
+        /// </summary>
+        public bool ShouldThrow { get; set; }
     }
 }
