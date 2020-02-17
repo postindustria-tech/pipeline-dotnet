@@ -189,7 +189,11 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             if (string.IsNullOrEmpty(Url) == false)
             {
-                cloudRequestEngineBuilder.SetDataEndpoint(Url);
+                cloudRequestEngineBuilder.SetEndPoint(Url);
+            }
+            if (string.IsNullOrEmpty(JsonEndpoint) == false)
+            {
+                cloudRequestEngineBuilder.SetDataEndpoint(JsonEndpoint);
             }
             if (string.IsNullOrEmpty(EvidenceKeysEndpoint) == false)
             {
@@ -215,6 +219,5 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             // Build and return the pipeline
             return base.Build();
         }
-
     }
 }

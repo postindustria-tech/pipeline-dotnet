@@ -213,7 +213,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
             try
             {
-                var request = _httpClient.GetAsync(_propertiesEndpoint);
+                var request = _httpClient.GetAsync($"{_propertiesEndpoint}?resource={_resourceKey}");
                 jsonResult = request.Result.Content.ReadAsStringAsync().Result;
             }
             catch (Exception ex)
