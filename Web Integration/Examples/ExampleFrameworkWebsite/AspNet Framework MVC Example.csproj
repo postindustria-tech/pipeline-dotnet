@@ -203,7 +203,7 @@
     </ProjectReference>
     <ProjectReference Include="..\Math\FiftyOne.Pipeline.Math.csproj">
       <Project>{820cf39b-e80a-4c4b-ad97-f942ede6efd2}</Project>
-      <Name>FiftyOne.Pipline.Math</Name>
+      <Name>FiftyOne.Pipeline.Math</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>

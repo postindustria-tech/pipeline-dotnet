@@ -173,8 +173,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
         public void AspectEngineLazyLoad_ProcessCancelled()
         {
             // Arrange
-            // Set the process time to half the configured timeout
-            _engine.SetProcessCost(TimeSpan.TicksPerMillisecond * (_timeoutMS / 2));
+            // Set the process time to the configured timeout
+            _engine.SetProcessCost(TimeSpan.TicksPerMillisecond * _timeoutMS);
 
             // Act
             var evidence = new Dictionary<string, object>()
@@ -199,16 +199,34 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 
             // Process the data
             _engine.Process(data);
-            // Start a new task that will wait a short time and then trigger
-            // the cancellation token.
-            Task.Run(() =>
+
+            // Ideally, start a new task that will wait a short time and
+            // then trigger the cancellation token. 
+            // If we've only got one core to work with then this approach
+            // can cause the test to fail as the cancellation task may 
+            // not get run in time.
+            // If we only have one core then just trigger cancellation 
+            // up-front.
+            if (Environment.ProcessorCount > 1)
             {
-                Task.Delay(_timeoutMS / 10);
+                Task.Run(() =>
+                {
+                    Task.Delay(_timeoutMS / 10);
+                    _cancellationTokenSource.Cancel();
+                });
+            }
+            else
+            {
                 _cancellationTokenSource.Cancel();
-            });
+            }
 
             // Attempt to get the value.
             var result = engineData.ValueOne;
+            // These asserts are not really needed but can help work out
+            // what is happening if the test fails to throw the expected
+            // exception.
+            Assert.IsTrue(_cancellationTokenSource.IsCancellationRequested);
+            Assert.IsNull(result);
         }
 
         /// <summary>

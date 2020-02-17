@@ -1,8 +1,5 @@
 pool:
-  name: Hosted VS2017
-  demands:
-  - msbuild
-  - visualstudio
+  vmImage: 'windows-2019'
   
 trigger: none
 
@@ -94,14 +91,14 @@ steps:
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: |
-      **\$(BuildPlatform)\*\netcoreapp2.*\*Tests*.dll
+      **\$(BuildPlatform)\*\netcoreapp*\*Tests*.dll
       !**\*TestAdapter*.dll
       !**\*TestFramework*.dll
       !**\*DeviceDetection*.Tests.dll
       !**\obj\**
     searchFolder: '$(System.DefaultWorkingDirectory)'
     codeCoverageEnabled: true
-    otherConsoleOptions: '/Framework:.NETStandard,Version=v2.0 /Platform:$(BuildPlatform) /logger:console;verbosity="normal"'
+    otherConsoleOptions: '/Framework:.NETCoreApp,Version=v3.1 /Platform:$(BuildPlatform) /logger:console;verbosity="normal"'
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
     diagnosticsEnabled: true

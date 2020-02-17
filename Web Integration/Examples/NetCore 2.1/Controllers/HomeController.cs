@@ -38,8 +38,19 @@ namespace Example_Website.Controllers
 
         public IActionResult Index()
         {
-            var math = _flow.GetFlowData().Get(MathElement.math);
-            ViewData["Message"] = $"{math.Operation} = {math.Result}";
+            var math = _flow.GetFlowData()?.Get(MathElement.math);
+            if (math != null)
+            {
+                ViewData["Message"] = $"{math.Operation} = {math.Result}";
+            }
+            else
+            {
+                ViewData["Message"] = "No 'FlowData' found. This is usually " +
+                    "because the 51Degrees middleware component has not run, " +
+                    "possibly due to being after some other middleware " +
+                    "component that has blocked further execution " +
+                    "(For example, requiring HTTPS).";
+            }
             return View();
         }
     }

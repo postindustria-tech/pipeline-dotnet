@@ -23,10 +23,7 @@ variables:
     value: $(System.AccessToken)
         
 pool:
-  name: Hosted VS2017
-  demands:
-  - msbuild
-  - visualstudio
+  vmImage: 'windows-2019'
 
 steps:
 - bash: |

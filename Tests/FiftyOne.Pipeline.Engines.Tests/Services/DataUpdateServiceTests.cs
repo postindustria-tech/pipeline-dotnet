@@ -1354,21 +1354,27 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             //   file.Timer.m_timer.m_timer.m_dueTime
             // This is the number of milliseconds until the next update
             // will fire.
+            string timerFieldName = "_timer";
+            string dueTimeFieldName = "_dueTime";
+#if NETCOREAPP2_0 || NETCOREAPP2_1 || NETCOREAPP2_2
+            timerFieldName = "m_timer";
+            dueTimeFieldName = "m_dueTime";
+#endif
             var privateFlags =
                 System.Reflection.BindingFlags.NonPublic |
                 System.Reflection.BindingFlags.Instance;
-            var field = file.Timer.GetType().GetField("m_timer", privateFlags);
+            var field = file.Timer.GetType().GetField(timerFieldName, privateFlags);
             var fieldValue = field.GetValue(file.Timer);
-            field = fieldValue.GetType().GetField("m_timer", privateFlags);
+            field = fieldValue.GetType().GetField(timerFieldName, privateFlags);
             fieldValue = field.GetValue(fieldValue);
-            field = fieldValue.GetType().GetField("m_dueTime", privateFlags);
+            field = fieldValue.GetType().GetField(dueTimeFieldName, privateFlags);
             fieldValue = field.GetValue(fieldValue);
             var dueTime = TimeSpan.FromMilliseconds((uint)fieldValue);
             // Check that the timer has been set to expire in 10 seconds.
             Assert.AreEqual(10, dueTime.TotalSeconds);
         }
 
-        #region Private methods
+#region Private methods
         private void ConfigureNoFileSystem()
         {
             // Configure the file system wrappers to be 'strict'. 
@@ -1511,6 +1517,6 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                     Content = new StringContent("<empty />", Encoding.UTF8, "application/xml"),
                 });
         }
-        #endregion
+#endregion
     }
 }

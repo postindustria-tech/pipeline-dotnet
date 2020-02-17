@@ -31,6 +31,7 @@ using FiftyOne.Pipeline.Web.Services;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.Exceptions;
+using System.Net.Http;
 
 namespace FiftyOne.Pipeline.Web
 {
@@ -63,6 +64,7 @@ namespace FiftyOne.Pipeline.Web
             services.AddLogging();
             services.AddOptions();
 
+#if NETCOREAPP2_0 || NETCOREAPP2_1 || NETCOREAPP2_2
             // Set up a file provider that will allow the client web 
             // application to find the 51D views embedded in our assembly
             // when it needs them
@@ -72,8 +74,18 @@ namespace FiftyOne.Pipeline.Web
                     typeof(FiftyOneJSViewComponent).GetTypeInfo().Assembly,
                     "FiftyOne.Pipeline.Web"));
             });
+#else
+            // Set up a file provider that will allow the client web 
+            // application to find the 51D views embedded in our assembly
+            // when it needs them
+            var embeddedProvider = new EmbeddedFileProvider(
+                    typeof(FiftyOneJSViewComponent).GetTypeInfo().Assembly,
+                    "FiftyOne.Pipeline.Web");
+            services.AddSingleton<IFileProvider>(embeddedProvider);
+#endif
 
             // Set up our DI mappings
+            services.AddSingleton<HttpClient>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IFlowDataProvider, FlowDataProvider>();
             services.AddSingleton<IClientsidePropertyService,
