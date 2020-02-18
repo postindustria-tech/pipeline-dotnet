@@ -78,10 +78,12 @@ namespace FiftyOne.Pipeline.Web
             // Set up a file provider that will allow the client web 
             // application to find the 51D views embedded in our assembly
             // when it needs them
-            var embeddedProvider = new EmbeddedFileProvider(
-                    typeof(FiftyOneJSViewComponent).GetTypeInfo().Assembly,
-                    "FiftyOne.Pipeline.Web");
-            services.AddSingleton<IFileProvider>(embeddedProvider);
+            services.AddMvc().AddRazorRuntimeCompilation(o =>
+            {
+                o.FileProviders.Add(new EmbeddedFileProvider(
+                    typeof(FiftyOneJSViewComponent).Assembly, 
+                    "FiftyOne.Pipeline.Web"));
+            });
 #endif
 
             // Set up our DI mappings

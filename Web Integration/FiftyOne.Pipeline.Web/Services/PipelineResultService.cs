@@ -59,6 +59,13 @@ namespace FiftyOne.Pipeline.Web.Services
             _evidenceService.AddEvidenceFromRequest(flowData, context.Request);
             // Start processing the data
             flowData.Process();
+            // Remove the existing flow data if there is one.
+            // This will be from a previous request and the evidence may have 
+            // changed so we need to update it.
+            if (context.Items.ContainsKey(Constants.HTTPCONTEXT_FLOWDATA))
+            {
+                context.Items.Remove(Constants.HTTPCONTEXT_FLOWDATA);
+            }
             // Store the FlowData in the HttpContext
             context.Items.Add(Constants.HTTPCONTEXT_FLOWDATA, flowData);
         }

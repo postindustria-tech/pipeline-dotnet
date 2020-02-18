@@ -6,19 +6,19 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
 	
-	<!-- NuGet package properties -->
-	<PackageId>FiftyOne.Pipeline.Web</PackageId>
-	<Title>ASP.NET integration for the 51Degrees Pipeline API</Title>
-	<PackageDescription>
-		The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. 
-		The package contains components that integrate the 51Degrees Pipeline API into ASP.NET and ASP.NET Core web projects.
-	</PackageDescription>
-	<Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
-    <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
-	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
-	<Copyright>51Degrees Mobile Experts Limited</Copyright>
-	<PackageTags>51degrees,pipeline,aggregate,data service,web</PackageTags>
-	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+	  <!-- NuGet package properties -->
+	  <PackageId>FiftyOne.Pipeline.Web</PackageId>
+	  <Title>ASP.NET integration for the 51Degrees Pipeline API</Title>
+	  <PackageDescription>
+		  The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. 
+		  The package contains components that integrate the 51Degrees Pipeline API into ASP.NET and ASP.NET Core web projects.
+	  </PackageDescription>
+	  <Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+      <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
+	  <PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
+	  <Copyright>51Degrees Mobile Experts Limited</Copyright>
+	  <PackageTags>51degrees,pipeline,aggregate,data service,web</PackageTags>
+	  <RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -33,7 +33,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Views\Shared\Components\FiftyOneJS\Default.cshtml" />
   </ItemGroup>
-
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" Version="1.0.0">
@@ -59,6 +58,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines.FiftyOne\FiftyOne.Pipeline.Engines.FiftyOne.csproj" />
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Web.Shared\FiftyOne.Pipeline.Web.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation">
+      <Version>3.1.1</Version>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

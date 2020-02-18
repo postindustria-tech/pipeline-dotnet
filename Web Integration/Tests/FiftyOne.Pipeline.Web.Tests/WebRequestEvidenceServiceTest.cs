@@ -23,10 +23,10 @@
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Web.Services;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.Primitives;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 
@@ -36,6 +36,43 @@ namespace FiftyOne.Pipeline.Web.Tests
     [TestClass]
     public class WebRequestEvidenceServiceTest
     {
+        private class MockCookieCollection : IRequestCookieCollection
+        {
+            private Dictionary<string, string> _dict;
+
+            public MockCookieCollection(Dictionary<string, string> values)
+            {
+                _dict = values;
+            }
+
+            public string this[string key] => _dict[key];
+
+            public int Count => _dict.Count;
+
+            public ICollection<string> Keys => _dict.Keys;
+
+            public bool ContainsKey(string key)
+            {
+                return _dict.ContainsKey(key);
+            }
+
+            public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+            {
+                return _dict.GetEnumerator();
+            }
+
+            public bool TryGetValue(string key, out string value)
+            {
+                return _dict.TryGetValue(key, out value);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return _dict.GetEnumerator();
+            }
+        }
+
+
         private static string expectedValue = "expected";
 
         private static string requiredKey = "requiredkey";
@@ -62,13 +99,12 @@ namespace FiftyOne.Pipeline.Web.Tests
                 { "null", new StringValues((string)null) } };
 
             var headers = new HeaderDictionary(valuesV);
-            var cookies = new RequestCookieCollection(values);
             var query = new QueryCollection(valuesV);
+            var cookies = new MockCookieCollection(values);
 
             request = new Mock<HttpRequest>();
             flowData = new Mock<IFlowData>();
             service = new WebRequestEvidenceService();
-
 
             request.SetupGet(r => r.Headers).Returns(headers);
             request.SetupGet(r => r.Cookies).Returns(cookies);

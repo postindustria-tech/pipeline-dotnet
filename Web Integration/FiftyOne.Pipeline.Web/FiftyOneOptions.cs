@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.Web
         public FiftyOneOptions()
         {
             ClientsidePropertiesEnabled = true;
+            UseAsyncScript = true;
         }
         
         /// <summary>
@@ -45,5 +46,12 @@ namespace FiftyOne.Pipeline.Web
         /// use this to determine a value for a property using more information.
         /// </summary>
         public bool ClientsidePropertiesEnabled { get; set; }
+
+        /// <summary>
+        /// Flag to enable/disable the use of the async attribute for
+        /// the client side script.
+        /// Defaults to true.
+        /// </summary>
+        public bool UseAsyncScript { get; set; }
     }
 }
