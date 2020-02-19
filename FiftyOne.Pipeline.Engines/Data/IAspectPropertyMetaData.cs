@@ -41,5 +41,10 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// Enterprise
         /// </summary>
         IList<string> DataTiersWherePresent { get; }
+
+        /// <summary>
+        /// Full description of the property.
+        /// </summary>
+        string Description { get; }
     }
 }

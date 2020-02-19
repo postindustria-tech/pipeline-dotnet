@@ -70,11 +70,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         bool ShowValues { get; }
 
         /// <summary>
-        /// Full description of the property.
-        /// </summary>
-        string Description { get; }
-
-        /// <summary>
         /// The component which the property belongs to.
         /// </summary>
         IComponentMetaData Component { get; }

@@ -47,6 +47,11 @@ namespace FiftyOne.Pipeline.Engines.Data
         public IList<string> DataTiersWherePresent { get; private set; }
 
         /// <summary>
+        /// Full description of the property.
+        /// </summary>
+        public string Description { get; }
+
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="element">
@@ -71,15 +76,20 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// True if the property is available in the results for the
         /// associated <see cref="IAspectEngine"/>, false otherwise.
         /// </param>
+        /// <param name="description">
+        /// Full description of the property.
+        /// </param>
         public AspectPropertyMetaData(
             IAspectEngine element,
             string name,
             Type type,
             string category,
             IList<string> dataTiersWherePresent,
-            bool available) : base(element, name, type, available, category)
+            bool available,
+            string description = "") : base(element, name, type, available, category)
         {
             DataTiersWherePresent = dataTiersWherePresent;
+            Description = description;
         }
     }
 }
