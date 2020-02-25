@@ -115,6 +115,16 @@ steps:
     clean: true
     msbuildArchitecture: 'x86'
 
+- task: VSBuild@1
+  displayName: 'Build solutions Any CPU'
+  inputs:
+    solution: '$(RestoreBuildProjects)'
+    vsVersion: '15.0'
+    platform: 'Any CPU'
+    configuration: '$(BuildConfiguration)'
+    clean: true
+    msbuildArchitecture: 'x86'
+
 # Index and publish symbol file to allow debugging.
 - task: PublishSymbols@2
   displayName: 'Publish Symbols'
@@ -142,7 +152,7 @@ steps:
     packagesToPack: '**/FiftyOne.Pipeline.Web.nuspec'
     versioningScheme: 'byEnvVar'
     versionEnvVar: 'BUILD_BUILDNUMBER'
-    buildProperties: 'platform=x64;config=$(BuildConfiguration)'
+    buildProperties: 'config=$(BuildConfiguration)'
     
 # The secure file to download will be stored in the 
 # Pipelines/Library/SecureFiles section in Azure DevOps.
