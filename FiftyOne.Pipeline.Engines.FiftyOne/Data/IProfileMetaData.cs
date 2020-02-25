@@ -57,12 +57,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// <returns>Value instance for property and value, or null if doesn't 
         /// exist</returns>
         IValueMetaData GetValue(string propertyName, string valueName);
-
-        /// <summary>
-        /// The number of signatures which define the profile.
-        /// </summary>
-        uint SignatureCount { get; }
-
+        
         /// <summary>
         /// The component which the profile belongs to.
         /// </summary>
