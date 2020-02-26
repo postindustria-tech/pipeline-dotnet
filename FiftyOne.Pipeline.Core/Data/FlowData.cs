@@ -123,8 +123,14 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <summary>
         /// Constructor
         /// </summary>
+        /// <param name="logger">
+        /// The logger to use when events occur. Can be null.
+        /// </param>
         /// <param name="pipeline">
         /// The pipeline that created this FlowData instance.
+        /// </param>
+        /// <param name="evidence">
+        /// The initial evidence.
         /// </param>
         internal FlowData(
             ILogger<FlowData> logger,
@@ -133,10 +139,13 @@ namespace FiftyOne.Pipeline.Core.Data
         {
             _logger = logger;
             PipelineInternal = pipeline;
-            _data = new TypedKeyMap(pipeline.IsConcurrent);
+            _data = new TypedKeyMap(pipeline?.IsConcurrent ?? false);
             _evidence = evidence;
 
-            _logger.LogDebug($"FlowData '{GetHashCode()}' created.");
+            if (_logger != null && _logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug($"FlowData '{GetHashCode()}' created.");
+            }
         }
 
         /// <summary>
@@ -159,7 +168,7 @@ namespace FiftyOne.Pipeline.Core.Data
                 _errors.Add(error);
             }
 
-            if (_logger.IsEnabled(LogLevel.Error))
+            if (_logger != null && _logger.IsEnabled(LogLevel.Error))
             {
                 string logMessage = "Error occurred during processing";
                 if (flowElement != null)

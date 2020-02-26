@@ -11,9 +11,14 @@ Individual engines (For example, device detection) are in separate repositories.
 
 ## Pre-requesites
 
-Visual Studio 2017 or later is recommended. Although Visual Studio Code can be used for working with most of the projects.
+Visual Studio 2019 or later is recommended. Although Visual Studio Code can be used for working with most of the projects.
 
-The Pipeline projects are written in C# and target .NET Standard 2.0.3 and .NET Core 2.1.
+The Pipeline projects are written in C# and target .NET Standard 2.0.3
+The Web integration multi-targets the following:
+    - .NET Core 2.1
+    - .NET Core 3.1
+    - .NET Framework 4.6.1
+Test and example projects target .NET Core 3.1
 
 ## Solutions and projects
 
@@ -34,20 +39,21 @@ The Pipeline projects are written in C# and target .NET Standard 2.0.3 and .NET 
 
 ## Installation
 
-You can either reference the projects in this repository or you can reference the [NuGet][nuget] packages in your project:
+You can either clone this repository and reference the projects locally or you can reference the [NuGet][nuget] packages directly.
 
 ```
-Install-Package FiftyOne.Pipeline.Core -Version 4.1.0
-Install-Package FiftyOne.Pipeline.Engines -Version 4.1.0
-Install-Package FiftyOne.Pipeline.Engines.FiftyOne -Version 4.1.0
-Install-Package FiftyOne.Pipeline.Web -Version 4.1.0
-Install-Package FiftyOne.Pipeline.Web.Minify -Version 4.1.0
-Install-Package FiftyOne.Pipeline.JsonBuilder -Version 4.1.0
-Install-Package FiftyOne.Pipeline.JavaScriptBuilder -Version 4.1.0
-Install-Package FiftyOne.Pipeline.CloudRequestEngine -Version 4.1.0
+Install-Package FiftyOne.Pipeline.Core
+Install-Package FiftyOne.Pipeline.Engines
+Install-Package FiftyOne.Pipeline.Engines.FiftyOne
+Install-Package FiftyOne.Pipeline.Web
+Install-Package FiftyOne.Pipeline.Web.Minify
+Install-Package FiftyOne.Pipeline.JsonBuilder
+Install-Package FiftyOne.Pipeline.JavaScriptBuilder
+Install-Package FiftyOne.Pipeline.CloudRequestEngine
 ```
 
-Make sure to select the latest version from [NuGet.][nuget]
+Note that the packages have dependencies on each other so you'll never need to install all of them individually.
+For example, Installing `FiftyOne.Pipeline.Engines.FiftyOne` will automatically add `FiftyOne.Pipeline.Engines` and `FiftyOne.Pipeline.Core`.
 
 ## Examples
 
@@ -65,7 +71,8 @@ Make sure to select the latest version from [NuGet.][nuget]
   - *SimpleCloudEngine* - Shows how to modify SimpleFlowElement to perform the star sign lookup via a cloud service rather than locally.
 
 - **In FiftyOne.Pipeline.Web.sln**
-  - *Example Website* - Shows how to use the Pipeline ASP.NET Core integration.
+  - *AspNetCore 2.1 Example* - Shows how to use the Pipeline ASP.NET Core 2.1 integration.
+  - *AspNetCore 3.1 Example* - Shows how to use the Pipeline ASP.NET Core 3.1 integration.
   - *Example Website Framework* - Shows how to use the Pipeline ASP.NET integration.
 
 ## Tests
@@ -74,9 +81,10 @@ Make sure to select the latest version from [NuGet.][nuget]
 - **FiftyOne.Pipeline.Core.Tests** - Tests for FlowElement and FlowData base classes.
 - **FiftyOne.Pipeline.Engines.Tests** - Tests for AspectEngines and AspectData base classes.
 - **FiftyOne.Pipeline.Engines.FiftyOne.Tests** - Tests for 51Degrees specific aspect engines.
-- **FiftyOne.Pipeline.Examples.Tests** - Tests for developer examples.
+- **FiftyOne.Pipeline.Examples.Tests** - Tests for developer examples. This will automatically run all the examples and ensure they do not crash.
+- **FiftyOne.Pipeline.Web.Tests** - Tests for web integration functionality.
 
-The tests can be run from within Visual Studio.
+The tests can be run from within Visual Studio or (in most cases) by using the `dotnet` command line tool. 
 
 ## Project documentation
 

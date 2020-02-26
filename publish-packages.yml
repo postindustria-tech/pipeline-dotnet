@@ -9,9 +9,6 @@ variables:
   # using the name/value syntax.
   - name: RestoreBuildProjects
     value: '**/*.sln'
-    # Projects to be run unit tests for
-  - name: TestProjects
-    value: '**/*[Tt]ests/*.csproj'
     # Projects to be published as NuGet packages.
     # Note the the Web and Web.Framework projects are published as a single package
     # using a nuspec file rather than directly from the project files. Hence they 
@@ -94,26 +91,6 @@ steps:
     downloadType: specific
     itemPattern: '**/*'
     downloadPath: '$(build.sourcesdirectory)/'
-
-- task: VSBuild@1
-  displayName: 'Build solutions x64'
-  inputs:
-    solution: '$(RestoreBuildProjects)'
-    vsVersion: '15.0'
-    platform: 'x64'
-    configuration: '$(BuildConfiguration)'
-    clean: true
-    msbuildArchitecture: 'x64'
-
-- task: VSBuild@1
-  displayName: 'Build solutions x86'
-  inputs:
-    solution: '$(RestoreBuildProjects)'
-    vsVersion: '15.0'
-    platform: 'x86'
-    configuration: '$(BuildConfiguration)'
-    clean: true
-    msbuildArchitecture: 'x86'
 
 - task: VSBuild@1
   displayName: 'Build solutions Any CPU'

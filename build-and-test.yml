@@ -7,23 +7,13 @@ trigger: none
 strategy:
   maxParallel: 4
   matrix:
-    debug x86:
+    debug:
       BuildConfiguration: Debug
-      BuildPlatform: x86
-    release x86:
+    release:
       BuildConfiguration: Release 
-      BuildPlatform: x86
-    debug x64:
-      BuildConfiguration: Debug
-      BuildPlatform: x64
-    release x64:
-      BuildConfiguration: Release  
-      BuildPlatform: x64      
 
 variables: 
   RestoreBuildProjects: '**/*.sln'
-    # Projects to be run unit tests for
-  TestProjects: '**/*[Tt]ests/*.csproj'
 
 steps:
 # Get the data files that are required for device detection automated system tests.
@@ -58,10 +48,9 @@ steps:
   inputs:
     solution: '$(RestoreBuildProjects)'
     vsVersion: '15.0'
-    platform: '$(BuildPlatform)'
+    platform: 'Any CPU'
     configuration: '$(BuildConfiguration)'
     clean: true
-    msbuildArchitecture: '$(BuildPlatform)'
     
 - task: VisualStudioTestPlatformInstaller@1
   displayName: 'Visual Studio Test Platform Installer'
@@ -73,36 +62,32 @@ steps:
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: |
-      **\$(BuildPlatform)\*\*test*Framework.dll
+      **\*test*Framework.dll
       !**\*TestAdapter*.dll
       !**\*TestFramework*.dll
-      !**\*DeviceDetection*.Tests.dll
       !**\obj\**
     searchFolder: '$(System.DefaultWorkingDirectory)'
     codeCoverageEnabled: true
-    otherConsoleOptions: '/Framework:Framework45 /Platform:$(BuildPlatform) /logger:console;verbosity="normal"'
-    platform: '$(BuildPlatform)'
+    otherConsoleOptions: '/Framework:Framework45 /logger:console;verbosity="normal"'
     configuration: '$(BuildConfiguration)'
     diagnosticsEnabled: true
-    testRunTitle: 'framework-$(BuildConfiguration)-$(BuildPlatform)'
+    testRunTitle: 'framework-$(BuildConfiguration)'
     
 - task: VSTest@2
   displayName: 'VsTest - testAssemblies - dotnet core'
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: |
-      **\$(BuildPlatform)\*\netcoreapp*\*Tests*.dll
+      **\netcoreapp*\*Tests*.dll
       !**\*TestAdapter*.dll
       !**\*TestFramework*.dll
-      !**\*DeviceDetection*.Tests.dll
       !**\obj\**
     searchFolder: '$(System.DefaultWorkingDirectory)'
     codeCoverageEnabled: true
-    otherConsoleOptions: '/Framework:.NETCoreApp,Version=v3.1 /Platform:$(BuildPlatform) /logger:console;verbosity="normal"'
-    platform: '$(BuildPlatform)'
+    otherConsoleOptions: '/Framework:.NETCoreApp,Version=v3.1 /logger:console;verbosity="normal"'
     configuration: '$(BuildConfiguration)'
     diagnosticsEnabled: true
-    testRunTitle: 'dotnetcore-$(BuildConfiguration)-$(BuildPlatform)'
+    testRunTitle: 'dotnetcore-$(BuildConfiguration)'
   
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact' 

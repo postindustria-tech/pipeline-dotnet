@@ -724,6 +724,19 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             Assert.AreEqual(4, _flowData.GetWhere(i => true).Count());
         }
 
+        /// <summary>
+        /// Check that a FlowData instance can be created with null constructor
+        /// parameters.
+        /// This is required to reduce the complexity of unit tests that rely on
+        /// functionality from <see cref="FlowData"/>.
+        /// </summary>
+        [TestMethod]
+        public void FlowData_CreateWithNullPipeline()
+        {
+            _flowData = new FlowData(null, null, null);
+            Assert.IsNotNull(_flowData);
+        }
+
         #endregion
 
     }
