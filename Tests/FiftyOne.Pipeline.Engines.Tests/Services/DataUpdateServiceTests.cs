@@ -33,6 +33,8 @@ using System.Text;
 using System.Threading;
 using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.Engines.Data;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FiftyOne.Pipeline.Engines.Tests.Services
 {
@@ -363,9 +365,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Configure a ManualResetEvent to be set when processing
                 // is complete.
                 ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+                List<DataUpdateCompleteArgs> completeEventArgs = new List<DataUpdateCompleteArgs>();
                 _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
                 {
                     completeFlag.Set();
+                    completeEventArgs.Add(e);
                 };
 
                 // Act
@@ -380,6 +384,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                     "event was never fired");
                 engine.Verify(e => e.RefreshData(config.Identifier), Times.Once());
+                // FileSystemWatcher often fires multiple events for a single file.
+                // As long as the update was successful once, the test is passed.
+                Assert.IsTrue(completeEventArgs.Any(e => e.Status == AutoUpdateStatus.AUTO_UPDATE_SUCCESS));
             }
             finally
             {
@@ -471,9 +478,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Configure a ManualResetEvent to be set when processing
             // is complete.
             ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
                 completeFlag.Set();
+                completeEventArgs = e;
             };
 
             // Act
@@ -490,6 +499,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // set up the initial timer.
             _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
                 It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Once());
+            Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED, completeEventArgs.Status);
         }        
 
         /// <summary>
@@ -519,9 +529,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Configure a ManualResetEvent to be set when processing
             // is complete.
             ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
                 completeFlag.Set();
+                completeEventArgs = e;
             };
 
             // Act
@@ -538,6 +550,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // initial timer and again after the update was complete.
             _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
                 It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Exactly(2));
+            Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_SUCCESS, completeEventArgs.Status);
         }
 
         /// <summary>
@@ -575,9 +588,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Configure a ManualResetEvent to be set when processing
             // is complete.
             ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
                 completeFlag.Set();
+                completeEventArgs = e;
             };
 
             // Act
@@ -591,6 +606,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             _httpHandler.Verify(h => h.Send(It.IsAny<HttpRequestMessage>()), Times.Once());
             // Make sure engine was not refreshed
             engine.Verify(e => e.RefreshData(config.Identifier), Times.Never());
+            Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED, completeEventArgs.Status);
         }
 
         /// <summary>
@@ -636,9 +652,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Configure a ManualResetEvent to be set when processing
             // is complete.
             ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
                 completeFlag.Set();
+                completeEventArgs = e;
             };
 
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
@@ -681,6 +699,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // applied to the engine.
                 _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(), 
                     It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Exactly(2));
+                Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_SUCCESS, completeEventArgs.Status);
             }
             finally
             {
@@ -729,9 +748,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Configure a ManualResetEvent to be set when processing
             // is complete.
             ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
                 completeFlag.Set();
+                completeEventArgs = e;
             };
 
             // The invalid MD5 will cause an error to be logged so we want
@@ -776,6 +797,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // rather than creating a new one with new data.
                 _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
                     It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Once());
+                Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_ERR_MD5_VALIDATION_FAILED, completeEventArgs.Status);
             }
             finally
             {
@@ -814,9 +836,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Configure a ManualResetEvent to be set when processing
             // is complete.
             ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
                 completeFlag.Set();
+                completeEventArgs = e;
             };
 
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
@@ -865,6 +889,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // ignored in cleanup and verify its presence.
                 _ignoreErrors = 1;
                 Assert.AreEqual(1, _logger.ErrorsLogged.Count);
+                Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR, completeEventArgs.Status);
             }
             finally
             {
@@ -911,9 +936,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Configure a ManualResetEvent to be set when processing
                 // is complete.
                 ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+                DataUpdateCompleteArgs completeEventArgs = null;
                 _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
                 {
                     completeFlag.Set();
+                    completeEventArgs = e;
                 };
 
                 // Act
@@ -931,6 +958,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // set up the initial timer.
                 _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
                     It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Once());
+                Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED, completeEventArgs.Status);
             }
             finally
             {
@@ -961,7 +989,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             ConfigureFileNoUpdate(engine, file);
 
             // Act
-            _dataUpdate.CheckForUpdate(engine.Object);
+            var result = _dataUpdate.CheckForUpdate(engine.Object);
 
             // Assert
             // Make sure that refresh is not called on the engine.
@@ -970,6 +998,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // set up a new timer.
             _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
                 It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Never());
+            Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED, result);
         }
 
         /// <summary>
@@ -995,7 +1024,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             ConfigureFileUpdate(engine, file);
 
             // Act
-            _dataUpdate.CheckForUpdate(engine.Object);
+            var result = _dataUpdate.CheckForUpdate(engine.Object);
 
             // Assert
             // Make sure that refresh is called on the engine.
@@ -1004,6 +1033,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // set up a new timer.
             _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
                 It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Never());
+            Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_SUCCESS, result);
         }
         
         /// <summary>
@@ -1028,13 +1058,15 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 Engine = engine.Object,
                 Configuration = config
             };
+            engine.Setup(e => e.GetDataFileMetaData(It.IsAny<string>())).Returns(file);
 
             // Act
-            _dataUpdate.CheckForUpdate(engine.Object);
+            var result = _dataUpdate.CheckForUpdate(engine.Object);
 
             // Assert
             // Make sure that refresh is not called on the engine.
             engine.Verify(e => e.RefreshData(config.Identifier), Times.Never());
+            Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED, result);
         }
 
         /// <summary>
@@ -1089,9 +1121,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Configure a ManualResetEvent to be set when processing
             // is complete.
             ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
                 completeFlag.Set();
+                completeEventArgs = e;
             };
 
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
@@ -1154,6 +1188,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // locations.
                 Assert.IsTrue(File.Exists(file.DataFilePath), "Data file does not exist after test");
                 Assert.IsTrue(File.Exists(file.TempDataFilePath), "Temp data file does not exist after test");
+                Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_SUCCESS, completeEventArgs.Status);
             }
             finally
             {
@@ -1202,9 +1237,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Configure a ManualResetEvent to be set when processing
             // is complete.
             ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
                 completeFlag.Set();
+                completeEventArgs = e;
             };            
 
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
@@ -1272,7 +1309,10 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // The timer factory should have been called once.
             _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
                 It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Once());
+            Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_SUCCESS, completeEventArgs.Status);
         }
+
+
 
         /// <summary>
         /// Check that unregistering a data file works without exception.

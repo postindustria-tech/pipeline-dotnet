@@ -62,7 +62,7 @@ steps:
   inputs:
     testSelector: 'testAssemblies'
     testAssemblyVer2: |
-      **\*test*Framework.dll
+      **\net4*\*Tests*.dll
       !**\*TestAdapter*.dll
       !**\*TestFramework*.dll
       !**\obj\**

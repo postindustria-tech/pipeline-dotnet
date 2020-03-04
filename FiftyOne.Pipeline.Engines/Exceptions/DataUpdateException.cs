@@ -33,6 +33,8 @@ namespace FiftyOne.Pipeline.Engines.Exceptions
     /// </summary>
     public class DataUpdateException : Exception
     {
+        public AutoUpdateStatus Status { get; private set; } = AutoUpdateStatus.UNSPECIFIED;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -63,5 +65,43 @@ namespace FiftyOne.Pipeline.Engines.Exceptions
             Exception innerException) :
             base(message, innerException)
         { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="message">
+        /// The exception message
+        /// </param>
+        /// <param name="status">
+        /// The <see cref="AutoUpdateStatus"/> associated with this exception.
+        /// </param>
+        public DataUpdateException(
+            string message,
+            AutoUpdateStatus status) :
+            base(message)
+        {
+            Status = status;
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="message">
+        /// The exception message
+        /// </param>
+        /// <param name="innerException">
+        /// The inner exception that triggered this exception.
+        /// </param>
+        /// <param name="status">
+        /// The <see cref="AutoUpdateStatus"/> associated with this exception.
+        /// </param>
+        public DataUpdateException(
+            string message,
+            Exception innerException,
+            AutoUpdateStatus status) :
+            base(message, innerException)
+        {
+            Status = status;
+        }
     }
 }

@@ -72,6 +72,10 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// The event handler fired when a call to CheckForUpdate is completed.
 		/// </summary>
 		public event EventHandler<DataUpdateCompleteArgs> CheckForUpdateComplete;
+		/// <summary>
+		/// The event handler fired when a call to CheckForUpdate is started.
+		/// </summary>
+		public event EventHandler<DataUpdateEventArgs> CheckForUpdateStarted;
 		#endregion
 
 		/// <summary>
@@ -180,7 +184,7 @@ namespace FiftyOne.Pipeline.Engines.Services
                         throw new DataUpdateException($"Update on startup " +
                             $"failed for {dataFile.Identifier} with status " +
                             $"{Enum.GetName(typeof(AutoUpdateStatus), result)}. " +
-                            $"See log for details.");
+                            $"See log for details.", result);
                     }
 				}
 				else
@@ -315,7 +319,7 @@ namespace FiftyOne.Pipeline.Engines.Services
                 }
                 catch (Exception ex)
                 {
-                    throw new DataUpdateException($"An error occurred when writing to " +
+                    _logger.LogWarning($"An error occurred when writing to " +
                         $"'{dataFile.DataFilePath}'. The engine will be updated " +
                         $"to use the new data but the file on disk will still " +
                         $"contain old data.", ex);
@@ -334,7 +338,7 @@ namespace FiftyOne.Pipeline.Engines.Services
                 {
                     result = AutoUpdateStatus.AUTO_UPDATE_REFRESH_FAILED;
                     throw new DataUpdateException($"An error occurred when applying a " +
-                        $"data update to engine '{dataFile.Engine.GetType().Name}'.", ex);
+                        $"data update to engine '{dataFile.Engine.GetType().Name}'.", ex, result);
                 }
             }
             else
@@ -367,6 +371,15 @@ namespace FiftyOne.Pipeline.Engines.Services
 		private void OnUpdateComplete(DataUpdateCompleteArgs args)
 		{
 			CheckForUpdateComplete?.Invoke(this, args);
+		}
+
+		/// <summary>
+		/// Called when the 'CheckForUpdate' method is started.
+		/// </summary>
+		/// <param name="args"></param>
+		private void OnUpdateStarted(DataUpdateEventArgs args)
+		{
+			CheckForUpdateStarted?.Invoke(this, args);
 		}
 
 		/// <summary>
@@ -403,6 +416,11 @@ namespace FiftyOne.Pipeline.Engines.Services
 				dataFile = null;
 			}
 
+			OnUpdateStarted(new DataUpdateEventArgs()
+			{
+				DataFile = dataFile
+			});
+
 			if (dataFile != null)
 			{
 				// Get the creation time of the new data file
@@ -432,17 +450,21 @@ namespace FiftyOne.Pipeline.Engines.Services
 								catch { }
 
 								// Complete the update
-								status = UpdatedFileAvailable(dataFile);
+								status = UpdatedDataAvailable(dataFile);
 							}
 						}
 					}
+				}
+				else
+				{
+					status = AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED;
 				}
 			}
 
 			OnUpdateComplete(new DataUpdateCompleteArgs()
 			{
 				DataFile = dataFile,
-				UpdateApplied = status == AutoUpdateStatus.AUTO_UPDATE_SUCCESS
+				Status = status
 			});
 		}
 
@@ -491,86 +513,107 @@ namespace FiftyOne.Pipeline.Engines.Services
             AspectEngineDataFile dataFile = state as AspectEngineDataFile;
             bool newDataAvailable = false;
 
-            try
-            {
-                if (dataFile != null)
-                {
-                    LogInfoMessage("Checking for update", dataFile);
+			OnUpdateStarted(new DataUpdateEventArgs()
+			{
+				DataFile = dataFile
+			});
 
-                    // Only check the file system if the file system watcher
-                    // is not enabled and the engine is using a temporary file.
-                    if (dataFile.Configuration.FileSystemWatcherEnabled == false &&
-                        string.IsNullOrEmpty(dataFile.DataFilePath) == false &&
-                        string.IsNullOrEmpty(dataFile.TempDataFilePath) == false)
-                    {
-                        LogInfoMessage("Checking file system", dataFile);
+			try
+			{
+				if (dataFile != null)
+				{
+					LogInfoMessage("Checking for update", dataFile);
 
-                        var fileCreateTime = _fileSystem.File.GetCreationTimeUtc(
-                            dataFile.DataFilePath);
-                        var tempFileCreateTime = _fileSystem.File.GetCreationTimeUtc(
-                            dataFile.TempDataFilePath);
+					// Only check the file system if the file system watcher
+					// is not enabled and the engine is using a temporary file.
+					if (dataFile.Configuration.FileSystemWatcherEnabled == false &&
+						string.IsNullOrEmpty(dataFile.DataFilePath) == false &&
+						string.IsNullOrEmpty(dataFile.TempDataFilePath) == false)
+					{
+						LogInfoMessage("Checking file system", dataFile);
 
-                        // If the data file is newer than the temp file currently
-                        // being used by the engine the we need to tell the engine
-                        // to refresh itself.
-                        if (fileCreateTime > tempFileCreateTime)
-                        {
-                            newDataAvailable = true;
-                        }
-                    }
+						var fileCreateTime = _fileSystem.File.GetCreationTimeUtc(
+							dataFile.DataFilePath);
+						var tempFileCreateTime = _fileSystem.File.GetCreationTimeUtc(
+							dataFile.TempDataFilePath);
 
-                    if (newDataAvailable == false &&
-                        string.IsNullOrEmpty(dataFile.Configuration.DataUpdateUrl) == false)
-                    {
-                        result = CheckForUpdateFromUrl(dataFile);
-                        newDataAvailable =
-                            result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS ||
-                            result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
-                    }
+						// If the data file is newer than the temp file currently
+						// being used by the engine the we need to tell the engine
+						// to refresh itself.
+						if (fileCreateTime > tempFileCreateTime)
+						{
+							newDataAvailable = true;
+						}
+					}
 
-                    if (newDataAvailable &&
-                        result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
-                    {
-                        // Data update was available but engine has not 
-                        // yet been refreshed.
-                        result = UpdatedFileAvailable(dataFile);
-                    }
+					if (newDataAvailable == false &&
+						string.IsNullOrEmpty(dataFile.Configuration.DataUpdateUrl) == false)
+					{
+						result = CheckForUpdateFromUrl(dataFile);
+						newDataAvailable =
+							result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS ||
+							result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
+					}
 
-                    if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS ||
-                        result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
-                    {
-                        // Re-register the engine with the data update service 
-                        // so it knows when next set of data should be available.
-                        RegisterDataFile(dataFile);
-                        result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
-                    }
-                }
-            }
-            finally
-            {
-                if (newDataAvailable == false)
-                {
-                    // No update available.
-                    // If this was a manual call to update then do nothing.
-                    // If it was triggered by the timer expiring then modify
-                    // the timer to check again after the configured interval.
-                    // This will repeat until the update is acquired.
-                    if (manualUpdate == false &&
-                        dataFile != null &&
-                        dataFile.Timer != null)
-                    {
-                        dataFile.Timer.Change(
-                            GetInterval(dataFile.Configuration),
-                            TimeSpan.FromMilliseconds(-1));
-                    }
-                }
+					if (newDataAvailable == false)
+					{
+						result = AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED;
+					}
+					else if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
+					{
+						// Data update was available but engine has not 
+						// yet been refreshed.
+						result = UpdatedDataAvailable(dataFile);
+					}
 
-                OnUpdateComplete(new DataUpdateCompleteArgs()
-                {
-                    DataFile = dataFile,
-                    UpdateApplied = result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS
-                });
-            }
+					if (result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
+					{
+						// Clear the timer ready for a new one to be created.
+						ClearTimer(dataFile);
+						// Re-register the engine with the data update service 
+						// so it knows when next set of data should be available.
+						RegisterDataFile(dataFile);
+					}
+				}
+			}
+			// Catch exceptions to make sure that status is set correctly 
+			// when firing the UpdateComplete event, then rethrow them
+			// so that the caller has visibility of the exception.
+			catch (DataUpdateException dex)
+			{
+				result = dex.Status;
+				throw;
+			}
+			catch (Exception)
+			{
+				result = AutoUpdateStatus.AUTO_UPDATE_UNKNOWN_ERROR;
+				throw;
+			}
+			finally
+			{
+				if (newDataAvailable == false)
+				{
+					// No update available.
+					// If this was a manual call to update then do nothing.
+					// If it was triggered by the timer expiring then modify
+					// the timer to check again after the configured interval.
+					// This will repeat until the update is acquired.
+					if (manualUpdate == false &&
+						dataFile != null &&
+						dataFile.Timer != null)
+					{
+						dataFile.Timer.Change(
+							GetInterval(dataFile.Configuration),
+							TimeSpan.FromMilliseconds(-1));
+					}
+				}
+
+				OnUpdateComplete(new DataUpdateCompleteArgs()
+				{
+					DataFile = dataFile,
+					Status = result
+				});
+			}
 
             return result;
         }
@@ -601,30 +644,37 @@ namespace FiftyOne.Pipeline.Engines.Services
 					result = CheckForUpdateFromUrl(dataFile,
 						compressedStream,
 						uncompressedStream);
-					result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
-
-                    if (dataFile.Engine != null)
+					if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
 					{
-						try
+						if (dataFile.Engine != null)
 						{
-                            // Tell the engine to refresh itself with
-                            // the new data.
-                            dataFile.Engine.RefreshData(dataFile.Identifier, uncompressedStream);
+							try
+							{
+								LogInfoMessage($"Attempting to refresh engine with new data", dataFile);
+								// Tell the engine to refresh itself with
+								// the new data.
+								dataFile.Engine.RefreshData(dataFile.Identifier, uncompressedStream);
+								result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
+							}
+							catch (Exception ex)
+							{
+								result = AutoUpdateStatus.AUTO_UPDATE_REFRESH_FAILED;
+								throw new DataUpdateException($"An error occurred when applying a " +
+										$"data update to engine '{dataFile.Engine.GetType().Name}'.", ex, result);
+							}
+							finally
+							{
+								uncompressedStream.Dispose();
+							}
 						}
-						catch (Exception ex)
+						else
 						{
-							result = AutoUpdateStatus.AUTO_UPDATE_REFRESH_FAILED;
-                            throw new DataUpdateException($"An error occurred when applying a " +
-									$"data update to engine '{dataFile.Engine.GetType().Name}'.", ex);
+							// No associated engine at the moment so just set 
+							// the value of the data stream.
+							dataFile.Configuration.DataStream = uncompressedStream;
+							result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
 						}
-                        uncompressedStream.Dispose();
 					}
-					else
-					{
-                        // No associated engine at the moment so just set 
-                        // the value of the data stream.
-                        dataFile.Configuration.DataStream = uncompressedStream;
-                    }
 				}
 			}
 			else
@@ -633,7 +683,8 @@ namespace FiftyOne.Pipeline.Engines.Services
                 {
                     throw new DataUpdateException($"The data file " +
                         $"'{dataFile.Identifier}' is checking for updates but " +
-                        $"does not have a temporary file path configured."); 
+                        $"does not have a temporary file path configured.", 
+						AutoUpdateStatus.AUTO_UPDATE_TEMP_PATH_NOT_SET); 
                 }
 
                 // There is a data file path so use the temporary
@@ -680,7 +731,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 							result = AutoUpdateStatus.AUTO_UPDATE_NEW_FILE_CANT_RENAME;
                             throw new DataUpdateException($"An error occurred when copying a " +
 								$"data file to replace the existing one at " +
-								$"'{dataFile.DataFilePath}'.", ex);
+								$"'{dataFile.DataFilePath}'.", ex, result);
 						}
 						finally
 						{
@@ -779,7 +830,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// </summary>
 		/// <param name="dataFile"></param>
 		/// <returns></returns>
-		private AutoUpdateStatus UpdatedFileAvailable(
+		private AutoUpdateStatus UpdatedDataAvailable(
 			AspectEngineDataFile dataFile)
 		{
 			AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
@@ -813,10 +864,24 @@ namespace FiftyOne.Pipeline.Engines.Services
 				{
                     throw new DataUpdateException($"An error occurred when applying a " +
 							$"data update to engine '{dataFile.Engine.GetType().Name}' " +
-							$"after {tries} tries.", exception);
+							$"after {tries} tries.", exception, result);
 				}
 			}
+			else
+			{
+				// Engine not yet set so no need to refresh it.
+				// We can consider the update a success.
+				result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
+			}
 
+			return result;
+		}
+
+		/// <summary>
+		/// Clear the timer ready for a new one to be created.
+		/// </summary>
+		private void ClearTimer(AspectEngineDataFile dataFile)
+		{
 			if (dataFile != null &&
 				dataFile.Timer != null)
 			{
@@ -824,8 +889,6 @@ namespace FiftyOne.Pipeline.Engines.Services
 				dataFile.Timer.Dispose();
 				dataFile.Timer = null;
 			}
-
-			return result;
 		}
 
 		/// <summary>
@@ -890,7 +953,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			{
 				result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
                 throw new DataUpdateException($"Error accessing data update service at " +
-					$"'{url}' for engine '{dataFile.EngineType?.Name}'", ex);
+					$"'{url}' for engine '{dataFile.EngineType?.Name}'", ex, result);
 			}
 
 			if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
@@ -899,7 +962,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 				{
 					result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
                     throw new DataUpdateException($"No response from data update service at " +
-						$"'{url}' for engine '{dataFile.EngineType?.Name}'");
+						$"'{url}' for engine '{dataFile.EngineType?.Name}'", result);
 				}
 				else
 				{
@@ -940,7 +1003,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 								result = AutoUpdateStatus.
 									AUTO_UPDATE_ERR_429_TOO_MANY_ATTEMPTS;
                                 throw new DataUpdateException($"Too many requests to " +
-									$"'{url}' for engine '{dataFile.EngineType?.Name}'");
+									$"'{url}' for engine '{dataFile.EngineType?.Name}'", result);
 							case HttpStatusCode.NotModified:
 								result = AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED;
                                 _logger.LogInformation($"No data newer than " +
@@ -950,12 +1013,12 @@ namespace FiftyOne.Pipeline.Engines.Services
 							case HttpStatusCode.Forbidden:
 								result = AutoUpdateStatus.AUTO_UPDATE_ERR_403_FORBIDDEN;
                                 throw new DataUpdateException($"Access denied to data update service at " +
-									$"'{url}' for engine '{dataFile.EngineType?.Name}'");
+									$"'{url}' for engine '{dataFile.EngineType?.Name}'", result);
                             default:
 								result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
                                 throw new DataUpdateException($"HTTP status code '{response.StatusCode}' " +
 									$"from data update service at " +
-									$"'{url}' for engine '{dataFile.EngineType?.Name}'"); ;
+									$"'{url}' for engine '{dataFile.EngineType?.Name}'", result); ;
 						}
 					}
 				}
@@ -1020,7 +1083,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 					$"Integrity check failed. MD5 hash in HTTP response " +
 					$"'{serverHash}' for '{dataFile.EngineType?.Name}'" +
                     $"data update does not match calculated hash for the " +
-					$"downloaded file '{downloadHash}'.");
+					$"downloaded file '{downloadHash}'.", status);
 			} 
 			return status;
 		}

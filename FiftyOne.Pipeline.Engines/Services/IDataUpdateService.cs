@@ -83,18 +83,35 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// </exception>
         AutoUpdateStatus UpdateFromMemory(AspectEngineDataFile dataFile, 
             MemoryStream data);
+
+        /// <summary>
+        /// The event handler fired when a call to CheckForUpdate is completed.
+        /// </summary>
+        event EventHandler<DataUpdateCompleteArgs> CheckForUpdateComplete;
+
+        /// <summary>
+        /// The event handler fired when a call to CheckForUpdate is started.
+        /// </summary>
+        event EventHandler<DataUpdateEventArgs> CheckForUpdateStarted;
     }
 
 
-    public class DataUpdateCompleteArgs : EventArgs
+    public class DataUpdateEventArgs : EventArgs
     {
-        public bool UpdateApplied { get; set; }
         public AspectEngineDataFile DataFile { get; set; }
+    }
+    public class DataUpdateCompleteArgs : DataUpdateEventArgs
+    {
+        public AutoUpdateStatus Status { get; set; }
     }
 
 
     public enum AutoUpdateStatus
     {
+        /// <summary>
+        /// Status has not been set.
+        /// </summary>
+        UNSPECIFIED,
         /// <summary>
         /// Update completed successfully. 
         /// </summary>
@@ -144,6 +161,10 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// identifier.
         /// </summary>
         AUTO_UPDATE_NO_CONFIGURATION,
+        /// <summary>
+        /// A temporary file path was required but has not been set.
+        /// </summary>
+        AUTO_UPDATE_TEMP_PATH_NOT_SET,
         /// <summary>
         /// There was an error while checking for an update that was not
         /// anticipated by the developers of this service.
