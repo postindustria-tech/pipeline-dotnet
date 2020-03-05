@@ -27,6 +27,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using FiftyOne.Pipeline.Core.Data;
+using Newtonsoft.Json;
+using System.Linq;
 
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
@@ -36,15 +38,22 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
     public class JsonBuilderElementBuilder
     {
         private ILoggerFactory _loggerFactory;
+        private IEnumerable<JsonConverter> _jsonConverters = Enumerable.Empty<JsonConverter>();
 
         public JsonBuilderElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
         }
 
+            public JsonBuilderElementBuilder(ILoggerFactory loggerFactory, IEnumerable<JsonConverter> jsonConverters)
+        {
+            _loggerFactory = loggerFactory;
+            _jsonConverters = jsonConverters;
+        }
+
         public IJsonBuilderElement Build()
         {
-            return new JsonBuilderElement(_loggerFactory.CreateLogger<JsonBuilderElement>(), CreateData);
+            return new JsonBuilderElement(_loggerFactory.CreateLogger<JsonBuilderElement>(), _jsonConverters, CreateData);
         }
 
         private IJsonBuilderElementData CreateData(

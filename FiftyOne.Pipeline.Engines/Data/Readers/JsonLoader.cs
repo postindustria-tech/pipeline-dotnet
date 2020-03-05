@@ -50,14 +50,11 @@ namespace FiftyOne.Pipeline.Engines.Data.Readers
             }
         }
         
-        public T LoadData(byte[] data)
+        public T LoadData(Stream data)
         {
-            using (MemoryStream stream = new MemoryStream(data))
+            using (StreamReader reader = new StreamReader(data))
             {
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    return LoadData(reader);
-                }
+                return LoadData(reader);
             }
         }
     }

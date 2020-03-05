@@ -61,6 +61,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
         public JsonBuilderElement(
             ILogger<JsonBuilderElement> logger,
+            IEnumerable<JsonConverter> jsonConverters,
             Func<IPipeline, FlowElementBase<IJsonBuilderElementData, IElementPropertyMetaData>,
                 IJsonBuilderElementData> elementDataFactory)
             : base(logger, elementDataFactory)
@@ -77,6 +78,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
             // Blacklist of properties which should not be added to the Json.
             _blacklist = new List<string>() { "products","properties" };
+
+            JSON_CONVERTERS = JSON_CONVERTERS.Concat(jsonConverters).ToArray();
         }
 
         public override string ElementDataKey => "json-builder";

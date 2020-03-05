@@ -20,6 +20,8 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using System.IO;
+
 namespace FiftyOne.Pipeline.Engines.Data.Readers
 {
     /// <summary>
@@ -36,10 +38,10 @@ namespace FiftyOne.Pipeline.Engines.Data.Readers
         T LoadData(string filePath);
 
         /// <summary>
-        /// Load a new instance of T using the binary data provided.
+        /// Load a new instance of T using the data stream provided.
         /// </summary>
         /// <param name="data">Data to load from</param>
         /// <returns></returns>
-        T LoadData(byte[] data);
+        T LoadData(Stream data);
     }
 }
