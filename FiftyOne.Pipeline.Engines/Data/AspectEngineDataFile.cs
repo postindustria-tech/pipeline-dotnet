@@ -137,7 +137,7 @@ namespace FiftyOne.Pipeline.Engines.Data
         internal Timer Timer { get; set; }
         internal FileSystemWatcher FileWatcher { get; set; }
         internal object UpdateSyncLock { get; } = new object();
-        internal DateTime LastUpdateFileCreateTime { get; set; }
+        internal DateTime LastUpdateFileModifiedTime { get; set; }
 
         /// <summary>
         /// Get the data update URL complete with any query string 

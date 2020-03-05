@@ -52,6 +52,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
         private int _ignoreWranings = 0;
         private int _ignoreErrors = 0;
+        private const int TEST_TIMEOUT_MS = 2000;
 
         private DataUpdateService _dataUpdate;
 
@@ -360,8 +361,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 };
                 engine.Setup(e => e.GetDataFileMetaData(It.IsAny<string>())).Returns(file);
 
-                _fileWrapper.Setup(w => w.GetCreationTimeUtc(It.IsAny<string>()))
-                    .Returns((string tempFile) => { return File.GetCreationTimeUtc(tempFile); });
+                _fileWrapper.Setup(w => w.GetLastWriteTimeUtc(It.IsAny<string>()))
+                    .Returns((string tempFile) => { return File.GetLastWriteTimeUtc(tempFile); });
                 // Configure a ManualResetEvent to be set when processing
                 // is complete.
                 ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
@@ -378,7 +379,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 File.WriteAllText(temp2, "Testing");
                 File.Copy(temp2, tempData, true);
                 // Wait until processing is complete.
-                completeFlag.Wait(1000);
+                completeFlag.Wait(TEST_TIMEOUT_MS);
 
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -439,7 +440,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         //        }
         //        File.Copy(temp2, tempData, true);
         //        // Wait until processing is complete.
-        //        completeFlag.Wait(1000);
+        //        completeFlag.Wait(TEST_TIMEOUT_MS);
 
         //        // Assert
         //        Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -488,7 +489,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Act
             _dataUpdate.RegisterDataFile(file);
             // Wait until processing is complete.
-            completeFlag.Wait(1000);
+            completeFlag.Wait(TEST_TIMEOUT_MS);
 
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -539,7 +540,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Act
             _dataUpdate.RegisterDataFile(file);
             // Wait until processing is complete.
-            completeFlag.Wait(1000);
+            completeFlag.Wait(TEST_TIMEOUT_MS);
 
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -598,7 +599,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Act
             _dataUpdate.RegisterDataFile(file);
             // Wait until processing is complete.
-            completeFlag.Wait(1000);
+            completeFlag.Wait(TEST_TIMEOUT_MS);
 
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -686,7 +687,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Act
                 _dataUpdate.RegisterDataFile(file);
                 // Wait until processing is complete.
-                completeFlag.Wait(1000);
+                completeFlag.Wait(TEST_TIMEOUT_MS);
 
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -784,7 +785,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Act
                 _dataUpdate.RegisterDataFile(file);
                 // Wait until processing is complete.
-                completeFlag.Wait(1000);
+                completeFlag.Wait(TEST_TIMEOUT_MS);
 
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -871,7 +872,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Act
                 _dataUpdate.RegisterDataFile(file);
                 // Wait until processing is complete.
-                completeFlag.Wait(1000);
+                completeFlag.Wait(TEST_TIMEOUT_MS);
 
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -946,7 +947,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Act
                 _dataUpdate.RegisterDataFile(file);
                 // Wait until processing is complete.
-                completeFlag.Wait(1000);
+                completeFlag.Wait(TEST_TIMEOUT_MS);
 
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -1165,7 +1166,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Act
                 _dataUpdate.RegisterDataFile(file);
                 // Wait until processing is complete.
-                completeFlag.Wait(1000);
+                completeFlag.Wait(TEST_TIMEOUT_MS);
 
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -1284,7 +1285,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Act
             _dataUpdate.RegisterDataFile(file);
             // Wait until processing is complete.
-            completeFlag.Wait(1000);
+            completeFlag.Wait(TEST_TIMEOUT_MS);
 
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -1313,6 +1314,96 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         }
 
 
+        /// <summary>
+        /// Configure the engine to update on startup.
+        /// The update service will find that an update is not required.
+        /// In this scenario, confirm that the timer is configured so that
+        /// the service will check again in the future.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(true, false)]
+        [DataRow(false, false)]
+        [DataRow(true, true)]
+        [DataRow(false, true)]
+        public void DataUpdateService_Register_UpdateOnStartup_NotNeeded(
+            bool engineSetNull,
+            bool autoUpdateEnabled)
+        {
+            // Arrange
+            // For this test we want to use the real FileWrapper to allow
+            // the test to perform file system read/write operations.
+            IFileSystem fileSystem = ConfigureRealFileSystem();
+            // Configure the timer to execute as normal
+            ConfigureTimerAccurateCallback();
+            // Configure the HTTP client to return a 'NOT_MODIFIED' status
+            ConfigureHttpNoUpdateAvailable();
+
+            // Configure a ManualResetEvent to be set when processing
+            // is complete.
+            ManualResetEventSlim completeFlag = new ManualResetEventSlim(false);
+            DataUpdateCompleteArgs completeEventArgs = null;
+            _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
+            {
+                completeFlag.Set();
+                completeEventArgs = e;
+            };
+
+            Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
+            string tempPath = Path.GetTempPath();
+            string dataFile = Path.GetTempFileName();
+            using (var writer = File.CreateText(dataFile))
+            {
+                writer.WriteLine("TEST");
+            }
+
+            try
+            {
+                // Configure the engine to return the relevant paths.
+                engine.Setup(e => e.TempDataDirPath).Returns(tempPath);
+                var config = new DataFileConfiguration()
+                {
+                    AutomaticUpdatesEnabled = true,
+                    DataUpdateUrl = @"http://www.test.com",
+                    DataFilePath = dataFile,
+                    VerifyMd5 = true,
+                    DecompressContent = true,
+                    FileSystemWatcherEnabled = false,
+                    VerifyModifiedSince = false,
+                    UpdateOnStartup = true
+
+                };
+                var file = new AspectEngineDataFile()
+                {
+                    Engine = engineSetNull ? null : engine.Object,
+                    Configuration = config,
+                    TempDataDirPath = tempPath,
+                };
+                engine.Setup(e => e.GetDataFileMetaData(It.IsAny<string>())).Returns(file);
+
+                // Act
+                _dataUpdate.RegisterDataFile(file);
+                // Wait until processing is complete.
+                completeFlag.Wait(TEST_TIMEOUT_MS);
+
+                // Assert
+                Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
+                    "event was never fired");
+                _httpHandler.Verify(h => h.Send(It.IsAny<HttpRequestMessage>()), Times.Once());
+                if (autoUpdateEnabled)
+                {
+                    // If auto update is enabled then the timer factory 
+                    // should have been called once to set up the next
+                    // update check.
+                    _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
+                        It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Once());
+                }
+                Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED, completeEventArgs.Status);
+            }
+            finally
+            {
+                if (File.Exists(dataFile)) { File.Delete(dataFile); }
+            }
+        }
 
         /// <summary>
         /// Check that unregistering a data file works without exception.
@@ -1374,7 +1465,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Act
             _dataUpdate.RegisterDataFile(file);
             // Wait until processing is complete.
-            completeFlag.Wait(1000);
+            completeFlag.Wait(TEST_TIMEOUT_MS);
 
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -1506,9 +1597,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
             // Configure file wrapper to return specified creation dates 
             // for data files.
-            _fileWrapper.Setup(w => w.GetCreationTimeUtc(It.Is<string>(s => s == dataFile)))
+            _fileWrapper.Setup(w => w.GetLastWriteTimeUtc(It.Is<string>(s => s == dataFile)))
                 .Returns(new DateTime(2018, 05, 10, 12, 0, 0));
-            _fileWrapper.Setup(w => w.GetCreationTimeUtc(It.Is<string>(s => s == tempFile)))
+            _fileWrapper.Setup(w => w.GetLastWriteTimeUtc(It.Is<string>(s => s == tempFile)))
                 .Returns(new DateTime(2018, 05, 10, 12, 0, 0));
         }
 
@@ -1524,9 +1615,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
             // Configure file wrapper to return specified creation dates 
             // for data files.
-            _fileWrapper.Setup(w => w.GetCreationTimeUtc(It.Is<string>(s => s == dataFile)))
+            _fileWrapper.Setup(w => w.GetLastWriteTimeUtc(It.Is<string>(s => s == dataFile)))
                 .Returns(new DateTime(2018, 05, 11, 12, 0, 0));
-            _fileWrapper.Setup(w => w.GetCreationTimeUtc(It.Is<string>(s => s == tempFile)))
+            _fileWrapper.Setup(w => w.GetLastWriteTimeUtc(It.Is<string>(s => s == tempFile)))
                 .Returns(new DateTime(2018, 05, 10, 12, 0, 0));
         }
 

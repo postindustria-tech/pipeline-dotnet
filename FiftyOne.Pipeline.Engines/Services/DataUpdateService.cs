@@ -164,6 +164,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			}
 
 			bool alreadyRegistered = dataFile.IsRegistered;
+			bool setTimer = true;
 			dataFile.SetDataUpdateService(this);
             LogInfoMessage("Registering file with auto update service", dataFile);
 
@@ -178,16 +179,22 @@ namespace FiftyOne.Pipeline.Engines.Services
                 {
                     LogInfoMessage("Updating on startup", dataFile);
                     var result = CheckForUpdate(dataFile, true);
-                    if(result != AutoUpdateStatus.AUTO_UPDATE_SUCCESS &&
-                        result != AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED)
-                    {
-                        throw new DataUpdateException($"Update on startup " +
-                            $"failed for {dataFile.Identifier} with status " +
-                            $"{Enum.GetName(typeof(AutoUpdateStatus), result)}. " +
-                            $"See log for details.", result);
-                    }
+					if (result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
+					{
+						// If the update was successful then the timer 
+						// and watcher will already have been set up if 
+						// needed.
+						setTimer = false;
+					}
+					else if (result != AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED)
+					{
+						throw new DataUpdateException($"Update on startup " +
+							$"failed for {dataFile.Identifier} with status " +
+							$"{Enum.GetName(typeof(AutoUpdateStatus), result)}. " +
+							$"See log for details.", result);
+					}
 				}
-				else
+				if(setTimer)
 				{
 					// Only create an automatic update timer if auto updates are 
 					// enabled for this engine and there is not already an associated 
@@ -423,18 +430,18 @@ namespace FiftyOne.Pipeline.Engines.Services
 
 			if (dataFile != null)
 			{
-				// Get the creation time of the new data file
-				DateTime createTime = _fileSystem.File.GetCreationTimeUtc(e.FullPath);
-				// Use a lock with a double check on file creation time to make
-				// sure we only run the update once even if multiple events fire
-				// for a single file.
-				if (dataFile.LastUpdateFileCreateTime < createTime)
+				// Get the last modified time of the new data file
+				DateTime dataTime = _fileSystem.File.GetLastWriteTimeUtc(e.FullPath);
+				// Use a lock with a double check on file time to make
+				// sure we only run the update once even if multiple
+				// events fire for a single file.
+				if (dataFile.LastUpdateFileModifiedTime < dataTime)
 				{
 					lock (dataFile.UpdateSyncLock)
 					{
-						if (dataFile.LastUpdateFileCreateTime < createTime)
+						if (dataFile.LastUpdateFileModifiedTime < dataTime)
 						{
-							dataFile.LastUpdateFileCreateTime = createTime;
+							dataFile.LastUpdateFileModifiedTime = dataTime;
 
 							// Make sure we can actually open the file for reading
 							// before notifying the engine, otherwise the copy 
@@ -532,15 +539,20 @@ namespace FiftyOne.Pipeline.Engines.Services
 					{
 						LogInfoMessage("Checking file system", dataFile);
 
-						var fileCreateTime = _fileSystem.File.GetCreationTimeUtc(
+						// We use last write time as creation time can be 
+						// unreliable for this check.
+						// For example, if a file exists with created date 
+						// yesterday and a new file is manually copied over 
+						// the top then the creation date will not change.
+						var fileWriteTime = _fileSystem.File.GetLastWriteTimeUtc(
 							dataFile.DataFilePath);
-						var tempFileCreateTime = _fileSystem.File.GetCreationTimeUtc(
+						var tempFileWriteTime = _fileSystem.File.GetLastWriteTimeUtc(
 							dataFile.TempDataFilePath);
 
 						// If the data file is newer than the temp file currently
 						// being used by the engine the we need to tell the engine
 						// to refresh itself.
-						if (fileCreateTime > tempFileCreateTime)
+						if (fileWriteTime > tempFileWriteTime)
 						{
 							newDataAvailable = true;
 						}
@@ -725,6 +737,11 @@ namespace FiftyOne.Pipeline.Engines.Services
                             // data file location
                             _fileSystem.File.Copy(uncompressedTempFile,
 								dataFile.DataFilePath, true);
+							// Ensure creation time of the file is set
+							// correctly so that the 'If-Modified-Since' 
+							// header will be set to the expected value.
+							_fileSystem.File.SetCreationTimeUtc(
+								uncompressedTempFile, DateTime.UtcNow);
 						}
 						catch (Exception ex)
 						{
