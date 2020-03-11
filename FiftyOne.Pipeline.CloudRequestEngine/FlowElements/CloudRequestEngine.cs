@@ -30,6 +30,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
@@ -167,6 +168,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             string jsonResult = string.Empty;
 
             var content = GetContent(data);
+            if (_logger != null && _logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug($"Sending request to cloud service at " +
+                    $"'{_dataEndpoint}'. Content: {content}");
+            }
+
             var request = _httpClient.PostAsync(_dataEndpoint, content);
             jsonResult = request.Result.Content.ReadAsStringAsync().Result;
 

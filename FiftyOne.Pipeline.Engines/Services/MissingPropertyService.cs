@@ -124,6 +124,12 @@ namespace FiftyOne.Pipeline.Engines.Services
                 }
             }
 
+            if(reason == MissingPropertyReason.Unknown &&
+                typeof(ICloudAspectEngine).IsAssignableFrom(engine.GetType()))
+            {
+                reason = MissingPropertyReason.CloudEngine;
+            }
+
             // Build the message string to return to the caller.
             StringBuilder message = new StringBuilder();
             message.AppendLine($"Property '{propertyName}' is not present in the results.");
@@ -139,6 +145,14 @@ namespace FiftyOne.Pipeline.Engines.Services
                 case MissingPropertyReason.PropertyExculdedFromEngineConfiguration:
                     message.Append("This is because the property has been " +
                         "excluded when configuring the engine.");
+                    break;
+                case MissingPropertyReason.CloudEngine:
+                    message.Append("This may be because your resource key " +
+                        "does not include this property. " +
+                        "Check the property name is correct. Compare this " +
+                        "to the properties available using the supplied " +
+                        "resource key: ");
+                    message.Append(string.Join(",", engine.Properties.Select(p => p.Name)));
                     break;
                 case MissingPropertyReason.Unknown:
                     message.Append("The reason for this is unknown. Please " +

@@ -54,6 +54,7 @@ namespace FiftyOne.Pipeline.Engines.Services
     {
         DataFileUpgradeRequired,
         PropertyExculdedFromEngineConfiguration,
+        CloudEngine,
         Unknown
     }
 }

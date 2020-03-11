@@ -32,6 +32,8 @@ using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.Exceptions;
 using System.Net.Http;
+using System.Linq;
+using FiftyOne.Pipeline.Web.Shared.FlowElements;
 
 namespace FiftyOne.Pipeline.Web
 {
@@ -98,6 +100,7 @@ namespace FiftyOne.Pipeline.Web
             services.AddSingleton<IWebRequestEvidenceService,
                 WebRequestEvidenceService>();
             services.AddTransient<IPipelineBuilderFromConfiguration, TBuilder>();
+            services.AddSingleton<JavaScriptBundlerElementBuilder>();
 
             // Add the pipeline to the DI container
             services.AddSingleton(serviceProvider =>
@@ -144,6 +147,7 @@ namespace FiftyOne.Pipeline.Web
             IConfiguration config,
             IPipelineBuilderFromConfiguration pipelineBuilder)
         {
+            // Get Pipeline options to check that it is present
             PipelineOptions options = new PipelineOptions();
             config.Bind("PipelineOptions", options);
 
@@ -153,6 +157,26 @@ namespace FiftyOne.Pipeline.Web
             {
                 throw new PipelineConfigurationException(
                     "Could not find pipeline configuration information");
+            }
+
+            PipelineWebIntegrationOptions webOptions = new PipelineWebIntegrationOptions();
+            config.Bind("PipelineWebIntegrationOptions", webOptions);
+
+            if (webOptions.ClientSideEvidenceEnabled)
+            {
+                // Client-side evidence is enabled so make sure the 
+                // JavaScriptBundlerElement has been included.
+                var bundlerConfig = options.Elements.Where(e =>
+                    e.BuilderName.Contains(nameof(JavaScriptBundlerElement),
+                        StringComparison.OrdinalIgnoreCase));
+                if(bundlerConfig.Count() == 0)
+                {
+                    // The bundler is not included so add it.
+                    options.Elements.Add(new ElementOptions()
+                    {
+                        BuilderName = nameof(JavaScriptBundlerElement)
+                    });
+                }
             }
 
             return pipelineBuilder.BuildFromConfiguration(options);

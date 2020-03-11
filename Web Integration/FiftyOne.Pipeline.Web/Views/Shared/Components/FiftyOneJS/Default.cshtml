@@ -1,6 +1,6 @@
-﻿@model Microsoft.Extensions.Options.IOptions<FiftyOne.Pipeline.Web.FiftyOneOptions>
+﻿@model Microsoft.Extensions.Options.IOptions<FiftyOne.Pipeline.Web.PipelineWebIntegrationOptions>
 
-@if (Model.Value.ClientsidePropertiesEnabled)
+@if (Model.Value.ClientSideEvidenceEnabled)
 {
     <script @(Model.Value.UseAsyncScript ? "async" : "") src='51Degrees.core.js' type='text/javascript'></script>
 }

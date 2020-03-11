@@ -31,11 +31,11 @@ namespace FiftyOne.Pipeline.Web.Services
     public class FiftyOneJSService : IFiftyOneJSService
     {
         protected IClientsidePropertyService _clientsidePropertyService;
-        protected IOptions<FiftyOneOptions> _options;
+        protected IOptions<PipelineWebIntegrationOptions> _options;
 
         public FiftyOneJSService(
             IClientsidePropertyService clientsidePropertyService,
-            IOptions<FiftyOneOptions> options)
+            IOptions<PipelineWebIntegrationOptions> options)
         {
             _clientsidePropertyService = clientsidePropertyService;
             _options = options;
@@ -64,7 +64,7 @@ namespace FiftyOne.Pipeline.Web.Services
 
         private void ServeCoreJS(HttpContext context)
         {
-            if (_options.Value.ClientsidePropertiesEnabled)
+            if (_options.Value.ClientSideEvidenceEnabled)
             {
                 _clientsidePropertyService.ServeJavascript(context);
             }

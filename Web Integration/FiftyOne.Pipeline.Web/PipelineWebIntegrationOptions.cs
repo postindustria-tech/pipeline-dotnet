@@ -20,26 +20,40 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FiftyOne.Pipeline.Web.Framework.Configuration
+namespace FiftyOne.Pipeline.Web
 {
     /// <summary>
-    /// Extends the PipelineOptions class to add web specific options.
+    /// Configuration options for MVC Pipeline operation.
     /// </summary>
-    public class WebPipelineOptions : PipelineOptions
+    public class PipelineWebIntegrationOptions
     {
         /// <summary>
-        /// True if client-side properties should be enabled. If enabled
-        /// (and the JavaScriptBundlerElement added to the Pipeline), a
-        /// client-side JavaScript file will be served at the URL
-        /// */51Degrees.core.js.
+        /// Constructor.
         /// </summary>
-        public bool ClientSideEnabled { get; set; }
+        public PipelineWebIntegrationOptions()
+        {
+            ClientSideEvidenceEnabled = true;
+            UseAsyncScript = true;
+        }
+
+        /// <summary>
+        /// Flag to enable/disable client side evidence functionality.
+        /// Client-side evidence comes into effect when there is not enough 
+        /// information in the request to determine certain properties.
+        /// For example the exact model of iPhone cannot be determined
+        /// from the User-Agent.
+        /// If enabled, this option allows the Pipeline to inject JavaScript 
+        /// into the page and use this to determine a value for a property 
+        /// using more information.
+        /// Defaults to true.
+        /// </summary>
+        public bool ClientSideEvidenceEnabled { get; set; }
+
+        /// <summary>
+        /// Flag to enable/disable the use of the async attribute for
+        /// the client side script.
+        /// Defaults to true.
+        /// </summary>
+        public bool UseAsyncScript { get; set; }
     }
 }

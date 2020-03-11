@@ -36,13 +36,13 @@ namespace FiftyOne.Pipeline.Web
         /// <summary>
         /// Configuration options.
         /// </summary>
-        protected readonly IOptions<FiftyOneOptions> _options;
+        protected readonly IOptions<PipelineWebIntegrationOptions> _options;
 
         /// <summary>
         /// Creates a new <see cref="FiftyOneJSViewComponent"/>.
         /// </summary>
         /// <param name="options">Configuration</param>
-        public FiftyOneJSViewComponent(IOptions<FiftyOneOptions> options)
+        public FiftyOneJSViewComponent(IOptions<PipelineWebIntegrationOptions> options)
         {
             _options = options;
         }

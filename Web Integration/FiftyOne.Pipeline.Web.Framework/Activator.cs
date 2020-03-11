@@ -64,7 +64,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                 {
                     RegisterModule();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // Don't prevent the server from starting up.
                 }

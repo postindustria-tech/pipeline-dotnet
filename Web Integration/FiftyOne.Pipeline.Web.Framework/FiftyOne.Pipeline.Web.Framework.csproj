@@ -58,7 +58,7 @@
     <Compile Include="Activator.cs" />
     <Compile Include="AspFrameworkSession.cs" />
     <Compile Include="Configuration\Extensions.cs" />
-    <Compile Include="Configuration\WebPipelineOptions.cs" />
+    <Compile Include="Configuration\PipelineWebIntegrationOptions.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="PipelineModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -70,7 +70,6 @@
   <ItemGroup>
     <None Include="51Degrees.json" />
     <None Include="app.config" />
-    <None Include="FiftyOne.Pipeline.Web.Framework.nuspec" />
     <None Include="Web.config.transform" />
   </ItemGroup>
   <ItemGroup>

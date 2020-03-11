@@ -20,38 +20,26 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-namespace FiftyOne.Pipeline.Web
+using FiftyOne.Pipeline.Core.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace FiftyOne.Pipeline.Web.Framework.Configuration
 {
     /// <summary>
-    /// Configuration options for MVC Pipeline operation.
+    /// Extends the PipelineOptions class to add web specific options.
     /// </summary>
-    public class FiftyOneOptions
+    public class PipelineWebIntegrationOptions : PipelineOptions
     {
         /// <summary>
-        /// Constructor.
+        /// True if client-side properties should be enabled. If enabled
+        /// (and the JavaScriptBundlerElement added to the Pipeline), a
+        /// client-side JavaScript file will be served at the URL
+        /// */51Degrees.core.js.
         /// </summary>
-        public FiftyOneOptions()
-        {
-            ClientsidePropertiesEnabled = true;
-            UseAsyncScript = true;
-        }
-        
-        /// <summary>
-        /// Flag to enable/disable client side override functionality.
-        /// Overrides comes into effect when there is not enough information
-        /// in the request to determine certain properties.
-        /// For example the exact model of iPhone cannot be determined
-        /// from the User-Agent.
-        /// If enabled, FlowElements may inject JavaScript into the page and
-        /// use this to determine a value for a property using more information.
-        /// </summary>
-        public bool ClientsidePropertiesEnabled { get; set; }
-
-        /// <summary>
-        /// Flag to enable/disable the use of the async attribute for
-        /// the client side script.
-        /// Defaults to true.
-        /// </summary>
-        public bool UseAsyncScript { get; set; }
+        public bool ClientSideEvidenceEnabled { get; set; }
     }
 }

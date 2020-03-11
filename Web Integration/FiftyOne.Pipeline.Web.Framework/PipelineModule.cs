@@ -60,7 +60,7 @@ namespace FiftyOne.Pipeline.Web.Framework
 
             if (context != null &&
                 context.Request.Path.EndsWith("51Degrees.core.js") &&
-                WebPipeline.GetInstance().ClientSideEnabled)
+                WebPipeline.GetInstance().ClientSideEvidenceEnabled)
             {
                 FiftyOneJsProvider.GetInstance().ServeJavascript(context);
             }

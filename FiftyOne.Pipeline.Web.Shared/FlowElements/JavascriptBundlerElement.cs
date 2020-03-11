@@ -23,10 +23,12 @@
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Web.Shared.Data;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -103,15 +105,25 @@ namespace FiftyOne.Pipeline.Web.Shared.FlowElements
                 .GetWhere(p => p.Type == typeof(JavaScript));
 
             // Add each JavaScript property value as a method on the class.
-            foreach (var javaScriptProperty in javaScriptProperties)
+            foreach (var javaScriptProperty in 
+                javaScriptProperties.Where(p => p.Value != null))
             {
-                completeJavaScript.Append(
-                    javaScriptProperty.Key
-                    .Replace('.', '_')
-                    .Replace('-', '_'));
-                completeJavaScript.AppendLine("() {");
-                completeJavaScript.AppendLine(javaScriptProperty.Value.ToString());
-                completeJavaScript.AppendLine("}");
+                bool addToJS = true;
+                if (typeof(IAspectPropertyValue).IsAssignableFrom(javaScriptProperty.Value.GetType()))
+                {
+                    addToJS = (javaScriptProperty.Value as IAspectPropertyValue).HasValue;
+                }
+
+                if (addToJS)
+                {
+                    completeJavaScript.Append(
+                        javaScriptProperty.Key
+                        .Replace('.', '_')
+                        .Replace('-', '_'));
+                    completeJavaScript.AppendLine("() {");
+                    completeJavaScript.AppendLine(javaScriptProperty.Value.ToString());
+                    completeJavaScript.AppendLine("}");
+                }
             }
             completeJavaScript.AppendLine("}");
 

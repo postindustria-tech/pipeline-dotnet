@@ -29,7 +29,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNet Framework MVC Exampl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore 2.1 Example", "Web Integration\Examples\NetCore 2.1\AspNetCore 2.1 Example.csproj", "{136B0EFD-3A60-413B-A210-73165FADE0C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCore 3.1 Example", "Web Integration\Examples\NetCore 3.1\AspNetCore 3.1 Example.csproj", "{C586EC69-C52E-412B-AB49-352236F48EDE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore 3.1 Example", "Web Integration\Examples\NetCore 3.1\AspNetCore 3.1 Example.csproj", "{C586EC69-C52E-412B-AB49-352236F48EDE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FiftyOne.Pipeline.JavaScriptBuilder", "FiftyOne.Pipeline.Elements\FiftyOne.Pipeline.JavaScriptBuilderElement\FiftyOne.Pipeline.JavaScriptBuilder.csproj", "{2C2AFF73-A5E5-45C0-98BE-A492BE85BEBB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{68983808-F411-4682-B643-3B9BF25F404C}"
+	ProjectSection(SolutionItems) = preProject
+		Web Integration\FiftyOne.Pipeline.Web.nuspec = Web Integration\FiftyOne.Pipeline.Web.nuspec
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,6 +92,10 @@ Global
 		{C586EC69-C52E-412B-AB49-352236F48EDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C586EC69-C52E-412B-AB49-352236F48EDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C586EC69-C52E-412B-AB49-352236F48EDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C2AFF73-A5E5-45C0-98BE-A492BE85BEBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C2AFF73-A5E5-45C0-98BE-A492BE85BEBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C2AFF73-A5E5-45C0-98BE-A492BE85BEBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C2AFF73-A5E5-45C0-98BE-A492BE85BEBB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -25,6 +25,7 @@ using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Web.Framework.Configuration;
+using FiftyOne.Pipeline.Web.Shared.FlowElements;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -49,13 +50,13 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// Whether or not client-side properties are enabled. If they are,
         /// then a 51Degrees.core.js will be served by the server.
         /// </summary>
-        public bool ClientSideEnabled => _options.ClientSideEnabled;
+        public bool ClientSideEvidenceEnabled => _options.ClientSideEvidenceEnabled;
 
         /// <summary>
         /// Extra pipeline options which only apply to an implementation in a
         /// web server.
         /// </summary>
-        private readonly WebPipelineOptions _options;
+        private readonly PipelineWebIntegrationOptions _options;
 
         /// <summary>
         /// Lock used when constructing a pipeline.
@@ -98,7 +99,7 @@ namespace FiftyOne.Pipeline.Web.Framework
             IConfiguration config = new ConfigurationBuilder()
                 .AddPipelineConfig()
                 .Build();
-            WebPipelineOptions options = new WebPipelineOptions();
+            PipelineWebIntegrationOptions options = new PipelineWebIntegrationOptions();
             config.Bind("PipelineOptions", options);
 
             if (options == null ||
@@ -108,11 +109,29 @@ namespace FiftyOne.Pipeline.Web.Framework
                     "Could not find pipeline configuration information");
             }
 
+            if (ClientSideEvidenceEnabled)
+            {
+                // Client-side evidence is enabled so make sure the 
+                // JavaScriptBundlerElement has been included.
+                var bundlerConfig = options.Elements.Where(e =>
+                    e.BuilderName.IndexOf(nameof(JavaScriptBundlerElement), 
+                        StringComparison.OrdinalIgnoreCase) >= 0);
+                if (bundlerConfig.Count() == 0)
+                {
+                    // The bundler is not included so add it.
+                    options.Elements.Add(new ElementOptions()
+                    {
+                        BuilderName = nameof(JavaScriptBundlerElement)
+                    });
+                }
+            }
+
             Pipeline = new PipelineBuilder(new LoggerFactory())
                 .BuildFromConfiguration(options);
 
             _options = options;
         }
+
 
         /// <summary>
         /// Populate a FlowData's evidence from the web request, and process

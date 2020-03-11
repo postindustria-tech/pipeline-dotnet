@@ -31,6 +31,7 @@ using FiftyOne.Pipeline.Web.Shared.FlowElements;
 using System.Linq;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Data.Types;
+using FiftyOne.Pipeline.Core.Exceptions;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
@@ -136,6 +137,15 @@ namespace FiftyOne.Pipeline.Web.Services
             {
                 // Otherwise, return the minified script to the client.
                 var bundler = flowData.Pipeline.GetElement<JavaScriptBundlerElement>();
+                if(bundler == null)
+                {
+                    throw new PipelineConfigurationException("Client-side " +
+                        "JavaScript has been requested from the Pipeline. " +
+                        "However, the JavaScriptBundlerElement is not present. " +
+                        "To resolve this error, either disable client-side " +
+                        "evidence or ensure the JavaScriptBundlerElement is " +
+                        "added to your Pipeline.");
+                }
                 var bundlerData = flowData.GetFromElement(bundler);
 
                 SetHeaders(context, hash.ToString(), bundlerData.JavaScript.Length);

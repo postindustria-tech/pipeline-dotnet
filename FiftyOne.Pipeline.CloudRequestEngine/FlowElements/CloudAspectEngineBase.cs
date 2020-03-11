@@ -43,7 +43,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
     /// The type of meta data that the flow element will supply 
     /// about the properties it populates.
     /// </typeparam>
-    public abstract class CloudAspectEngineBase<T, TMeta> : AspectEngineBase<T, TMeta>
+    public abstract class CloudAspectEngineBase<T, TMeta> : AspectEngineBase<T, TMeta>, ICloudAspectEngine
         where T : IAspectData
         where TMeta : IAspectPropertyMetaData
     {
