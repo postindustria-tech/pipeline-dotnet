@@ -96,6 +96,7 @@ namespace FiftyOne.Pipeline.Web.Shared.FlowElements
         protected override void ProcessInternal(IFlowData data)
         {
             StringBuilder completeJavaScript = new StringBuilder();
+            StringBuilder functionCalls = new StringBuilder();
 
             // Start the class declaration, including constructor
             completeJavaScript.AppendLine(@"class FOD_CO { ");
@@ -103,6 +104,7 @@ namespace FiftyOne.Pipeline.Web.Shared.FlowElements
 
             var javaScriptProperties = data
                 .GetWhere(p => p.Type == typeof(JavaScript));
+
 
             // Add each JavaScript property value as a method on the class.
             foreach (var javaScriptProperty in 
@@ -116,13 +118,18 @@ namespace FiftyOne.Pipeline.Web.Shared.FlowElements
 
                 if (addToJS)
                 {
-                    completeJavaScript.Append(
-                        javaScriptProperty.Key
+                    var cleanKey = javaScriptProperty.Key
                         .Replace('.', '_')
-                        .Replace('-', '_'));
+                        .Replace('-', '_');
+
+                    completeJavaScript.Append(cleanKey);
                     completeJavaScript.AppendLine("() {");
                     completeJavaScript.AppendLine(javaScriptProperty.Value.ToString());
                     completeJavaScript.AppendLine("}");
+
+                    functionCalls.Append("fod_co.");
+                    functionCalls.Append(cleanKey);
+                    functionCalls.AppendLine("();");
                 }
             }
             completeJavaScript.AppendLine("}");
@@ -130,15 +137,7 @@ namespace FiftyOne.Pipeline.Web.Shared.FlowElements
             // Add code to create an instance of the class and call each of 
             // the methods on it.
             completeJavaScript.AppendLine("let fod_co = new FOD_CO();");
-            foreach (var javaScriptProperty in javaScriptProperties)
-            {
-                completeJavaScript.Append("fod_co.");
-                completeJavaScript.Append(
-                    javaScriptProperty.Key
-                    .Replace('.', '_')
-                    .Replace('-', '_'));
-                completeJavaScript.AppendLine("();");
-            }
+            completeJavaScript.AppendLine(functionCalls.ToString());
 
             // Create the element data and add it to the flow data.
             var elementData = data.GetOrAdd(ElementDataKeyTyped, CreateElementData);
