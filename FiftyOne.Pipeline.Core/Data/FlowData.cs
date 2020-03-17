@@ -160,9 +160,27 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </param>
         public void AddError(Exception ex, IFlowElement flowElement)
         {
+            AddError(ex, flowElement, true);
+        }
+
+        /// <summary>
+        /// Register an error that occurred while working with this 
+        /// instance.
+        /// </summary>
+        /// <param name="ex">
+        /// The exception that occurred.
+        /// </param>
+        /// <param name="flowElement">
+        /// The flow element that the exception occurred in.
+        /// </param>
+        /// <param name="shouldThrow">
+        /// Set whether the pipeline should throw this exception.
+        /// </param>
+        public void AddError(Exception ex, IFlowElement flowElement, bool shouldThrow)
+        {
             if (_errors == null) { _errors = new List<IFlowError>(); }
             if (_errorsLock == null) { _errorsLock = new object(); }
-            var error = new FlowError(ex, flowElement);
+            var error = new FlowError(ex, flowElement, shouldThrow);
             lock (_errorsLock)
             {
                 _errors.Add(error);
