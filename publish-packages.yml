@@ -155,7 +155,6 @@ steps:
   inputs:
     tagUser: 'Azure DevOps'
     tagEmail: 'CIUser@51Degrees.com'
-    tag: 'v$(GitVersion.NuGetVersion)'
   condition: succeeded()
   
 - task: PublishBuildArtifacts@1
