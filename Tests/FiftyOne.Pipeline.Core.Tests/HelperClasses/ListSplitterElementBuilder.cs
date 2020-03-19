@@ -22,6 +22,7 @@
 
 using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Core.FlowElements;
+using System.Collections.Generic;
 
 namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
 {
@@ -31,13 +32,17 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
     public class ListSplitterElementBuilder
     {
         // Default to a comma delimiter and the maximum possible string length.
-        string _delimiter = ",";
+        List<string> _delimiters = new List<string>() { "," };
         int _maxLength = int.MaxValue;
 
         [AlternateName("delim")]
         public void SetDelimiter(string delimiter)
         {
-            _delimiter = delimiter;
+            _delimiters = new List<string>() { delimiter };
+        }
+        public void SetDelimiters(List<string> delimiters)
+        {
+            _delimiters = delimiters;
         }
         public void SetMaxLength(int maxLength)
         {
@@ -46,7 +51,7 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
 
         public IFlowElement Build()
         {
-            return new ListSplitterElement(_delimiter, _maxLength);
+            return new ListSplitterElement(_delimiters, _maxLength);
         }
     }
 }

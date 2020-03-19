@@ -581,7 +581,155 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
                 .BuildFromConfiguration(opts);
         }
 
-        private enum SplitOption { Comma, Pipe, CommaMaxLengthThree }
+        /// <summary>
+        /// Test that the Pipeline builder works when the set method
+        /// takes a list parameter and we pass an array
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_ListFromArray()
+        {
+            // Create the configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                new ElementOptions()
+                {
+                    BuilderName = "ListSplitterElement",
+                    BuildParameters = new Dictionary<string, object>()
+                    {
+                        { "Delimiters", new string[] { "|", "," } }
+                    }
+                }
+            };
+
+            VerifyListSplitterElementPipeline(opts, SplitOption.CommaAndPipe);
+        }
+
+        /// <summary>
+        /// Test that the Pipeline builder works when the set method
+        /// takes a list parameter and we pass a list
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_List()
+        {
+            // Create the configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                new ElementOptions()
+                {
+                    BuilderName = "ListSplitterElement",
+                    BuildParameters = new Dictionary<string, object>()
+                    {
+                        { "Delimiters", new List<string>() { "|", "," } }
+                    }
+                }
+            };
+
+            VerifyListSplitterElementPipeline(opts, SplitOption.CommaAndPipe);
+        }
+
+        /// <summary>
+        /// Test that the Pipeline builder works when the set method
+        /// takes a list parameter and we pass a comma-separated string
+        /// containing the delimiters 'A' and '|'
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_ListFromString()
+        {
+            // Create the configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                new ElementOptions()
+                {
+                    BuilderName = "ListSplitterElement",
+                    BuildParameters = new Dictionary<string, object>()
+                    {
+                        { "Delimiters", "A,|" }
+                    }
+                }
+            };
+
+            VerifyListSplitterElementPipeline(opts, SplitOption.Pipe);
+        }
+
+        /// <summary>
+        /// Test that the Pipeline builder works when the set method
+        /// takes a list parameter and we pass a comma-separated string
+        /// where one of the delimiters is a comma.
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_ListFromStringWithComma()
+        {
+            // Create the configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                new ElementOptions()
+                {
+                    BuilderName = "ListSplitterElement",
+                    BuildParameters = new Dictionary<string, object>()
+                    {
+                        { "Delimiters", "|,\",\"" }
+                    }
+                }
+            };
+
+            VerifyListSplitterElementPipeline(opts, SplitOption.CommaAndPipe);
+        }
+
+        /// <summary>
+        /// Test that the Pipeline builder works when the set method
+        /// takes a list parameter and we pass a comma-separated string
+        /// containing an escaped double quote character.
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_ListFromStringWithQuote()
+        {
+            // Create the configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                new ElementOptions()
+                {
+                    BuilderName = "ListSplitterElement",
+                    BuildParameters = new Dictionary<string, object>()
+                    {
+                        { "Delimiters", "|,\"\"\"\"" }
+                    }
+                }
+            };
+
+            VerifyListSplitterElementPipeline(opts, SplitOption.PipeAndQuote);
+        }
+
+        /// <summary>
+        /// Test that the Pipeline builder works when the set method
+        /// takes a list parameter and we pass a comma-separated string
+        /// that only has one item
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_ListFromStringSingleEntry()
+        {
+            // Create the configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                new ElementOptions()
+                {
+                    BuilderName = "ListSplitterElement",
+                    BuildParameters = new Dictionary<string, object>()
+                    {
+                        { "Delimiters", "|" }
+                    }
+                }
+            };
+
+            VerifyListSplitterElementPipeline(opts, SplitOption.Pipe);
+        }
+
+        private enum SplitOption { Comma, Pipe, CommaMaxLengthThree, CommaAndPipe, PipeAndQuote }
 
         private void VerifyListSplitterElementPipeline(
             PipelineOptions options,
@@ -596,7 +744,7 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
 
             // Create, populate and process flow data.
             var flowData = pipeline.CreateFlowData();
-            flowData.AddEvidence(element.EvidenceKeys[0], "123,456|789,0")
+            flowData.AddEvidence(element.EvidenceKeys[0], "123,45\"6|789,0")
                 .Process();
 
             // Get the result and verify it.
@@ -605,19 +753,30 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             {
                 case SplitOption.Comma:
                     Assert.AreEqual("123", elementData.Result[0]);
-                    Assert.AreEqual("456|789", elementData.Result[1]);
+                    Assert.AreEqual("45\"6|789", elementData.Result[1]);
                     Assert.AreEqual("0", elementData.Result[2]);
                     break;
                 case SplitOption.Pipe:
-                    Assert.AreEqual("123,456", elementData.Result[0]);
+                    Assert.AreEqual("123,45\"6", elementData.Result[0]);
                     Assert.AreEqual("789,0", elementData.Result[1]);
                     break;
                 case SplitOption.CommaMaxLengthThree:
                     Assert.AreEqual("123", elementData.Result[0]);
-                    Assert.AreEqual("456", elementData.Result[1]);
-                    Assert.AreEqual("|78", elementData.Result[2]);
-                    Assert.AreEqual("9", elementData.Result[3]);
+                    Assert.AreEqual("45\"", elementData.Result[1]);
+                    Assert.AreEqual("6|7", elementData.Result[2]);
+                    Assert.AreEqual("89", elementData.Result[3]);
                     Assert.AreEqual("0", elementData.Result[4]);
+                    break;
+                case SplitOption.CommaAndPipe:
+                    Assert.AreEqual("123", elementData.Result[0]);
+                    Assert.AreEqual("45\"6", elementData.Result[1]);
+                    Assert.AreEqual("789", elementData.Result[2]);
+                    Assert.AreEqual("0", elementData.Result[3]);
+                    break;
+                case SplitOption.PipeAndQuote:
+                    Assert.AreEqual("123,45", elementData.Result[0]);
+                    Assert.AreEqual("6", elementData.Result[1]);
+                    Assert.AreEqual("789,0", elementData.Result[2]);
                     break;
                 default:
                     break;

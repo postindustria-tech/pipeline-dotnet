@@ -540,30 +540,12 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                         // supplied in the configuration.
                         try
                         {
-                            if (parameter.Value.GetType().IsArray == true)
-                            {
-                                // The parameter is an array, so try each value
-                                // individually.
-                                foreach (var value in (object[])parameter.Value)
-                                {
-                                    TryParseAndCallMethod(
-                                        value,
-                                        method,
-                                        builderType,
-                                        builderInstance,
-                                        elementConfigLocation);
-                                }
-                            }
-                            else
-                            {
-                                // Not an array, so just call the method.
-                                TryParseAndCallMethod(
-                                    parameter.Value,
-                                    method,
-                                    builderType,
-                                    builderInstance,
-                                    elementConfigLocation);
-                            }
+                            TryParseAndCallMethod(
+                                parameter.Value,
+                                method,
+                                builderType,
+                                builderInstance,
+                                elementConfigLocation);
                             methodCalled = true;
                         }
                         catch (PipelineConfigurationException)
@@ -611,18 +593,58 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             string elementConfigLocation)
         {
             var paramType = method.GetParameters()[0].ParameterType;
+            string expectedTypeMessage =
+                    $"Method '{method.Name}' on builder " +
+                    $"'{builderType.FullName}' for " +
+                    $"{elementConfigLocation} expects a parameter of type " +
+                    $"'{paramType.Name}'";
 
             // If the method takes a string then we can just pass it
             // in. If not, we'll have to parse it to the required 
             // type.
-
             if (paramType != typeof(string))
             {
-                paramValue = ParseToType(paramType, paramValue.ToString(),
-                    $"Method '{method.Name}' on builder " +
-                    $"'{builderType.FullName}' for " +
-                    $"{elementConfigLocation} expects a parameter of type " +
-                    $"'{paramType.Name}'");
+                var suppliedObjectIsString = paramValue.GetType() == typeof(string);
+                var suppliedObjectIsArray = paramValue.GetType().IsArray;
+                var suppliedObjectIsList = typeof(IList<string>).IsAssignableFrom(paramValue.GetType());
+                var expectedObjectIsArray = paramType.IsArray;
+                var expectedObjectIsList = typeof(IList<string>).IsAssignableFrom(paramType);
+
+                if (suppliedObjectIsString == false &&
+                    (suppliedObjectIsArray == true ||
+                    suppliedObjectIsList == true))
+                {
+                    // Parameter value is a list or array type.
+                    // Only allow this if the method also accepts 
+                    // a list or array type.
+                    if (expectedObjectIsArray == false &&
+                        expectedObjectIsList == false)
+                    {
+                        throw new PipelineConfigurationException(
+                            $"{expectedTypeMessage} but supplied object is " +
+                            $"of type '{paramValue.GetType().Name}'.");
+                    }
+                    // If necessary, convert the supplied object to 
+                    // the expected type.
+                    if(suppliedObjectIsArray == true && 
+                        expectedObjectIsArray == false)
+                    {
+                        paramValue = new List<string>((IEnumerable<string>)paramValue);
+                    }
+                    else if(suppliedObjectIsList == true && 
+                        expectedObjectIsList == false)
+                    {
+                        paramValue = ((IList<string>)paramValue).ToArray();
+                    }
+                }
+                else
+                {
+                    // Parameter value is not a list or array type so
+                    // attempt to parse it to the required type.
+                    paramValue = ParseToType(paramType,
+                        paramValue.ToString(),
+                        expectedTypeMessage);
+                }
             }
 
             // Invoke the method on the builder, passing the parameter
@@ -801,44 +823,147 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 
             return builderType;
         }
-
+        
         private object ParseToType(Type targetType, string value, string errorTextPrefix)
         {
             object result = null;
-            // Check for a TryParse method on the type
-            MethodInfo tryParse = null;
-            try
+
+            if (typeof(IList<string>).IsAssignableFrom(targetType) ||
+                targetType.IsArray)
             {
-                tryParse = targetType.GetMethods()
-                    .SingleOrDefault(m => m.Name == "TryParse" &&
-                        m.GetParameters()[0].ParameterType == typeof(string) &&
-                        m.GetParameters().Length == 2);
-            }
-            catch (InvalidOperationException)
-            {
-                tryParse = null;
-            }
-            if (tryParse == null)
-            {
-                throw new PipelineConfigurationException(
-                    $"{errorTextPrefix} but this type does not have " +
-                    $"the expected 'TryParse' method " +
-                    $"(or has multiples that cannot be resolved).");
-            }
-            // Call the try parse method.
-            object[] args = new object[] { value, null };
-            if ((bool)tryParse.Invoke(null, args) == false)
-            {
-                throw new PipelineConfigurationException(
-                    $"{errorTextPrefix}. Failed to parse value " +
-                    $"'{value}' using the static " +
-                    $"'TryParse' method.");
+                try
+                {
+                    // We are populating a list or array type so parse the 
+                    // string as a comma-separated list of values.
+                    List<string> list = new List<string>(ParseCsv(value));
+                    if (targetType.IsArray)
+                    {
+                        result = list.ToArray();
+                    }
+                    else
+                    {
+                        result = list;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new PipelineConfigurationException(
+                        $"Failed to parse list value '{value}'. " +
+                        $"This is expected to contain a comma-delimited list " +
+                        $"of string values. Double quotes (\") may be used " +
+                        $"to encapsulate values. Double quotes can be escaped " +
+                        $"within a quoted value by using two in a row (For " +
+                        $"example a list of text values containing 6 inches " +
+                        $"and 12 inches would look like this: " +
+                        $"\"6\"\"\",\"12\"\"\")", ex);
+                }
             }
             else
             {
-                result = args[1];
+                // Check for a TryParse method on the type
+                MethodInfo tryParse = null;
+                try
+                {
+                    tryParse = targetType.GetMethods()
+                        .SingleOrDefault(m => m.Name == "TryParse" &&
+                            m.GetParameters()[0].ParameterType == typeof(string) &&
+                            m.GetParameters().Length == 2);
+                }
+                catch (InvalidOperationException)
+                {
+                    tryParse = null;
+                }
+
+                if (tryParse == null)
+                {
+                    throw new PipelineConfigurationException(
+                        $"{errorTextPrefix} but this type does not have " +
+                        $"the expected 'TryParse' method " +
+                        $"(or has multiples that cannot be resolved).");
+                }
+                // Call the try parse method.
+                object[] args = new object[] { value, null };
+                if ((bool)tryParse.Invoke(null, args) == false)
+                {
+                    throw new PipelineConfigurationException(
+                        $"{errorTextPrefix}. Failed to parse value " +
+                        $"'{value}' using the static " +
+                        $"'TryParse' method.");
+                }
+                else
+                {
+                    result = args[1];
+                }
             }
+
             return result;
+        }
+        
+        private IEnumerable<string> ParseCsv(string csv)
+        {
+            int pos = 0;
+            bool inquotes = false;
+
+            // Process the string one character at a time.
+            while (pos < csv.Length)
+            {
+                if (csv[pos] == '"')
+                {
+                    // Remove these quotes
+                    csv = csv.Remove(pos, 1);
+                    if (inquotes)
+                    {
+                        // We're already in a quoted region so
+                        // check if this is a double double quote.
+                        // If so, we retain the second quotes and simply 
+                        // continue to advance within the quoted region.
+                        if (csv.Length > pos &&
+                            csv[pos] == '"')
+                        {
+                        }
+                        // If it's not a double double quote then
+                        // change the state to indicate we are out of 
+                        // the quoted region.
+                        else
+                        {
+                            inquotes = false;
+                            pos--;
+                        }
+                    }
+                    else
+                    {
+                        // Change the state so we know we're inside
+                        // a quoted region.
+                        inquotes = true;
+                        pos--;
+                    }
+                }
+                else if (inquotes == false && csv[pos] == ',')
+                {
+                    // We're not within a quoted region and we've hit
+                    // a comma delimiter so return the string item
+                    // and trim the remaining string to remove it
+                    // and the comma.
+                    yield return csv.Remove(pos);
+                    if (csv.Length > pos + 1)
+                    {
+                        csv = csv.Substring(pos + 1);
+                        pos = -1;
+                    }
+                    else
+                    {
+                        csv = "";
+                    }
+                }
+                // Advance to the next character position.
+                pos++;
+            }
+
+            // Return the last item.
+            if (csv.Length > 0)
+            {
+                yield return csv;
+            }
         }
     }
 

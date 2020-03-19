@@ -62,14 +62,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// Optional license keys for additional products.
         /// </summary>
         protected string LicenceKey { get; set; } = string.Empty;
-        /// <summary>
-        /// Cache configuration to use for the <see cref="CloudRequestEngine"/>.
-        /// </summary>
-        protected CacheConfiguration CacheConfig { get; set; }        
-        /// <summary>
-        /// Lazy loading configuration
-        /// </summary>
-        protected LazyLoadingConfiguration LazyLoadingConfig { get; set; }
 
         /// <summary>
         /// Constructor

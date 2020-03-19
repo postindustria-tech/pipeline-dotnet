@@ -52,9 +52,9 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
         public override IList<IElementPropertyMetaData> Properties => new List<IElementPropertyMetaData>();
 
         /// <summary>
-        /// The delimiter to split the string on
+        /// The delimiter(s) to split the string on
         /// </summary>
-        private string _delimiter;
+        private string[] _delimiters;
         /// <summary>
         /// The maximum length of a resulting string.
         /// If the string is larger than this, it will be split into chunks
@@ -65,18 +65,18 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="delimiter">
-        /// The delimiter to use when splitting strings
+        /// <param name="delimiters">
+        /// The delimiter(s) to use when splitting strings
         /// </param>
         /// <param name="maxLength">
         /// The maximum length of a resulting string.
         /// If the string is larger than this, it will be split into chunks
         /// of _maxLength.
         /// </param>
-        public ListSplitterElement(string delimiter, int maxLength) :
+        public ListSplitterElement(List<string> delimiters, int maxLength) :
             base(new Mock<ILogger<ListSplitterElement>>().Object)
         {
-            _delimiter = delimiter;
+            _delimiters = delimiters.ToArray();
             _maxLength = maxLength;
             _evidenceKeyFilter = new EvidenceKeyFilterWhitelist(EvidenceKeys);
         }
@@ -96,7 +96,7 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
             string source = (string)data.GetEvidence()[EvidenceKeys[0]];
             // Split the source string using the configured delimiter.
             var results = source
-                .Split(_delimiter, StringSplitOptions.RemoveEmptyEntries)
+                .Split(_delimiters, StringSplitOptions.RemoveEmptyEntries)
                 .ToList();
 
             elementData.Result = new List<string>();

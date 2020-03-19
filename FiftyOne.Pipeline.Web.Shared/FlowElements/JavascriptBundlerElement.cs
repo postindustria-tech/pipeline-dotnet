@@ -113,7 +113,9 @@ namespace FiftyOne.Pipeline.Web.Shared.FlowElements
                 bool addToJS = true;
                 if (typeof(IAspectPropertyValue).IsAssignableFrom(javaScriptProperty.Value.GetType()))
                 {
-                    addToJS = (javaScriptProperty.Value as IAspectPropertyValue).HasValue;
+                    var value = (javaScriptProperty.Value as IAspectPropertyValue);
+                    addToJS = value.HasValue && 
+                        string.IsNullOrEmpty(value.Value.ToString()) == false;
                 }
 
                 if (addToJS)

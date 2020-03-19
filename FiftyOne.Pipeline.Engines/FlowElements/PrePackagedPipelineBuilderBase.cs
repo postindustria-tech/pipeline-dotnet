@@ -53,7 +53,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
-        /// Enable lazy loading of geo location results.
+        /// Enable lazy loading of results.
         /// Uses a default timeout of 5 seconds.
         /// </summary>
         /// <returns>
@@ -66,7 +66,24 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
-        /// Enable lazy loading of geo location results.
+        /// Enable lazy loading of results.
+        /// </summary>
+        /// <param name="timeoutMilliseconds">
+        /// The timeout to use when attempting to access lazy-loaded values.
+        /// Default is 5 seconds.
+        /// </param>
+        /// <returns>
+        /// This builder instance.
+        /// </returns>
+        public TBuilder UseLazyLoading(int timeoutMilliseconds)
+        {
+            LazyLoading = true;
+            LazyLoadingTimeout = TimeSpan.FromSeconds(timeoutMilliseconds);
+            return this as TBuilder;
+        }
+
+        /// <summary>
+        /// Enable lazy loading of results.
         /// </summary>
         /// <param name="timeout">
         /// The timeout to use when attempting to access lazy-loaded values.
@@ -83,7 +100,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
-        /// Enable lazy loading of geo location results.
+        /// Enable lazy loading of results.
         /// Uses a default timeout of 5 seconds.
         /// </summary>
         /// <param name="cancellationToken">
@@ -101,7 +118,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
-        /// Enable lazy loading of geo location results.
+        /// Enable lazy loading of results.
         /// </summary>
         /// <param name="timeout">
         /// The timeout to use when attempting to access lazy-loaded values.
@@ -123,7 +140,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
-        /// Enable caching of geo location results.
+        /// Enable caching of results.
         /// Uses a default cache size of 1000.
         /// </summary>
         /// <returns>
@@ -136,7 +153,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
-        /// Enable caching of geo location results.
+        /// Enable caching of results.
         /// </summary>
         /// <param name="size">
         /// The maximum number of results to hold in the device 
