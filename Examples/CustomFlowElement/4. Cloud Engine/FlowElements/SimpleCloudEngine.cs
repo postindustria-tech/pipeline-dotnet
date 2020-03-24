@@ -40,11 +40,8 @@ namespace Examples.CloudEngine.FlowElements
 {
     //! [class]
     //! [constructor]
-    public class SimpleCloudEngine : CloudAspectEngineBase<IStarSignData, IAspectPropertyMetaData>
+    public class SimpleCloudEngine : CloudAspectEngineBase<IStarSignData>
     {
-        private IList<IAspectPropertyMetaData> _aspectProperties;
-        private string _dataSourceTier;
-
         public SimpleCloudEngine(
             ILogger<SimpleCloudEngine> logger,
             Func<IPipeline, FlowElementBase<IStarSignData, IAspectPropertyMetaData>, IStarSignData> deviceDataFactory,
@@ -60,19 +57,9 @@ namespace Examples.CloudEngine.FlowElements
                     $"before it in the Pipeline. This engine will be unable " +
                     $"to produce results until this is corrected.");
             }
-
-            // Get the properties from the cloud service.
-            if (LoadAspectProperties(engine) == false)
-            {
-                _logger.LogCritical("Failed to load aspect properties");
-            }
         }
         //! [constructor]
-
-        public override IList<IAspectPropertyMetaData> Properties => _aspectProperties;
-
-        public override string DataSourceTier => _dataSourceTier;
-
+        
         public override string ElementDataKey => "starsign";
 
         public override IEvidenceKeyFilter EvidenceKeyFilter =>
@@ -98,46 +85,6 @@ namespace Examples.CloudEngine.FlowElements
             // Now get the values from the star sign results.
             starSignData.StarSign = starSign["starsign"].ToString();
         }
-
-        protected override void UnmanagedResourcesCleanup()
-        {
-            // Nothing to clean up here.
-        }
-
-        //! [loadaspectproperties]
-        private bool LoadAspectProperties(CloudRequestEngine engine)
-        {
-            if (engine.PublicProperties != null &&
-                engine.PublicProperties.Count > 0 &&
-                engine.PublicProperties.ContainsKey(ElementDataKey))
-            {
-                // Create the properties list and set the data tier from the
-                // cloud service.
-                _aspectProperties = new List<IAspectPropertyMetaData>();
-                _dataSourceTier = engine.PublicProperties[ElementDataKey].DataTier;
-
-                // For each of the properties returned by the cloud service,
-                // add it to the list.
-                foreach (var item in engine.PublicProperties[ElementDataKey].Properties)
-                {
-                    _aspectProperties.Add(new AspectPropertyMetaData(
-                        this,
-                        item.Name,
-                        item.GetPropertyType(),
-                        item.Category,
-                        new List<string>(),
-                        true));
-                }
-                return true;
-            }
-            else
-            {
-                _logger.LogError($"Aspect properties could not be loaded for" +
-                    $" the cloud engine", this);
-                return false;
-            }
-        }
-        //! [loadaspectproperties]
     }
     //! [class]
 }

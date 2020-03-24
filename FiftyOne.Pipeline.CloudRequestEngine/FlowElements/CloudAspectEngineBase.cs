@@ -39,13 +39,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
     /// The type of data that the engine will return. Must implement 
     /// <see cref="IAspectData"/>.
     /// </typeparam>
-    /// <typeparam name="TMeta">
-    /// The type of meta data that the flow element will supply 
-    /// about the properties it populates.
-    /// </typeparam>
-    public abstract class CloudAspectEngineBase<T, TMeta> : AspectEngineBase<T, TMeta>, ICloudAspectEngine
+    public abstract class CloudAspectEngineBase<T> : 
+        AspectEngineBase<T, IAspectPropertyMetaData>, 
+        ICloudAspectEngine
         where T : IAspectData
-        where TMeta : IAspectPropertyMetaData
     {
         /// <summary>
         /// Internal class that is used to retrieve the
@@ -114,17 +111,108 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
         }
 
+        private IList<IAspectPropertyMetaData> _aspectProperties;
+        private object _aspectPropertiesLock = new object();
+        private string _dataSourceTier;
+
+        public override string DataSourceTier => _dataSourceTier;
+
         /// <summary>
         /// Used to access the <see cref="CloudRequestEngine"/> that will
         /// be making requests on behalf of this engine.
         /// </summary>
         protected RequestEngineAccessor RequestEngine { get; set; }
 
+        /// <summary>
+        /// Get property meta-data for properties populated by this engine
+        /// </summary>
+        public override IList<IAspectPropertyMetaData> Properties
+        {
+            get
+            {
+                if (_aspectProperties == null)
+                {
+                    lock (_aspectPropertiesLock)
+                    {
+                        if (_aspectProperties == null)
+                        {
+                            if (LoadAspectProperties(RequestEngine.Instance) == false)
+                            {
+                                throw new Exception("Failed to load aspect properties");
+                            }
+                        }
+                    }
+                }
+                return _aspectProperties;
+            }
+        }
 
-        public CloudAspectEngineBase(ILogger<AspectEngineBase<T, TMeta>> logger, 
-            Func<IPipeline, FlowElementBase<T, TMeta>, T> aspectDataFactory) : base(logger, aspectDataFactory)
+        public CloudAspectEngineBase(ILogger<AspectEngineBase<T, IAspectPropertyMetaData>> logger, 
+            Func<IPipeline, FlowElementBase<T, IAspectPropertyMetaData>, T> aspectDataFactory) : base(logger, aspectDataFactory)
         {
             RequestEngine = new RequestEngineAccessor(() => Pipelines);
+        }
+        
+        protected override void UnmanagedResourcesCleanup()
+        {
+        }
+
+        /// <summary>
+        /// Get property meta data from the <see cref="CloudRequestEngine"/> 
+        /// for properties relating to this engine instance.
+        /// This method will populate the <see cref="_aspectProperties"/>
+        /// field.
+        /// </summary>
+        /// <remarks>
+        /// There will be one <see cref="CloudRequestEngine"/> in a
+        /// Pipeline that makes the actual web requests to the cloud service.
+        /// One or more cloud aspect engines will take the response from these
+        /// cloud requests and convert them into strongly typed objects.
+        /// Given this model, the cloud aspect engines have no knowledge
+        /// of which properties the <see cref="CloudRequestEngine"/> can
+        /// return.
+        /// They must extract the properties relevant to them from the
+        /// meta-data for all properties that the 
+        /// <see cref="CloudRequestEngine"/> exposes.
+        /// </remarks>
+        /// <param name="engine">
+        /// The <see cref="CloudRequestEngine"/> from which to retrieve
+        /// property meta-data.
+        /// </param>
+        /// <returns>
+        /// True if the _aspectProperties has been successfully populated
+        /// with the relevant property meta-data.
+        /// False if something has gone wrong.
+        /// </returns>
+        private bool LoadAspectProperties(CloudRequestEngine engine)
+        {
+            var dictionary = engine.PublicProperties;
+
+            if (dictionary != null &&
+                dictionary.Count > 0 &&
+                dictionary.ContainsKey(ElementDataKey))
+            {
+                _aspectProperties = new List<IAspectPropertyMetaData>();
+                _dataSourceTier = dictionary[ElementDataKey].DataTier;
+
+                foreach (var item in dictionary[ElementDataKey].Properties)
+                {
+                    var property = new AspectPropertyMetaData(this,
+                        item.Name,
+                        item.GetPropertyType(),
+                        item.Category,
+                        new List<string>(),
+                        true);
+                    _aspectProperties.Add(property);
+                }
+                return true;
+            }
+            else
+            {
+                _logger.LogError($"Aspect properties could not be " +
+                    $"loaded for {GetType().Name}", this);
+                return false;
+            }
         }
     }
 }
