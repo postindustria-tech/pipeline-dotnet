@@ -77,7 +77,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 };
 
             // Blacklist of properties which should not be added to the Json.
-            _blacklist = new List<string>() { "products","properties" };
+            _blacklist = new List<string>() { "products", "properties" };
 
             JSON_CONVERTERS = JSON_CONVERTERS.Concat(jsonConverters).ToArray();
         }

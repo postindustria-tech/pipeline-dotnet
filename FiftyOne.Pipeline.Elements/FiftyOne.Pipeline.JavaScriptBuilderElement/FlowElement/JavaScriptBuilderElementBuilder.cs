@@ -32,42 +32,85 @@ using FiftyOne.Pipeline.Core.Data;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 {
+    /// <summary>
+    /// Builder for the <see cref="JavaScriptBuilderElement"/>
+    /// </summary>
     public class JavaScriptBuilderElementBuilder
     {
         protected ILoggerFactory _loggerFactory;
         protected ILogger _logger;
 
         protected string _host = string.Empty;
-        protected bool _overrideHost = false;
+        protected bool _overrideHost;
         protected string _endpoint = string.Empty;
         protected string _protocol = string.Empty;
-        protected bool _overrideProtocol = false;
+        protected bool _overrideProtocol;
         protected string _objName = string.Empty;
+        protected bool _enableCookies;
 
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="loggerFactory">
+        /// The logger factory.
+        /// </param>
         public JavaScriptBuilderElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<JavaScriptBuilderElementBuilder>();
         }
 
+        /// <summary>
+        /// Set whether the client JavaScript stored results of client side
+        /// processing in cookies.
+        /// </summary>
+        /// <param name="enableCookies">Should enable cookies?</param>
+        /// <returns></returns>
+        public JavaScriptBuilderElementBuilder SetEnableCookies(bool enableCookies)
+        {
+            _enableCookies = enableCookies;
+            return this;
+        }
+
+        /// <summary>
+        /// Set the host that the client JavaScript should query for updates.
+        /// </summary>
+        /// <param name="host">The host name.</param>
+        /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetHost(string host)
         {
             _host = host;
             return this;
         }
 
+        /// <summary>
+        /// Set whether host should be determined from the origin or referer.
+        /// </summary>
+        /// <param name="overrideHost">Should override host?</param>
+        /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetOverrideHost(bool overrideHost)
         {
             _overrideHost = overrideHost;
             return this;
         }
 
+        /// <summary>
+        /// Set the endpoint which will be queried on the host. e.g /api/v4/json
+        /// </summary>
+        /// <param name="endpoint">The endpoint.</param>
+        /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetEndpoint(string endpoint)
         {
             _endpoint = endpoint;
             return this;
         }
 
+        /// <summary>
+        /// The default protocol that the client JavaScript will use when 
+        /// querying for updates.
+        /// </summary>
+        /// <param name="protocol"></param>
+        /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetDefaultProtocol(string protocol)
         {
 
@@ -90,11 +133,23 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             return this;
         }
 
+        /// <summary>
+        /// Set whether the host should be overridden by evidence, e.g when the
+        /// host can be determined from the incoming request.
+        /// </summary>
+        /// <param name="overrideProto">Should override the protocol?</param>
+        /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetOverrideDefaultProtocol(bool overrideProto){
             _overrideProtocol = overrideProto;
             return this;
         }
 
+        /// <summary>
+        /// The default name of the object instantiated by the client 
+        /// JavaScript.
+        /// </summary>
+        /// <param name="objName"></param>
+        /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetObjectName(string objName)
         {
             var match = Regex.Match(objName, @"[a-zA-Z_$][0-9a-zA-Z_$]*");
@@ -116,6 +171,10 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             return this;
         }
 
+        /// <summary>
+        /// Build the element.
+        /// </summary>
+        /// <returns></returns>
         public virtual IFlowElement Build()
         {
             return new JavaScriptBuilderElement(_loggerFactory.CreateLogger<JavaScriptBuilderElement>(),
@@ -125,7 +184,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 _endpoint,
                 _protocol,
                 _overrideProtocol,
-                _objName);
+                _objName,
+                _enableCookies);
         }
 
         private IJavaScriptBuilderElementData CreateData(

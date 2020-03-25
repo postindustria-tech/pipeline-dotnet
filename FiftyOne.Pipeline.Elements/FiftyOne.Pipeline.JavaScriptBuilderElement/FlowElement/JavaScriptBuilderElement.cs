@@ -34,6 +34,11 @@ using System.Net;
 using System.Linq;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.Data;
+using Stubble.Core.Builders;
+using Stubble.Core;
+using System.IO;
+using System.Reflection;
+using Stubble.Core.Settings;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 {
@@ -54,12 +59,17 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </summary>
 		private IList<IElementPropertyMetaData> _properties;
 
-        protected string _host = string.Empty;
-        protected bool _overrideHost = false;
-        protected string _endpoint = string.Empty;
-        protected string _protocol = Constants.DEFAULT_PROTOCOL;
+        protected string _host;
+        protected bool _overrideHost;
+        protected string _endpoint;
+        protected string _protocol;
         protected bool _overrideProtocol;
         protected string _objName;
+        protected bool _enableCookies;
+        private StubbleVisitorRenderer _stubble;
+        private Assembly _assembly;
+        private string _template;
+        private RenderSettings _renderSettings;
 
         /// <summary>
         /// Flag set if last request resulted in an error, stops processing if 
@@ -90,27 +100,51 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <summary>
         /// Default constructor.
         /// </summary>
-        /// <param name="logger"></param>
-        /// <param name="elementDataFactory"></param>
-        /// <param name="host"></param>
-        /// <param name="overrideHost"></param>
-        /// <param name="endpoint"></param>
-        /// <param name="protocol"></param>
-        /// <param name="overrideProtocol"></param>
-        /// <param name="objectName"></param>
+        /// <param name="logger">
+        /// The logger.
+        /// </param>
+        /// <param name="elementDataFactory">
+        /// The element data factory.
+        /// </param>
+        /// <param name="host">
+        /// The host that the client JavaScript should query for updates.
+        /// </param>
+        /// <param name="overrideHost">
+        /// Set whether host should be determined from the origin or referer.
+        /// </param>
+        /// <param name="endpoint">
+        /// Set the endpoint which will be queried on the host. e.g /api/v4/json
+        /// </param>
+        /// <param name="protocol">
+        /// The protocol (HTTP or HTTPS) that the client JavaScript will use when 
+        /// querying for updates.
+        /// </param>
+        /// <param name="overrideProtocol">
+        /// Set whether the host should be overridden by evidence, e.g when the
+        /// host can be determined from the incoming request.
+        /// </param>
+        /// <param name="objectName">
+        /// The default name of the object instantiated by the client 
+        /// JavaScript.
+        /// </param>
+        /// <param name="enableCookies">
+        /// Set whether the client JavaScript stored results of client side
+        /// processing in cookies.
+        /// </param>
 		public JavaScriptBuilderElement(
-			ILogger<JavaScriptBuilderElement> logger,
-			Func<IPipeline, 
+            ILogger<JavaScriptBuilderElement> logger,
+            Func<IPipeline,
                 FlowElementBase<IJavaScriptBuilderElementData, IElementPropertyMetaData>,
-			    IJavaScriptBuilderElementData> elementDataFactory,
+                IJavaScriptBuilderElementData> elementDataFactory,
             string host,
             bool overrideHost,
             string endpoint,
             string protocol,
             bool overrideProtocol,
-            string objectName)
-			: base(logger, elementDataFactory)
-		{
+            string objectName,
+            bool enableCookies)
+            : base(logger, elementDataFactory)
+        {
             // Set the evidence key filter for the flow data to use.
             _evidenceKeyFilter = new EvidenceKeyFilterWhitelist(
                 new List<string>() {
@@ -120,21 +154,32 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 });
 
             _properties = new List<IElementPropertyMetaData>()
-				{
-					new ElementPropertyMetaData(
-						this,
+                {
+                    new ElementPropertyMetaData(
+                        this,
                         "javascript",
                         typeof(string),
                         true)
-				};
+                };
 
             _host = host;
             _overrideHost = overrideHost;
             _endpoint = endpoint;
-            _protocol = protocol;
+            _protocol = string.IsNullOrEmpty(protocol) ? Constants.DEFAULT_PROTOCOL : protocol;
             _overrideProtocol = overrideProtocol;
-            _objName = string.IsNullOrEmpty(objectName) ? "fod" : objectName;
-		}
+            _objName = string.IsNullOrEmpty(objectName) ? Constants.DEFAULT_OBJECT_NAME : objectName;
+            _enableCookies = enableCookies;
+
+            _stubble = new StubbleBuilder().Build();
+            _assembly = Assembly.GetExecutingAssembly();
+            _renderSettings = new RenderSettings() { SkipHtmlEncoding = true };
+
+            using (Stream stream = _assembly.GetManifestResourceStream(Constants.TEMPLATE))
+            using (StreamReader streamReader = new StreamReader(stream, Encoding.UTF8))
+            {
+                _template = streamReader.ReadToEnd();
+            }
+        }
 
 		protected override void ManagedResourcesCleanup()
 		{ }
@@ -215,8 +260,15 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             string queryParams = string.Join("&", parameters);
             string endpoint = _endpoint;
 
-            string url = WebUtility.UrlEncode($"{protocol}://{host}/{endpoint}" +
-                (String.IsNullOrEmpty(queryParams) ? "" : "?" + queryParams));
+            string url = null;
+
+            if (string.IsNullOrWhiteSpace(protocol) == false &&
+                string.IsNullOrWhiteSpace(host) == false &&
+                string.IsNullOrWhiteSpace(endpoint) == false)
+            {
+                url = WebUtility.UrlEncode($"{protocol}://{host}/{endpoint}" +
+                    (String.IsNullOrEmpty(queryParams) ? "" : "?" + queryParams));
+            }
 
             // With the gathered resources, build a new JavaScriptResource.
             BuildJavaScript(data, jsonObject, supportsPromises, url);
@@ -236,11 +288,18 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 objectName = _objName;
             }
 
-            JavaScriptResource javaScript = new JavaScriptResource(objectName, jsonObject,
-                supportsPromises,
-                url);
+            var ubdateEnabled = string.IsNullOrWhiteSpace(url) == false;
 
-            string content = javaScript.TransformText();
+            JavaScriptResource javaScriptObj = new JavaScriptResource(
+                objectName,
+                jsonObject,
+                supportsPromises,
+                url,
+                _enableCookies,
+                ubdateEnabled);
+
+            string content = _stubble.Render(_template, javaScriptObj.AsDictionary()/*, _renderSettings*/);
+
             string minifiedContent = string.Empty;
 
             // Minimize the script.

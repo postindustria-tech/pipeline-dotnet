@@ -27,11 +27,11 @@ using System.Collections.Generic;
 
 using Microsoft.Extensions.Primitives;
 using FiftyOne.Pipeline.Core.FlowElements;
-using FiftyOne.Pipeline.Web.Shared.FlowElements;
 using System.Linq;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.Exceptions;
+using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
@@ -136,8 +136,8 @@ namespace FiftyOne.Pipeline.Web.Services
             else
             {
                 // Otherwise, return the minified script to the client.
-                var bundler = flowData.Pipeline.GetElement<JavaScriptBundlerElement>();
-                if(bundler == null)
+                var builder = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
+                if(builder == null)
                 {
                     throw new PipelineConfigurationException("Client-side " +
                         "JavaScript has been requested from the Pipeline. " +
@@ -146,11 +146,11 @@ namespace FiftyOne.Pipeline.Web.Services
                         "evidence or ensure the JavaScriptBundlerElement is " +
                         "added to your Pipeline.");
                 }
-                var bundlerData = flowData.GetFromElement(bundler);
+                var builderData = flowData.GetFromElement(builder);
 
-                SetHeaders(context, hash.ToString(), bundlerData.JavaScript.Length);
+                SetHeaders(context, hash.ToString(), builderData.JavaScript.Length);
 
-                context.Response.WriteAsync(bundlerData.JavaScript);
+                context.Response.WriteAsync(builderData.JavaScript);
             }
 
         }

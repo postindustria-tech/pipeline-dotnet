@@ -33,7 +33,10 @@ using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.Exceptions;
 using System.Net.Http;
 using System.Linq;
-using FiftyOne.Pipeline.Web.Shared.FlowElements;
+using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
+using FiftyOne.Pipeline.JsonBuilder.FlowElement;
+using System.Collections.Generic;
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 
 namespace FiftyOne.Pipeline.Web
 {
@@ -100,7 +103,9 @@ namespace FiftyOne.Pipeline.Web
             services.AddSingleton<IWebRequestEvidenceService,
                 WebRequestEvidenceService>();
             services.AddTransient<IPipelineBuilderFromConfiguration, TBuilder>();
-            services.AddSingleton<JavaScriptBundlerElementBuilder>();
+            services.AddSingleton<SequenceElementBuilder>();
+            services.AddSingleton<JsonBuilderElementBuilder>();
+            services.AddSingleton<JavaScriptBuilderElementBuilder>();
 
             // Add the pipeline to the DI container
             services.AddSingleton(serviceProvider =>
@@ -162,19 +167,48 @@ namespace FiftyOne.Pipeline.Web
             PipelineWebIntegrationOptions webOptions = new PipelineWebIntegrationOptions();
             config.Bind("PipelineWebIntegrationOptions", webOptions);
 
+            // Add the sequence element.
+            var sequenceConfig = options.Elements.Where(e =>
+                e.BuilderName.Contains(nameof(SequenceElement),
+                    StringComparison.OrdinalIgnoreCase));
+            if (sequenceConfig.Count() == 0)
+            {
+                // The sequence element is not included so add it.
+                options.Elements.Add(new ElementOptions()
+                {
+                    BuilderName = nameof(SequenceElement)
+                });
+            }
+
             if (webOptions.ClientSideEvidenceEnabled)
             {
                 // Client-side evidence is enabled so make sure the 
-                // JavaScriptBundlerElement has been included.
-                var bundlerConfig = options.Elements.Where(e =>
-                    e.BuilderName.Contains(nameof(JavaScriptBundlerElement),
+                // JsonBuilderElement and JavaScriptBundlerElement has been 
+                // included.
+                var jsonConfig = options.Elements.Where(e =>
+                    e.BuilderName.Contains(nameof(JsonBuilderElement),
                         StringComparison.OrdinalIgnoreCase));
-                if(bundlerConfig.Count() == 0)
+                if (jsonConfig.Count() == 0)
                 {
-                    // The bundler is not included so add it.
+                    // The json builder is not included so add it.
                     options.Elements.Add(new ElementOptions()
                     {
-                        BuilderName = nameof(JavaScriptBundlerElement)
+                        BuilderName = nameof(JsonBuilderElement)
+                    });
+                }
+
+                var builderConfig = options.Elements.Where(e =>
+                    e.BuilderName.Contains(nameof(JavaScriptBuilderElement),
+                        StringComparison.OrdinalIgnoreCase));
+                if(builderConfig.Count() == 0)
+                {
+                    // The builder is not included so add it.
+                    options.Elements.Add(new ElementOptions()
+                    {
+                        BuilderName = nameof(JavaScriptBuilderElement),
+                        BuildParameters = new Dictionary<string, object>() {
+                            { "EnableCookies", true }
+                        }
                     });
                 }
             }

@@ -23,7 +23,7 @@
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.FlowElements;
-using FiftyOne.Pipeline.Web.Shared.FlowElements;
+using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
@@ -142,7 +142,7 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             }
             else
             {
-                var bundler = flowData.Pipeline.GetElement<JavaScriptBundlerElement>();
+                var bundler = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
                 if (bundler != null)
                 {
                     var bundlerData = flowData.GetFromElement(bundler);

@@ -90,12 +90,19 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </summary>
         protected override void OnPreBuild()
         {
-            // Add the share usage element if it does not exist in the list.
+            // Add the sequence element if it doe not exist already, make sure 
+            // it is added at the beginning as some engines depend on it.
+            if (FlowElements.Any(e => e.GetType() == typeof(SequenceElement)) == false)
+            {
+                FlowElements.Insert(0, new SequenceElementBuilder(LoggerFactory).Build());
+            }
+            // If share usage is enabled then add the share usage element if it
+            // does not exist in the list. Otherwise add the sequence element.
             if (_shareUsageEnabled &&
                 FlowElements.Any(e => e.GetType() == typeof(ShareUsageElement)) == false)
             {
                 FlowElements.Add(new ShareUsageBuilder(LoggerFactory, new HttpClient()).Build());
-            }
+            }  
         }
 
     }

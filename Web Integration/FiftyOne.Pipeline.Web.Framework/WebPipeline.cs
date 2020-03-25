@@ -24,8 +24,10 @@ using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
+using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
+using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.Web.Framework.Configuration;
-using FiftyOne.Pipeline.Web.Shared.FlowElements;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -109,19 +111,45 @@ namespace FiftyOne.Pipeline.Web.Framework
                     "Could not find pipeline configuration information");
             }
 
+            // Add the sequence element.
+            var sequenceConfig = options.Elements.Where(e =>
+                e.BuilderName.IndexOf(nameof(SequenceElement),
+                    StringComparison.OrdinalIgnoreCase) >= 0);
+            if (sequenceConfig.Count() == 0)
+            {
+                // The sequence element is not included so add it.
+                options.Elements.Add(new ElementOptions()
+                {
+                    BuilderName = nameof(SequenceElement)
+                });
+            }
+
             if (ClientSideEvidenceEnabled)
             {
                 // Client-side evidence is enabled so make sure the 
-                // JavaScriptBundlerElement has been included.
-                var bundlerConfig = options.Elements.Where(e =>
-                    e.BuilderName.IndexOf(nameof(JavaScriptBundlerElement), 
+                // JsonBuilderElement and JavaScriptBundlerElement has been 
+                // included.
+                var jsonConfig = options.Elements.Where(e =>
+                    e.BuilderName.IndexOf(nameof(JsonBuilderElement),
                         StringComparison.OrdinalIgnoreCase) >= 0);
-                if (bundlerConfig.Count() == 0)
+                if (jsonConfig.Count() == 0)
+                {
+                    // The json builder is not included so add it.
+                    options.Elements.Add(new ElementOptions()
+                    {
+                        BuilderName = nameof(JsonBuilderElement)
+                    });
+                }
+
+                var builderConfig = options.Elements.Where(e =>
+                    e.BuilderName.IndexOf(nameof(JavaScriptBuilderElement), 
+                        StringComparison.OrdinalIgnoreCase) >= 0);
+                if (builderConfig.Count() == 0)
                 {
                     // The bundler is not included so add it.
                     options.Elements.Add(new ElementOptions()
                     {
-                        BuilderName = nameof(JavaScriptBundlerElement)
+                        BuilderName = nameof(JavaScriptBuilderElement)
                     });
                 }
             }

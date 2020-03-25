@@ -26,7 +26,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Examples.ClientSideEvidence.Shared;
 using FiftyOne.Pipeline.Core.FlowElements;
-using FiftyOne.Pipeline.Web.Shared.FlowElements;
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
+using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
+using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -61,7 +63,9 @@ namespace Examples.ClientSideEvidence.MVC
             // Add the builders for both the simple client side example, and
             // the JavaScript bundler required for the client side code.
             services.AddSingleton<SimpleClientSideElementBuilder>();
-            services.AddSingleton<JavaScriptBundlerElementBuilder>();
+            services.AddSingleton<SequenceElementBuilder>();
+            services.AddSingleton<JsonBuilderElementBuilder>();
+            services.AddSingleton<JavaScriptBuilderElementBuilder>();
 
             // Add a pipeline builder using the configuration from appsettings.
             services.AddFiftyOne<PipelineBuilder>(Configuration);

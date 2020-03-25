@@ -42,6 +42,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
     [TestClass]
     public class ShareUsageElementTests
     {
+        private SequenceElement _sequenceElement;
 
         // Share usage instance that is being tested
         private ShareUsageElement _shareUsageElement;
@@ -100,6 +101,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             List<string> includedQueryStringParams, 
             List<KeyValuePair<string, string>> ignoreDataEvidenceFiler)
         {
+            _sequenceElement = new SequenceElement(new Mock<ILogger<SequenceElement>>().Object);
+            _sequenceElement.AddPipeline(_pipeline.Object);
             _shareUsageElement = new ShareUsageElement(
                 _logger.Object,
                 _httpClient,
@@ -524,6 +527,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             data.AddEvidence(evidenceData);
 
             // Act
+            _sequenceElement.Process(data);
             _shareUsageElement.Process(data);
             // Wait for the consumer task to finish.
             Assert.IsNotNull(_shareUsageElement.SendDataTask);
@@ -570,6 +574,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             data.AddEvidence(evidenceData);
 
             // Act
+            _sequenceElement.Process(data);
             _shareUsageElement.Process(data);
             // Wait for the consumer task to finish.
             Assert.IsNotNull(_shareUsageElement.SendDataTask);

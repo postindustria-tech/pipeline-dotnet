@@ -401,6 +401,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// usage should send to 51Degrees.
         /// </param>
         /// <param name="ignoreDataEvidenceFilter"></param>
+        /// <param name="sessionService"></param>
         /// <param name="aspSessionCookieName">
         /// The name of the cookie that contains the asp.net session id.
         /// </param>
@@ -525,34 +526,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                         }
                     }
                 }
-            }
-
-            // If the evidence does not contain a session id then create a new one.
-            if (evidence.ContainsKey(Constants.EVIDENCE_SESSIONID) == false)
-            {
-                data.AddEvidence(Constants.EVIDENCE_SESSIONID, GetNewSessionId());
-            }
-
-            // If the evidence does not have a sequence then add one. Otherwise
-            // increment it.
-            if (evidence.ContainsKey(Constants.EVIDENCE_SEQUENCE) == false)
-            {
-                data.AddEvidence(Constants.EVIDENCE_SEQUENCE, 1);
-            }
-            else if (evidence.TryGetValue(Constants.EVIDENCE_SEQUENCE, out object sequence))
-            {
-                if (sequence is int result || (sequence is string seq && int.TryParse(seq, out result)))
-                {
-                    data.AddEvidence(Constants.EVIDENCE_SEQUENCE, result + 1);
-                }
-                else
-                {
-                    _logger.LogError("Failed to increment usage sequence number.");
-                }
-            }
-            else
-            {
-                _logger.LogError("Failed to retrieve sequence number.");
             }
 
             if (IsCanceled == false && ignoreData == false)
@@ -883,12 +856,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
                 return tmp.ToString();
             }
-        }
-
-        private string GetNewSessionId()
-        {
-            Guid g = Guid.NewGuid();
-            return g.ToString();
         }
     }
 }

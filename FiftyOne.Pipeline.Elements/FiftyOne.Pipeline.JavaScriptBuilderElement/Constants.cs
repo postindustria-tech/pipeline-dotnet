@@ -47,5 +47,9 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder
             EVIDENCE_OBJECT_NAME_SUFFIX;
 
         public const string DEFAULT_PROTOCOL = "https";
+
+        public const string DEFAULT_OBJECT_NAME = "fod";
+
+        internal const string TEMPLATE = "FiftyOne.Pipeline.JavaScriptBuilder.Templates.JavaScriptResource.mustache";
     }
 }

@@ -26,11 +26,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Templates\JavaScriptResource.mustache" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\JavaScriptResource.mustache" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" Version="1.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NUglify" Version="1.5.12" />
+    <PackageReference Include="Stubble.Core" Version="1.7.2" />
     <PackageReference Include="System.CodeDom" Version="4.5.0" />
   </ItemGroup>
 
@@ -41,21 +50,6 @@
 
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Templates\JavaScriptResource.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>JavaScriptResource.tt</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Templates\JavaScriptResource.tt">
-      <Generator>TextTemplatingFilePreprocessor</Generator>
-      <LastGenOutput>JavaScriptResource.cs</LastGenOutput>
-    </None>
   </ItemGroup>
 
 </Project>

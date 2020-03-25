@@ -77,6 +77,18 @@
       <Project>{1a56eb6e-37dd-474a-9ca4-ed4bfe96857d}</Project>
       <Name>FiftyOne.Pipeline.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Elements\FiftyOne.Pipeline.JavaScriptBuilderElement\FiftyOne.Pipeline.JavaScriptBuilder.csproj">
+      <Project>{2C2AFF73-A5E5-45C0-98BE-A492BE85BEBB}</Project>
+      <Name>FiftyOne.Pipeline.JavaScriptBuilder</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Elements\FiftyOne.Pipeline.JsonBuilderElement\FiftyOne.Pipeline.JsonBuilder.csproj">
+      <Project>{DE895B27-976B-47CA-B7FD-8BFFBE24C80D}</Project>
+      <Name>FiftyOne.Pipeline.JsonBuilder</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines.FiftyOne\FiftyOne.Pipeline.Engines.FiftyOne.csproj">
+      <Project>{8087BE8A-67B7-4ECC-8EA6-109B3B741D5E}</Project>
+      <Name>FiftyOne.Pipeline.Engines.FiftyOne</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Web.Shared\FiftyOne.Pipeline.Web.Shared.csproj">
       <Project>{47f07272-7639-44ba-96c2-dcff7a8d702a}</Project>
       <Name>FiftyOne.Pipeline.Web.Shared</Name>

@@ -19,8 +19,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FiftyOne.Pipeline.Engines",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FiftyOne.Pipeline.Core", "FiftyOne.Pipeline.Core\FiftyOne.Pipeline.Core.csproj", "{4F8BCC3B-D156-47DC-BB4D-BCB00A8F02A9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FiftyOne.Pipeline.Web.Minify", "FiftyOne.Pipeline.Web.Minify\FiftyOne.Pipeline.Web.Minify.csproj", "{1B66AAA0-9E63-4677-964B-ECB5B50E2684}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FiftyOne.Pipeline.Web.Shared", "FiftyOne.Pipeline.Web.Shared\FiftyOne.Pipeline.Web.Shared.csproj", "{89C19891-7B2B-41F2-86F1-F450257586CD}"
 EndProject
 Global
@@ -53,10 +51,6 @@ Global
 		{4F8BCC3B-D156-47DC-BB4D-BCB00A8F02A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F8BCC3B-D156-47DC-BB4D-BCB00A8F02A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F8BCC3B-D156-47DC-BB4D-BCB00A8F02A9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1B66AAA0-9E63-4677-964B-ECB5B50E2684}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1B66AAA0-9E63-4677-964B-ECB5B50E2684}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1B66AAA0-9E63-4677-964B-ECB5B50E2684}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1B66AAA0-9E63-4677-964B-ECB5B50E2684}.Release|Any CPU.Build.0 = Release|Any CPU
 		{89C19891-7B2B-41F2-86F1-F450257586CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{89C19891-7B2B-41F2-86F1-F450257586CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{89C19891-7B2B-41F2-86F1-F450257586CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
