@@ -109,7 +109,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// The default protocol that the client JavaScript will use when 
         /// querying for updates.
         /// </summary>
-        /// <param name="protocol"></param>
+        /// <param name="protocol">The protocol to use (http / https)</param>
         /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetDefaultProtocol(string protocol)
         {
