@@ -30,6 +30,10 @@ namespace FiftyOne.Pipeline.Core.Data
     /// <summary>
     /// Meta-data relating to properties that are populated by Flow Elements.
     /// </summary>
+    /// <remarks>
+    /// This can be used as a simple implementation of the generic, 
+    /// abstract base class.
+    /// </remarks>
     public class ElementPropertyMetaData : IElementPropertyMetaData
     {
         /// <summary>
@@ -61,6 +65,18 @@ namespace FiftyOne.Pipeline.Core.Data
         public bool Available { get; private set; }
 
         /// <summary>
+        /// This is only relevant where Type is a collection of complex 
+        /// objects. 
+        /// It contains a list of the property meta-data for the
+        /// items in the value for this property.
+        /// For example, if this meta-data instance represents a list of 
+        /// hardware devices, ItemProperties will contain a list of the 
+        /// meta-data for properties available on each hardware device
+        /// element within that list.
+        /// </summary>
+        public IReadOnlyList<IElementPropertyMetaData> ItemProperties { get; }
+
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="element">
@@ -85,13 +101,15 @@ namespace FiftyOne.Pipeline.Core.Data
             string name,
             Type type,
             bool available,
-            string category = "")
+            string category = "",
+            IReadOnlyList<IElementPropertyMetaData> itemProperties = null)
         {
             Element = element;
             Name = name;
             Type = type;
             Category = category;
             Available = available;
+            ItemProperties = itemProperties;
         }
     }
 }

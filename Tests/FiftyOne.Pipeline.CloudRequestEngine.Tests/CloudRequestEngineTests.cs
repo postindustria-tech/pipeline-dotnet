@@ -28,6 +28,7 @@ using Moq;
 using Moq.Protected;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -44,66 +45,11 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
         private Uri expectedUri = new Uri("https://cloud.51degrees.com/api/v4/json");
 
-        [TestInitialize]
-        public void Init()
-        {
-            // ARRANGE
-            _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-            // Set up the JSON response.
-            _handlerMock
-               .Protected()
-               // Setup the PROTECTED method to mock
-               .Setup<Task<HttpResponseMessage>>(
-                  "SendAsync",
-                  ItExpr.Is<HttpRequestMessage>(r =>
-                      r.RequestUri.AbsolutePath.ToLower().EndsWith("json")),
-                  ItExpr.IsAny<CancellationToken>()
-               )
-               // prepare the expected response of the mocked http call
-               .ReturnsAsync(new HttpResponseMessage()
-               {
-                   StatusCode = HttpStatusCode.OK,
-                   Content = new StringContent("{'device':{'value':'1'}}"),
-               })
-               .Verifiable();
-            // Set up the evidencekeys response.
-            _handlerMock
-               .Protected()
-               // Setup the PROTECTED method to mock
-               .Setup<Task<HttpResponseMessage>>(
-                  "SendAsync",
-                  ItExpr.Is<HttpRequestMessage>(r =>
-                      r.RequestUri.AbsolutePath.ToLower().EndsWith("evidencekeys")),
-                  ItExpr.IsAny<CancellationToken>()
-               )
-               // prepare the expected response of the mocked http call
-               .ReturnsAsync(new HttpResponseMessage()
-               {
-                   StatusCode = HttpStatusCode.OK,
-                   Content = new StringContent("['query.User-Agent']"),
-               })
-               .Verifiable();
-            // Set up the accessibleproperties response.
-            _handlerMock
-               .Protected()
-               // Setup the PROTECTED method to mock
-               .Setup<Task<HttpResponseMessage>>(
-                  "SendAsync",
-                  ItExpr.Is<HttpRequestMessage>(r =>
-                      r.RequestUri.AbsolutePath.ToLower().EndsWith("accessibleproperties")),
-                  ItExpr.IsAny<CancellationToken>()
-               )
-               // prepare the expected response of the mocked http call
-               .ReturnsAsync(new HttpResponseMessage()
-               {
-                   StatusCode = HttpStatusCode.OK,
-                   Content = new StringContent("{'Products': {'device': {'DataTier': 'tier','Properties': [{'Name': 'value','Type': 'String','Category': 'Device'}]}}}"),
-               })
-               .Verifiable();
+        private string _jsonResponse = "{'device':{'value':'1'}}";
+        private string _evidenceKeysResponse = "['query.User-Agent']";
+        private string _accessiblePropertiesResponse = 
+            "{'Products': {'device': {'DataTier': 'tier','Properties': [{'Name': 'value','Type': 'String','Category': 'Device'}]}}}";
 
-            // use real http client with mocked handler here
-            _httpClient = new HttpClient(_handlerMock.Object);
-        }
 
         /// <summary>
         /// Test cloud request engine adds correct information to post request
@@ -114,6 +60,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         {
             string resourceKey = "resource_key";
             string userAgent = "iPhone";
+            ConfigureMockedClient();
 
             var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
                 .SetResourceKey(resourceKey)
@@ -156,6 +103,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             string resourceKey = "resource_key";
             string userAgent = "iPhone";
             string licenseKey = "ABCDEFG";
+            ConfigureMockedClient();
 
             var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
                 .SetResourceKey(resourceKey)
@@ -190,5 +138,135 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             );
         }
 
+        /// <summary>
+        /// Verify that the CloudRequestEngine can correctly parse a 
+        /// response from the accessible properties endpoint that contains
+        /// meta-data for sub-properties.
+        /// </summary>
+        [TestMethod]
+        public void SubProperties()
+        {
+            _accessiblePropertiesResponse = @"
+{
+    ""Products"": {
+        ""device"": {
+            ""DataTier"": ""CloudV4TAC"",
+            ""Properties"": [
+                {
+                    ""Name"": ""IsMobile"",
+                    ""Type"": ""Boolean"",
+                    ""Category"": ""Device""
+                },
+                {
+                    ""Name"": ""IsTablet"",
+                    ""Type"": ""Boolean"",
+                    ""Category"": ""Device""
+                }
+            ]
+        },
+        ""devices"": {
+            ""DataTier"": ""CloudV4TAC"",
+            ""Properties"": [
+                {
+                    ""Name"": ""Devices"",
+                    ""Type"": ""Array"",
+                    ""Category"": ""Unspecified"",
+                    ""ItemProperties"": [
+                        {
+                            ""Name"": ""IsMobile"",
+                            ""Type"": ""Boolean"",
+                            ""Category"": ""Device""
+                        },
+                        {
+                            ""Name"": ""IsTablet"",
+                            ""Type"": ""Boolean"",
+                            ""Category"": ""Device""
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}";
+            ConfigureMockedClient();
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey("key")
+                .Build();
+
+            Assert.AreEqual(2, engine.PublicProperties.Count);
+            var deviceProperties = engine.PublicProperties["device"];
+            Assert.AreEqual(2, deviceProperties.Properties.Count);
+            Assert.IsTrue(deviceProperties.Properties.Any(p => p.Name.Equals("IsMobile")));
+            Assert.IsTrue(deviceProperties.Properties.Any(p => p.Name.Equals("IsTablet")));
+            var devicesProperties = engine.PublicProperties["devices"];
+            Assert.AreEqual(1, devicesProperties.Properties.Count);
+            Assert.AreEqual("Devices", devicesProperties.Properties[0].Name);
+            Assert.IsTrue(devicesProperties.Properties[0].ItemProperties.Any(p => p.Name.Equals("IsMobile")));
+            Assert.IsTrue(devicesProperties.Properties[0].ItemProperties.Any(p => p.Name.Equals("IsTablet")));
+        }
+
+        /// <summary>
+        /// Setup _httpClient to respond with the configured messages.
+        /// </summary>
+        private void ConfigureMockedClient()
+        {
+            // ARRANGE
+            _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            // Set up the JSON response.
+            _handlerMock
+               .Protected()
+               // Setup the PROTECTED method to mock
+               .Setup<Task<HttpResponseMessage>>(
+                  "SendAsync",
+                  ItExpr.Is<HttpRequestMessage>(r =>
+                      r.RequestUri.AbsolutePath.ToLower().EndsWith("json")),
+                  ItExpr.IsAny<CancellationToken>()
+               )
+               // prepare the expected response of the mocked http call
+               .ReturnsAsync(new HttpResponseMessage()
+               {
+                   StatusCode = HttpStatusCode.OK,
+                   Content = new StringContent(_jsonResponse),
+               })
+               .Verifiable();
+            // Set up the evidencekeys response.
+            _handlerMock
+               .Protected()
+               // Setup the PROTECTED method to mock
+               .Setup<Task<HttpResponseMessage>>(
+                  "SendAsync",
+                  ItExpr.Is<HttpRequestMessage>(r =>
+                      r.RequestUri.AbsolutePath.ToLower().EndsWith("evidencekeys")),
+                  ItExpr.IsAny<CancellationToken>()
+               )
+               // prepare the expected response of the mocked http call
+               .ReturnsAsync(new HttpResponseMessage()
+               {
+                   StatusCode = HttpStatusCode.OK,
+                   Content = new StringContent(_evidenceKeysResponse),
+               })
+               .Verifiable();
+            // Set up the accessibleproperties response.
+            _handlerMock
+               .Protected()
+               // Setup the PROTECTED method to mock
+               .Setup<Task<HttpResponseMessage>>(
+                  "SendAsync",
+                  ItExpr.Is<HttpRequestMessage>(r =>
+                      r.RequestUri.AbsolutePath.ToLower().EndsWith("accessibleproperties")),
+                  ItExpr.IsAny<CancellationToken>()
+               )
+               // prepare the expected response of the mocked http call
+               .ReturnsAsync(new HttpResponseMessage()
+               {
+                   StatusCode = HttpStatusCode.OK,
+                   Content = new StringContent(_accessiblePropertiesResponse),
+               })
+               .Verifiable();
+
+            // use real http client with mocked handler here
+            _httpClient = new HttpClient(_handlerMock.Object);
+        }
     }
 }

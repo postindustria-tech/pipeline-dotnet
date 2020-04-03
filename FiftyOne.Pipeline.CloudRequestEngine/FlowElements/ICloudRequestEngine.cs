@@ -1,4 +1,4 @@
-/* *********************************************************************
+﻿/* *********************************************************************
  * This Original Work is copyright of 51 Degrees Mobile Experts Limited.
  * Copyright 2020 51 Degrees Mobile Experts Limited, 5 Charlotte Close,
  * Caversham, Reading, Berkshire, United Kingdom RG4 7BY.
@@ -20,35 +20,18 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.CloudRequestEngine.Data;
 using FiftyOne.Pipeline.Core.Data;
-using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text;
 
-namespace FiftyOne.Pipeline.Engines.Data
+namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
-    /// <summary>
-    /// Represents meta-data relating to a property that is populated 
-    /// by an <see cref="IAspectEngine"/> instance.
-    /// </summary>
-    public interface IAspectPropertyMetaData : IElementPropertyMetaData
+    public interface ICloudRequestEngine : IAspectEngine<CloudRequestData, IAspectPropertyMetaData>
     {
-        /// <summary>
-        /// A list of the data tiers that can be used to determine values 
-        /// for this property.
-        /// Examples values are:
-        /// Lite
-        /// Premium
-        /// Enterprise
-        /// </summary>
-        IList<string> DataTiersWherePresent { get; }
-
-        /// <summary>
-        /// Full description of the property.
-        /// </summary>
-        string Description { get; }
+        IReadOnlyDictionary<string, ProductMetaData> PublicProperties { get; }
     }
 }

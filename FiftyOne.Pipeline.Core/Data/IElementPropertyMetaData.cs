@@ -27,14 +27,18 @@ using System.Text;
 
 namespace FiftyOne.Pipeline.Core.Data
 {
+    /// <summary>
+    /// Represents meta-data relating to a property that is populated 
+    /// by a <see cref="IFlowElement"/> instance.
+    /// </summary>
     public interface IElementPropertyMetaData
-    {
+    { 
         /// <summary>
         /// The name of the property. Must match the string key used to
         /// store the property value in the <see cref="IElementData"/> instance.
         /// </summary>
         string Name { get; }
-        
+
         /// <summary>
         /// The <see cref="IFlowElement"/> that this property is associated 
         /// with.
@@ -57,5 +61,16 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </summary>
         bool Available { get; }
 
+        /// <summary>
+        /// This is only relevant where Type is a collection of complex 
+        /// objects. 
+        /// It contains a list of the property meta-data for the
+        /// items in the value for this property.
+        /// For example, if this meta-data instance represents a list of 
+        /// hardware devices, ItemProperties will contain a list of the 
+        /// meta-data for properties available on each hardware device
+        /// element within that list.
+        /// </summary>
+        IReadOnlyList<IElementPropertyMetaData> ItemProperties { get; }
     }
 }

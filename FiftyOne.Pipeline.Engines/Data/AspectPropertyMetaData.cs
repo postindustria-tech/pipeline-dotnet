@@ -21,7 +21,6 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
-using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using System;
 using System.Collections.Generic;
@@ -79,6 +78,11 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// <param name="description">
         /// Full description of the property.
         /// </param>
+        /// <param name="itemProperties">
+        /// The meta-data for properties that are stored in sub-items.
+        /// Only relevant if this meta-data instance relates to a 
+        /// collection of complex objects.
+        /// </param>
         public AspectPropertyMetaData(
             IAspectEngine element,
             string name,
@@ -86,7 +90,9 @@ namespace FiftyOne.Pipeline.Engines.Data
             string category,
             IList<string> dataTiersWherePresent,
             bool available,
-            string description = "") : base(element, name, type, available, category)
+            string description = "",
+            IReadOnlyList<IElementPropertyMetaData> itemProperties = null) : 
+            base(element, name, type, available, category, itemProperties)
         {
             DataTiersWherePresent = dataTiersWherePresent;
             Description = description;

@@ -315,7 +315,15 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 {
                     result = null;
                 }
-
+            }
+            else if (_elementsByType.Any(e => typeof(TElement).IsAssignableFrom(e.Key)))
+            {
+                var matches = _elementsByType.Where(e => typeof(TElement).IsAssignableFrom(e.Key));
+                if(matches.Count() == 1 &&
+                    matches.Single().Value.Count == 1)
+                {
+                    result = matches.Single().Value.Single() as TElement;
+                }
             }
 
             return result;

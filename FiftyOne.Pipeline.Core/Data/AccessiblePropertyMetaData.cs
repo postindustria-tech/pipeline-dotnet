@@ -70,6 +70,11 @@ namespace FiftyOne.Pipeline.Core.Data
         public string Category;
 
         /// <summary>
+        /// Properties of sub-items
+        /// </summary>
+        public IList<PropertyMetaData> ItemProperties;
+
+        /// <summary>
         /// Gets the actual Type of the property from the Type Name.
         /// </summary>
         /// <returns></returns>
@@ -81,9 +86,7 @@ namespace FiftyOne.Pipeline.Core.Data
                     return typeof(string);
                 case "Int32":
                     return typeof(int);
-                case "IList`1":
-                    return typeof(IList<string>);
-                case "IReadOnlyList`1":
+                case "Array":
                     return typeof(IReadOnlyList<string>);
                 case "Boolean":
                     return typeof(bool);

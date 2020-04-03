@@ -41,7 +41,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
     /// The unprocessed JSON response is stored in the FlowData
     /// for other engines to make use of.
     /// </summary>
-    public class CloudRequestEngine : AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>
+    public class CloudRequestEngine : AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>, ICloudRequestEngine
     {
         private HttpClient _httpClient;
 
@@ -156,7 +156,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// populate in the JSON response.
         /// Keyed on property name.
         /// </summary>
-        public Dictionary<string, ProductMetaData> PublicProperties => _publicProperties;
+        public IReadOnlyDictionary<string, ProductMetaData> PublicProperties => _publicProperties;
 
         /// <summary>
         /// Send evidence to the cloud and get back a JSON result.

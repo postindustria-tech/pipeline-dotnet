@@ -51,7 +51,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         protected class RequestEngineAccessor
         {
-            private CloudRequestEngine _cloudRequestEngine = null;
+            private ICloudRequestEngine _cloudRequestEngine = null;
             private object _cloudRequestEngineLock = new object();
             private Func<IReadOnlyList<IPipeline>> _pipelinesAccessor;
 
@@ -71,7 +71,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             /// Get the <see cref="CloudRequestEngine"/> that will be making
             /// requests on behalf of this engine.
             /// </summary>
-            public CloudRequestEngine Instance
+            public ICloudRequestEngine Instance
             {
                 get
                 {
@@ -94,7 +94,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                                         $"to a Pipeline.");
                                 }
 
-                                _cloudRequestEngine = _pipelinesAccessor()[0].GetElement<CloudRequestEngine>();
+                                _cloudRequestEngine = _pipelinesAccessor()[0].GetElement<ICloudRequestEngine>();
 
                                 if (_cloudRequestEngine == null)
                                 {
@@ -184,7 +184,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// with the relevant property meta-data.
         /// False if something has gone wrong.
         /// </returns>
-        private bool LoadAspectProperties(CloudRequestEngine engine)
+        private bool LoadAspectProperties(ICloudRequestEngine engine)
         {
             var dictionary = engine.PublicProperties;
 
@@ -197,13 +197,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
                 foreach (var item in dictionary[ElementDataKey].Properties)
                 {
-                    var property = new AspectPropertyMetaData(this,
-                        item.Name,
-                        item.GetPropertyType(),
-                        item.Category,
-                        new List<string>(),
-                        true);
-                    _aspectProperties.Add(property);
+                    _aspectProperties.Add(LoadProperty(item));
                 }
                 return true;
             }
@@ -213,6 +207,29 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     $"loaded for {GetType().Name}", this);
                 return false;
             }
+        }
+
+        private AspectPropertyMetaData LoadProperty(PropertyMetaData property)
+        {
+            List<AspectPropertyMetaData> subProperties = null;
+            if (property.ItemProperties != null &&
+                property.ItemProperties.Count > 0)
+            {
+                subProperties = new List<AspectPropertyMetaData>();
+                foreach (var subproperty in property.ItemProperties)
+                {
+                    subProperties.Add(LoadProperty(subproperty));
+                }
+            }
+
+            return new AspectPropertyMetaData(this,
+                property.Name,
+                property.GetPropertyType(),
+                property.Category,
+                new List<string>(),
+                true,
+                "",
+                subProperties);
         }
     }
 }

@@ -40,9 +40,7 @@ using System.Diagnostics;
 /// explanation can be found in the 
 /// [documentation](https://docs.51degrees.com/documentation/4.1/_features__result_caching.html).
 /// 
-/// This example is available in full on [GitHub](https://github.com/51Degrees/pipeline-dotnet/blob/release/v4.1.0/Examples/ResultCaching/Program.cs). 
-/// (During the beta period, this repository will be private. 
-/// [Contact us](mailto:support.51degrees.com) to request access) 
+/// This example is available in full on [GitHub](https://github.com/51Degrees/pipeline-dotnet/blob/master/Examples/ResultCaching/Program.cs).
 /// 
 /// The example shows how to:
 /// 
