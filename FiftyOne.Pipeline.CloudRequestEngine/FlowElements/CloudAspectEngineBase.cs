@@ -28,6 +28,7 @@ using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
@@ -197,9 +198,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
                 foreach (var item in dictionary[ElementDataKey].Properties)
                 {
-                    _aspectProperties.Add(LoadProperty(item));
+                    var property = LoadProperty(item);
+                    if (property != null)
+                    {
+                        _aspectProperties.Add(property);
+                    }
                 }
-                return true;
+
+                return _aspectProperties.Count > 0;
             }
             else
             {
@@ -209,27 +215,68 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
         }
 
-        private AspectPropertyMetaData LoadProperty(PropertyMetaData property)
+        /// <summary>
+        /// Translate the specified property from <see cref="PropertyMetaData"/>
+        /// to <see cref="AspectPropertyMetaData"/>.
+        /// </summary>
+        /// <param name="property">
+        /// The <see cref="PropertyMetaData"/> instance to translate.
+        /// </param>
+        /// <param name="parentObjectType">
+        /// The type of the object on which this property exists.
+        /// </param>
+        /// <returns>
+        /// A new <see cref="AspectPropertyMetaData"/> instance, created from
+        /// the values in the supplied <see cref="PropertyMetaData"/>.
+        /// </returns>
+        private AspectPropertyMetaData LoadProperty(PropertyMetaData property, Type parentObjectType = null)
         {
-            List<AspectPropertyMetaData> subProperties = null;
-            if (property.ItemProperties != null &&
-                property.ItemProperties.Count > 0)
+            // If parent object type is not set then use the type of the
+            // data returned by this engine.
+            if(parentObjectType == null)
             {
-                subProperties = new List<AspectPropertyMetaData>();
-                foreach (var subproperty in property.ItemProperties)
-                {
-                    subProperties.Add(LoadProperty(subproperty));
-                }
+                parentObjectType = typeof(T);
             }
+            // Get the property info for this property based on the 
+            // supplied name.
+            var propertyInfo = typeof(T).GetProperty(property.Name, 
+                BindingFlags.Public | 
+                BindingFlags.Instance | 
+                BindingFlags.IgnoreCase);
 
-            return new AspectPropertyMetaData(this,
-                property.Name,
-                property.GetPropertyType(),
-                property.Category,
-                new List<string>(),
-                true,
-                "",
-                subProperties);
+            if (propertyInfo != null) 
+            {
+                // Load any sub properties.
+                List<AspectPropertyMetaData> subProperties = null;
+                if (property.ItemProperties != null &&
+                    property.ItemProperties.Count > 0)
+                {
+                    subProperties = new List<AspectPropertyMetaData>();
+                    foreach (var subproperty in property.ItemProperties)
+                    {
+                        subProperties.Add(LoadProperty(subproperty, 
+                            propertyInfo.PropertyType));
+                    }
+                }
+
+                // Create the AspectPropertyMetaData instance.
+                return new AspectPropertyMetaData(this,
+                    property.Name,
+                    propertyInfo.PropertyType,
+                    property.Category,
+                    new List<string>(),
+                    true,
+                    "",
+                    subProperties);
+            }
+            else
+            {
+                // Could not find a matching property on the parent object
+                // so log a warning.
+                _logger.LogWarning($"Failed to find property '{property.Name}' " +
+                    $"on data object '{parentObjectType.Name}'. ");
+                return null;
+            }
         }
     }
 }

@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -73,30 +74,5 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Properties of sub-items
         /// </summary>
         public IList<PropertyMetaData> ItemProperties;
-
-        /// <summary>
-        /// Gets the actual Type of the property from the Type Name.
-        /// </summary>
-        /// <returns></returns>
-        public Type GetPropertyType()
-        {
-            switch (Type)
-            {
-                case "String":
-                    return typeof(string);
-                case "Int32":
-                    return typeof(int);
-                case "Array":
-                    return typeof(IReadOnlyList<string>);
-                case "Boolean":
-                    return typeof(bool);
-                case "JavaScript":
-                    return typeof(Pipeline.Core.Data.Types.JavaScript);
-                case "Double":
-                    return typeof(double);
-                default:
-                    throw new TypeAccessException("Type does not map");
-            }
-        }
     }
 }

@@ -48,6 +48,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 base(logger, pipeline, engine)
             {
             }
+
+            public bool IsMobile { get; set; }
+            public string HardwareVendor { get; set; }
+            public IReadOnlyList<string> HardwareVariants { get; set; }
+
+            public IReadOnlyList<TestData> Devices { get; set; }
         }
         private class TestInstance : CloudAspectEngineBase<TestData>
         {
