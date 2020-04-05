@@ -89,11 +89,14 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilderElement_JavaScript(string key, string property, object value)
         {
             dynamic json = new JObject();
-            json[key] = new JObject(new JProperty(property, value));
+            
             if(value == null)
             {
+                json[key] = new JObject(new JProperty(property, value), new JProperty(property+"nullreason", "No value set"));
                 value = "No value set";
-                json["nullValueReasons"] = new JObject(new JProperty($"{key}.{property}", value.ToString()));
+            } else
+            {
+                json[key] = new JObject(new JProperty(property, value));
             }
             IJavaScriptBuilderElementData result = null;
             var flowData = new Mock<IFlowData>();

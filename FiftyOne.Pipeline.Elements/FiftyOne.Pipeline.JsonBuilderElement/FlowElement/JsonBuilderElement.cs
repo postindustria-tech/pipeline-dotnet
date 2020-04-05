@@ -126,33 +126,9 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 AddJavaScriptProperties(data, allProperties);
             }
 
-            AddNullValueReasons(data, allProperties);
-
             AddErrors(data, allProperties);
 
             return BuildJson(allProperties);
-        }
-
-        protected virtual void AddNullValueReasons(IFlowData data, Dictionary<string, object> allProperties)
-        {
-            Dictionary<string, string> nullValueReasons = new Dictionary<string, string>();
-
-            foreach (var values in data.ElementDataAsEnumerable())
-            {
-                if (values is IAspectData aspectData)
-                {
-                    foreach (var value in aspectData.AsDictionary())
-                    {
-                        if (value.Value is IAspectPropertyValue val)
-                        {
-                            if (val.HasValue == false)
-                                nullValueReasons.Add(aspectData.Engines.First().ElementDataKey + "." + value.Key, val.NoValueMessage);
-                        }
-                    }
-                }
-            }
-
-            allProperties.Add("nullValueReasons", nullValueReasons);
         }
 
         protected string BuildJson(Dictionary<string, object> allProperties)
@@ -232,6 +208,11 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         protected override void UnmanagedResourcesCleanup()
         { }
 
+        /// <summary>
+        /// Get all the proeprties.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         protected virtual Dictionary<String, object> GetAllProperties(IFlowData data)
         {
             Dictionary<string, object> allProperties = new Dictionary<string, object>();
@@ -240,12 +221,52 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             {
                 if (allProperties.ContainsKey(element.Key) == false)
                 {
-                    allProperties.Add(element.Key, 
-                        (element.Value as IElementData).AsDictionary());
+                    var values = GetValues((element.Value as IElementData).AsDictionary());
+
+                    allProperties.Add(element.Key, values);
                 }
             }
 
             return allProperties;
+        }
+
+        private Dictionary<string, object> GetValues(IReadOnlyDictionary<string, object> readOnlyDictionary)
+        {
+            var values = new Dictionary<string, object>();
+
+            foreach(var value in readOnlyDictionary)
+            {
+                if(value.Value is IAspectPropertyValue aspectProperty)
+                {
+                    if (aspectProperty.HasValue) 
+                    {
+                        if(aspectProperty.Value is IList elementDatas &&
+                            aspectProperty.Value.GetType().GetElementType() == typeof(IElementData))
+                        {
+                            var results = new List<object>();
+                            foreach(var elementData in elementDatas)
+                            {
+                                results.Add(GetValues(((IElementData)elementData).AsDictionary()));
+                            }
+                            values.Add(value.Key, results);
+                        }
+                        else
+                        {
+                            values.Add(value.Key, aspectProperty.Value);
+                        } 
+                    }
+                    else
+                    {
+                        values.Add(value.Key, null);
+                        values.Add(value.Key + "nullreason", aspectProperty.NoValueMessage);
+                    }
+                } 
+                else
+                {
+                    values.Add(value.Key, value.Value);
+                }
+            }
+            return values;
         }
 
         /// <summary>

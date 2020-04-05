@@ -66,6 +66,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         protected bool _overrideProtocol;
         protected string _objName;
         protected bool _enableCookies;
+        private bool _minify;
         private StubbleVisitorRenderer _stubble;
         private Assembly _assembly;
         private string _template;
@@ -131,6 +132,9 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// Set whether the client JavaScript stored results of client side
         /// processing in cookies.
         /// </param>
+        /// <param name="minify">
+        /// If true, the resulting JavaScript will be minified
+        /// </param>
 		public JavaScriptBuilderElement(
             ILogger<JavaScriptBuilderElement> logger,
             Func<IPipeline,
@@ -142,7 +146,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             string protocol,
             bool overrideProtocol,
             string objectName,
-            bool enableCookies)
+            bool enableCookies,
+            bool minify)
             : base(logger, elementDataFactory)
         {
             // Set the evidence key filter for the flow data to use.
@@ -169,6 +174,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             _overrideProtocol = overrideProtocol;
             _objName = string.IsNullOrEmpty(objectName) ? Constants.DEFAULT_OBJECT_NAME : objectName;
             _enableCookies = enableCookies;
+            _minify = minify;
 
             _stubble = new StubbleBuilder().Build();
             _assembly = Assembly.GetExecutingAssembly();
@@ -300,43 +306,42 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 
             string content = _stubble.Render(_template, javaScriptObj.AsDictionary()/*, _renderSettings*/);
 
-            string minifiedContent = string.Empty;
+            string minifiedContent = content;
 
-            // Minimize the script.
-            var ugly = Uglify.Js(content);
-
-            if (ugly.HasErrors)
+            if (_minify)
             {
-                // If there were are errors then log them and
-                // return the non-minified response.
+                // Minimize the script.
+                var ugly = Uglify.Js(content);
 
-                minifiedContent = content;
-
-                if (_lastRequestWasError == false)
+                if (ugly.HasErrors)
                 {
-                    StringBuilder errorText = new StringBuilder();
-                    errorText.AppendLine("Errors occurred when minifying JavaScript.");
-                    foreach (var error in ugly.Errors)
+                    // If there were are errors then log them and
+                    // return the non-minified response.
+
+                    minifiedContent = content;
+
+                    if (_lastRequestWasError == false)
                     {
-                        errorText.AppendLine($"{error.ErrorCode}: {error.Message}. " +
-                            $"Line(s) {error.StartLine}-{error.EndLine}. " +
-                            $"Column(s) {error.StartColumn}-{error.EndColumn}");
+                        StringBuilder errorText = new StringBuilder();
+                        errorText.AppendLine("Errors occurred when minifying JavaScript.");
+                        foreach (var error in ugly.Errors)
+                        {
+                            errorText.AppendLine($"{error.ErrorCode}: {error.Message}. " +
+                                $"Line(s) {error.StartLine}-{error.EndLine}. " +
+                                $"Column(s) {error.StartColumn}-{error.EndColumn}");
+                        }
+                        errorText.AppendLine(content);
+                        _logger.LogError(errorText.ToString());
+                        _lastRequestWasError = true;
+                        data.Stop = true;
                     }
-                    errorText.AppendLine(content);
-                    _logger.LogError(errorText.ToString());
-                    _lastRequestWasError = true;
-                    data.Stop = true;
+                }
+                else
+                {
+                    minifiedContent = ugly.Code;
                 }
             }
-            else
-            {
-                minifiedContent = ugly.Code;
-            }
 
-#if DEBUG            
-            // Undo minify in debug mode.
-            minifiedContent = content;
-#endif
             elementData.JavaScript = minifiedContent;
         }
 

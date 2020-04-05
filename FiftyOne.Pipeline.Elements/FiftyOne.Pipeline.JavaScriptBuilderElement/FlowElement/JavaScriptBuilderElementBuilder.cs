@@ -47,6 +47,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         protected bool _overrideProtocol;
         protected string _objName = string.Empty;
         protected bool _enableCookies;
+        protected bool _minify = true;
 
         /// <summary>
         /// Constructor.
@@ -171,6 +172,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             return this;
         }
 
+        public JavaScriptBuilderElementBuilder SetMinify(bool minify)
+        {
+            _minify = minify;
+            return this;
+        }
+
         /// <summary>
         /// Build the element.
         /// </summary>
@@ -185,7 +192,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 _protocol,
                 _overrideProtocol,
                 _objName,
-                _enableCookies);
+                _enableCookies,
+                _minify);
         }
 
         private IJavaScriptBuilderElementData CreateData(
