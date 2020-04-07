@@ -39,6 +39,7 @@ using Stubble.Core;
 using System.IO;
 using System.Reflection;
 using Stubble.Core.Settings;
+using FiftyOne.Pipeline.Engines.Data;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 {
@@ -234,12 +235,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             // Could be for the requesting browser or the end-users browser.
             try
             {
-                supportsPromises = data.GetAsString("Promise") == "Full";
+                var promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
+                supportsPromises = promise != null && promise.HasValue && promise.Value == "Full";
             }
-            catch (PipelineDataException)
-            {
-                supportsPromises = false;
-            }
+            catch (PipelineDataException) { supportsPromises = false; }
+            catch (InvalidCastException) { supportsPromises = false; }
+            catch (KeyNotFoundException) { supportsPromises = false; }
 
             // Get the JSON include to embed into the JavaScript include.
             string jsonObject = string.Empty;
@@ -249,7 +250,9 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             }
             catch (KeyNotFoundException ex)
             {
-                _logger.LogError(ex, "The output of the Json builder is missing");
+                throw new PipelineConfigurationException(
+                    "JsonBuilderElement must run before JavaScriptBuilderElement. " +
+                    "Please check your pipeline configuration.", ex);
             }
 
             // Generate any required parameters for the JSON request.
@@ -278,7 +281,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 
             // With the gathered resources, build a new JavaScriptResource.
             BuildJavaScript(data, jsonObject, supportsPromises, url);
-		}
+            }
 
         protected void BuildJavaScript(IFlowData data, string jsonObject, bool supportsPromises, string url)
         {
