@@ -174,7 +174,8 @@ namespace FiftyOne.Pipeline.Web
             if (sequenceConfig.Count() == 0)
             {
                 // The sequence element is not included so add it.
-                options.Elements.Add(new ElementOptions()
+                // Make sure it's added as the first element.
+                options.Elements.Insert(0, new ElementOptions()
                 {
                     BuilderName = nameof(SequenceElement)
                 });
@@ -188,19 +189,33 @@ namespace FiftyOne.Pipeline.Web
                 var jsonConfig = options.Elements.Where(e =>
                     e.BuilderName.Contains(nameof(JsonBuilderElement),
                         StringComparison.OrdinalIgnoreCase));
+                var javascriptConfig = options.Elements.Where(e =>
+                    e.BuilderName.Contains(nameof(JavaScriptBuilderElement),
+                        StringComparison.OrdinalIgnoreCase));
+
+                var jsIndex = javascriptConfig.Count() > 0 ? 
+                    options.Elements.IndexOf(javascriptConfig.First()) : -1;
+
                 if (jsonConfig.Count() == 0)
                 {
                     // The json builder is not included so add it.
-                    options.Elements.Add(new ElementOptions()
+                    var newElementOptions = new ElementOptions()
                     {
                         BuilderName = nameof(JsonBuilderElement)
-                    });
+                    };
+                    if (jsIndex > -1)
+                    {
+                        // There is already a javascript builder element
+                        // so insert the json builder before it.
+                        options.Elements.Insert(jsIndex, newElementOptions);
+                    }
+                    else
+                    {
+                        options.Elements.Add(newElementOptions);
+                    }
                 }
 
-                var builderConfig = options.Elements.Where(e =>
-                    e.BuilderName.Contains(nameof(JavaScriptBuilderElement),
-                        StringComparison.OrdinalIgnoreCase));
-                if(builderConfig.Count() == 0)
+                if (jsIndex == -1)
                 {
                     // The builder is not included so add it.
                     options.Elements.Add(new ElementOptions()

@@ -302,7 +302,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             var javascriptPropertiesEnumerable =
                 data.GetWhere(
                     p => p.Type != null &&
-                    p.Type.Equals(typeof(JavaScript)))
+                    (p.Type.Equals(typeof(JavaScript)) ||
+                    p.Type.Equals(typeof(IAspectPropertyValue<JavaScript>))))
                     .Where(p => availableProperties.Contains(p.Key));
 
             List<string> javascriptPropeties = new List<string>();
