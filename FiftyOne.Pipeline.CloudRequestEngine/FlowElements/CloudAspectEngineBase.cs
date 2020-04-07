@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
@@ -362,7 +363,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                         var apv = obj as IAspectPropertyValue;
                         if (property.Value != null)
                         {
-                            apv.Value = property.Value;
+                            var newValue = property.Value;
+                            // TODO - Replace this with a more generalized type factory.
+                            if (metaData.Type.GetGenericArguments()[0] == typeof(JavaScript))
+                            {
+                                newValue = new JavaScript(newValue.ToString());
+                            }
+                            apv.Value = newValue;
                         }
                         else 
                         { 
