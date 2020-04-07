@@ -40,6 +40,20 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
     [TestClass]
     public class CloudAspectEngineBaseTests
     {
+        private class ItemData : AspectDataBase
+        {
+            public ItemData(ILogger<AspectDataBase> logger,
+                IPipeline pipeline,
+                IAspectEngine engine) :
+                base(logger, pipeline, engine)
+            {
+            }
+
+            public bool IsMobile { get; set; }
+            public string HardwareVendor { get; set; }
+            public IReadOnlyList<string> HardwareVariants { get; set; }
+        }
+
         private class TestData : AspectDataBase
         {
             public TestData(ILogger<AspectDataBase> logger,
@@ -53,8 +67,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             public string HardwareVendor { get; set; }
             public IReadOnlyList<string> HardwareVariants { get; set; }
 
-            public IReadOnlyList<TestData> Devices { get; set; }
+            public IReadOnlyList<ItemData> Devices { get; set; }
         }
+
         private class TestInstance : CloudAspectEngineBase<TestData>
         {
             public TestInstance() :

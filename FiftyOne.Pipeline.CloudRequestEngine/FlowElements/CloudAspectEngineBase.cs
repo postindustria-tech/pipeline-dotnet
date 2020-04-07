@@ -27,7 +27,9 @@ using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -239,7 +241,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             // Get the property info for this property based on the 
             // supplied name.
-            var propertyInfo = typeof(T).GetProperty(property.Name, 
+            var propertyInfo = parentObjectType.GetProperty(property.Name, 
                 BindingFlags.Public | 
                 BindingFlags.Instance | 
                 BindingFlags.IgnoreCase);
@@ -252,10 +254,28 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     property.ItemProperties.Count > 0)
                 {
                     subProperties = new List<AspectPropertyMetaData>();
-                    foreach (var subproperty in property.ItemProperties)
+                    var thisType = propertyInfo.PropertyType;
+                    if (typeof(IEnumerable).IsAssignableFrom(thisType) &&
+                        thisType.IsGenericType)
                     {
-                        subProperties.Add(LoadProperty(subproperty, 
-                            propertyInfo.PropertyType));
+                        // Get the type of the items in this list so
+                        // LoadProperty can use reflection to get its
+                        // properties.
+                        var itemType = thisType.GetGenericArguments()[0];
+                        foreach (var subproperty in property.ItemProperties)
+                        {
+                            var newProperty = LoadProperty(subproperty, itemType);
+                            if (newProperty != null)
+                            {
+                                subProperties.Add(newProperty);
+                            }
+                        }
+                    }
+                    else 
+                    {
+                        _logger.LogWarning($"Problem parsing sub-items. " +
+                            $"Property '{parentObjectType.Name}.{property.Name}' " +
+                            $"does not implement IEnumerable<>.");
                     }
                 }
 
@@ -277,6 +297,102 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     $"on data object '{parentObjectType.Name}'. ");
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Use the supplied cloud data to create a dictionary of 
+        /// <see cref="AspectPropertyValue{T}"/> instances.
+        /// </summary>
+        /// <remarks>
+        /// This method uses the meta-data exposed by the 
+        /// <see cref="Properties"/> collection to determine
+        /// if a given entry in the supplied cloudData should
+        /// be converted to an <see cref="AspectPropertyValue{T}"/>
+        /// or not.
+        /// If not it will be output unchanged. If it is then a new
+        /// <see cref="AspectPropertyValue{T}"/> instance will be created 
+        /// and the value from the cloud data assigned to it.
+        /// If the value is null then the code will look for a property
+        /// in the cloud data with the same name suffixed with 'nullreason'.
+        /// If it exists, then it's value will be used to set the 
+        /// noValueMessage on the new <see cref="AspectPropertyValue{T}"/>.
+        /// </remarks>
+        /// <param name="cloudData">
+        /// The cloud data to be processed.
+        /// Keys are flat property names (i.e. no '.' separators).
+        /// Values are the property values.
+        /// </param>
+        /// <param name="propertyMetaData">
+        /// The meta-data for the properties in the data.
+        /// This will usually be the list from <see cref="Properties"/>
+        /// but will be different if dealing with sub-properties.
+        /// </param>
+        /// <returns>
+        /// A dictionary containing the original values converted to 
+        /// <see cref="AspectPropertyValue{T}"/> instances where needed.
+        /// Any entries in the source dictionary where the key ends 
+        /// with 'nullreason' will not appear in the output.
+        /// </returns>
+        protected Dictionary<string, object> CreateAPVDictionary(
+            Dictionary<string, object> cloudData,
+            IReadOnlyList<IElementPropertyMetaData> propertyMetaData)
+        {
+            // Convert the meta-data to a dictionary for faster access.
+            var metaDataDictionary = propertyMetaData.ToDictionary(
+                p => p.Name, p => p, 
+                StringComparer.OrdinalIgnoreCase);
+
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            // Iterate through all entries in the source data where the
+            // key is not suffixed with 'nullreason'.
+            foreach (var property in cloudData
+                .Where(kvp => kvp.Key.EndsWith("nullreason") == false))
+            {
+                var outputValue = property.Value;
+
+                if (metaDataDictionary.TryGetValue(property.Key, out IElementPropertyMetaData metaData) == true)
+                {
+                    if (typeof(IAspectPropertyValue).IsAssignableFrom(metaData.Type))
+                    {
+                        // If this property has a type of AspectPropertyValue
+                        // then create a new instance and populate it.
+                        var apvType = typeof(AspectPropertyValue<>);
+                        var genericType = apvType.MakeGenericType(metaData.Type.GetGenericArguments());
+                        object obj = Activator.CreateInstance(genericType);
+                        var apv = obj as IAspectPropertyValue;
+                        if (property.Value != null)
+                        {
+                            apv.Value = property.Value;
+                        }
+                        else 
+                        { 
+                            // Value is null so check if we have a 
+                            // corresponding reason.
+                            // We need to set the no value message with 
+                            // reflection as the property is read only 
+                            // through the interface.
+                            var messageProperty = genericType.GetProperty("NoValueMessage");
+                            if (cloudData.TryGetValue(property.Key + "nullreason", out object nullreason))
+                            {
+                                messageProperty.SetValue(apv, nullreason);
+                            }
+                            else
+                            {
+                                messageProperty.SetValue(apv, "Unknown");
+                            }
+                        }
+                        outputValue = apv;
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning($"No meta-data entry for property " +
+                        $"'{property.Key}' in '{GetType().Name}'");
+                }
+
+                result.Add(property.Key, outputValue);
+            }
+            return result;
         }
     }
 }
