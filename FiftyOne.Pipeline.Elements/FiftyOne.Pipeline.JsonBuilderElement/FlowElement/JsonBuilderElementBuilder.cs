@@ -51,7 +51,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             _jsonConverters = jsonConverters;
         }
 
-        public IJsonBuilderElement Build()
+        public JsonBuilderElement Build()
         {
             return new JsonBuilderElement(_loggerFactory.CreateLogger<JsonBuilderElement>(), _jsonConverters, CreateData);
         }

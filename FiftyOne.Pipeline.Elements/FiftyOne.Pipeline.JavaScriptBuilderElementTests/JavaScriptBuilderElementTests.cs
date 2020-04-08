@@ -64,9 +64,6 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             _mockjsonBuilderElement.Setup(x => x.Properties).Returns(_elementPropertyMetaDatas);
             _loggerFactory = new LoggerFactory();
 
-            _javaScriptBuilderElement = (JavaScriptBuilderElement)new JavaScriptBuilderElementBuilder(_loggerFactory)
-                .Build();
-
             _elementDataMock = new Mock<IElementData>();
             _elementDataMock.Setup(ed => ed.AsDictionary()).Returns(new Dictionary<string, object>() { { "property", "thisIsAValue" } });
         }
@@ -88,6 +85,9 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         [DataRow("device", "browsername", null)]
         public void JavaScriptBuilderElement_JavaScript(string key, string property, object value)
         {
+            _javaScriptBuilderElement = 
+                new JavaScriptBuilderElementBuilder(_loggerFactory).Build();
+
             dynamic json = new JObject();
             
             if(value == null)
@@ -112,7 +112,6 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(new Dictionary<string, object>() {
                 { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, "localhost" },
                 { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, "https" },
-
             });
             flowData.Setup(d => d.Get(It.IsAny<string>())).Returns(_elementDataMock.Object);
             flowData.Setup(d => d.GetOrAdd(
@@ -127,6 +126,64 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
             Assert.IsTrue(IsValidFodObject(result.JavaScript, key, property, value));
         }
+
+        delegate void GetValueCallback(string key, out string result);
+
+        /// <summary>
+        /// Check that the callback URL is generated correctly.
+        /// </summary>
+        /// <remarks>
+        /// TODO: Add more tests verifying URL if other parameters are set 
+        /// and if query parameters are in the evidence.
+        /// </remarks>
+        [TestMethod]
+        public void JavaScriptBuilder_VerifyUrl()
+        {
+            _javaScriptBuilderElement =
+                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                .SetEndpoint("/json")
+                .Build();
+
+            var flowData = new Mock<IFlowData>();
+            flowData.Setup(d => d.Get<IJsonBuilderElementData>()).Returns(() =>
+            {
+                var d = new JsonBuilderElementData(new Mock<ILogger<JsonBuilderElementData>>().Object, null);
+                d.Json = @"{ ""test"": ""value"" }";
+                return d;
+            });
+            // Setup the TryGetEvidence methods that are used to get 
+            // host and protocol for the callback URL
+            flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, out It.Ref<string>.IsAny))
+                .Callback(new GetValueCallback((string key, out string result) => { result = "localhost"; }));
+            flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, out It.Ref<string>.IsAny))
+                .Callback(new GetValueCallback((string key, out string result) => { result = "https"; }));
+            // Setup the evidence dictionary accessor.
+            // This is used to get the query parameters to add to the 
+            // callback URL.
+            flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(new Dictionary<string, object>() {
+                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, "localhost" },
+                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, "https" },
+            });
+            // Setup the GetOrAdd method to catch the data object that is
+            // set by the element so we can check it's values.
+            IJavaScriptBuilderElementData result = null;
+            flowData.Setup(d => d.GetOrAdd(
+                It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
+                It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
+                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
+                {
+                    result = f(flowData.Object.Pipeline);
+                    return result;
+                });
+
+            _javaScriptBuilderElement.Process(flowData.Object);
+
+            string expectedUrl = "https://localhost/json";
+            Assert.IsTrue(result.JavaScript.Contains(expectedUrl), 
+                $"JavaScript does not contain expected URL '{expectedUrl}'.");
+        }
+
+
 
         /// <summary>
         /// Test the JavaScript include by accessing the given property.

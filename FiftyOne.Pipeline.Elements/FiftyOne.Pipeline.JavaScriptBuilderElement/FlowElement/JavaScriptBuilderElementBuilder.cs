@@ -41,10 +41,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         protected ILogger _logger;
 
         protected string _host = string.Empty;
-        protected bool _overrideHost;
         protected string _endpoint = string.Empty;
         protected string _protocol = string.Empty;
-        protected bool _overrideProtocol;
         protected string _objName = string.Empty;
         protected bool _enableCookies;
         protected bool _minify = true;
@@ -75,23 +73,13 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 
         /// <summary>
         /// Set the host that the client JavaScript should query for updates.
+        /// By default, the host from the request will be used.
         /// </summary>
         /// <param name="host">The host name.</param>
         /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetHost(string host)
         {
             _host = host;
-            return this;
-        }
-
-        /// <summary>
-        /// Set whether host should be determined from the origin or referer.
-        /// </summary>
-        /// <param name="overrideHost">Should override host?</param>
-        /// <returns></returns>
-        public JavaScriptBuilderElementBuilder SetOverrideHost(bool overrideHost)
-        {
-            _overrideHost = overrideHost;
             return this;
         }
 
@@ -107,41 +95,25 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         }
 
         /// <summary>
-        /// The default protocol that the client JavaScript will use when 
+        /// The protocol that the client JavaScript will use when 
         /// querying for updates.
+        /// By default, the protocol from the request will be used.
         /// </summary>
         /// <param name="protocol">The protocol to use (http / https)</param>
         /// <returns></returns>
-        public JavaScriptBuilderElementBuilder SetDefaultProtocol(string protocol)
+        public JavaScriptBuilderElementBuilder SetProtocol(string protocol)
         {
-
-            var empty = string.IsNullOrEmpty(protocol);
-            var http = string.Equals(protocol, "http");
-            var https = string.Equals(protocol, "https");
-
-            if (string.Equals(protocol, "http") ||
-                string.Equals(protocol, "https"))
+            if (string.Equals(protocol, "http", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(protocol, "https", StringComparison.OrdinalIgnoreCase))
             {
                 _protocol = protocol;
             }
             else
             {
-                _protocol = Constants.DEFAULT_PROTOCOL;
-                _logger.LogWarning($"No/Invalid protocol in configuration," +
-                    $" JavaScriptBuilderElement is using the default protocol:" +
-                    $" {Constants.DEFAULT_PROTOCOL}");
+                throw new PipelineConfigurationException(
+                    $"Invalid protocol in configuration ({protocol}), " +
+                    $"must be 'http' or https'");
             }
-            return this;
-        }
-
-        /// <summary>
-        /// Set whether the host should be overridden by evidence, e.g when the
-        /// host can be determined from the incoming request.
-        /// </summary>
-        /// <param name="overrideProto">Should override the protocol?</param>
-        /// <returns></returns>
-        public JavaScriptBuilderElementBuilder SetOverrideDefaultProtocol(bool overrideProto){
-            _overrideProtocol = overrideProto;
             return this;
         }
 
@@ -182,18 +154,16 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// Build the element.
         /// </summary>
         /// <returns></returns>
-        public virtual IFlowElement Build()
+        public virtual JavaScriptBuilderElement Build()
         {
             return new JavaScriptBuilderElement(_loggerFactory.CreateLogger<JavaScriptBuilderElement>(),
                 CreateData,
-                _host,
-                _overrideHost,
                 _endpoint,
-                _protocol,
-                _overrideProtocol,
                 _objName,
                 _enableCookies,
-                _minify);
+                _minify, 
+                _host, 
+                _protocol);
         }
 
         private IJavaScriptBuilderElementData CreateData(

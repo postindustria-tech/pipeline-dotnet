@@ -103,16 +103,15 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         [DataRow("htps")]
         [DataRow("ftp")]
         [DataRow("tcp")]
+        [ExpectedException(typeof(PipelineConfigurationException))]
         public void JavaScriptBuilderElement_Builder_SetDefaultProtocol_InvalidProtocol(string protocol)
         {
             TestLoggerFactory loggerFactory = new TestLoggerFactory();
             var engine = new JavaScriptBuilderElementBuilder(loggerFactory)
-                .SetDefaultProtocol(protocol)
+                .SetProtocol(protocol)
                 .Build();
 
-            var loggers = loggerFactory.Loggers.Where(x => x.WarningsLogged.Count > 0);
-
-            Assert.IsTrue(loggers.Count() > 0);
+            Assert.Fail("Expected exception was not thrown");
         }
 
         /// <summary>
@@ -127,7 +126,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         {
             TestLoggerFactory loggerFactory = new TestLoggerFactory();
             var engine = new JavaScriptBuilderElementBuilder(loggerFactory)
-                .SetDefaultProtocol(protocol)
+                .SetProtocol(protocol)
                 .Build();
 
             var loggers = loggerFactory.Loggers.Where(x => x.WarningsLogged.Count > 0);

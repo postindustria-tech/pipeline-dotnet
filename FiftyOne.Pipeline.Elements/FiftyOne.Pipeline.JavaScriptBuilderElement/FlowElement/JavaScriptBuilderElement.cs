@@ -108,22 +108,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <param name="elementDataFactory">
         /// The element data factory.
         /// </param>
-        /// <param name="host">
-        /// The host that the client JavaScript should query for updates.
-        /// </param>
-        /// <param name="overrideHost">
-        /// Set whether host should be determined from the origin or referer.
-        /// </param>
         /// <param name="endpoint">
         /// Set the endpoint which will be queried on the host. e.g /api/v4/json
-        /// </param>
-        /// <param name="protocol">
-        /// The protocol (HTTP or HTTPS) that the client JavaScript will use when 
-        /// querying for updates.
-        /// </param>
-        /// <param name="overrideProtocol">
-        /// Set whether the host should be overridden by evidence, e.g when the
-        /// host can be determined from the incoming request.
         /// </param>
         /// <param name="objectName">
         /// The default name of the object instantiated by the client 
@@ -136,19 +122,26 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <param name="minify">
         /// If true, the resulting JavaScript will be minified
         /// </param>
+        /// <param name="host">
+        /// The host that the client JavaScript should query for updates.
+        /// If null or blank then the host from the request will be used
+        /// </param>
+        /// <param name="protocol">
+        /// The protocol (HTTP or HTTPS) that the client JavaScript will use when 
+        /// querying for updates.
+        /// If null or blank then the protocol from the request will be used
+        /// </param>
 		public JavaScriptBuilderElement(
             ILogger<JavaScriptBuilderElement> logger,
             Func<IPipeline,
                 FlowElementBase<IJavaScriptBuilderElementData, IElementPropertyMetaData>,
                 IJavaScriptBuilderElementData> elementDataFactory,
-            string host,
-            bool overrideHost,
             string endpoint,
-            string protocol,
-            bool overrideProtocol,
             string objectName,
             bool enableCookies,
-            bool minify)
+            bool minify,
+            string host = null,
+            string protocol = null)
             : base(logger, elementDataFactory)
         {
             // Set the evidence key filter for the flow data to use.
@@ -169,10 +162,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 };
 
             _host = host;
-            _overrideHost = overrideHost;
             _endpoint = endpoint;
-            _protocol = string.IsNullOrEmpty(protocol) ? Constants.DEFAULT_PROTOCOL : protocol;
-            _overrideProtocol = overrideProtocol;
+            _protocol = protocol;
             _objName = string.IsNullOrEmpty(objectName) ? Constants.DEFAULT_OBJECT_NAME : objectName;
             _enableCookies = enableCookies;
             _minify = minify;
@@ -202,37 +193,31 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 
         private void SetUp(IFlowData data)
         {
-            var host = string.Empty;
-            var protocol = string.Empty;
+            var host = _host;
+            var protocol = _protocol;
             bool supportsPromises;
 
-            // Try and get the request host name so it can be used to request
-            // the Json refresh in the JavaScript code.
-            if (_overrideHost == true)
+            if (string.IsNullOrEmpty(_host))
             {
-                if(data.TryGetEvidence(Constants.EVIDENCE_HOST_KEY, out host) == false)
-                {
-                    host = _host;
-                }
-            } else
+                // Try and get the request host name so it can be used to request
+                // the Json refresh in the JavaScript code.
+                data.TryGetEvidence(Constants.EVIDENCE_HOST_KEY, out host);
+            }
+            if (string.IsNullOrEmpty(_protocol))
             {
-                host = _host;
+                // Try and get the request protocol so it can be used to request
+                // the JSON refresh in the JavaScript code.
+                data.TryGetEvidence(Constants.EVIDENCE_PROTOCOL, out protocol);
+            }
+            // Couldn't get protocol from anywhere 
+            if (string.IsNullOrEmpty(protocol))
+            {
+                protocol = Constants.DEFAULT_PROTOCOL;
             }
 
-            // Try and get the request protocol so it can be used to request
-            // the JSON refresh in the JavaScript code.
-            if (_overrideProtocol)
-            {
-                if(data.TryGetEvidence(Constants.EVIDENCE_PROTOCOL, out protocol) == false)
-                {
-                    protocol = _protocol;
-                }
-            } else
-            {
-                protocol = _protocol;
-            }
-
-            // Could be for the requesting browser or the end-users browser.
+            // If device detection is in the Pipeline then we can check
+            // if the client's browser supports promises.
+            // This can be used to customize the JavaScript response. 
             try
             {
                 var promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
@@ -258,11 +243,15 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             // Generate any required parameters for the JSON request.
             List<string> parameters = new List<string>();
 
+            // Any query parameters from this request that were ingested by 
+            // the Pipeline are added to the request URL that will appear 
+            // in the JavaScript.
             var queryEvidence = data
                 .GetEvidence()
                 .AsDictionary()
                 .Where(e => e.Key.StartsWith(Core.Constants.EVIDENCE_QUERY_PREFIX))
-                .Select(k => $"{k.Key.Remove(0, k.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR) + 1)}={k.Value}");
+                .Select(k => $"{WebUtility.UrlEncode(k.Key.Remove(0, k.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR) + 1))}" +
+                    $"={WebUtility.UrlEncode(k.Value.ToString())}");
 
             parameters.AddRange(queryEvidence);
 
@@ -275,13 +264,26 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 string.IsNullOrWhiteSpace(host) == false &&
                 string.IsNullOrWhiteSpace(endpoint) == false)
             {
-                url = WebUtility.UrlEncode($"{protocol}://{host}/{endpoint}" +
-                    (String.IsNullOrEmpty(queryParams) ? "" : "?" + queryParams));
+                var endpointHasSlash = endpoint[0] == '/';
+                var hostHasSlash = host[host.Length - 1] == '/';
+                // if there is no slash between host and endpoint then add one.
+                if (endpointHasSlash == false && hostHasSlash == false)
+                {
+                    endpoint = $"/{endpoint}";
+                }
+                // if there are two slashes between host and endpoint then remove one.
+                else if (endpointHasSlash == true && hostHasSlash == true)
+                {
+                    endpoint = endpoint.Substring(1);
+                }
+
+                url = $"{protocol}://{host}{endpoint}" +
+                    (String.IsNullOrEmpty(queryParams) ? "" : $"?{queryParams}");
             }
 
             // With the gathered resources, build a new JavaScriptResource.
             BuildJavaScript(data, jsonObject, supportsPromises, url);
-            }
+        }
 
         protected void BuildJavaScript(IFlowData data, string jsonObject, bool supportsPromises, string url)
         {
