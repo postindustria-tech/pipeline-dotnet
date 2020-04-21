@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Platforms>AnyCPU</Platforms>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Examples.Shared\FiftyOne.Pipeline.Examples.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

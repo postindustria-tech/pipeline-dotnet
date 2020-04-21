@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>AspNetCore3_1_Example</RootNamespace>
+    <AssemblyName>AspNetCore3_1_Example</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Web\FiftyOne.Pipeline.Web.csproj" />
+    <ProjectReference Include="..\Math\FiftyOne.Pipeline.Math.csproj" />
+  </ItemGroup>
+
+
+
+</Project>

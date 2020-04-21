@@ -1,0 +1,12 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<!-- Add the 51Degrees core JavaScript. This contains the bundled JavaScript
+    from all elements in the pipeline, so will run the star sign JavaScript if
+    it is set. -->
+<script type="application/javascript" src="~/51Degrees.core.js"></script>
+
+<div class="row">
+    @ViewData["message"]
+</div>

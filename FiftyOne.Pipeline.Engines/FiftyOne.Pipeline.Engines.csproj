@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Platforms>AnyCPU</Platforms>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DocumentationFile>FiftyOne.Pipeline.Engines.xml</DocumentationFile>
+	
+	<!-- NuGet package properties -->
+	<PackageId>FiftyOne.Pipeline.Engines</PackageId>
+	<Title>Shared base classes for implementing engines for the 51Degrees Pipeline API</Title>
+	<PackageDescription>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. The package contains base classes that implement the shared features available to engines (a specialized type of flow element).</PackageDescription>
+	<Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+    <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
+	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
+	<Copyright>51Degrees Mobile Experts Limited</Copyright>
+	<PackageTags>51degrees,pipeline,data service</PackageTags>
+	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FiftyOne.Caching" Version="4.1.9" />
+    <PackageReference Include="FiftyOne.Common" Version="4.1.7" />
+    <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FiftyOne.Pipeline.Core\FiftyOne.Pipeline.Core.csproj" />
+  </ItemGroup>
+
+</Project>

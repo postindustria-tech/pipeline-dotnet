@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+
+    <Platforms>AnyCPU</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="2.1.0" />
+    <PackageReference Include="MSTest.TestFramework" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Examples\CustomFlowElement\1. Simple Flow Element\Examples.CustomFlowElement.csproj" />
+    <ProjectReference Include="..\..\Examples\CustomFlowElement\2. On Premise Engine\Examples.OnPremiseEngine.csproj" />
+    <ProjectReference Include="..\..\Examples\ResultCaching\Examples.ResultCaching.csproj" />
+  </ItemGroup>
+
+</Project>

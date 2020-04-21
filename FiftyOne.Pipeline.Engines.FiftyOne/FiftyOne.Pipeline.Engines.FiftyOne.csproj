@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Platforms>AnyCPU</Platforms>
+    <DocumentationFile>FiftyOne.Pipeline.Engines.FiftyOne.xml</DocumentationFile>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>	
+	
+	<!-- NuGet package properties -->
+	<PackageId>FiftyOne.Pipeline.Engines.FiftyOne</PackageId>
+	<Title>Shared base classes for implementing 51Degrees engines for the 51Degrees Pipeline API</Title>
+	<PackageDescription>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. The package contains base classes that provide functionality used by 51Degrees engines.</PackageDescription>
+	<Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+    <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
+	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
+	<Copyright>51Degrees Mobile Experts Limited</Copyright>
+	<PackageTags>51degrees,pipeline,data service</PackageTags>
+	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Data\Interop\**" />
+    <EmbeddedResource Remove="Data\Interop\**" />
+    <None Remove="Data\Interop\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Trackers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
+  </ItemGroup>
+
+</Project>
