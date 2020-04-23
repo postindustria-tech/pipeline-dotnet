@@ -34,11 +34,11 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
     {
         private EvidenceKeyFilterWhitelist _filter;
 
-        [TestMethod]
         /// <summary>
         /// Check that the Include method works as expected for a simple 
         /// white list filter.
         /// </summary>
+        [TestMethod]
         public void EvidenceKeyFilterWhitelist_Include_CheckKeys()
         {
             _filter = new EvidenceKeyFilterWhitelist(new List<string>() { "key1", "key2" });
@@ -48,11 +48,11 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             Assert.IsFalse(_filter.Include("key3"));
         }
 
-        [TestMethod]
         /// <summary>
         /// Check that the List property works as expected for a simple
         /// white list filter.
         /// </summary>
+        [TestMethod]
         public void EvidenceKeyFilterWhitelist_List()
         {
             _filter = new EvidenceKeyFilterWhitelist(new List<string>() { "key1", "key2" });
@@ -62,6 +62,36 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             Assert.AreEqual(2, result.Count);
             Assert.IsTrue(result.Keys.Contains("key1"));
             Assert.IsTrue(result.Keys.Contains("key2"));
+        }
+
+        /// <summary>
+        /// Check that filter is case-insensitive by default.
+        /// </summary>
+        [TestMethod]
+        public void EvidenceKeyFilterWhitelist_CaseInsensitive()
+        {
+            _filter = new EvidenceKeyFilterWhitelist(
+                new List<string>() { "key1" });
+
+            Assert.IsTrue(_filter.Include("key1"));
+            Assert.IsTrue(_filter.Include("Key1"));
+            Assert.IsTrue(_filter.Include("KEY1"));
+        }
+
+        /// <summary>
+        /// Check that case-sensitive comparison with a custom comparer 
+        /// works as expected.
+        /// </summary>
+        [TestMethod]
+        public void EvidenceKeyFilterWhitelist_CaseSensitive()
+        {
+            _filter = new EvidenceKeyFilterWhitelist(
+                new List<string>() { "key1" }, 
+                StringComparer.Ordinal);
+
+            Assert.IsTrue(_filter.Include("key1"));
+            Assert.IsFalse(_filter.Include("Key1"));
+            Assert.IsFalse(_filter.Include("KEY1"));
         }
     }
 }
