@@ -42,8 +42,10 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <summary>
         /// The equality comparer that is used to determine if a supplied
         /// string key is in the whitelist or not.
+        /// By default, a case insensitive comparison is used.
         /// </summary>
-        protected IEqualityComparer<string> _comparer;
+        protected IEqualityComparer<string> _comparer = 
+            StringComparer.OrdinalIgnoreCase;
 
         /// <summary>
         /// Get the keys in the white list as a read only dictionary.
@@ -60,13 +62,12 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Get the equality comparer that is used to determine if a supplied
         /// string key is in the whitelist or not.
         /// </summary>
-        public IEqualityComparer<string> Comparer
-        {
-            get { return _comparer; }
-        }
+        public IEqualityComparer<string> Comparer => _comparer;
 
         /// <summary>
         /// Constructor
+        /// The filter will be case-insensitive. For a case-sensitive filter
+        /// use the overload that takes an <see cref="IEqualityComparer{T}"/>.
         /// </summary>
         /// <param name="whitelist">
         /// The list of evidence keys that is filter will include.
@@ -74,8 +75,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </param>
         public EvidenceKeyFilterWhitelist(List<string> whitelist)
         {
-            _whitelist = whitelist.ToDictionary(w => w, w => 0);
-            _comparer = EqualityComparer<string>.Default;
+            PopulateFromList(whitelist);
         }
 
         /// <summary>
@@ -92,12 +92,14 @@ namespace FiftyOne.Pipeline.Core.Data
             List<string> whitelist,
             IEqualityComparer<string> comparer)
         {
-            _whitelist = whitelist.ToDictionary(w => w, w => 0, comparer);
             _comparer = comparer;
+            PopulateFromList(whitelist);
         }
 
         /// <summary>
         /// Constructor
+        /// The filter will be case-insensitive. For a case-sensitive filter
+        /// use the overload that takes an <see cref="IEqualityComparer{T}"/>.
         /// </summary>
         /// <param name="whitelist">
         /// The dictionary of evidence keys that is filter will include.
@@ -106,8 +108,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </param>
         public EvidenceKeyFilterWhitelist(Dictionary<string, int> whitelist)
         {
-            _whitelist = whitelist.ToDictionary(w => w.Key, w => w.Value);
-            _comparer = EqualityComparer<string>.Default;
+            PopulateFromDictionary(whitelist);
         }
 
         /// <summary>
@@ -125,8 +126,19 @@ namespace FiftyOne.Pipeline.Core.Data
             Dictionary<string, int> whitelist,
             IEqualityComparer<string> comparer)
         {
-            _whitelist = whitelist.ToDictionary(w => w.Key, w => w.Value, comparer);
             _comparer = comparer;
+            PopulateFromDictionary(whitelist);
+        }
+
+
+        private void PopulateFromList(List<string> whitelist)
+        {
+            _whitelist = whitelist.ToDictionary(w => w, w => 0, _comparer);
+        }
+
+        private void PopulateFromDictionary(Dictionary<string, int> whitelist)
+        {
+            _whitelist = whitelist.ToDictionary(w => w.Key, w => w.Value, _comparer);
         }
 
         /// <summary>
