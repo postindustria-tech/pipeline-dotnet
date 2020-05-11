@@ -160,7 +160,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </param>
         public void AddError(Exception ex, IFlowElement flowElement)
         {
-            AddError(ex, flowElement, true);
+            AddError(ex, flowElement, true, true);
         }
 
         /// <summary>
@@ -174,9 +174,12 @@ namespace FiftyOne.Pipeline.Core.Data
         /// The flow element that the exception occurred in.
         /// </param>
         /// <param name="shouldThrow">
-        /// Set whether the pipeline should throw this exception.
+        /// Set whether the pipeline should throw the exception.
         /// </param>
-        public void AddError(Exception ex, IFlowElement flowElement, bool shouldThrow)
+        /// <param name="shouldLog">
+        /// Set whether the pipeline should log the exception as an error.
+        /// </param>
+        public void AddError(Exception ex, IFlowElement flowElement, bool shouldThrow, bool shouldLog)
         {
             if (_errors == null) { _errors = new List<IFlowError>(); }
             if (_errorsLock == null) { _errorsLock = new object(); }
@@ -186,7 +189,7 @@ namespace FiftyOne.Pipeline.Core.Data
                 _errors.Add(error);
             }
 
-            if (_logger != null && _logger.IsEnabled(LogLevel.Error))
+            if (_logger != null && _logger.IsEnabled(LogLevel.Error) && shouldLog)
             {
                 string logMessage = "Error occurred during processing";
                 if (flowElement != null)

@@ -76,7 +76,10 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <param name="shouldThrow">
         /// Set whether the pipeline should throw this exception.
         /// </param>
-        void AddError(Exception ex, IFlowElement flowElement, bool shouldThrow);
+        /// <param name="shouldLog">
+        /// Set whether the pipeline should log the exception as an error.
+        /// </param>
+        void AddError(Exception ex, IFlowElement flowElement, bool shouldThrow, bool shouldLog);
 
         /// <summary>
         /// Get the <see cref="IEvidence"/> object that contains the 
