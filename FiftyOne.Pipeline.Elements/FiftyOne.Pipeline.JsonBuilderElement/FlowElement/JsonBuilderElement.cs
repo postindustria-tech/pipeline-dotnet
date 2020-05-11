@@ -219,11 +219,11 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
             foreach (var element in data.ElementDataAsDictionary())
             {
-                if (allProperties.ContainsKey(element.Key) == false)
+                if (allProperties.ContainsKey(element.Key.ToLowerInvariant()) == false)
                 {
                     var values = GetValues((element.Value as IElementData).AsDictionary());
 
-                    allProperties.Add(element.Key, values);
+                    allProperties.Add(element.Key.ToLowerInvariant(), values);
                 }
             }
 
@@ -248,22 +248,23 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                             {
                                 results.Add(GetValues(((IElementData)elementData).AsDictionary()));
                             }
-                            values.Add(value.Key, results);
+                            values.Add(value.Key.ToLowerInvariant(), results);
                         }
                         else
                         {
-                            values.Add(value.Key, aspectProperty.Value);
+                            values.Add(value.Key.ToLowerInvariant(), aspectProperty.Value);
                         } 
                     }
                     else
                     {
-                        values.Add(value.Key, null);
-                        values.Add(value.Key + "nullreason", aspectProperty.NoValueMessage);
+                        values.Add(value.Key.ToLowerInvariant(), null);
+                        values.Add(value.Key.ToLowerInvariant() + "nullreason", 
+                            aspectProperty.NoValueMessage);
                     }
                 } 
                 else
                 {
-                    values.Add(value.Key, value.Value);
+                    values.Add(value.Key.ToLowerInvariant(), value.Value);
                 }
             }
             return values;
