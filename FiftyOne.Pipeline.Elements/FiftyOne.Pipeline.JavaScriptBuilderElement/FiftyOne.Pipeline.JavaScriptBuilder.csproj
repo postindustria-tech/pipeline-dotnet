@@ -7,17 +7,25 @@
     <Platforms>AnyCPU</Platforms>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-	
-	<!-- NuGet package properties -->
-	<PackageId>FiftyOne.Pipeline.JavaScriptBuilder</PackageId>
-	<Title>JavaScript builder element for the 51Degrees Pipeline API</Title>
-	<PackageDescription>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. The package contains an element that combines JavaScript properties returned by other elements into a single piece of code.</PackageDescription>
-	<Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+    <DocumentationFile>FiftyOne.Pipeline.JavaScriptBuilderElement.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+
+    <!-- NuGet package properties -->
+    <PackageId>FiftyOne.Pipeline.JavaScriptBuilder</PackageId>
+    <Title>JavaScript builder element for the 51Degrees Pipeline API</Title>
+    <PackageDescription>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains an element that produces JavaScript code that can be used to access Pipeline results in client-side code and provide additional evidence that is not available from the initial request to the web server.</PackageDescription>
+    <Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
     <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
-	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
-	<Copyright>51Degrees Mobile Experts Limited</Copyright>
-	<PackageTags>51degrees,pipeline,data service</PackageTags>
-	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+    <PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
+    <Copyright>51Degrees Mobile Experts Limited</Copyright>
+    <PackageTags>51degrees,pipeline,data service</PackageTags>
+    <RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+    <PackageIcon>51d-logo.png</PackageIcon>
+    <PackageProjectUrl>www.51degrees.com</PackageProjectUrl>
+    <Description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains an element that produces JavaScript code that can be used to access Pipeline results in client-side code and provide additional evidence that is not available from the initial request to the web server.</Description>
+    <NeutralLanguage>en</NeutralLanguage>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -27,6 +35,10 @@
 
   <ItemGroup>
     <None Remove="Templates\JavaScriptResource.mustache" />
+    <None Include="..\..\Images\51d-logo.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -34,6 +46,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" Version="1.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -50,6 +66,21 @@
 
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Messages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Messages.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Messages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Messages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

@@ -71,47 +71,57 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 _pipelinesAccessor = pipelinesAccessor;
             }
 
+
             /// <summary>
             /// Get the <see cref="CloudRequestEngine"/> that will be making
             /// requests on behalf of this engine.
             /// </summary>
-            public ICloudRequestEngine Instance
+            /// 
+            [Obsolete("Use the 'GetInstance' method instead. " +
+                "This property will be removed in a future version.")]
+#pragma warning disable CA1721 // Property names should not match get methods
+            // Set as obsolete and Will be removed in a future version.
+            public ICloudRequestEngine Instance => GetInstance();
+#pragma warning restore CA1721 // Property names should not match get methods
+
+            /// <summary>
+            /// Get the <see cref="CloudRequestEngine"/> that will be making
+            /// requests on behalf of this engine.
+            /// </summary>
+            public ICloudRequestEngine GetInstance()
             {
-                get
+                if (_cloudRequestEngine == null)
                 {
-                    if (_cloudRequestEngine == null)
+                    lock (_cloudRequestEngineLock)
                     {
-                        lock (_cloudRequestEngineLock)
+                        if (_cloudRequestEngine == null)
                         {
+                            if (_pipelinesAccessor().Count > 1)
+                            {
+                                throw new PipelineConfigurationException(
+                                    $"'{GetType().Name}' does not support being " +
+                                    $"added to multiple Pipelines.");
+                            }
+                            if (_pipelinesAccessor().Count == 0)
+                            {
+                                throw new PipelineConfigurationException(
+                                    $"'{GetType().Name}' has not yet been added " +
+                                    $"to a Pipeline.");
+                            }
+
+                            _cloudRequestEngine = _pipelinesAccessor()[0].GetElement<ICloudRequestEngine>();
+
                             if (_cloudRequestEngine == null)
                             {
-                                if (_pipelinesAccessor().Count > 1)
-                                {
-                                    throw new PipelineConfigurationException(
-                                        $"'{GetType().Name}' does not support being " +
-                                        $"added to multiple Pipelines.");
-                                }
-                                if (_pipelinesAccessor().Count == 0)
-                                {
-                                    throw new PipelineConfigurationException(
-                                        $"'{GetType().Name}' has not yet been added " +
-                                        $"to a Pipeline.");
-                                }
-
-                                _cloudRequestEngine = _pipelinesAccessor()[0].GetElement<ICloudRequestEngine>();
-
-                                if (_cloudRequestEngine == null)
-                                {
-                                    throw new PipelineConfigurationException(
-                                        $"The '{GetType().Name}' requires a 'CloudRequestEngine' " +
-                                        $"before it in the Pipeline. This engine will be unable " +
-                                        $"to produce results until this is corrected.");
-                                }
+                                throw new PipelineConfigurationException(
+                                    $"The '{GetType().Name}' requires a 'CloudRequestEngine' " +
+                                    $"before it in the Pipeline. This engine will be unable " +
+                                    $"to produce results until this is corrected.");
                             }
                         }
                     }
-                    return _cloudRequestEngine;
                 }
+                return _cloudRequestEngine;
             }
         }
 
@@ -119,6 +129,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private object _aspectPropertiesLock = new object();
         private string _dataSourceTier;
 
+        /// <summary>
+        /// The 'tier' of the source data used to service this request.
+        /// For 51Degrees cloud, this means the name for the set of
+        /// properties that are accessible to the license key(s) 
+        /// associated with the resource key that is used.
+        /// </summary>
         public override string DataSourceTier => _dataSourceTier;
 
         /// <summary>
@@ -127,9 +143,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         protected RequestEngineAccessor RequestEngine { get; set; }
 
+
         /// <summary>
         /// Get property meta-data for properties populated by this engine
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", 
+            "CA1065:Do not raise exceptions in unexpected locations", 
+            Justification = "")]
         public override IList<IAspectPropertyMetaData> Properties
         {
             get
@@ -140,9 +160,11 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     {
                         if (_aspectProperties == null)
                         {
-                            if (LoadAspectProperties(RequestEngine.Instance) == false)
+                            if (LoadAspectProperties(
+                                RequestEngine.GetInstance()) == false)
                             {
-                                throw new Exception("Failed to load aspect properties");
+                                throw new PipelineException(
+                                    Messages.ExceptionFailedToLoadProperties);
                             }
                         }
                     }
@@ -151,12 +173,25 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="logger">
+        /// The logger used by this instance.
+        /// </param>
+        /// <param name="aspectDataFactory">
+        /// The factory function to use when creating new data instances
+        /// of type <code>T</code>.
+        /// </param>
         public CloudAspectEngineBase(ILogger<AspectEngineBase<T, IAspectPropertyMetaData>> logger, 
             Func<IPipeline, FlowElementBase<T, IAspectPropertyMetaData>, T> aspectDataFactory) : base(logger, aspectDataFactory)
         {
             RequestEngine = new RequestEngineAccessor(() => Pipelines);
         }
         
+        /// <summary>
+        /// Cleanup any unmanaged resources.
+        /// </summary>
         protected override void UnmanagedResourcesCleanup()
         {
         }
@@ -212,7 +247,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             else
             {
-                _logger.LogError($"Aspect properties could not be " +
+                Logger.LogError($"Aspect properties could not be " +
                     $"loaded for {GetType().Name}", this);
                 return false;
             }
@@ -274,7 +309,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     }
                     else 
                     {
-                        _logger.LogWarning($"Problem parsing sub-items. " +
+                        Logger.LogWarning($"Problem parsing sub-items. " +
                             $"Property '{parentObjectType.Name}.{property.Name}' " +
                             $"does not implement IEnumerable<>.");
                     }
@@ -294,7 +329,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 // Could not find a matching property on the parent object
                 // so log a warning.
-                _logger.LogWarning($"Failed to find property '{property.Name}' " +
+                Logger.LogWarning($"Failed to find property '{property.Name}' " +
                     $"on data object '{parentObjectType.Name}'. ");
                 return null;
             }
@@ -334,10 +369,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// Any entries in the source dictionary where the key ends 
         /// with 'nullreason' will not appear in the output.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         protected Dictionary<string, object> CreateAPVDictionary(
             Dictionary<string, object> cloudData,
             IReadOnlyList<IElementPropertyMetaData> propertyMetaData)
         {
+            if (cloudData == null) throw new ArgumentNullException(nameof(cloudData));
+
             // Convert the meta-data to a dictionary for faster access.
             var metaDataDictionary = propertyMetaData.ToDictionary(
                 p => p.Name, p => p, 
@@ -347,7 +387,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             // Iterate through all entries in the source data where the
             // key is not suffixed with 'nullreason'.
             foreach (var property in cloudData
-                .Where(kvp => kvp.Key.EndsWith("nullreason") == false))
+                .Where(kvp => kvp.Key.EndsWith("nullreason", 
+                    StringComparison.OrdinalIgnoreCase) == false))
             {
                 var outputValue = property.Value;
 
@@ -393,7 +434,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 }
                 else
                 {
-                    _logger.LogWarning($"No meta-data entry for property " +
+                    Logger.LogWarning($"No meta-data entry for property " +
                         $"'{property.Key}' in '{GetType().Name}'");
                 }
 

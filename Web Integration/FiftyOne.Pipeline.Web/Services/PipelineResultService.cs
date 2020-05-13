@@ -28,6 +28,11 @@ using Microsoft.AspNetCore.Http;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
+    /// <summary>
+    /// The PipelineResultService passes the current request 
+    /// to the <see cref="IPipeline"/> and makes the results 
+    /// accessible through the <see cref="HttpContext"/>.
+    /// </summary>
     public class PipelineResultService : IPipelineResultService
     {
         private IPipeline _pipeline;
@@ -51,8 +56,22 @@ namespace FiftyOne.Pipeline.Web.Services
             _pipeline = pipeline;
         }
 
+        /// <summary>
+        /// Take evidence from the given <see cref="HttpContext"/> and
+        /// pass it into the action <see cref="IPipeline"/>.
+        /// Add the result to the <see cref="HttpContext.Items"/>
+        /// collection for downstream components to use.
+        /// </summary>
+        /// <param name="context">
+        /// The current <see cref="HttpContext"/>
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if one of the required arguments is null
+        /// </exception>
         public void Process(HttpContext context)
         {
+            if (context == null) { throw new ArgumentNullException(nameof(context)); }
+
             // Create the flowData
             var flowData = _pipeline.CreateFlowData();
             // Extract the required pieces of evidence from the request

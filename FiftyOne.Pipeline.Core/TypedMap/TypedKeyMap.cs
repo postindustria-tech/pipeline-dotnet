@@ -95,7 +95,7 @@ namespace FiftyOne.Pipeline.Core.TypedMap
         /// <summary>
         /// Get the data associated with the specified key.
         /// If the key is not present or the data value is null then the 
-        /// return value will be <see cref="default(T)"/>
+        /// return value will be <code>default(T)</code>.
         /// </summary>
         /// <typeparam name="T">
         /// The type of the data to return.
@@ -123,11 +123,12 @@ namespace FiftyOne.Pipeline.Core.TypedMap
         {
             if (key == null)
             {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
             if (key.Name == null)
             {
-                throw new ArgumentException("Key name cannot be null", "key");
+                throw new ArgumentException(Messages.ExceptionKeyNameNull, 
+                    nameof(key));
             }
 
             T result = default(T);
@@ -150,7 +151,7 @@ namespace FiftyOne.Pipeline.Core.TypedMap
         {
             var matches = _data
                 .Where(kvp => kvp.Value.GetType() is T);
-            if (matches.Count() == 0)
+            if (matches.Any() == false)
             {
                 matches = _data.Where(kvp => typeof(T)
                     .IsAssignableFrom(kvp.Value.GetType()));
@@ -160,7 +161,7 @@ namespace FiftyOne.Pipeline.Core.TypedMap
             {
                 return (T)matches.Single().Value;
             }
-            else if (matches.Count() == 0)
+            else if (matches.Any() == false)
             {
                 throw new PipelineDataException(
                     $"This map contains no data matching type " +
@@ -186,12 +187,12 @@ namespace FiftyOne.Pipeline.Core.TypedMap
 
         /// <summary>
         /// Return the entire collection as a
-        /// <see cref="IDictionary{string, object}"/> object.
+        /// <see cref="IDictionary{TKey, TValue}"/> object.
         /// Note that this is the actual internal dictionary instance so any 
         /// changes to it will be reflected in the TypedKeyMap object. 
         /// </summary>
         /// <returns>
-        /// The data as a <see cref="IDictionary{string, object}"/>.
+        /// The data as a <see cref="IDictionary{TKey, TValue}"/>.
         /// </returns>
         public IDictionary<string, object> AsStringKeyDictionary()
         {

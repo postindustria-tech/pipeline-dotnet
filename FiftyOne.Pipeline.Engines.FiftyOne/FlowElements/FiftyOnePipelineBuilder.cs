@@ -43,7 +43,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// Default constructor
         /// </summary>
         public FiftyOnePipelineBuilder()
+#pragma warning disable CA2000 // Dispose objects before losing scope
             : base(new LoggerFactory())
+#pragma warning restore CA2000 // Dispose objects before losing scope
         {
         }
 
@@ -94,7 +96,10 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             // it is added at the beginning as some engines depend on it.
             if (FlowElements.Any(e => e.GetType() == typeof(SequenceElement)) == false)
             {
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                // Element lifetimes are managed by the Pipeline
                 FlowElements.Insert(0, new SequenceElementBuilder(LoggerFactory).Build());
+#pragma warning restore CA2000 // Dispose objects before losing scope
             }
             // If share usage is enabled then add the share usage element if it
             // does not exist in the list. Otherwise add the sequence element.

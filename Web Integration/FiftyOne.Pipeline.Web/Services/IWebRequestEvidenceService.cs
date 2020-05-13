@@ -25,6 +25,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
+    /// <summary>
+    /// Interface for <see cref="WebRequestEvidenceService"/>
+    /// </summary>
     public interface IWebRequestEvidenceService
     {
         /// <summary>

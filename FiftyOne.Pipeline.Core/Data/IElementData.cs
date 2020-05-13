@@ -32,7 +32,9 @@ namespace FiftyOne.Pipeline.Core.Data
     /// </summary>
     public interface IElementData : IData
     {
-
+        /// <summary>
+        /// The <see cref="IPipeline"/> that this instance was created by
+        /// </summary>
         IPipeline Pipeline { get; set; }
     }
 }

@@ -23,6 +23,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.Data
@@ -35,15 +36,54 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Data
     /// </summary>
     public class CloudJsonConverter : JsonConverter
     {
+        /// <summary>
+        /// Returns true if the converter can convert objects of the 
+        /// supplied type.
+        /// </summary>
+        /// <param name="objectType">
+        /// The type to check against.
+        /// </param>
+        /// <returns>
+        /// True if the converter can convert the supplied type.
+        /// False if not.
+        /// </returns>
         public override bool CanConvert(Type objectType)
         {
             return objectType == typeof(Dictionary<string, object>);
         }
 
+        /// <summary>
+        /// If true then this converter can be used for writing as well
+        /// as reading JSON.
+        /// </summary>
         public override bool CanWrite => false;
 
+        /// <summary>
+        /// Convert the data from the given reader.
+        /// </summary>
+        /// <param name="reader">
+        /// The reader to read from.
+        /// </param>
+        /// <param name="objectType">
+        /// The type of the object to return.
+        /// </param>
+        /// <param name="existingValue">
+        /// ??
+        /// </param>
+        /// <param name="serializer">
+        /// The serializer to use when reading the JSON.
+        /// </param>
+        /// <returns>
+        /// The data object.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
+            if (reader == null) throw new ArgumentNullException(nameof(reader));
+            if (serializer == null) throw new ArgumentNullException(nameof(serializer));
+
             Dictionary<string, object> result = new Dictionary<string, object>();
             reader.Read();
 
@@ -67,9 +107,16 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Data
                     value = list;
                 }
                 else if (reader.TokenType == JsonToken.Integer)
-                    value = Convert.ToInt32(reader.Value);      // convert to Int32 instead of Int64
+                {
+                    // convert to Int32 instead of Int64
+                    value = Convert.ToInt32(reader.Value,
+                        CultureInfo.InvariantCulture);
+                }
                 else
-                    value = serializer.Deserialize(reader);     // let the serializer handle all other cases
+                {
+                    // let the serializer handle all other cases
+                    value = serializer.Deserialize(reader);
+                }
 
                 result.Add(propertyName, value);
                 reader.Read();
@@ -78,6 +125,21 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Data
             return result;
         }
 
+        /// <summary>
+        /// Write the given value to JSON
+        /// </summary>
+        /// <param name="writer">
+        /// The writer to use when writing the output.
+        /// </param>
+        /// <param name="value">
+        /// The value to be converted to JSON
+        /// </param>
+        /// <param name="serializer">
+        /// Not used.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if one of the supplied parameters is null.
+        /// </exception>
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             throw new NotImplementedException();

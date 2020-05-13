@@ -36,7 +36,7 @@ namespace FiftyOne.Pipeline.Web
         /// <summary>
         /// Configuration options.
         /// </summary>
-        protected readonly IOptions<PipelineWebIntegrationOptions> _options;
+        protected IOptions<PipelineWebIntegrationOptions> Options { get; private set; }
 
         /// <summary>
         /// Creates a new <see cref="FiftyOneJSViewComponent"/>.
@@ -44,7 +44,7 @@ namespace FiftyOne.Pipeline.Web
         /// <param name="options">Configuration</param>
         public FiftyOneJSViewComponent(IOptions<PipelineWebIntegrationOptions> options)
         {
-            _options = options;
+            Options = options;
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace FiftyOne.Pipeline.Web
         /// <returns>The rendered component</returns>
         public IViewComponentResult Invoke()
         {
-            return View(_options);
+            return View(Options);
         }
     }
 }

@@ -63,11 +63,6 @@ namespace FiftyOne.Pipeline.Core.Data
         private bool _processed = false;
 
         /// <summary>
-        /// True if this instance has been disposed.
-        /// </summary>
-        private bool _disposed = false;
-
-        /// <summary>
         /// Logger.
         /// </summary>
         private ILogger<FlowData> _logger;
@@ -194,8 +189,7 @@ namespace FiftyOne.Pipeline.Core.Data
                 string logMessage = "Error occurred during processing";
                 if (flowElement != null)
                 {
-                    logMessage = logMessage + $" of {flowElement.GetType().Name}" +
-                        $"-{flowElement.GetHashCode()}";
+                    logMessage = logMessage + $" of {flowElement.GetType().Name}";
                 }
                 _logger.LogError(ex, logMessage);
             }            
@@ -282,9 +276,12 @@ namespace FiftyOne.Pipeline.Core.Data
                 foreach (var property in
                     element.Properties.Where(predicate).Where(i => i.Available))
                 {
+#pragma warning disable CA1308 // Normalize strings to uppercase
+                    // Pipeline specification is for keys to be lower-case.      
                     yield return new KeyValuePair<string, object>(
-                        element.ElementDataKey + "." + property.Name.ToLower(),
-                        Get(element.ElementDataKey)[property.Name.ToLower()]);
+                        element.ElementDataKey + "." + property.Name.ToLowerInvariant(),
+                        Get(element.ElementDataKey)[property.Name.ToLowerInvariant()]);
+#pragma warning restore CA1308 // Normalize strings to uppercase
                 }
             }
         }
@@ -293,7 +290,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Use the pipeline to process this FlowData instance and 
         /// populate the aspect data values.
         /// </summary>
-        /// <exception cref="Exception">
+        /// <exception cref="PipelineException">
         /// Thrown if this flow data object has already been processed.
         /// </exception>
         /// <exception cref="ObjectDisposedException">
@@ -303,7 +300,7 @@ namespace FiftyOne.Pipeline.Core.Data
         {
             if (_processed)
             {
-                throw new Exception("FlowData has already been processed");
+                throw new PipelineException(Messages.ExceptionFlowDataAlreadyProcessed);
             }
             _processed = true;
             PipelineInternal.Process(this);
@@ -318,8 +315,20 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <param name="value">
         /// The evidence value
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if parameters are null
+        /// </exception>
         public IFlowData AddEvidence(string key, object value)
         {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+            if (value == null)
+            {
+                throw new ArgumentNullException(nameof(value));
+            }
+
             if (_logger.IsEnabled(LogLevel.Debug))
             {
                 _logger.LogDebug($"FlowData '{GetHashCode()}' set evidence " +
@@ -335,8 +344,16 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <param name="evidence">
         /// The evidence to add
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if evidence is null
+        /// </exception>
         public IFlowData AddEvidence(IDictionary<string, object> evidence)
         {
+            if (evidence == null)
+            {
+                throw new ArgumentNullException(nameof(evidence));
+            }
+
             var log = _logger.IsEnabled(LogLevel.Debug);
             foreach (var entry in evidence)
             {
@@ -360,15 +377,21 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// An <see cref="IElementData"/> instance containing the data.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied data key is null
+        /// </exception>
+        /// <exception cref="PipelineException">
+        /// Thrown if this FlowData instance has not been processed yet.
+        /// </exception>
         public IElementData Get(string elementDataKey)
         {
             if (_processed == false)
             {
-                throw new Exception("This instance has not yet been processed");
+                throw new PipelineException(Messages.ExceptionFlowDataNotYetProcessed);
             }
             if (elementDataKey == null)
             {
-                throw new ArgumentNullException("elementDataKey");
+                throw new ArgumentNullException(nameof(elementDataKey));
             }
             return _data.AsStringKeyDictionary()[elementDataKey] as IElementData;
         }
@@ -387,15 +410,21 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// An instance of type T containing the data.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied key is null
+        /// </exception>
+        /// <exception cref="PipelineException">
+        /// Thrown if this FlowData instance has not been processed yet.
+        /// </exception>
         public T Get<T>(ITypedKey<T> key) where T : IElementData
         {
             if (_processed == false)
             {
-                throw new Exception("This instance has not yet been processed");
+                throw new PipelineException(Messages.ExceptionFlowDataNotYetProcessed);
             }
             if (key == null)
             {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
             return _data.Get(key);
         }
@@ -453,17 +482,23 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// An instance of type T containing the data.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow element is null
+        /// </exception>
+        /// <exception cref="PipelineException">
+        /// Thrown if this FlowData instance has not been processed yet.
+        /// </exception>
         public T GetFromElement<T, TMeta>(IFlowElement<T, TMeta> flowElement)
             where T : IElementData
             where TMeta : IElementPropertyMetaData
         {
             if (_processed == false)
             {
-                throw new Exception("This instance has not yet been processed");
+                throw new PipelineException(Messages.ExceptionFlowDataNotYetProcessed);
             }
             if (flowElement == null)
             {
-                throw new ArgumentNullException("flowElement");
+                throw new ArgumentNullException(nameof(flowElement));
             }
             return _data.Get(flowElement.ElementDataKeyTyped);
         }
@@ -480,6 +515,9 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// The property value
         /// </returns>
+        /// <exception cref="PipelineException">
+        /// Thrown if this FlowData instance has not been processed yet.
+        /// </exception>
         /// <exception cref="PipelineDataException">
         /// Thrown if the requested property cannot be found or if multiple
         /// flow elements use the same property name.
@@ -498,9 +536,8 @@ namespace FiftyOne.Pipeline.Core.Data
             // Throw an error if the instance has not yet been processed.
             if(_processed == false)
             {
-                string message = $"Flow data has not yet been processed";
-                _logger.LogError(message);
-                throw new PipelineDataException(message);
+                _logger.LogError(Messages.ExceptionFlowDataNotYetProcessed);
+                throw new PipelineException(Messages.ExceptionFlowDataNotYetProcessed);
             }
 
             var property = PipelineInternal.GetMetaDataForProperty(propertyName);
@@ -611,9 +648,21 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// Existing data matching the key, or newly added data.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied data factory is null
+        /// </exception>
+        /// <exception cref="InvalidCastException">
+        /// Thrown if the <see cref="IElementData"/> retrieved for the 
+        /// supplied data key cannot be cast to the type T
+        /// </exception>
         public T GetOrAdd<T>(string elementDataKey, Func<IPipeline, T> dataFactory)
             where T : IElementData
         {
+            if (dataFactory == null)
+            {
+                throw new ArgumentNullException(nameof(dataFactory));
+            }
+
             T result = default(T);
             object data;
             if (_data.AsStringKeyDictionary().TryGetValue(elementDataKey, out data) == false)
@@ -666,9 +715,17 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// Existing data matching the key, or newly added data.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied data factory is null
+        /// </exception>
         public T GetOrAdd<T>(ITypedKey<T> key, Func<IPipeline, T> dataFactory)
              where T : IElementData
         {
+            if (dataFactory == null)
+            {
+                throw new ArgumentNullException(nameof(dataFactory));
+            }
+
             T data = default(T);
             if (_data.TryGetValue(key, out data) == false)
             {
@@ -728,12 +785,14 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// A new <see cref="DataKey"/> instance.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied filter is null
+        /// </exception>
         public DataKey GenerateKey(IEvidenceKeyFilter filter)
         {
             if(filter == null)
             {
-                throw new ArgumentNullException("filter",
-                    "Cannot generate a key if a filter is not supplied");
+                throw new ArgumentNullException(nameof(filter));
             }
 
             var evidence = _evidence.AsDictionary();

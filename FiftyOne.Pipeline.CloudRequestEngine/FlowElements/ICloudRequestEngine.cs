@@ -22,6 +22,7 @@
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using System;
@@ -30,8 +31,22 @@ using System.Text;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
+    /// <summary>
+    /// The interface for <see cref="CloudRequestEngine"/>
+    /// </summary>
     public interface ICloudRequestEngine : IAspectEngine<CloudRequestData, IAspectPropertyMetaData>
     {
+        /// <summary>
+        /// A collection containing the meta-data for the properties that 
+        /// the cloud service will return values for when a request is
+        /// made using the supplied resource key.
+        /// Note that this is distinct from the 
+        /// <see cref="IAspectEngine.Properties"/> collection, which returns
+        /// the meta-data for the properties that are populated by 
+        /// this engine in the <see cref="IFlowData"/>.
+        /// The key is the 'product name' and is equivalent to the 
+        /// <see cref="IFlowElement.ElementDataKey"/>. For example, 'device'.
+        /// </summary>
         IReadOnlyDictionary<string, ProductMetaData> PublicProperties { get; }
     }
 }

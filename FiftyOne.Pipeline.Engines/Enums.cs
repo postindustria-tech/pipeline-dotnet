@@ -30,12 +30,51 @@ namespace FiftyOne.Pipeline.Engines
     /// The performance profiles to use with the SetPerformanceProfile
     /// method.
     /// </summary>
+#pragma warning disable CA1717 // Only FlagsAttribute enums should have plural names
+    // This would be a breaking change.
     public enum PerformanceProfiles
+#pragma warning restore CA1717 // Only FlagsAttribute enums should have plural names
     {
+        /// <summary>
+        /// Use as little memory as possible. 
+        /// Performance can be significantly impacted but will still be 
+        /// fast enough for many scenarios.
+        /// Similar to HighPerformance and Balanced but uses much 
+        /// smaller cache sizes.
+        /// The precise details will vary based on the implementation of 
+        /// the engine.
+        /// </summary>
         LowMemory,
+        /// <summary>
+        /// Best possible performance. Everything loaded into memory.
+        /// Execution can be optimized to ignore operations relating to
+        /// maintaining caches, etc.
+        /// The precise details will vary based on the implementation of 
+        /// the engine.
+        /// </summary>
         MaxPerformance,
+        /// <summary>
+        /// Load smaller data structures into memory.
+        /// Larger data structures are cached to keep the most frequently
+        /// used data in memory as well.
+        /// Similar to Balanced but uses larger cache sizes.
+        /// The precise details will vary based on the implementation of 
+        /// the engine.
+        /// </summary>
         HighPerformance,
+        /// <summary>
+        /// Load smaller data structures into memory.
+        /// Larger data structures are cached to keep the most frequently
+        /// used data in memory as well.
+        /// Similar to HighPerformance but uses smaller cache sizes.
+        /// The precise details will vary based on the implementation of 
+        /// the engine.
+        /// </summary>
         Balanced,
+        /// <summary>
+        /// The precise details will vary based on the implementation of 
+        /// the engine.
+        /// </summary>
         BalancedTemp
     }
 }

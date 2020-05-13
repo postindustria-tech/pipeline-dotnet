@@ -22,23 +22,39 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using System;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
     /// <summary>
-    /// Service that provides the 51Degrees javascript when requested
+    /// Service that provides the 51Degrees JavaScript when requested
     /// </summary>
     public class FiftyOneJSService : IFiftyOneJSService
     {
-        protected IClientsidePropertyService _clientsidePropertyService;
-        protected IOptions<PipelineWebIntegrationOptions> _options;
+        /// <summary>
+        /// The ClientsidePropertyService determines the JavaScript
+        /// content to be returned when it is requested.
+        /// </summary>
+        protected IClientsidePropertyService ClientsidePropertyService { get; private set; }
+        /// <summary>
+        /// The configuration options for this service.
+        /// </summary>
+        protected IOptions<PipelineWebIntegrationOptions> Options { get; private set; }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="clientsidePropertyService">
+        /// The <see cref="IClientsidePropertyService"/> to use when 
+        /// JavaScript needs to be returned to the user.
+        /// </param>
+        /// <param name="options"></param>
         public FiftyOneJSService(
             IClientsidePropertyService clientsidePropertyService,
             IOptions<PipelineWebIntegrationOptions> options)
         {
-            _clientsidePropertyService = clientsidePropertyService;
-            _options = options;
+            ClientsidePropertyService = clientsidePropertyService;
+            Options = options;
         }
 
         /// <summary>
@@ -51,10 +67,16 @@ namespace FiftyOne.Pipeline.Web.Services
         /// <returns>
         /// True if JavaScript was written to the response, false otherwise.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         public bool ServeJS(HttpContext context)
         {
+            if (context == null) throw new ArgumentNullException(nameof(context));
+
             bool result = false;
-            if (context.Request.Path.Value.EndsWith("51Degrees.core.js")) // todo bug
+            if (context.Request.Path.Value.EndsWith("51Degrees.core.js", 
+                StringComparison.OrdinalIgnoreCase))
             {
                 ServeCoreJS(context);
                 result = true;
@@ -64,9 +86,9 @@ namespace FiftyOne.Pipeline.Web.Services
 
         private void ServeCoreJS(HttpContext context)
         {
-            if (_options.Value.ClientSideEvidenceEnabled)
+            if (Options.Value.ClientSideEvidenceEnabled)
             {
-                _clientsidePropertyService.ServeJavascript(context);
+                ClientsidePropertyService.ServeJavascript(context);
             }
         }
     }

@@ -83,20 +83,20 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         public override ShareUsageElement Build()
         {
             return new ShareUsageElement(
-                _loggerFactory.CreateLogger<ShareUsageElement>(),
+                LoggerFactory.CreateLogger<ShareUsageElement>(),
                 _httpClient,
-                _sharePercentage,
-                _minimumEntriesPerMessage,
-                _maximumQueueSize,
-                _addTimeout,
-                _takeTimeout,
-                _repeatEvidenceInterval,
-                _trackSession,
-                _shareUsageUrl,
-                _blockedHttpHeaders,
-                _includedQueryStringParameters,
-                _ignoreDataEvidenceFilter,
-                _aspSessionCookieName);
+                SharePercentage,
+                MinimumEntriesPerMessage,
+                MaximumQueueSize,
+                AddTimeout,
+                TakeTimeout,
+                RepeatEvidenceInterval,
+                TrackSession,
+                ShareUsageUri.AbsoluteUri,
+                BlockedHttpHeaders,
+                IncludedQueryStringParameters,
+                IgnoreDataEvidenceFilter,
+                AspSessionCookieName);
         }
     }
 }

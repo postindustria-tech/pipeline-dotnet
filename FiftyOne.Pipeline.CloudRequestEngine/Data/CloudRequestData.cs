@@ -32,15 +32,35 @@ using System.Text;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.Data
 {
+    /// <summary>
+    /// The <see cref="IElementData"/> class for 
+    /// <see cref="FlowElements.CloudRequestEngine"/>.
+    /// </summary>
     public class CloudRequestData : AspectDataBase
     {
         private const string JSON_RESPONSE_KEY = "json-response";
+
+        /// <summary>
+        /// The raw JSON response returned by the 51Degrees cloud service. 
+        /// </summary>
         public string JsonResponse
         {
             get { return base[JSON_RESPONSE_KEY].ToString(); }
             set { base[JSON_RESPONSE_KEY] = value; }
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="logger">
+        /// The logger for this instance
+        /// </param>
+        /// <param name="pipeline">
+        /// The pipeline this instance was created by.
+        /// </param>
+        /// <param name="engine">
+        /// The engine that created this instance.
+        /// </param>
         public CloudRequestData(
             ILogger<AspectDataBase> logger,
             IPipeline pipeline,

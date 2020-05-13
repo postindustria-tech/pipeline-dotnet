@@ -51,6 +51,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         where TData : IMultiProfileData<TProfile>
         where TProfile : IAspectData
     {
+        /// <summary>
+        /// A filter object that indicates the evidence keys that can be
+        /// used by this engine.
+        /// </summary>
         public override IEvidenceKeyFilter EvidenceKeyFilter =>
             // This engine needs no evidence. 
             // It works from the cloud request data.
@@ -61,6 +65,16 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             new CloudJsonConverter()
         };
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="logger">
+        /// The logger used by this instance.
+        /// </param>
+        /// <param name="deviceDataFactory">
+        /// The factory function to use when creating new data instances
+        /// of type <code>TData</code>.
+        /// </param>
         public PropertyKeyedCloudEngineBase(
             ILogger<PropertyKeyedCloudEngineBase<TData, TProfile>> logger,
             Func<IPipeline, FlowElementBase<TData, IAspectPropertyMetaData>, TData> deviceDataFactory)
@@ -68,9 +82,26 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         {
         }
 
+        /// <summary>
+        /// Retrieve the raw JSON response from the 
+        /// <see cref="CloudRequestEngine"/> in this pipeline, extract 
+        /// the data for this specific engine and populate the 
+        /// <code>TData</code> instance accordingly.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> to get the raw JSON data from.
+        /// </param>
+        /// <param name="aspectData">
+        /// The <code>TData</code> instance to populate with values.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         protected override void ProcessEngine(IFlowData data, TData aspectData)
         {
-            var requestData = data.GetFromElement(RequestEngine.Instance);
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
+            var requestData = data.GetFromElement(RequestEngine.GetInstance());
             var json = requestData?.JsonResponse;
 
             if (string.IsNullOrEmpty(json))
@@ -114,6 +145,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
         }
 
+        /// <summary>
+        /// An abstract factory method that should return a new instance 
+        /// of the type that represents a single 'profile' in the list
+        /// of profiles returned by this engine.
+        /// </summary>
+        /// <returns>
+        /// A new <code>TProfile</code> instance.
+        /// </returns>
         protected abstract TProfile CreateProfileData();
 
     }

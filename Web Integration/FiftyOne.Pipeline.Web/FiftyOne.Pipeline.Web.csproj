@@ -5,20 +5,9 @@
     <Platforms>AnyCPU</Platforms>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-	
-	  <!-- NuGet package properties -->
-	  <PackageId>FiftyOne.Pipeline.Web</PackageId>
-	  <Title>ASP.NET integration for the 51Degrees Pipeline API</Title>
-	  <PackageDescription>
-		  The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. 
-		  The package contains components that integrate the 51Degrees Pipeline API into ASP.NET and ASP.NET Core web projects.
-	  </PackageDescription>
-	  <Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
-      <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
-	  <PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
-	  <Copyright>51Degrees Mobile Experts Limited</Copyright>
-	  <PackageTags>51degrees,pipeline,aggregate,data service,web</PackageTags>
-	  <RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+    <DocumentationFile>FiftyOne.Pipeline.Web.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -35,6 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" Version="1.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -52,6 +45,9 @@
 	     update the dependencies in the nuspec file in the parent directory. -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="3.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation">
+      <Version>3.1.1</Version>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -59,11 +55,4 @@
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines.FiftyOne\FiftyOne.Pipeline.Engines.FiftyOne.csproj" />
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Web.Shared\FiftyOne.Pipeline.Web.Shared.csproj" />
   </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation">
-      <Version>3.1.1</Version>
-    </PackageReference>
-  </ItemGroup>
-
 </Project>

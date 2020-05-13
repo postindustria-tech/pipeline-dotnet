@@ -34,7 +34,35 @@ namespace FiftyOne.Pipeline.Engines.Services
     /// </summary>
     public interface IMissingPropertyService
     {
+        /// <summary>
+        /// Get the reason that the specified property is not available
+        /// in the results from the specified engine.
+        /// </summary>
+        /// <param name="propertyName">
+        /// The property name to check.
+        /// </param>
+        /// <param name="engine">
+        /// The engine that was expected to populate the property.
+        /// </param>
+        /// <returns>
+        /// A <see cref="MissingPropertyResult"/> instance explaining 
+        /// why the property is not populated.
+        /// </returns>
         MissingPropertyResult GetMissingPropertyReason(string propertyName, IAspectEngine engine);
+        /// <summary>
+        /// Get the reason that the specified property is not available
+        /// in the results from the specified engines.
+        /// </summary>
+        /// <param name="propertyName">
+        /// The property name to check.
+        /// </param>
+        /// <param name="engines">
+        /// The engines that were expected to populate the property.
+        /// </param>
+        /// <returns>
+        /// A <see cref="MissingPropertyResult"/> instance explaining 
+        /// why the property is not populated.
+        /// </returns>
         MissingPropertyResult GetMissingPropertyReason(string propertyName, IReadOnlyList<IAspectEngine> engines);
     }
 
@@ -43,7 +71,13 @@ namespace FiftyOne.Pipeline.Engines.Services
     /// </summary>
     public class MissingPropertyResult
     {
+        /// <summary>
+        /// The reason the property was not populated.
+        /// </summary>
         public MissingPropertyReason Reason { get; set; }
+        /// <summary>
+        /// A text description of the reason the property was not populated.
+        /// </summary>
         public string Description { get; set; }
     }
 
@@ -52,9 +86,36 @@ namespace FiftyOne.Pipeline.Engines.Services
     /// </summary>
     public enum MissingPropertyReason
     {
+        /// <summary>
+        /// The property was not populated because the data file being 
+        /// used does not contain that property.
+        /// For example, the free, lite 51Degrees device detection data file
+        /// has only a handful of properties of the 250+ that are available
+        /// in the paid-for versions.
+        /// </summary>
         DataFileUpgradeRequired,
+        /// <summary>
+        /// The property was not included in the list of properties that
+        /// were passed in when the engine was created.
+        /// Restricting the list of properties that you want an engine to
+        /// populate can result in improved performance. However, if you
+        /// then request a property that is not in that list then it 
+        /// will not be populated.
+        /// </summary>
         PropertyExculdedFromEngineConfiguration,
+        /// <summary>
+        /// 51Degrees cloud engines use a 'resourceKey' to determine
+        /// the properties that should be returned in the response.
+        /// This reason indicates that the resource key probably does
+        /// not include the requested property.
+        /// A new resource key will need to be created that does 
+        /// include the property before you will be able to access it.
+        /// </summary>
         CloudEngine,
+        /// <summary>
+        /// The reason for the property not being present could not 
+        /// be determined.
+        /// </summary>
         Unknown
     }
 }

@@ -37,8 +37,22 @@ namespace FiftyOne.Pipeline.Web.Framework
     /// </summary>
     public class PipelineModule : IHttpModule
     {
+        /// <summary>
+        /// Initialize this module.
+        /// </summary>
+        /// <param name="application">
+        /// The <see cref="HttpApplication"/> object.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if one of the required arguments is null
+        /// </exception>
         public void Init(HttpApplication application)
         {
+            if (application == null)
+            {
+                throw new ArgumentNullException(nameof(application));
+            }
+
             // Replace the browser capabilities provider with one that is 51Degrees
             // enabled if not done so already.
             if (HttpCapabilitiesBase.BrowserCapabilitiesProvider is
@@ -58,13 +72,17 @@ namespace FiftyOne.Pipeline.Web.Framework
             HttpContext context = ((HttpApplication)sender).Context;
 
             if (context != null &&
-                context.Request.Path.EndsWith("51Degrees.core.js") &&
+                context.Request.Path.EndsWith("51Degrees.core.js", 
+                    StringComparison.OrdinalIgnoreCase) &&
                 WebPipeline.GetInstance().ClientSideEvidenceEnabled)
             {
                 FiftyOneJsProvider.GetInstance().ServeJavascript(context);
             }
         }
 
+        /// <summary>
+        /// Dispose of this instance
+        /// </summary>
         public void Dispose()
         {
         }

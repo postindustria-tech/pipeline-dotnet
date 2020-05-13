@@ -35,6 +35,8 @@ using System.Text;
 using System.Threading.Tasks;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.JsonBuilder.Converters;
+using FiftyOne.Pipeline.Core.Exceptions;
+using FiftyOne.Pipeline.Engines.FiftyOne;
 
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
@@ -51,7 +53,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         private List<IElementPropertyMetaData> _properties;
         private List<string> _blacklist;
                
-        // An array of custom converters to use when seralising 
+        // An array of custom converters to use when serializing 
         // the property values.
         private static JsonConverter[] JSON_CONVERTERS = new JsonConverter[]
         {
@@ -59,6 +61,20 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             new AspectPropertyValueConverter()
         };
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="logger">
+        /// The logger for this instance to use.
+        /// </param>
+        /// <param name="jsonConverters">
+        /// A collection of <see cref="JsonConverter"/> instances that will
+        /// be used when serializing the data.
+        /// </param>
+        /// <param name="elementDataFactory">
+        /// The factory function to use when creating a new element data
+        /// instance.
+        /// </param>
         public JsonBuilderElement(
             ILogger<JsonBuilderElement> logger,
             IEnumerable<JsonConverter> jsonConverters,
@@ -82,19 +98,47 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             JSON_CONVERTERS = JSON_CONVERTERS.Concat(jsonConverters).ToArray();
         }
 
+        /// <summary>
+        /// The key to identify this engine's element data instance
+        /// within <see cref="IFlowData"/>.
+        /// </summary>
         public override string ElementDataKey => "json-builder";
 
+        /// <summary>
+        /// A filter that identifies the evidence items that this 
+        /// element can make use of.
+        /// JsonBuilder does not make use of any evidence so this filter
+        /// will never match anything.
+        /// </summary>
         public override IEvidenceKeyFilter EvidenceKeyFilter => 
             _evidenceKeyFilter;
 
+        /// <summary>
+        /// The meta-data for the properties populated by this element.
+        /// </summary>
         public override IList<IElementPropertyMetaData> Properties => 
             _properties;
 
+        /// <summary>
+        /// Cleanup of an managed resources.
+        /// </summary>
         protected override void ManagedResourcesCleanup()
         { }
 
+        /// <summary>
+        /// Transform the data in the flow data instance into a
+        /// JSON object.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/>
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
         protected override void ProcessInternal(IFlowData data)
         {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
             var elementData = data.GetOrAdd(
                     ElementDataKeyTyped,
                     CreateElementData);
@@ -106,8 +150,6 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// Create and populate a JSON string from the specified data.
         /// </summary>
         /// <param name="data"></param>
-        /// <param name="allProperties"></param>
-        /// <param name="javascriptProperties"></param>
         /// <returns>
         /// A string containing the data in JSON format.
         /// </returns>
@@ -119,7 +161,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             // are accessible to a dictionary.
             Dictionary<String, object> allProperties = GetAllProperties(data);
 
-            // Only populate the javascript properties if the sequence 
+            // Only populate the JavaScript properties if the sequence 
             // has not reached max iterations.
             if (sequenceNumber < Constants.MAX_JAVASCRIPT_ITERATIONS)
             {
@@ -131,9 +173,19 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             return BuildJson(allProperties);
         }
 
-        protected string BuildJson(Dictionary<string, object> allProperties)
+        /// <summary>
+        /// Build the JSON 
+        /// </summary>
+        /// <param name="allProperties">
+        /// A dictionary containing the data to convert to JSON.
+        /// Key is the element data key.
+        /// Value is a <code><![CDATA[Dictionary<string, object>]]></code>
+        /// containing the property names and values for that element.
+        /// </param>
+        /// <returns></returns>
+        protected static string BuildJson(Dictionary<string, object> allProperties)
         {
-            // Build the Json object from the property list containing property 
+            // Build the JSON object from the property list containing property 
             // values and errors.
             // TODO: Remove formatting
             return JsonConvert.SerializeObject(allProperties,
@@ -166,9 +218,15 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// </summary>
         /// <param name="data"></param>
         /// <param name="allProperties"></param>
-        protected void AddErrors(IFlowData data,
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if one of the supplied parameters is null
+        /// </exception>
+        protected static void AddErrors(IFlowData data,
             Dictionary<String, object> allProperties)
         {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (allProperties == null) throw new ArgumentNullException(nameof(allProperties));
+
             // If there are any errors then add them to the Json.
             if (data.Errors != null && data.Errors.Count > 0)
             {
@@ -194,27 +252,46 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        protected int GetSequenceNumber(IFlowData data)
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        /// <exception cref="PipelineException">
+        /// Thrown if sequence number is not present in the evidence.
+        /// </exception>
+        protected static int GetSequenceNumber(IFlowData data)
         {
-            int sequence = 1;
-            if (data.TryGetEvidence("query.sequence", out sequence) == false)
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
+            if (data.TryGetEvidence(Engines.FiftyOne.Constants.EVIDENCE_SEQUENCE, out int sequence) == false)
             {
-                throw new Exception("Sequence number not present in evidence. " +
-                    "this is mandatory.");
+                throw new PipelineException(Messages.ExceptionSequenceNumberNotPresent);
             }
             return sequence;
         }
 
+        /// <summary>
+        /// Cleanup any unmanaged resources
+        /// </summary>
         protected override void UnmanagedResourcesCleanup()
         { }
+
 
         /// <summary>
         /// Get all the proeprties.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", 
+            "CA1308:Normalize strings to uppercase", 
+            Justification = "Pipeline API specification is for JSON " +
+            "data to always use fully lower-case keys")]
         protected virtual Dictionary<String, object> GetAllProperties(IFlowData data)
         {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
             Dictionary<string, object> allProperties = new Dictionary<string, object>();
 
             foreach (var element in data.ElementDataAsDictionary())
@@ -230,6 +307,10 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             return allProperties;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization",
+            "CA1308:Normalize strings to uppercase",
+            Justification = "Pipeline API specification is for JSON " +
+            "data to always use fully lower-case keys")]
         private Dictionary<string, object> GetValues(IReadOnlyDictionary<string, object> readOnlyDictionary)
         {
             var values = new Dictionary<string, object>();
@@ -275,8 +356,16 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// (property names) to a list which will be used by the JavaScript
         /// resource to determine if they should be run.
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="propertyWhitelist"></param>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> instance to get properties from.
+        /// </param>
+        /// <param name="allProperties">
+        /// A collection of the properties that are accessible in the
+        /// current request.
+        /// Key is the element data key. 
+        /// Value is a <code><![CDATA[Dictionary<string, object>]]></code>
+        /// that contains the property names and values.
+        /// </param>
         /// <returns></returns>
         private IList<string> GetJavaScriptProperties(
             IFlowData data,
@@ -295,10 +384,31 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             return GetJavaScriptProperties(data, props);
         }
 
+        /// <summary>
+        /// Get the names of all properties from the given 
+        /// <see cref="IFlowData"/> instance that have type 'JavaScript'.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> to get properties from.
+        /// </param>
+        /// <param name="availableProperties">
+        /// A list of the full string names (i.e. prefixed with the element 
+        /// data key for the element that populates that property) of the 
+        /// available properties in dot-separated format.
+        /// </param>
+        /// <returns>
+        /// A list of the full string names of the properties that are of 
+        /// type 'JavaScript'
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
         protected virtual IList<string> GetJavaScriptProperties(
             IFlowData data,
             IList<string> availableProperties)
         {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
             // Get a list of all the JavaScript properties which are available.
             var javascriptPropertiesEnumerable =
                 data.GetWhere(

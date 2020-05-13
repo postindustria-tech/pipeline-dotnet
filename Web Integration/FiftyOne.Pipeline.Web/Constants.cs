@@ -22,6 +22,14 @@
 
 namespace FiftyOne.Pipeline.Web
 {
+    /// <summary>
+    /// Static class containing various constants that are used by the 
+    /// Pipeline web integration and/or are helpful to callers.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming",
+        "CA1707:Identifiers should not contain underscores",
+        Justification = "51Degrees coding style is for constant names " +
+            "to be all-caps with an underscore to separate words.")]
     public static class Constants
     {
         /// <summary>
@@ -43,7 +51,7 @@ namespace FiftyOne.Pipeline.Web
         public const string PIPELINE_OPTIONS = "PipelineOptions";
 
         /// <summary>
-        /// The copyright message to add to all javascript. This message 
+        /// The copyright message to add to all JavaScript. This message 
         /// can not be altered by 3rd parties.
         /// </summary>
         internal const string ClientSidePropertyCopyright = 

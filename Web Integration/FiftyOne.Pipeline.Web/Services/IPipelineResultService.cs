@@ -20,10 +20,14 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.AspNetCore.Http;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
+    /// <summary>
+    /// The interface for the <see cref="PipelineResultService"/>
+    /// </summary>
     public interface IPipelineResultService
     {
         /// <summary>

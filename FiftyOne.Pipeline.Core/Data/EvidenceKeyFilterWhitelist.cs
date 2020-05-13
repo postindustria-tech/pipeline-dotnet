@@ -34,6 +34,9 @@ namespace FiftyOne.Pipeline.Core.Data
     /// </summary>
     public class EvidenceKeyFilterWhitelist : IEvidenceKeyFilter
     {
+#pragma warning disable CA1051 // Do not declare visible instance fields
+        // Extending classes can make direct use of these fields.
+
         /// <summary>
         /// The dictionary containing all keys in the whitelist and the
         /// order of precedence.
@@ -46,6 +49,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </summary>
         protected IEqualityComparer<string> _comparer = 
             StringComparer.OrdinalIgnoreCase;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
         /// <summary>
         /// Get the keys in the white list as a read only dictionary.

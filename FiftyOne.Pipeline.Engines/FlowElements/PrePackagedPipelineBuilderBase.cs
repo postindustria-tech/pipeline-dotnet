@@ -35,11 +35,28 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
     public abstract class PrePackagedPipelineBuilderBase<TBuilder> : PipelineBuilderBase<TBuilder>
         where TBuilder : PrePackagedPipelineBuilderBase<TBuilder>
     {
+        /// <summary>
+        /// True if lazy loading is enabled for the relevant engine(s).
+        /// False if not.
+        /// </summary>
         protected bool LazyLoading { get; set; } = false;
+        /// <summary>
+        /// True if a results cache should be added to the relevant engine(s).
+        /// False if not.
+        /// </summary>
         protected bool ResultsCache { get; set; } = false;
 
+        /// <summary>
+        /// The timeout to be used by the lazy loading feature.
+        /// </summary>
         protected TimeSpan LazyLoadingTimeout { get; set; } = TimeSpan.FromSeconds(5);
+        /// <summary>
+        /// The cancellation token to be used by the lazy loading feature.
+        /// </summary>
         protected CancellationToken LazyLoadingCancellationToken { get; set; } = default(CancellationToken);
+        /// <summary>
+        /// The cache size to use for the results cache
+        /// </summary>
         protected int ResultsCacheSize { get; set; } = 1000;
 
         /// <summary>

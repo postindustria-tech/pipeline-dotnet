@@ -41,6 +41,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
     /// The unprocessed JSON response is stored in the FlowData
     /// for other engines to make use of.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming",
+        "CA1724:Type names should not match namespaces",
+        Justification = "This would be a breaking change so will be " +
+        "addressed in a future version.")]
     public class CloudRequestEngine : AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>, ICloudRequestEngine
     {
         private HttpClient _httpClient;
@@ -54,40 +58,52 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private IEvidenceKeyFilter _evidenceKeyFilter;
 
         /// <summary>
-        /// Constructor used if no licence key is set.
-        /// </summary>
-        /// <param name="logger"></param>
-        /// <param name="aspectDataFactory"></param>
-        /// <param name="httpClient"></param>
-        /// <param name="dataEndpoint"></param>
-        /// <param name="propertiesEndpoint"></param>
-        /// <param name="evidenceKeysEndpoint"></param>
-        /// <param name="timeout"></param>
-        public CloudRequestEngine(
-            ILogger<AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>> logger,
-            Func<IPipeline, FlowElementBase<CloudRequestData, IAspectPropertyMetaData>, 
-                CloudRequestData> aspectDataFactory,
-            HttpClient httpClient,
-            string dataEndpoint,
-            string propertiesEndpoint,
-            string evidenceKeysEndpoint,
-            int timeout,
-            List<string> requestedProperties) : 
-            this(logger, aspectDataFactory, httpClient, dataEndpoint, null, null, propertiesEndpoint, evidenceKeysEndpoint, timeout, requestedProperties)
-        {
-        }
-
-        /// <summary>
         /// Default constructor.
         /// </summary>
-        /// <param name="logger"></param>
-        /// <param name="aspectDataFactory"></param>
-        /// <param name="httpClient"></param>
-        /// <param name="dataEndpoint"></param>
-        /// <param name="licenseKey"></param>
-        /// <param name="propertiesEndpoint"></param>
-        /// <param name="evidenceKeysEndpoint"></param>
-        /// <param name="timeout"></param>
+        /// <param name="logger">
+        /// The logger for this instance
+        /// </param>
+        /// <param name="aspectDataFactory">
+        /// A factory function to use when creating new 
+        /// <see cref="CloudRequestData"/> instances.
+        /// </param>
+        /// <param name="httpClient">
+        /// The HttpClient instance to use when making requests
+        /// </param>
+        /// <param name="licenseKey">
+        /// The license key to use when making requests.
+        /// This parameter is obsolete, use resourceKey instead.
+        /// </param>
+        /// <param name="resourceKey">
+        /// The resource key to use when making requests.
+        /// A resource key encapsulates details such as any license keys,
+        /// the properties that should be returned and the domains that
+        /// requests are permitted from. A new resource key can be
+        /// generated for free at https://configure.51degrees.com
+        /// </param>
+        /// <param name="dataEndpoint">
+        /// The URL for the cloud endpoint that will take the supplied
+        /// evidence and return JSON formatted data.
+        /// </param>
+        /// <param name="propertiesEndpoint">
+        /// The URL for the cloud endpoint that will return meta-data
+        /// on properties that will be populated when the data endpoint 
+        /// is called using the given resource key.
+        /// </param>
+        /// <param name="evidenceKeysEndpoint">
+        /// The URL for the cloud endpoint that will return meta-data
+        /// on the evidence that will be used when the data endpoint 
+        /// is called using the given resource key.
+        /// </param>
+        /// <param name="timeout">
+        /// The timeout for HTTP requests in seconds.
+        /// </param>
+        /// <param name="requestedProperties">
+        /// Not currently used.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         public CloudRequestEngine(
             ILogger<AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>> logger, 
             Func<IPipeline, FlowElementBase<CloudRequestData, IAspectPropertyMetaData>, 
@@ -102,6 +118,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             List<string> requestedProperties) 
             : base(logger, aspectDataFactory)
         {
+            if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
+
             try
             {
                 _dataEndpoint = dataEndpoint;
@@ -131,7 +149,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, $"Error creating {this.GetType().Name}");
+                Logger.LogCritical(ex, $"Error creating {this.GetType().Name}");
                 throw;
             }
         }
@@ -145,10 +163,24 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         public override IList<IAspectPropertyMetaData> Properties => _propertyMetaData;
 
+        /// <summary>
+        /// The 'tier' of the source data used to service this request.
+        /// </summary>
         public override string DataSourceTier => "cloud";
 
+        /// <summary>
+        /// The key for this element's data within an <see cref="IFlowData"/>
+        /// instance.
+        /// </summary>
         public override string ElementDataKey => "cloud-response";
 
+        /// <summary>
+        /// A filter object that indicates the evidence keys that can be
+        /// used by this engine.
+        /// This will vary based on the supplied resource key so will
+        /// be populated after a call to the cloud service as part of 
+        /// object initialization.
+        /// </summary>
         public override IEvidenceKeyFilter EvidenceKeyFilter => _evidenceKeyFilter;
 
         /// <summary>
@@ -163,19 +195,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         /// <param name="data"></param>
         /// <param name="aspectData"></param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         protected override void ProcessEngine(IFlowData data, CloudRequestData aspectData)
         {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (aspectData == null) throw new ArgumentNullException(nameof(aspectData));
+
             string jsonResult = string.Empty;
 
-            var content = GetContent(data);
-            if (_logger != null && _logger.IsEnabled(LogLevel.Debug))
+            using (var content = GetContent(data))
             {
-                _logger.LogDebug($"Sending request to cloud service at " +
-                    $"'{_dataEndpoint}'. Content: {content}");
-            }
+                if (Logger != null && Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.LogDebug($"Sending request to cloud service at " +
+                        $"'{_dataEndpoint}'. Content: {content}");
+                }
 
-            var request = _httpClient.PostAsync(_dataEndpoint, content);
-            jsonResult = request.Result.Content.ReadAsStringAsync().Result;
+                var request = _httpClient.PostAsync(_dataEndpoint, content);
+                jsonResult = request.Result.Content.ReadAsStringAsync().Result;
+            }
 
             aspectData.JsonResponse = jsonResult;
         }
@@ -207,6 +247,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             return content;
         }
 
+        /// <summary>
+        /// Cleanup any unmanaged resources
+        /// </summary>
         protected override void UnmanagedResourcesCleanup()
         {
         }

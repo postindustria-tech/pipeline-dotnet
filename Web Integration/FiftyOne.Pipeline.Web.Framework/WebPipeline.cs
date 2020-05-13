@@ -28,6 +28,7 @@ using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.Web.Framework.Configuration;
+using FiftyOne.Pipeline.Web.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -68,7 +69,7 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// <summary>
         /// The single IPipeline instance for a web server.
         /// </summary>
-        public readonly IPipeline Pipeline;
+        public IPipeline Pipeline { get; private set; }
 
         /// <summary>
         /// Get the only instance of WebPipeline. If an instance does not
@@ -108,14 +109,14 @@ namespace FiftyOne.Pipeline.Web.Framework
                 options.Elements == null)
             {
                 throw new PipelineConfigurationException(
-                    "Could not find pipeline configuration information");
+                   Messages.ExceptionNoConfiguration);
             }
 
             // Add the sequence element.
             var sequenceConfig = options.Elements.Where(e =>
                 e.BuilderName.IndexOf(nameof(SequenceElement),
                     StringComparison.OrdinalIgnoreCase) >= 0);
-            if (sequenceConfig.Count() == 0)
+            if (sequenceConfig.Any() == false)
             {
                 // The sequence element is not included so add it.
                 options.Elements.Add(new ElementOptions()
@@ -132,7 +133,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                 var jsonConfig = options.Elements.Where(e =>
                     e.BuilderName.IndexOf(nameof(JsonBuilderElement),
                         StringComparison.OrdinalIgnoreCase) >= 0);
-                if (jsonConfig.Count() == 0)
+                if (jsonConfig.Any() == false)
                 {
                     // The json builder is not included so add it.
                     options.Elements.Add(new ElementOptions()
@@ -144,7 +145,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                 var builderConfig = options.Elements.Where(e =>
                     e.BuilderName.IndexOf(nameof(JavaScriptBuilderElement), 
                         StringComparison.OrdinalIgnoreCase) >= 0);
-                if (builderConfig.Count() == 0)
+                if (builderConfig.Any() == false)
                 {
                     // The bundler is not included so add it.
                     options.Elements.Add(new ElementOptions()
@@ -171,8 +172,13 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// <returns>
         /// A processed FlowData
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         public static IFlowData Process(HttpRequest request)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
             // Create a new FlowData instance.
             var flowData = GetInstance().Pipeline.CreateFlowData();
             // Add headers

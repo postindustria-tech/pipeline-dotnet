@@ -30,6 +30,10 @@ using System.Text;
 
 namespace FiftyOne.Pipeline.Engines.FlowElements
 {
+    /// <summary>
+    /// Interface for an AspectEngine that processes evidence using one 
+    /// or more local data files.
+    /// </summary>
     public interface IOnPremiseAspectEngine : IAspectEngine
     {
         /// <summary>

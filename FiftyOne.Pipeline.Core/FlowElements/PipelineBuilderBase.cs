@@ -114,8 +114,15 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <exception cref="ObjectDisposedException">
         /// Thrown if the element has already been disposed.
         /// </exception>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied element is null.
+        /// </exception>
         public T AddFlowElement(IFlowElement element)
         {
+            if(element == null)
+            {
+                throw new ArgumentNullException(nameof(element));
+            }
             if (element.IsDisposed)
             {
                 throw new ObjectDisposedException(nameof(element));

@@ -33,29 +33,92 @@ using System.Linq;
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
     /// <summary>
-    /// 
+    /// Fluent builder class for constructing <see cref="JsonBuilderElement"/>
+    /// instances.
     /// </summary>
     public class JsonBuilderElementBuilder
     {
         private ILoggerFactory _loggerFactory;
         private IEnumerable<JsonConverter> _jsonConverters = Enumerable.Empty<JsonConverter>();
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="loggerFactory">
+        /// The logger factory for this builder to use when creating new 
+        /// instances.
+        /// </param>
         public JsonBuilderElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
         }
 
-            public JsonBuilderElementBuilder(ILoggerFactory loggerFactory, IEnumerable<JsonConverter> jsonConverters)
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="loggerFactory">
+        /// The logger factory for this builder to use when creating new 
+        /// instances.
+        /// </param>
+        /// <param name="jsonConverters">
+        /// A list of additional <see cref="JsonConverter"/> instances 
+        /// for the <see cref="JsonBuilderElement"/> to use when creating
+        /// the JSON output.
+        /// </param>
+        [Obsolete("Use the 'SetJsonConverters' method instead. " +
+            "This constructor will be removed in a future version.")]
+        public JsonBuilderElementBuilder(ILoggerFactory loggerFactory, 
+            IEnumerable<JsonConverter> jsonConverters)
         {
             _loggerFactory = loggerFactory;
             _jsonConverters = jsonConverters;
         }
 
-        public JsonBuilderElement Build()
+        /// <summary>
+        /// Set the additional <see cref="JsonConverter"/> instances
+        /// to be passed to the <see cref="JsonBuilderElement"/>.
+        /// </summary>
+        /// <param name="jsonConverters">
+        /// A list of additional <see cref="JsonConverter"/> instances 
+        /// for the <see cref="JsonBuilderElement"/> to use when creating
+        /// the JSON output.
+        /// </param>
+        /// <returns>This builder.</returns>
+        public JsonBuilderElementBuilder SetJsonConverters(IEnumerable<JsonConverter> jsonConverters)
         {
-            return new JsonBuilderElement(_loggerFactory.CreateLogger<JsonBuilderElement>(), _jsonConverters, CreateData);
+            _jsonConverters = jsonConverters;
+            return this;
         }
 
+        /// <summary>
+        /// Build and return a new <see cref="JsonBuilderElement"/> with
+        /// the currently configured settings.
+        /// </summary>
+        /// <returns>
+        /// a new <see cref="JsonBuilderElement"/>
+        /// </returns>
+        public JsonBuilderElement Build()
+        {
+            return new JsonBuilderElement(
+                _loggerFactory.CreateLogger<JsonBuilderElement>(),
+                _jsonConverters, CreateData);
+        }
+
+        /// <summary>
+        /// Factory method for creating the 
+        /// <see cref="JsonBuilderElementData"/> instances that 
+        /// will be populated by the <see cref="JsonBuilderElement"/>.
+        /// </summary>
+        /// <param name="pipeline">
+        /// The pipeline that this is part of.
+        /// </param>
+        /// <param name="jsonBuilderElement">
+        /// The <see cref="JsonBuilderElement"/> the is creating this data
+        /// instance.
+        /// </param>
+        /// <returns>
+        /// A new <see cref="JsonBuilderElementData"/> instance.
+        /// </returns>
         private IJsonBuilderElementData CreateData(
             IPipeline pipeline,
             FlowElementBase<IJsonBuilderElementData, IElementPropertyMetaData> jsonBuilderElement)

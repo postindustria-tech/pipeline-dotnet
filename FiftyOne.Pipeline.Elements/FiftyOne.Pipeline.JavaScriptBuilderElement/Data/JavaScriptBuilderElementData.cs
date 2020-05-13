@@ -22,19 +22,37 @@
 
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using Microsoft.Extensions.Logging;
 using System;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.Data
 {
+    /// <summary>
+    /// The <see cref="IElementData"/> class for 
+    /// <see cref="JavaScriptBuilderElement"/>.
+    /// </summary>
     public class JavaScriptBuilderElementData : ElementDataBase, IJavaScriptBuilderElementData
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="logger">
+        /// The logger for this instance.
+        /// </param>
+        /// <param name="pipeline">
+        /// The pipeline this instance was created by.
+        /// </param>
         public JavaScriptBuilderElementData(
             ILogger<JavaScriptBuilderElementData> logger,
             IPipeline pipeline)
             : base(logger, pipeline)
         { }
 
+        /// <summary>
+        /// The JavaScript output produced by the 
+        /// <see cref="JavaScriptBuilderElement"/>
+        /// </summary>
         public string JavaScript
         {
             get

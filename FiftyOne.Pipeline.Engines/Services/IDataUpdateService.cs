@@ -22,6 +22,7 @@
 
 using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.Data;
+using FiftyOne.Pipeline.Engines.Exceptions;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using System;
 using System.IO;
@@ -95,17 +96,40 @@ namespace FiftyOne.Pipeline.Engines.Services
         event EventHandler<DataUpdateEventArgs> CheckForUpdateStarted;
     }
 
-
+    /// <summary>
+    /// Event arguments used when events are fired by an 
+    /// <see cref="IDataUpdateService"/>
+    /// </summary>
     public class DataUpdateEventArgs : EventArgs
     {
+        /// <summary>
+        /// The data file that the event relates to
+        /// </summary>
         public AspectEngineDataFile DataFile { get; set; }
     }
+    /// <summary>
+    /// Event arguments used when an 'UpdteComplete' event is fired by an 
+    /// <see cref="IDataUpdateService"/>
+    /// </summary>
+#pragma warning disable CA1710 // Identifiers should have correct suffix
+    // This would be a breaking change.
     public class DataUpdateCompleteArgs : DataUpdateEventArgs
+#pragma warning restore CA1710 // Identifiers should have correct suffix
     {
+        /// <summary>
+        /// The final status of the data update
+        /// </summary>
         public AutoUpdateStatus Status { get; set; }
     }
 
 
+    /// <summary>
+    /// Possible status values for the data update process.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", 
+        "CA1707:Identifiers should not contain underscores", 
+        Justification = "51Degrees code style for public constants and " +
+        "enum names is to use all caps with underscores as a separator.")]
     public enum AutoUpdateStatus
     {
         /// <summary>
@@ -141,7 +165,7 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// </summary>
         AUTO_UPDATE_ERR_403_FORBIDDEN,
         /// <summary>
-        /// Used when IO oerations with input or output stream failed. 
+        /// Used when IO operations with input or output stream failed. 
         /// </summary>
         AUTO_UPDATE_ERR_READING_STREAM,
         /// <summary>
@@ -169,6 +193,10 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// There was an error while checking for an update that was not
         /// anticipated by the developers of this service.
         /// </summary>
-        AUTO_UPDATE_UNKNOWN_ERROR
+        AUTO_UPDATE_UNKNOWN_ERROR,
+        /// <summary>
+        /// An operation could not be completed within the expected time.
+        /// </summary>
+        AUTO_UPDATE_TIMEOUT
     }
 }

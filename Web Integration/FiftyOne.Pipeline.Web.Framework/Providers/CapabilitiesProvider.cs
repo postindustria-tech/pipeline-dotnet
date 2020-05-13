@@ -33,17 +33,40 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
     /// <summary>
     /// Extends the default HttpCapabilitiesProvider to return a new instance
     /// of the 51Degrees HttpBrowserCapabilities implementation when requested.
+    /// </summary>
     public class CapabilitiesProvider : HttpCapabilitiesDefaultProvider
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public CapabilitiesProvider()
         {
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="parent">
+        /// The <see cref="HttpCapabilitiesDefaultProvider"/> instance to use
+        /// for initializing a new instance.
+        /// </param>
         public CapabilitiesProvider(HttpCapabilitiesDefaultProvider parent) : base(parent)
         {
         }
 
-        public override HttpBrowserCapabilities GetBrowserCapabilities(HttpRequest request)
+        /// <summary>
+        /// Gets the <see cref="HttpBrowserCapabilities"/> object for the 
+        /// specified <see cref="HttpRequest"/>.
+        /// </summary>
+        /// <param name="request">
+        /// The <see cref="HttpRequest"/> to get the browser capabilities for.
+        /// </param>
+        /// <returns>
+        /// The browser capabilities for the specified
+        /// <see cref="HttpRequest"/>.
+        /// </returns>
+        public override HttpBrowserCapabilities GetBrowserCapabilities(
+            HttpRequest request)
         {
             HttpBrowserCapabilities caps;
             var baseCaps = base.GetBrowserCapabilities(request);

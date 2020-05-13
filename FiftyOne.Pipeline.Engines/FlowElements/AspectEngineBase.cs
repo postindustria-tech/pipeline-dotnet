@@ -52,9 +52,11 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         where T : IAspectData
         where TMeta : IAspectPropertyMetaData
     {
-        protected IMissingPropertyService _missingPropertyService;
-
-        protected IFlowCache _cache;
+        /// <summary>
+        /// The results cache to be used to store results against
+        /// relevant evidence values.
+        /// </summary>
+        private IFlowCache _cache;
 
         /// <summary>
         /// The tier to which the current data source belongs.
@@ -109,9 +111,12 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <param name="cache">
         /// The cache.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the parameter is null
+        /// </exception>
         public virtual void SetCache(IFlowCache cache)
         {
-            _cache = cache;
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _cache.FlowElement = this;
         }
 
@@ -146,14 +151,21 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <summary>
         /// Implementation of method from the base class 
         /// <see cref="FlowElementBase{T, TMeta}"/>.
-        /// This exists to centralise the results caching logic.
+        /// This exists to centralize the results caching logic.
         /// </summary>
         /// <param name="data">
         /// The <see cref="IFlowData"/> instance that provides the evidence 
         /// and holds the result.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the parameter is null
+        /// </exception>
         protected sealed override void ProcessInternal(IFlowData data)
         {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
             ProcessWithCache(data);
         }
 
@@ -161,7 +173,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// Private method that checks if the result is already in the cache
         /// or not.
         /// If it is then the result is added to 'data', if not then 
-        /// <see cref="ProcessEngine(IFlowData)"/> is called to do so.
+        /// <see cref="ProcessEngine(IFlowData, T)"/> is called to do so.
         /// </summary>
         /// <param name="data">
         /// The <see cref="IFlowData"/> instance that provides the evidence 

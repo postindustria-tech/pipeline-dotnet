@@ -54,7 +54,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// A filter that will only include the evidence keys that can 
         /// be used by at least one <see cref="IFlowElement"/> within 
         /// this pipeline.
-        /// (Will only be populated after the <see cref="EvidenceKeys"/>
+        /// (Will only be populated after the <see cref="EvidenceKeyFilter"/>
         /// property is used.)
         /// </summary>
         private EvidenceKeyFilterAggregator _evidenceKeyFilter;
@@ -68,8 +68,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 // IFlowData to a single IElementData (because they contain 
                 // multiple elements and each element could have it's own data)
                 throw new NotImplementedException(
-                    "ParallelElements instances do not have an element " +
-                    "data key");
+                    Messages.ExceptionParallelElementsNoDataKey);
             }
         }
 
@@ -101,6 +100,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <summary>
         /// Constructor
         /// </summary>
+        /// <param name="logger">
+        /// The logger to be used by this instance.
+        /// </param>
         /// <param name="flowElements">
         /// The list of <see cref="IFlowElement"/> instances to execute
         /// when Process is called.
@@ -113,8 +115,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         }
 
         /// <summary>
-        /// Called by the Process method on the <see cref="FlowElementBase{T}"/> 
-        /// base class.
+        /// Called by the Process method on the 
+        /// <see cref="FlowElementBase{T, TMeta}"/> base class.
         /// Executes all child elements in parallel.
         /// </summary>
         /// <param name="data">
@@ -129,15 +131,19 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     // Run each element on a new thread.
                     Task.Run(() =>
                     {
-                        try
+                        element.Process(data);
+                    }).ContinueWith(t =>
+                    {
+                        // If any exceptions occurred then add them to the 
+                        // flow data.
+                        if (t.Exception != null)
                         {
-                            element.Process(data);
+                            foreach (var innerException in t.Exception.InnerExceptions)
+                            {
+                                data.AddError(innerException, element);
+                            }
                         }
-                        catch (Exception ex)
-                        {
-                            data.AddError(ex, element);
-                        }
-                    }));
+                    }, TaskScheduler.Default));
             }
 
             // Wait until all tasks have completed.

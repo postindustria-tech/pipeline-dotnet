@@ -33,6 +33,9 @@ namespace FiftyOne.Pipeline.Engines.Exceptions
     /// </summary>
     public class DataUpdateException : Exception
     {
+        /// <summary>
+        /// The status of the update process.
+        /// </summary>
         public AutoUpdateStatus Status { get; private set; } = AutoUpdateStatus.UNSPECIFIED;
 
         /// <summary>

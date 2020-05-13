@@ -117,7 +117,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
                 blockedHeaders,
                 includedQueryStringParams,
                 ignoreDataEvidenceFiler,
-                Constants.DEFAULT_ASP_COOKIE_NAME,
+                Engines.Constants.DEFAULT_ASP_COOKIE_NAME,
                 _tracker.Object);
             _shareUsageElement.AddPipeline(_pipeline.Object);
         }
@@ -139,7 +139,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
                 { Core.Constants.EVIDENCE_CLIENTIP_KEY, "1.2.3.4" },
                 { Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + "x-forwarded-for", "5.6.7.8" },
                 { Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + "forwarded-for", "2001::" },
-                { Core.Constants.EVIDENCE_COOKIE_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + Constants.FIFTYONE_COOKIE_PREFIX + "Profile", "123456" },
+                { Core.Constants.EVIDENCE_COOKIE_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + Engines.Constants.FIFTYONE_COOKIE_PREFIX + "Profile", "123456" },
                 { Core.Constants.EVIDENCE_COOKIE_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + "RemoveMe", "123456" }
             };
             var data = MockFlowData.CreateFromEvidence(evidenceData, false);
@@ -164,7 +164,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             Assert.IsTrue(_xmlContent[0].Contains("<ClientIP>1.2.3.4</ClientIP>"));
             Assert.IsTrue(_xmlContent[0].Contains("<header Name=\"x-forwarded-for\"><![CDATA[5.6.7.8]]></header>"));
             Assert.IsTrue(_xmlContent[0].Contains("<header Name=\"forwarded-for\"><![CDATA[2001::]]></header>"));
-            Assert.IsTrue(_xmlContent[0].Contains($"<cookie Name=\"{Constants.FIFTYONE_COOKIE_PREFIX}Profile\"><![CDATA[123456]]></cookie>"));
+            Assert.IsTrue(_xmlContent[0].Contains($"<cookie Name=\"{Engines.Constants.FIFTYONE_COOKIE_PREFIX}Profile\"><![CDATA[123456]]></cookie>"));
             Assert.IsFalse(_xmlContent[0].Contains("<cookie Name=\"RemoveMe\">"));
         }
 
@@ -547,8 +547,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             // Check that the expected values are populated.
             Assert.IsTrue(_xmlContent[0].Contains("<SessionId>"));
             Assert.IsTrue(_xmlContent[0].Contains("<Sequence>1</Sequence>"));
-            Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Engines.FiftyOne.FlowElements.Constants.EVIDENCE_SESSIONID));
-            Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Engines.FiftyOne.FlowElements.Constants.EVIDENCE_SEQUENCE));
+            Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Constants.EVIDENCE_SESSIONID));
+            Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Constants.EVIDENCE_SEQUENCE));
         }
 
         /// <summary>
@@ -565,8 +565,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             Dictionary<string, object> evidenceData = new Dictionary<string, object>()
             {
                 { Core.Constants.EVIDENCE_CLIENTIP_KEY, "1.2.3.4" },
-                { FiftyOne.FlowElements.Constants.EVIDENCE_SESSIONID, "abcdefg-hijklmn-opqrst-uvwyxz" },
-                { FiftyOne.FlowElements.Constants.EVIDENCE_SEQUENCE, "2" },
+                { Constants.EVIDENCE_SESSIONID, "abcdefg-hijklmn-opqrst-uvwyxz" },
+                { Constants.EVIDENCE_SEQUENCE, "2" },
             };
 
             var pipeline = new TestPipeline(_pipeline.Object);
@@ -594,8 +594,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             // Check that the expected values are populated.
             Assert.IsTrue(_xmlContent[0].Contains("<SessionId>abcdefg-hijklmn-opqrst-uvwyxz</SessionId>"));
             Assert.IsTrue(_xmlContent[0].Contains("<Sequence>3</Sequence>"));
-            Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Engines.FiftyOne.FlowElements.Constants.EVIDENCE_SESSIONID));
-            Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Engines.FiftyOne.FlowElements.Constants.EVIDENCE_SEQUENCE));
+            Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Constants.EVIDENCE_SESSIONID));
+            Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Constants.EVIDENCE_SEQUENCE));
         }
 
         /// <summary>

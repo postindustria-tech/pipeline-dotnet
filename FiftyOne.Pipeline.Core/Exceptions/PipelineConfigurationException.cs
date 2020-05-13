@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.FlowElements;
 using System;
 
 namespace FiftyOne.Pipeline.Core.Exceptions
@@ -28,7 +29,7 @@ namespace FiftyOne.Pipeline.Core.Exceptions
     /// Exception that is thrown when the configuration options provided 
     /// to <see cref="PipelineBuilder"/> are invalid
     /// </summary>
-    public class PipelineConfigurationException : Exception
+    public class PipelineConfigurationException : PipelineException
     {
         /// <summary>
         /// Constructor

@@ -31,21 +31,21 @@ namespace FiftyOne.Pipeline.Web.Framework
     /// <summary>
     /// Constants for the Web.Framework package.
     /// </summary>
-    public class Constants
+    public static class Constants
     {
         /// <summary>
         /// Possible names for the configuration file. These are the file names
         /// which will be searched for during construction.
         /// NOTE: These do not include the extension.
         /// </summary>
-        public static string[] ConfigFileNames = { "pipeline", "51Degrees" };
+        public static readonly string[] ConfigFileNames = { "pipeline", "51Degrees" };
         /// <summary>
         /// Possible file extensions for an XML configuration file.
         /// </summary>
-        public static string[] XmlFileExtensions = { "xml", "config" };
+        public static readonly string[] XmlFileExtensions = { "xml", "config" };
         /// <summary>
         /// Possible file extensions for a JSON configuration file.
         /// </summary>
-        public static string[] JsonFileExtensions = { "json" };
+        public static readonly string[] JsonFileExtensions = { "json" };
     }
 }

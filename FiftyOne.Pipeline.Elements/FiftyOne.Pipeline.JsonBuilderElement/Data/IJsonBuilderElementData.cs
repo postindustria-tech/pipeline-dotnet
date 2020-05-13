@@ -24,11 +24,20 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 
 namespace FiftyOne.Pipeline.JsonBuilder.Data
 {
+    /// <summary>
+    /// The <see cref="IElementData"/> interface for 
+    /// <see cref="JsonBuilderElement"/>.
+    /// </summary>
     public interface IJsonBuilderElementData : IElementData
     {
+        /// <summary>
+        /// The JSON output produced by the 
+        /// <see cref="JsonBuilderElement"/>
+        /// </summary>
         string Json { get; set;  }
     }
 }

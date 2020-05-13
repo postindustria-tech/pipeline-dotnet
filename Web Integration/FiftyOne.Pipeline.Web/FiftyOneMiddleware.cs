@@ -23,6 +23,8 @@
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using FiftyOne.Pipeline.Web.Services;
+using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 
 namespace FiftyOne.Pipeline.Web
 {
@@ -34,11 +36,21 @@ namespace FiftyOne.Pipeline.Web
     /// </summary>
     public class FiftyOneMiddleware
     {
-        // The next component in the MVC pipeline
-        protected readonly RequestDelegate _next;
-        // Required services
-        protected readonly IFiftyOneJSService _jsService;
-        protected readonly IPipelineResultService _pipelineResultService;
+        /// <summary>
+        /// The next component in the MVC pipeline
+        /// </summary>
+        protected RequestDelegate Next { get; private set; }
+        /// <summary>
+        /// The JavaScript service handles requests for dynamic JavaScript
+        /// resources such as 51degrees.core.js
+        /// </summary>
+        protected IFiftyOneJSService JsService { get; private set; }
+        /// <summary>
+        /// The PipelineResultService passes the current request 
+        /// to the <see cref="IPipeline"/> and makes the results 
+        /// accessible through the <see cref="HttpContext"/>.
+        /// </summary>
+        protected IPipelineResultService PipelineResultService { get; private set; }
 
         /// <summary>
         /// Create a new FiftyOneMiddleware object.
@@ -58,9 +70,9 @@ namespace FiftyOne.Pipeline.Web
             IPipelineResultService pipelineResultService, 
             IFiftyOneJSService jsService)
         {
-            _next = next;
-            _pipelineResultService = pipelineResultService;
-            _jsService = jsService;
+            Next = next;
+            PipelineResultService = pipelineResultService;
+            JsService = jsService;
         }
 
         /// <summary>
@@ -82,13 +94,13 @@ namespace FiftyOne.Pipeline.Web
         {
             // Populate the request properties and store against the 
             // HttpContext.
-            _pipelineResultService.Process(context);
+            PipelineResultService.Process(context);
             
             // If 51Degrees JavaScript is being requested then serve it.
             // Otherwise continue down the middleware Pipeline.
-            if (_jsService.ServeJS(context) == false)
+            if (JsService.ServeJS(context) == false)
             {
-                await _next.Invoke(context);
+                await Next.Invoke(context).ConfigureAwait(false);
             }
         }
     }

@@ -21,7 +21,9 @@
  * ********************************************************************* */
 
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 
@@ -34,21 +36,84 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     /// <typeparam name="T">Element type</typeparam>
     public abstract class ShareUsageBuilderBase<T>
     {
-        protected ILoggerFactory _loggerFactory;
-        protected ILogger _logger;
+        /// <summary>
+        /// The logger factory used by this builder
+        /// </summary>
+        protected ILoggerFactory LoggerFactory { get; private set; }
 
-        protected int _repeatEvidenceInterval = Constants.SHARE_USAGE_DEFAULT_REPEAT_EVIDENCE_INTERVAL;
-        protected double _sharePercentage = Constants.SHARE_USAGE_DEFAULT_SHARE_PERCENTAGE;
-        protected int _minimumEntriesPerMessage = Constants.SHARE_USAGE_DEFAULT_MIN_ENTRIES_PER_MESSAGE;
-        protected int _maximumQueueSize = Constants.SHARE_USAGE_DEFAULT_MAX_QUEUE_SIZE;
-        protected int _addTimeout = Constants.SHARE_USAGE_DEFAULT_ADD_TIMEOUT;
-        protected int _takeTimeout = Constants.SHARE_USAGE_DEFAULT_TAKE_TIMEOUT;
-        protected string _shareUsageUrl = Constants.SHARE_USAGE_DEFAULT_URL;
-        protected string _aspSessionCookieName = Engines.Constants.DEFAULT_ASP_COOKIE_NAME;
-        protected List<string> _blockedHttpHeaders = new List<string>();
-        protected List<string> _includedQueryStringParameters = new List<string>();
-        protected List<KeyValuePair<string, string>> _ignoreDataEvidenceFilter = new List<KeyValuePair<string, string>>();
-        protected bool _trackSession;
+        /// <summary>
+        /// The logger to be used by this builder
+        /// </summary>
+        protected ILogger Logger { get; private set; }
+
+        /// <summary>
+        /// Where a set of evidence values exactly matches a previously seen
+        /// set of evidence values, it will not be shared if that situation 
+        /// occurs within this time interval. (in minutes)
+        /// </summary>
+        protected int RepeatEvidenceInterval { get; private set; } = Constants.SHARE_USAGE_DEFAULT_REPEAT_EVIDENCE_INTERVAL;
+        /// <summary>
+        /// The approximate proportion of events to share.
+        /// Specified as a floating point number from 0 to 1.
+        /// </summary>
+        protected double SharePercentage { get; private set; } = Constants.SHARE_USAGE_DEFAULT_SHARE_PERCENTAGE;
+        /// <summary>
+        /// The minimum number of entries to be present in the XML
+        /// PAyload before it is sent to the usage sharing endpoint.
+        /// </summary>
+        protected int MinimumEntriesPerMessage { get; private set; } = Constants.SHARE_USAGE_DEFAULT_MIN_ENTRIES_PER_MESSAGE;
+        /// <summary>
+        /// Set the maximum number of entries to be stored in the queue to be
+        /// sent. This must be more than the minimum entries per message.
+        /// </summary>
+        protected int MaximumQueueSize { get; private set; } = Constants.SHARE_USAGE_DEFAULT_MAX_QUEUE_SIZE;
+        /// <summary>
+        /// The timeout in milliseconds to allow when attempting to add an
+        /// item to the queue. If this timeout is exceeded then usage sharing
+        /// will be disabled.
+        /// </summary>
+        protected int AddTimeout { get; private set; } = Constants.SHARE_USAGE_DEFAULT_ADD_TIMEOUT;
+        /// <summary>
+        /// The timeout in milliseconds to allow when attempting to take an
+        /// item from the queue in order to send to the remote service.
+        /// </summary>
+        protected int TakeTimeout { get; private set; } = Constants.SHARE_USAGE_DEFAULT_TAKE_TIMEOUT;
+        /// <summary>
+        /// The remote endpoint to send usage data to. 
+        /// </summary>
+        [Obsolete("Use the ShareUsageUri property instead. This property may be removed in the future.")]
+#pragma warning disable CA1056 // Uri properties should not be strings
+        protected string ShareUsageUrl => ShareUsageUri.AbsoluteUri;
+#pragma warning restore CA1056 // Uri properties should not be strings
+        /// <summary>
+        /// The remote endpoint to send usage data to. 
+        /// </summary>
+        protected Uri ShareUsageUri { get; private set; } = new Uri(Constants.SHARE_USAGE_DEFAULT_URL);
+        /// <summary>
+        /// The name of the cookie that contains the asp.net session id.
+        /// This is used to help prevent the same usage data being shared
+        /// multiple times.
+        /// </summary>
+        protected string AspSessionCookieName { get; private set; } = Engines.Constants.DEFAULT_ASP_COOKIE_NAME;
+        /// <summary>
+        /// A list of HTTP headers that should not be shared.
+        /// </summary>
+        protected List<string> BlockedHttpHeaders { get; private set; } = new List<string>();
+        /// <summary>
+        /// A list of query string parameters to be shared.
+        /// </summary>
+        protected List<string> IncludedQueryStringParameters { get; private set; } = new List<string>();
+        /// <summary>
+        /// A collection of evidence keys and values which, if present,
+        /// cause the event to be ignored for the purposes of usage sharing.
+        /// </summary>
+        protected List<KeyValuePair<string, string>> IgnoreDataEvidenceFilter { get; private set; } = new List<KeyValuePair<string, string>>();
+        /// <summary>
+        /// Controls whether session tracking is enabled or disabled.
+        /// If enabled, requests from a single user session will only be 
+        /// shared once.
+        /// </summary>
+        protected bool TrackSession { get; private set; }
 
         /// <summary>
         /// Constructor
@@ -57,15 +122,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// The <see cref="ILoggerFactory"/> to use when creating loggers for
         /// a <see cref="ShareUsageElement"/>.
         /// </param>
-        /// <param name="httpClient">
-        /// The <see cref="HttpClient"/> that <see cref="ShareUsageElement"/>
-        /// should use for sending data.
-        /// </param>
         public ShareUsageBuilderBase(
             ILoggerFactory loggerFactory)
         {
-            _loggerFactory = loggerFactory;
-            _logger = _loggerFactory.CreateLogger<ShareUsageBuilder>();
+            LoggerFactory = loggerFactory;
+            Logger = LoggerFactory.CreateLogger<ShareUsageBuilder>();
         }
 
         /// <summary>
@@ -77,8 +138,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             ILoggerFactory loggerFactory,
             ILogger logger)
         {
-            _loggerFactory = loggerFactory;
-            _logger = logger;
+            LoggerFactory = loggerFactory;
+            Logger = logger;
         }
 
         /// <summary>
@@ -88,11 +149,19 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="queryStringParameterNames">
         /// The names of the query string parameter to include.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the parameter is null
+        /// </exception>
         public ShareUsageBuilderBase<T> SetIncludedQueryStringParameters(List<string> queryStringParameterNames)
         {
+            if (queryStringParameterNames == null)
+            {
+                throw new ArgumentNullException(nameof(queryStringParameterNames));
+            }
+
             foreach (var name in queryStringParameterNames)
             {
-                _includedQueryStringParameters.Add(name);
+                IncludedQueryStringParameters.Add(name);
             }
             return this;
         }
@@ -105,8 +174,16 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// A comma separated list of names of the query string parameter to
         /// include.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the parameter is null
+        /// </exception>
         public ShareUsageBuilderBase<T> SetIncludedQueryStringParameters(string queryStringParameterNames)
         {
+            if (queryStringParameterNames == null)
+            {
+                throw new ArgumentNullException(nameof(queryStringParameterNames));
+            }
+
             return SetIncludedQueryStringParameters(
                 new List<string>(queryStringParameterNames.Split(',')));
         }
@@ -120,7 +197,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </param>
         public ShareUsageBuilderBase<T> SetIncludedQueryStringParameter(string queryStringParameterName)
         {
-            _includedQueryStringParameters.Add(queryStringParameterName);
+            IncludedQueryStringParameters.Add(queryStringParameterName);
             return this;
         }
 
@@ -135,7 +212,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </param>
         public ShareUsageBuilderBase<T> SetBlockedHttpHeaders(List<string> blockedHeaders)
         {
-            _blockedHttpHeaders = blockedHeaders;
+            BlockedHttpHeaders = blockedHeaders;
             return this;
         }
 
@@ -150,7 +227,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </param>
         public ShareUsageBuilderBase<T> SetBlockedHttpHeader(string blockedHeader)
         {
-            _blockedHttpHeaders.Add(blockedHeader);
+            BlockedHttpHeaders.Add(blockedHeader);
             return this;
         }
 
@@ -171,20 +248,24 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                     {
                         KeyValuePair<string, string> kvp =
                             new KeyValuePair<string, string>(kvpString.Split(':')[0], kvpString.Split(':')[1]);
-                        _ignoreDataEvidenceFilter.Add(kvp);
+                        IgnoreDataEvidenceFilter.Add(kvp);
                     }
                     else
                     {
-                        _logger.LogWarning($"Configuration for " +
-                            $"'IgnoreFlowDataEvidenceFilter' is invalid, " +
-                            $"ignoring: {kvpString}");
+                        string msg = string.Format(CultureInfo.InvariantCulture,
+                            Messages.MessageShareUsageInvalidConfig,
+                            "IgnoreFlowDataEvidenceFilter",
+                            kvpString);
+                        Logger.LogWarning(msg);
                     }
                 }
             }
             else
             {
-                _logger.LogWarning($"Configuration for " +
-                            $"'IgnoreFlowDataEvidenceFilter' is invalid.");
+                string msg = string.Format(CultureInfo.InvariantCulture,
+                    Messages.MessageShareUsageInvalidConfig,
+                    "IgnoreFlowDataEvidenceFilter", "");
+                Logger.LogWarning(msg);
             }
             return this;
         }
@@ -200,7 +281,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </param>
         public ShareUsageBuilderBase<T> SetSharePercentage(double sharePercentage)
         {
-            _sharePercentage = sharePercentage;
+            SharePercentage = sharePercentage;
             return this;
         }
 
@@ -217,7 +298,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </param>
         public ShareUsageBuilderBase<T> SetMinimumEntriesPerMessage(int minimumEntriesPerMessage)
         {
-            _minimumEntriesPerMessage = minimumEntriesPerMessage;
+            MinimumEntriesPerMessage = minimumEntriesPerMessage;
             return this;
         }
 
@@ -228,7 +309,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="size">Size to set</param>
         public ShareUsageBuilderBase<T> SetMaximumQueueSize(int size)
         {
-            _maximumQueueSize = size;
+            MaximumQueueSize = size;
             return this;
         }
 
@@ -240,7 +321,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="milliseconds">Timeout to set</param>
         public ShareUsageBuilderBase<T> SetAddTimeout(int milliseconds)
         {
-            _addTimeout = milliseconds;
+            AddTimeout = milliseconds;
             return this;
         }
 
@@ -251,7 +332,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="milliseconds">Timeout to set</param>
         public ShareUsageBuilderBase<T> SetTakeTimeout(int milliseconds)
         {
-            _takeTimeout = milliseconds;
+            TakeTimeout = milliseconds;
             return this;
         }
 
@@ -263,7 +344,19 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </param>
         public ShareUsageBuilderBase<T> SetShareUsageUrl(string shareUsageUrl)
         {
-            _shareUsageUrl = shareUsageUrl;
+            ShareUsageUri = new Uri(shareUsageUrl);
+            return this;
+        }
+
+        /// <summary>
+        /// Set the URL to use when sharing usage data.
+        /// </summary>
+        /// <param name="shareUsageUrl">
+        /// The URL to use when sharing usage data.
+        /// </param>
+        public ShareUsageBuilderBase<T> SetShareUsageUrl(Uri shareUsageUrl)
+        {
+            ShareUsageUri = shareUsageUrl;
             return this;
         }
 
@@ -275,7 +368,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </param>
         public ShareUsageBuilderBase<T> SetAspSessionCookieName(string cookieName)
         {
-            _aspSessionCookieName = cookieName;
+            AspSessionCookieName = cookieName;
             return this;
         }
 
@@ -288,7 +381,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </param>
         public ShareUsageBuilderBase<T> SetRepeatEvidenceIntervalMinutes(int interval)
         {
-            _repeatEvidenceInterval = interval;
+            RepeatEvidenceInterval = interval;
             return this;
         }
 
@@ -300,7 +393,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <returns></returns>
         public ShareUsageBuilderBase<T> SetTrackSession(bool track)
         {
-            _trackSession = track;
+            TrackSession = track;
             return this;
         }
 
@@ -308,7 +401,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// Create the <see cref="ShareUsageElement"/>
         /// </summary>
         /// <returns>
-        /// The newly created <see cref="T"/>
+        /// The newly created element.
         /// </returns>
         public abstract T Build();
     }

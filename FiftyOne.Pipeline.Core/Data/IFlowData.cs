@@ -39,7 +39,12 @@ namespace FiftyOne.Pipeline.Core.Data
         /// A boolean flag that can be used to stop further elements
         /// from executing.
         /// </summary>
+        [Obsolete("This property will be replaced with a more appropriate " +
+            "mechanism such as a CancellationToken in a future version.")]
+#pragma warning disable CA1716 // Identifiers should not match keywords
+        // Marked as obsolete and will be removed in future.
         bool Stop { get; set; }
+#pragma warning restore CA1716 // Identifiers should not match keywords
 
         /// <summary>
         /// The errors that have occurred during processing
@@ -153,7 +158,12 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// An <see cref="IElementData"/> instance containing the data.
         /// </returns>
+#pragma warning disable CA1716 // Identifiers should not match keywords
+        // 'Get' is the name used in the Pipeline specification.
+        // This warning is only highlighting potential confusion,
+        // rather than functional problems.
         IElementData Get(string elementDataKey);
+#pragma warning restore CA1716 // Identifiers should not match keywords
 
         /// <summary>
         /// Get the <see cref="IElementData"/> instance containing data
@@ -169,8 +179,13 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// An instance of type T containing the data.
         /// </returns>
+#pragma warning disable CA1716 // Identifiers should not match keywords
+        // 'Get' is the name used in the Pipeline specification.
+        // This warning is only highlighting potential confusion,
+        // rather than functional problems.
         T Get<T>(ITypedKey<T> key)
             where T : IElementData;
+#pragma warning restore CA1716 // Identifiers should not match keywords
 
         /// <summary>
         /// Check if the flow data contains an item with the specified
@@ -199,7 +214,12 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// The data instance.
         /// </returns>
+#pragma warning disable CA1716 // Identifiers should not match keywords
+        // 'Get' is the name used in the Pipeline specification.
+        // This warning is only highlighting potential confusion,
+        // rather than functional problems.
         T Get<T>() where T : IElementData;
+#pragma warning restore CA1716 // Identifiers should not match keywords
 
         /// <summary>
         /// Get the <see cref="IElementData"/> instance containing data

@@ -881,7 +881,8 @@ EXCLUDE_SYMLINKS       = NO
 
 EXCLUDE_PATTERNS       = */bin/* \
                          */obj/* \
-                         */.vs/*
+                         */.vs/* \
+                         */wwwroot/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
@@ -906,7 +907,8 @@ EXAMPLE_PATH           = ../Examples \
 # *.h) to filter out the source-files in the directories. If left blank all
 # files are included.
 
-EXAMPLE_PATTERNS       = *.cs
+EXAMPLE_PATTERNS       = *.cs \
+                         *.cshtml
 
 # If the EXAMPLE_RECURSIVE tag is set to YES then subdirectories will be
 # searched for input files to be used with the \include or \dontinclude commands

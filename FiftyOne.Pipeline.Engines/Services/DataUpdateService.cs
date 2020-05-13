@@ -30,6 +30,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -39,6 +40,7 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.Engines.Services
 {
@@ -160,13 +162,13 @@ namespace FiftyOne.Pipeline.Engines.Services
 		{
 			if (dataFile == null)
 			{
-				throw new ArgumentNullException("dataFile");
+				throw new ArgumentNullException(nameof(dataFile));
 			}
 
 			bool alreadyRegistered = dataFile.IsRegistered;
 			bool setTimer = true;
 			dataFile.SetDataUpdateService(this);
-            LogInfoMessage("Registering file with auto update service", dataFile);
+            LogInfoMessage(Messages.MessageAutoUpdateRegisterDataFile, dataFile);
 
             if (dataFile != null)
 			{
@@ -177,7 +179,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 				if (dataFile.Configuration.UpdateOnStartup &&
 					alreadyRegistered == false)
                 {
-                    LogInfoMessage("Updating on startup", dataFile);
+                    LogInfoMessage(Messages.MessageAutoUpdateOnStartup, dataFile);
                     var result = CheckForUpdate(dataFile, true);
 					if (result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
 					{
@@ -188,10 +190,11 @@ namespace FiftyOne.Pipeline.Engines.Services
 					}
 					else if (result != AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED)
 					{
-						throw new DataUpdateException($"Update on startup " +
-							$"failed for {dataFile.Identifier} with status " +
-							$"{Enum.GetName(typeof(AutoUpdateStatus), result)}. " +
-							$"See log for details.", result);
+						var msg = string.Format(CultureInfo.InvariantCulture,
+							Messages.ExceptionAutoUpdateOnStartupFailed,
+							dataFile.Identifier,
+							Enum.GetName(typeof(AutoUpdateStatus), result));
+						throw new DataUpdateException(msg, result);
 					}
 				}
 				if(setTimer)
@@ -202,7 +205,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 					if (dataFile.AutomaticUpdatesEnabled &&
 						dataFile.Timer == null)
                     {
-                        LogInfoMessage("Creating update check timer", dataFile);
+                        LogInfoMessage(Messages.MessageAutoUpdateCreateTimer, dataFile);
 
                         TimeSpan timeToUpdate = GetInterval(dataFile.Configuration);
                         if (dataFile.UpdateAvailableTime > DateTime.UtcNow)
@@ -226,7 +229,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 						dataFile.FileWatcher == null &&
 						string.IsNullOrEmpty(dataFile.DataFilePath) == false)
                     {
-                        LogInfoMessage("Creating file system watcher", dataFile);
+                        LogInfoMessage(Messages.MessageAutoUpdateCreateWatcher, dataFile);
 
                         FileSystemWatcher watcher = new FileSystemWatcher(
 							Path.GetDirectoryName(dataFile.DataFilePath),
@@ -283,10 +286,18 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// <exception cref="DataUpdateException">
         /// Thrown if some problem occurs during the update process.
         /// </exception>
-        public AutoUpdateStatus CheckForUpdate(
+		/// <exception cref="ArgumentNullException">
+		/// Thrown if the parameter is null
+		/// </exception>        
+		public AutoUpdateStatus CheckForUpdate(
 			IOnPremiseAspectEngine engine, 
 			string dataFileIdentifier = null)
 		{
+			if (engine == null)
+			{
+				throw new ArgumentNullException(nameof(engine));
+			}
+
 			AutoUpdateStatus result;
 			var dataFile = engine.GetDataFileMetaData(dataFileIdentifier);
 			if(dataFile != null)
@@ -301,39 +312,55 @@ namespace FiftyOne.Pipeline.Engines.Services
 			return result;
 		}
 
-        /// <summary>
-        /// Update the specified data file from a <see cref="MemoryStream"/>
-        /// </summary>
-        /// <param name="dataFile">
-        /// The data file to update.
-        /// </param>
-        /// <param name="data">
-        /// The data to update with.
-        /// </param>
-        /// <exception cref="DataUpdateException">
-        /// Thrown if some problem occurs during the update process.
-        /// </exception>
-        public AutoUpdateStatus UpdateFromMemory(AspectEngineDataFile dataFile,
+		/// <summary>
+		/// Update the specified data file from a <see cref="MemoryStream"/>
+		/// </summary>
+		/// <param name="dataFile">
+		/// The data file to update.
+		/// </param>
+		/// <param name="data">
+		/// The data to update with.
+		/// </param>
+		/// <exception cref="DataUpdateException">
+		/// Thrown if some problem occurs during the update process.
+		/// </exception>
+		/// <exception cref="ArgumentNullException">
+		/// Thrown if arguments are null.
+		/// </exception>
+		public AutoUpdateStatus UpdateFromMemory(AspectEngineDataFile dataFile,
             MemoryStream data)
-        {
-            AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
+		{
+			if (dataFile == null)
+			{
+				throw new ArgumentNullException(nameof(dataFile));
+			}
+			if (data == null)
+			{
+				throw new ArgumentNullException(nameof(data));
+			}
+
+			AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
             if (string.IsNullOrEmpty(dataFile.DataFilePath) == false)
             {
                 // The engine has an associated data file so update it first.
                 try
                 {
                     _fileSystem.File.WriteAllBytes(dataFile.DataFilePath, data.GetBuffer());
-                }
-                catch (Exception ex)
-                {
+				}
+#pragma warning disable CA1031 // Do not catch general exception types
+				// Catch any exceptions as this is a non-critical 
+				// operation and we don't want it affecting anything else.
+				catch (Exception ex)
+				{
                     _logger.LogWarning($"An error occurred when writing to " +
                         $"'{dataFile.DataFilePath}'. The engine will be updated " +
                         $"to use the new data but the file on disk will still " +
                         $"contain old data.", ex);
-                }
-            }
+				}
+#pragma warning restore CA1031 // Do not catch general exception types
+			}
 
-            if (dataFile.Engine != null)
+			if (dataFile.Engine != null)
             {
                 try
                 {
@@ -447,17 +474,29 @@ namespace FiftyOne.Pipeline.Engines.Services
 							// before notifying the engine, otherwise the copy 
 							// may still be in progress.
 							bool fileLockable = false;
-							while (fileLockable == false)
+							DateTime timeout = DateTime.UtcNow.AddMinutes(10);
+
+							while (fileLockable == false &&
+								timeout > DateTime.UtcNow)
 							{
 								try
 								{
 									using (_fileSystem.File.OpenRead(e.FullPath)) { }
 									fileLockable = true;
 								}
-								catch { }
+								catch (IOException)
+								{
+									// Wait for half a second before trying again.
+									Task.Delay(500).Wait();
+								}
 
 								// Complete the update
 								status = UpdatedDataAvailable(dataFile);
+							}
+
+							if(fileLockable == false)
+							{
+								status = AutoUpdateStatus.AUTO_UPDATE_TIMEOUT;
 							}
 						}
 					}
@@ -488,33 +527,51 @@ namespace FiftyOne.Pipeline.Engines.Services
             // we need to make sure any exceptions that occur
             // are handled here.
             try
-            {
-                CheckForUpdate(state, false);
+			{
+				if (state == null)
+				{
+					throw new ArgumentNullException(nameof(state));
+				}
+
+				CheckForUpdate(state, false);
             }
             catch (DataUpdateException ex)
             {
-                _logger.LogError("Error during check for data update", ex);
+                _logger.LogError(Messages.ExceptionAutoUpdate, ex);
             }
-            catch (Exception ex)
-            {
-                AspectEngineDataFile dataFile = state as AspectEngineDataFile;
-                _logger.LogError($"An unhandled error occurred while " +
-                    $"checking for automatic updates for engine " +
-                    $"'{dataFile.EngineType?.Name}'", ex);
+#pragma warning disable CA1031 // Do not catch general exception types
+			// We want to catch any possible exception here so that 
+			// the relevant details can be logged.
+			catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+			{
+                AspectEngineDataFile dataFile = state == null ? null :
+					state as AspectEngineDataFile;
+				string msg = string.Format(CultureInfo.InvariantCulture,
+					Messages.MessageAutoUpdateUnhandledError,
+					dataFile?.EngineType?.Name ?? "Unknown");
+                _logger.LogError(msg, ex);
             }
         }
 
-        /// <summary>
-        /// Private method that performs the following actions:
-        /// 1. Checks for an update to the data file on disk.
-        /// 2. Checks for an update using the update URL.
-        /// 3. Refresh engine with new data if available.
-        /// 4. Schedule the next update check if needed.
-        /// </summary>
-        /// <param name="state">
-        /// The <see cref="AspectEngineDataFile"/>
-        /// </param>
-        private AutoUpdateStatus CheckForUpdate(object state, bool manualUpdate)
+		/// <summary>
+		/// Private method that performs the following actions:
+		/// 1. Checks for an update to the data file on disk.
+		/// 2. Checks for an update using the update URL.
+		/// 3. Refresh engine with new data if available.
+		/// 4. Schedule the next update check if needed.
+		/// </summary>
+		/// <param name="state">
+		/// The <see cref="AspectEngineDataFile"/>
+		/// </param>
+		/// <param name="manualUpdate">
+		/// True if this update was requested by the user and or is running 
+		/// synchronously from the 'main' thread. 
+		/// (For example, when the update on startup option is used)
+		/// False if it was triggered by a timer expiring and is therefore
+		/// running in a background thread.
+		/// </param>
+		private AutoUpdateStatus CheckForUpdate(object state, bool manualUpdate)
         {
             AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
             AspectEngineDataFile dataFile = state as AspectEngineDataFile;
@@ -529,7 +586,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			{
 				if (dataFile != null)
 				{
-					LogInfoMessage("Checking for update", dataFile);
+					LogInfoMessage(Messages.MessageAutoUpdateCheck, dataFile);
 
 					// Only check the file system if the file system watcher
 					// is not enabled and the engine is using a temporary file.
@@ -537,7 +594,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 						string.IsNullOrEmpty(dataFile.DataFilePath) == false &&
 						string.IsNullOrEmpty(dataFile.TempDataFilePath) == false)
 					{
-						LogInfoMessage("Checking file system", dataFile);
+						LogInfoMessage(Messages.MessageAutoUpdateCheckFileSystem, dataFile);
 
 						// We use last write time as creation time can be 
 						// unreliable for this check.
@@ -647,45 +704,63 @@ namespace FiftyOne.Pipeline.Engines.Services
 
 			if (dataFile.Configuration.MemoryOnly)
 			{
-                // Perform the update entirely in memory.
-                // The uncompressed stream may be read by the engine at a
-                // later time so we cannot put it in a using statement.
-                var uncompressedStream = new MemoryStream();
-                using (var compressedStream = new MemoryStream())
+				// Perform the update entirely in memory.
+
+				// The uncompressed stream may be read by the engine at a
+				// later time. In that case we must not dispose of it 
+				// within this method. As such, we cannot use a simple
+				// 'using' statement.
+#pragma warning disable CA2000 // Dispose objects before losing scope
+				var uncompressedStream = new MemoryStream();
+#pragma warning restore CA2000 // Dispose objects before losing scope
+				bool disposeUncompressedStream = true;
+				try
 				{
-					result = CheckForUpdateFromUrl(dataFile,
-						compressedStream,
-						uncompressedStream);
-					if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
+					using (var compressedStream = new MemoryStream())
 					{
-						if (dataFile.Engine != null)
+						result = CheckForUpdateFromUrl(dataFile,
+							compressedStream,
+							uncompressedStream);
+						if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
 						{
-							try
+							if (dataFile.Engine != null)
 							{
-								LogInfoMessage($"Attempting to refresh engine with new data", dataFile);
-								// Tell the engine to refresh itself with
-								// the new data.
-								dataFile.Engine.RefreshData(dataFile.Identifier, uncompressedStream);
+								try
+								{
+									LogInfoMessage(Messages.MessageAutoUpdateRefreshEngine, dataFile);
+									// Tell the engine to refresh itself with
+									// the new data.
+									dataFile.Engine.RefreshData(dataFile.Identifier, uncompressedStream);
+									result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
+								}
+								catch (Exception ex)
+								{
+									result = AutoUpdateStatus.AUTO_UPDATE_REFRESH_FAILED;
+									string msg = string.Format(
+										CultureInfo.InvariantCulture,
+										Messages.ExceptionAutoUpdateRefreshEngine,
+										dataFile.Engine.GetType().Name);
+									throw new DataUpdateException(msg, ex, result);
+								}
+							}
+							else
+							{
+								// No associated engine at the moment so just
+								// set the value of the data stream.
+								dataFile.Configuration.DataStream = uncompressedStream;
 								result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
-							}
-							catch (Exception ex)
-							{
-								result = AutoUpdateStatus.AUTO_UPDATE_REFRESH_FAILED;
-								throw new DataUpdateException($"An error occurred when applying a " +
-										$"data update to engine '{dataFile.Engine.GetType().Name}'.", ex, result);
-							}
-							finally
-							{
-								uncompressedStream.Dispose();
+								// Make sure the stream will not be disposed 
+								// before the engine is created with it.
+								disposeUncompressedStream = false;
 							}
 						}
-						else
-						{
-							// No associated engine at the moment so just set 
-							// the value of the data stream.
-							dataFile.Configuration.DataStream = uncompressedStream;
-							result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
-						}
+					}
+				}
+				finally
+				{
+					if (disposeUncompressedStream)
+					{
+						uncompressedStream?.Dispose();
 					}
 				}
 			}
@@ -857,7 +932,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 
             if (dataFile.Engine != null)
             {
-                LogInfoMessage($"Attempting to refresh engine with new data", dataFile);
+                LogInfoMessage(Messages.MessageAutoUpdateRefreshEngine, dataFile);
 
                 // Try to update the file multiple times to ensure the file is not 
                 // locked.
@@ -868,7 +943,13 @@ namespace FiftyOne.Pipeline.Engines.Services
 						dataFile.Engine.RefreshData(dataFile.Identifier);
 						result = AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
 					}
+#pragma warning disable CA1031 // Do not catch general exception types
+					// The code executed by the RefreshData method could
+					// be anything at all. Third parties can create their
+					// own implementations so we need to be able to handle
+					// any exception.
 					catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
 					{
 						exception = ex;
 						result = AutoUpdateStatus.AUTO_UPDATE_REFRESH_FAILED;
@@ -897,7 +978,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// <summary>
 		/// Clear the timer ready for a new one to be created.
 		/// </summary>
-		private void ClearTimer(AspectEngineDataFile dataFile)
+		private static void ClearTimer(AspectEngineDataFile dataFile)
 		{
 			if (dataFile != null &&
 				dataFile.Timer != null)
@@ -935,107 +1016,109 @@ namespace FiftyOne.Pipeline.Engines.Services
 			AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
 			expectedMd5Hash = null;
 			
-			string url = dataFile.FormattedUrl;
-            LogInfoMessage($"Checking for update from {url}", dataFile);
+			Uri url = dataFile.FormattedUri;
+            LogInfoMessage($"Checking for update from {url.AbsoluteUri}", dataFile);
 
-            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, url);
-
-            // Get data file published date from meta-data.
-            // If it's not been set for some reason then use the 
-            // creation date of the file instead.
-            DateTime publishDate = dataFile.DataPublishedDateTime;
-            if(dataFile.DataPublishedDateTime <= DateTime.MinValue &&
-                string.IsNullOrEmpty(dataFile.DataFilePath) == false &&
-                 _fileSystem.File.Exists(dataFile.DataFilePath))
-            {
-                publishDate = _fileSystem.File.GetCreationTimeUtc(dataFile.DataFilePath);
-            }
-
-            // Set last-modified header to ensure that a file will only
-            // be downloaded if it is newer than the data we already have.
-            if (dataFile.Configuration.VerifyModifiedSince == true)
+			using (HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, url))
 			{
-				message.Headers.Add(
-					 "If-Modified-Since",
-					 publishDate.ToString("R"));
-			}
 
-            HttpResponseMessage response = null;
-			try
-			{
-				// Send the message
-				response = _httpClient.SendAsync(message).Result;
-			}
-			catch (Exception ex)
-			{
-				result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
-                throw new DataUpdateException($"Error accessing data update service at " +
-					$"'{url}' for engine '{dataFile.EngineType?.Name}'", ex, result);
-			}
+				// Get data file published date from meta-data.
+				// If it's not been set for some reason then use the 
+				// creation date of the file instead.
+				DateTime publishDate = dataFile.DataPublishedDateTime;
+				if (dataFile.DataPublishedDateTime <= DateTime.MinValue &&
+					string.IsNullOrEmpty(dataFile.DataFilePath) == false &&
+					 _fileSystem.File.Exists(dataFile.DataFilePath))
+				{
+					publishDate = _fileSystem.File.GetCreationTimeUtc(dataFile.DataFilePath);
+				}
 
-			if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
-			{
-				if (response == null)
+				// Set last-modified header to ensure that a file will only
+				// be downloaded if it is newer than the data we already have.
+				if (dataFile.Configuration.VerifyModifiedSince == true)
+				{
+					message.Headers.Add(
+						 "If-Modified-Since",
+						 publishDate.ToString("R", CultureInfo.InvariantCulture));
+				}
+
+				HttpResponseMessage response = null;
+				try
+				{
+					// Send the message
+					response = _httpClient.SendAsync(message).Result;
+				}
+				catch (Exception ex)
 				{
 					result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
-                    throw new DataUpdateException($"No response from data update service at " +
-						$"'{url}' for engine '{dataFile.EngineType?.Name}'", result);
+					throw new DataUpdateException($"Error accessing data update service at " +
+						$"'{url}' for engine '{dataFile.EngineType?.Name}'", ex, result);
 				}
-				else
-				{
-					if (response.IsSuccessStatusCode)
-                    {
-                        _logger.LogInformation(
-                            $"Downloaded new data from '{url}' for engine " +
-                            $"'{dataFile.EngineType?.Name}'");
 
-                        // If the response is successful then save the content to a 
-                        // temporary file
-                        using (var dataStream = response.Content.ReadAsStreamAsync().Result)
-						{
-							dataStream.CopyTo(tempStream);
-						}
-						if (dataFile.Configuration.VerifyMd5)
-						{
-							IEnumerable<string> values;
-							if (response.Content.Headers.TryGetValues("Content-MD5", out values))
-							{
-								expectedMd5Hash = values.SingleOrDefault();
-							}
-							else
-							{
-								_logger.LogWarning(
-									$"No MD5 hash included in data update response for " +
-									$"'{url}'. Unable to verify data integrity");
-							}
-						}
+				if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
+				{
+					if (response == null)
+					{
+						result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
+						throw new DataUpdateException($"No response from data update service at " +
+							$"'{url}' for engine '{dataFile.EngineType?.Name}'", result);
 					}
 					else
 					{
-						switch (response.StatusCode)
+						if (response.IsSuccessStatusCode)
 						{
-							// Note: needed because TooManyRequests is not available 
-							// in some versions of the HttpStatusCode enum.
-							case ((HttpStatusCode)429):
-								result = AutoUpdateStatus.
-									AUTO_UPDATE_ERR_429_TOO_MANY_ATTEMPTS;
-                                throw new DataUpdateException($"Too many requests to " +
-									$"'{url}' for engine '{dataFile.EngineType?.Name}'", result);
-							case HttpStatusCode.NotModified:
-								result = AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED;
-                                _logger.LogInformation($"No data newer than " +
-                                    $"{publishDate} found at '{url}' for engine " +
-                                    $"'{dataFile.EngineType?.Name}'"); ;
-                                break;
-							case HttpStatusCode.Forbidden:
-								result = AutoUpdateStatus.AUTO_UPDATE_ERR_403_FORBIDDEN;
-                                throw new DataUpdateException($"Access denied to data update service at " +
-									$"'{url}' for engine '{dataFile.EngineType?.Name}'", result);
-                            default:
-								result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
-                                throw new DataUpdateException($"HTTP status code '{response.StatusCode}' " +
-									$"from data update service at " +
-									$"'{url}' for engine '{dataFile.EngineType?.Name}'", result); ;
+							_logger.LogInformation(
+								$"Downloaded new data from '{url}' for engine " +
+								$"'{dataFile.EngineType?.Name}'");
+
+							// If the response is successful then save the content to a 
+							// temporary file
+							using (var dataStream = response.Content.ReadAsStreamAsync().Result)
+							{
+								dataStream.CopyTo(tempStream);
+							}
+							if (dataFile.Configuration.VerifyMd5)
+							{
+								IEnumerable<string> values;
+								if (response.Content.Headers.TryGetValues("Content-MD5", out values))
+								{
+									expectedMd5Hash = values.SingleOrDefault();
+								}
+								else
+								{
+									_logger.LogWarning(
+										$"No MD5 hash included in data update response for " +
+										$"'{url}'. Unable to verify data integrity");
+								}
+							}
+						}
+						else
+						{
+							switch (response.StatusCode)
+							{
+								// Note: needed because TooManyRequests is not available 
+								// in some versions of the HttpStatusCode enum.
+								case ((HttpStatusCode)429):
+									result = AutoUpdateStatus.
+										AUTO_UPDATE_ERR_429_TOO_MANY_ATTEMPTS;
+									throw new DataUpdateException($"Too many requests to " +
+										$"'{url}' for engine '{dataFile.EngineType?.Name}'", result);
+								case HttpStatusCode.NotModified:
+									result = AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED;
+									_logger.LogInformation($"No data newer than " +
+										$"{publishDate} found at '{url}' for engine " +
+										$"'{dataFile.EngineType?.Name}'"); ;
+									break;
+								case HttpStatusCode.Forbidden:
+									result = AutoUpdateStatus.AUTO_UPDATE_ERR_403_FORBIDDEN;
+									throw new DataUpdateException($"Access denied to data update service at " +
+										$"'{url}' for engine '{dataFile.EngineType?.Name}'", result);
+								default:
+									result = AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR;
+									throw new DataUpdateException($"HTTP status code '{response.StatusCode}' " +
+										$"from data update service at " +
+										$"'{url}' for engine '{dataFile.EngineType?.Name}'", result); ;
+							}
 						}
 					}
 				}
@@ -1055,7 +1138,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// Stream to write the uncompressed data to.
 		/// </param>
 		/// <returns>The current state of the update process.</returns>
-		private AutoUpdateStatus Decompress(
+		private static AutoUpdateStatus Decompress(
 			Stream compressedDataStream,
 			Stream uncompressedDataStream)
 		{
@@ -1086,14 +1169,14 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// <returns>
 		/// True if the hashes match, false if not.
 		/// </returns>
-		private AutoUpdateStatus VerifyMd5(
+		private static AutoUpdateStatus VerifyMd5(
 			AspectEngineDataFile dataFile, 
 			string serverHash, Stream compressedDataStream)
 		{
 			AutoUpdateStatus status = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
 			string downloadHash = GetMd5(compressedDataStream);
 			if (serverHash == null ||
-				serverHash.Equals(downloadHash) == false)
+				string.Equals(serverHash, downloadHash, StringComparison.Ordinal) == false)
 			{
 				status = AutoUpdateStatus.AUTO_UPDATE_ERR_MD5_VALIDATION_FAILED;
                 throw new DataUpdateException(
@@ -1112,9 +1195,12 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// The stream containing the data to hash
 		/// </param>
 		/// <returns>The MD5 hash of the given data.</returns>
-		private string GetMd5(Stream compressedDataStream)
+		private static string GetMd5(Stream compressedDataStream)
 		{
+#pragma warning disable CA5351 // Do Not Use Broken Cryptographic Algorithms
+			// TODO: Add support for a better hashing algorithm such as SHA512
 			using (MD5 md5Hash = MD5.Create())
+#pragma warning restore CA5351 // Do Not Use Broken Cryptographic Algorithms
 			{
 				compressedDataStream.Position = 0;
 				return GetMd5(md5Hash, compressedDataStream);
@@ -1127,7 +1213,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// <param name="stream">calculate MD5 of this stream</param>
 		/// <param name="md5Hash">instance of MD5 hash calculator</param>
 		/// <returns>The MD5 hash of the given data.</returns>
-		private string GetMd5(MD5 md5Hash, Stream stream)
+		private static string GetMd5(MD5 md5Hash, Stream stream)
 		{
 			// Convert the input string to a byte array and compute the hash.
 			byte[] data = md5Hash.ComputeHash(stream);
@@ -1140,7 +1226,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			// and format each one as a hexadecimal string.
 			for (int i = 0; i < data.Length; i++)
 			{
-				sb.Append(data[i].ToString("x2"));
+				sb.Append(data[i].ToString("x2", CultureInfo.InvariantCulture));
 			}
 
 			// Return the hexadecimal string.

@@ -112,17 +112,16 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         public void PipelineBuilder_BuildFromConfiguration_SingleMandatoryParameter()
         {
             // Create the configuration object.
+            var element = new ElementOptions()
+            {
+                BuilderName = "MultiplyByElementBuilder"
+            };
+            element.BuildParameters.Add("multiple", "8");
+
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "MultiplyByElementBuilder",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "multiple", "8" }
-                    }
-                }
+                element
             };
 
             VerifyMultiplyByElementPipeline(opts);
@@ -138,17 +137,16 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         public void PipelineBuilder_BuildFromConfiguration_ClassNameByConvention()
         {
             // Create the configuration object.
+            var element = new ElementOptions()
+            {
+                BuilderName = "MultiplyByElement"
+            };
+            element.BuildParameters.Add("multiple", "8");
+
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "MultiplyByElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "multiple", "8" }
-                    }
-                }
+                element
             };
 
             VerifyMultiplyByElementPipeline(opts);
@@ -163,18 +161,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_ClassNameAlternate()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "Multiply"
+            };
+            element.BuildParameters.Add("multiple", "8");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "Multiply",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "multiple", "8" }
-                    }
-                }
+                element
             };
 
             VerifyMultiplyByElementPipeline(opts);
@@ -213,18 +210,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [ExpectedException(typeof(PipelineConfigurationException))]
         public void PipelineBuilder_BuildFromConfiguration_MandatoryParameterWrongType()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "MultiplyByElementBuilder"
+            };
+            element.BuildParameters.Add("multiple", "WrongType");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "MultiplyByElementBuilder",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "multiple", "WrongType" }
-                    }
-                }
+                element
             };
             _maxErrors = 1;
 
@@ -240,14 +236,16 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [ExpectedException(typeof(PipelineConfigurationException))]
         public void PipelineBuilder_BuildFromConfiguration_NoBuilder()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "NoBuilder"
+            };
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "NoBuilder"
-                }
+                element
             };
             _maxErrors = 1;
 
@@ -286,18 +284,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_OptionalParameter()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("SetDelimiter", "|");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "SetDelimiter", "|" }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.Pipe);
@@ -311,18 +308,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_MethodNameConvention()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("Delimiter", "|");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "Delimiter", "|" }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.Pipe);
@@ -335,18 +331,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_MethodNameAlternate()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("delim", "|");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "delim", "|" }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.Pipe);
@@ -380,18 +375,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [ExpectedException(typeof(PipelineConfigurationException))]
         public void PipelineBuilder_BuildFromConfiguration_OptionalMethodMissing()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("NoMethod", "|");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "NoMethod", "|" }
-                    }
-                }
+                element
             };
             _maxErrors = 1;
 
@@ -405,18 +399,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_OptionalMethodInteger()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("MaxLength", "3");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "MaxLength", "3" }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.CommaMaxLengthThree);
@@ -431,18 +424,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [ExpectedException(typeof(PipelineConfigurationException))]
         public void PipelineBuilder_BuildFromConfiguration_OptionalMethodWrongType()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("MaxLength", "WrongType");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "MaxLength", "WrongType" }
-                    }
-                }
+                element
             };
             _maxErrors = 1;
 
@@ -457,28 +449,28 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_ParallelElements()
         {
+            var multiplyElement = new ElementOptions()
+            {
+                BuilderName = "MultiplyByElement"
+            };
+            multiplyElement.BuildParameters.Add("Multiple", "3");
+
+            // Create the element that holds the elements that
+            // will be run in parallel.
+            var parentElement = new ElementOptions()
+            {
+            };
+            parentElement.SubElements.Add(new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            });
+            parentElement.SubElements.Add(multiplyElement);
+
             // Create the configuration object.
             PipelineOptions options = new PipelineOptions();
             options.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    SubElements = new List<ElementOptions>
-                    {
-                        new ElementOptions()
-                        {
-                            BuilderName = "ListSplitterElement"
-                        },
-                        new ElementOptions()
-                        {
-                            BuilderName = "MultiplyByElement",
-                            BuildParameters = new Dictionary<string, object>()
-                            {
-                                { "Multiple", "3" }
-                            }
-                        }
-                    }
-                }
+                parentElement
             };
 
             // Pass the configuration to the builder to create the pipeline.
@@ -511,18 +503,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_ServiceCollection()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "MultiplyByElementBuilder"
+            };
+            element.BuildParameters.Add("multiple", "3");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "MultiplyByElementBuilder",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "multiple", "3" }
-                    }
-                }
+                element
             };
 
             Mock<IServiceProvider> services = new Mock<IServiceProvider>();
@@ -556,18 +547,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [ExpectedException(typeof(InvalidOperationException))]
         public void PipelineBuilder_BuildFromConfiguration_NotInServiceCollection()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "MultiplyByElementBuilder"
+            };
+            element.BuildParameters.Add("multiple", "3");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "MultiplyByElementBuilder",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "multiple", "3" }
-                    }
-                }
+                element
             };
 
             _maxErrors = 1;
@@ -588,18 +578,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_ListFromArray()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("Delimiters", new string[] { "|", "," });
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "Delimiters", new string[] { "|", "," } }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.CommaAndPipe);
@@ -612,18 +601,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_List()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("Delimiters", new List<string>() { "|", "," });
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "Delimiters", new List<string>() { "|", "," } }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.CommaAndPipe);
@@ -637,18 +625,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_ListFromString()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("Delimiters", "A,|");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "Delimiters", "A,|" }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.Pipe);
@@ -662,18 +649,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_ListFromStringWithComma()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("Delimiters", "|,\",\"");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "Delimiters", "|,\",\"" }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.CommaAndPipe);
@@ -687,18 +673,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_ListFromStringWithQuote()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("Delimiters", "|,\"\"\"\"");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "Delimiters", "|,\"\"\"\"" }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.PipeAndQuote);
@@ -712,18 +697,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         [TestMethod]
         public void PipelineBuilder_BuildFromConfiguration_ListFromStringSingleEntry()
         {
+            var element = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            element.BuildParameters.Add("Delimiters", "|");
+
             // Create the configuration object.
             PipelineOptions opts = new PipelineOptions();
             opts.Elements = new List<ElementOptions>
             {
-                new ElementOptions()
-                {
-                    BuilderName = "ListSplitterElement",
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "Delimiters", "|" }
-                    }
-                }
+                element
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.Pipe);

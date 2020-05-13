@@ -5,17 +5,23 @@
     <Platforms>AnyCPU</Platforms>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-	
-	<!-- NuGet package properties -->
-	<PackageId>FiftyOne.Pipeline.Web.Shared</PackageId>
-	<Title>Shared base classes for web integration for the 51Degrees Pipeline API</Title>
-	<PackageDescription>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. The package contains shared functionality that is needed by both the ASP.NET Core and ASP.NET integrations.</PackageDescription>
-	<Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+    <DocumentationFile>FiftyOne.Pipeline.Web.Shared.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+
+    <!-- NuGet package properties -->
+    <Description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. The package contains shared functionality that is needed by both the ASP.NET Core and ASP.NET integrations.</Description>
+    <Company>51D_Steve;Ben51Degrees;Joseph51Degrees</Company>
+    <Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+    <Copyright>51Degrees Mobile Experts Limited</Copyright>
     <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
-	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
-	<Copyright>51Degrees Mobile Experts Limited</Copyright>
-	<PackageTags>51degrees,pipeline,data service,web,asp.net</PackageTags>
-	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+    <PackageProjectUrl>www.51degrees.com</PackageProjectUrl>
+    <PackageIcon>51d-logo.png</PackageIcon>
+    <PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
+    <RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>51degrees,pipeline,data service,web</PackageTags>
+    <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -24,6 +30,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" Version="1.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -33,6 +43,28 @@
   <ItemGroup>
     <ProjectReference Include="..\FiftyOne.Pipeline.Core\FiftyOne.Pipeline.Core.csproj" />
     <ProjectReference Include="..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Messages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Messages.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Messages.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Messages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Images\51d-logo.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

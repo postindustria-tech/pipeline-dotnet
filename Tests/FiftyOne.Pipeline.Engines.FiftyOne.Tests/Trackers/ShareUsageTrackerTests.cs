@@ -53,7 +53,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.Trackers
 		{
 			_blockedHttpHeaders = new List<string>() { };
             _includedQueryStringParameters = new List<string>();
-			_aspSessionCookieName = Constants.DEFAULT_ASP_COOKIE_NAME;
+			_aspSessionCookieName = Engines.Constants.DEFAULT_ASP_COOKIE_NAME;
 
 			_interval = new TimeSpan(0, 0, 0, 0, 50);
 			_evidenceKeyFilter = new EvidenceKeyFilterShareUsage(
@@ -138,7 +138,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.Trackers
 				var evidenceData = new Dictionary<string, object>()
 				{
 					{ Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + "user-agent", "iPhone" },
-					{ Core.Constants.EVIDENCE_COOKIE_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + Constants.DEFAULT_ASP_COOKIE_NAME, i }
+					{ Core.Constants.EVIDENCE_COOKIE_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + Engines.Constants.DEFAULT_ASP_COOKIE_NAME, i }
 				};
 				var data = MockFlowData.CreateFromEvidence(_evidenceData, true);
 				data.Setup(d => d.GenerateKey(It.IsAny<IEvidenceKeyFilter>())).Returns(
@@ -177,7 +177,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.Trackers
 				var evidenceData = new Dictionary<string, object>()
 				{
 					{ Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + "user-agent", "iPhone" },
-                    { Core.Constants.EVIDENCE_COOKIE_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + Constants.DEFAULT_ASP_COOKIE_NAME, i }
+                    { Core.Constants.EVIDENCE_COOKIE_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + Engines.Constants.DEFAULT_ASP_COOKIE_NAME, i }
 				};
 				var data = MockFlowData.CreateFromEvidence(_evidenceData, true);
 				data.Setup(d => d.GenerateKey(It.IsAny<IEvidenceKeyFilter>())).Returns(

@@ -84,7 +84,9 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <summary>
         /// The URL to check when looking for updates to the data file.
         /// </summary>
+#pragma warning disable CA1056 // Uri properties should not be strings
         public string DataUpdateUrl { get; set; }
+#pragma warning restore CA1056 // Uri properties should not be strings
 
         /// <summary>
         /// Flag that indicates if updates to the data file will be checked 

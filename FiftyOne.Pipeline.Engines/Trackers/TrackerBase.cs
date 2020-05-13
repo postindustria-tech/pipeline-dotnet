@@ -35,7 +35,7 @@ namespace FiftyOne.Pipeline.Engines.Trackers
     /// The key will always be a <see cref="DataKey"/> instance as defined
     /// by <see cref="DataKeyedCacheBase{TValue}"/>.
     /// The meta-data can be any type and is specified using the generic
-    /// type parameter <see cref="TValue"/>.
+    /// type parameter <code>TValue</code>.
     /// </summary>
     /// <remarks>
     /// As an example, a tracker could create a key using the source IP 

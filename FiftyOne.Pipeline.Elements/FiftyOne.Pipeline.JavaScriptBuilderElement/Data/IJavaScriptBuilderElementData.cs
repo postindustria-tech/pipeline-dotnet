@@ -21,14 +21,23 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.Data
 {
+    /// <summary>
+    /// The <see cref="IElementData"/> interface for 
+    /// <see cref="JavaScriptBuilderElement"/>.
+    /// </summary>
     public interface IJavaScriptBuilderElementData : IElementData
     {
+        /// <summary>
+        /// The JavaScript output produced by the 
+        /// <see cref="JavaScriptBuilderElement"/>
+        /// </summary>
         string JavaScript { get; set; }
     }
 }

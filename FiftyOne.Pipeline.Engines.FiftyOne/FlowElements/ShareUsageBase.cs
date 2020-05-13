@@ -22,6 +22,7 @@
 
 using FiftyOne.Caching;
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.FiftyOne.Data;
@@ -31,6 +32,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -50,13 +52,21 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     /// Contains common functionality such as filtering the evidence and
     /// building the XML records.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", 
+        "CA1054:Uri parameters should not be strings", 
+        Justification = "We do not wish to make this breaking change at this time.")]
     public abstract class ShareUsageBase : 
-        FlowElementBase<IElementData, IElementPropertyMetaData>, IDisposable
+        FlowElementBase<IElementData, IElementPropertyMetaData>
     {
         /// <summary>
         /// The HttpClient to use when sending the data.
         /// </summary>
-        protected HttpClient _httpClient;
+        private HttpClient _httpClient;
+
+        /// <summary>
+        /// The HttpClient to use when sending the data.
+        /// </summary>
+        protected HttpClient HttpClient => _httpClient;
 
         /// <summary>
         /// Inner class that is used to store details of data in memory
@@ -64,10 +74,32 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </summary>
         protected class ShareUsageData
         {
+            /// <summary>
+            /// The Pipeline session id for this event.
+            /// </summary>
             public string SessionId { get; set; }
+            /// <summary>
+            /// The sequence number for this event.
+            /// This is incremented as requests are made using the associated
+            /// session id.
+            /// </summary>
             public int Sequence { get; set; }
+            /// <summary>
+            /// The source IP address for this event.
+            /// </summary>
             public string ClientIP { get; set; }
-            public Dictionary<string, Dictionary<string, string>> EvidenceData { get; set; } =
+            /// <summary>
+            /// The evidence data from this event.
+            /// The dictionary key is the first part of the evidence key.
+            /// The value is another dictionary containing the rest of 
+            /// the evidence key and the evidence value.
+            /// For example, the evidence "header.user-agent"="ABC123"
+            /// would become:
+            /// <code>
+            /// { Key = "header", Value = { Key = "user-agent" Value = "ABC123" }}
+            /// </code>
+            /// </summary>
+            public Dictionary<string, Dictionary<string, string>> EvidenceData { get; private set; } =
                 new Dictionary<string, Dictionary<string, string>>();
         }
 
@@ -84,7 +116,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// Queue used to store entries in memory prior to them being sent
         /// to 51Degrees.
         /// </summary>
-        protected BlockingCollection<ShareUsageData> _evidenceCollection;
+        protected BlockingCollection<ShareUsageData> EvidenceCollection { get; }
 
         /// <summary>
         /// The current task sending data to the remote service.
@@ -104,7 +136,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <summary>
         /// Timeout to use when taking from the queue.
         /// </summary>
-        protected int _takeTimeout;
+        protected int TakeTimeout { get; }
 
         private Random _rng = new Random();
 
@@ -117,7 +149,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <summary>
         /// The minimum number of request entries per message sent to 51Degrees.
         /// </summary>
-        protected int _minEntriesPerMessage = Constants.SHARE_USAGE_DEFAULT_MIN_ENTRIES_PER_MESSAGE;
+        protected int MinEntriesPerMessage { get; } = Constants.SHARE_USAGE_DEFAULT_MIN_ENTRIES_PER_MESSAGE;
 
         /// <summary>
         /// The interval is a timespan which is used to determine if a piece
@@ -138,7 +170,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <summary>
         /// Return a list of <see cref="IFlowElement"/> in the pipeline. 
         /// If the list is null then populate from the pipeline.
-        /// If there are multiple or no pipelines then log an error.
+        /// If there are multiple or no pipelines then log a warning.
         /// </summary>
         private List<string> FlowElements
         {
@@ -160,9 +192,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                         // This means we cannot know the flow elements that
                         // make up the pipeline so a warning is logged
                         // but otherwise, the system can continue as normal.
-                        _logger.LogWarning($"Share usage element registered " +
-                            $"to {(Pipelines.Count > 0 ? "too many" : "no")}" +
-                            $" pipelines. Unable to send share usage information.");
+                        Logger.LogWarning(Pipelines.Count == 0 ? 
+                            Messages.MessageShareUsageNoPipelines :
+                            string.Format(CultureInfo.InvariantCulture,
+                                Messages.MessageShareUsageTooManyPipelines,
+                                Pipelines.Count));
                         _flowElements = new List<string>();
                     }
                 }
@@ -174,9 +208,26 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         private string _languageVersion = "";
         private string _coreVersion = "";
         private string _enginesVersion = "";
-        protected string _shareUsageUrl = "";
 
-        protected XmlWriterSettings _writerSettings = new XmlWriterSettings()
+        /// <summary>
+        /// The base URL to send usage data to.
+        /// </summary>
+        [Obsolete("Use the ShareUsageUri property instead. " +
+            "This property could be removed in a future version.")]
+#pragma warning disable CA1056 // Uri properties should not be strings
+        protected string ShareUsageUrl => ShareUsageUri.AbsoluteUri;
+#pragma warning restore CA1056 // Uri properties should not be strings
+
+        /// <summary>
+        /// The base URL to send usage data to.
+        /// </summary>
+        protected Uri ShareUsageUri { get; }
+
+        /// <summary>
+        /// The settings to use when creating an XML payload to send
+        /// to the usage sharing web service.
+        /// </summary>
+        protected XmlWriterSettings WriterSettings { get; } = new XmlWriterSettings()
         {
             ConformanceLevel = ConformanceLevel.Document,
             Encoding = Encoding.UTF8,
@@ -185,6 +236,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             CloseOutput = true,
         };
 
+        /// <summary>
+        /// The data key for this element
+        /// </summary>
         public override string ElementDataKey
         {
             get { return "shareusage"; }
@@ -237,6 +291,12 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             }
         }
 
+        /// <summary>
+        /// Get a list of the meta-data relating to the properties 
+        /// that this flow element will populate.
+        /// For this share usage element, the list will always be empty
+        /// as it does not populate any properties.
+        /// </summary>
         public override IList<IElementPropertyMetaData> Properties
         {
             get { return _properties; }
@@ -268,6 +328,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             get => _sendDataTask;
             private set => _sendDataTask = value;
         }
+
 
         /// <summary>
         /// Constructor
@@ -401,7 +462,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// usage should send to 51Degrees.
         /// </param>
         /// <param name="ignoreDataEvidenceFilter"></param>
-        /// <param name="sessionService"></param>
         /// <param name="aspSessionCookieName">
         /// The name of the cookie that contains the asp.net session id.
         /// </param>
@@ -409,6 +469,12 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// The <see cref="ITracker"/> to use to determine if a given 
         /// <see cref="IFlowData"/> instance should be shared or not.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if certain arguments are null.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// Thrown if certain argument values are invalid.
+        /// </exception>
         protected ShareUsageBase(
             ILogger<ShareUsageBase> logger,
             HttpClient httpClient,
@@ -427,11 +493,17 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             ITracker tracker)
             : base(logger)
         {
+            if (blockedHttpHeaders == null)
+            {
+                throw new ArgumentNullException(nameof(blockedHttpHeaders));
+            }
+            if (includedQueryStringParameters == null)
+            {
+                throw new ArgumentNullException(nameof(includedQueryStringParameters));
+            }
             if (minimumEntriesPerMessage > maximumQueueSize)
             {
-                throw new ArgumentException(
-                    "The minimum entries per message cannot be larger than " +
-                    "the maximum size of the queue.");
+                throw new ArgumentException(Messages.ExceptionShareUsageMinimumEntriesTooLarge);
             }
 
             // Make sure the cookie headers are ignored.
@@ -440,17 +512,16 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                 blockedHttpHeaders.Add(Constants.EVIDENCE_HTTPHEADER_COOKIE_SUFFIX);
             }
 
-            _logger = logger;
             _httpClient = httpClient;
 
-            _evidenceCollection = new BlockingCollection<ShareUsageData>(maximumQueueSize);
+            EvidenceCollection = new BlockingCollection<ShareUsageData>(maximumQueueSize);
 
             _addTimeout = addTimeout;
-            _takeTimeout = takeTimeout;
+            TakeTimeout = takeTimeout;
             _sharePercentage = sharePercentage;
-            _minEntriesPerMessage = minimumEntriesPerMessage;
+            MinEntriesPerMessage = minimumEntriesPerMessage;
             _interval = TimeSpan.FromMinutes(repeatEvidenceIntervalMinutes);
-            _shareUsageUrl = shareUsageUrl;
+            ShareUsageUri = new Uri(shareUsageUrl);
 
             // Some data is going to stay the same on all requests so we can 
             // gather that now.
@@ -496,8 +567,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         {
             if (Pipelines.Count > 0)
             {
-                throw new Exception($"Cannot add ShareUsageElement to " +
-                    $"multiple pipelines.");
+                throw new PipelineException(Messages.ExceptionShareUsageSinglePipeline);
             }
             base.AddPipeline(pipeline);
         }
@@ -508,8 +578,16 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="data">
         /// The <see cref="IFlowData"/> instance that provides the evidence
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied data instance is null
+        /// </exception>
         protected override void ProcessInternal(IFlowData data)
         {
+            if(data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             bool ignoreData = false;
             var evidence = data.GetEvidence().AsDictionary();
 
@@ -583,13 +661,13 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                 {
                     // Extract the data we want from the evidence and add
                     // it to the collection.
-                    if (_evidenceCollection.TryAdd(
+                    if (EvidenceCollection.TryAdd(
                         GetDataFromEvidence(data.GetEvidence()),
                         _addTimeout) == true)
                     {
                         // If the collection has enough entries then start
                         // taking data from it to be sent.
-                        if (_evidenceCollection.Count >= _minEntriesPerMessage)
+                        if (EvidenceCollection.Count >= MinEntriesPerMessage)
                         {
                             TrySendData();
                         }
@@ -597,12 +675,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                     else
                     {
                         IsCanceled = true;
-                        _logger.LogError("Share usage was canceled after " +
-                            "failing to add data to the collection. This " +
-                            "may mean that the max collection size is too " +
-                            "low for the amount of traffic / min devices to " +
-                            "send, or that the 'send' thread has stopped " +
-                            "taking data from the collection.");
+                        Logger.LogError(Messages.MessageShareUsageFailedToAddData);
 
                     }
                 }
@@ -629,18 +702,21 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
             foreach (var entry in evidence.AsDictionary())
             {
-                if (entry.Key.Equals(Core.Constants.EVIDENCE_CLIENTIP_KEY))
+                if (entry.Key.Equals(Core.Constants.EVIDENCE_CLIENTIP_KEY, 
+                    StringComparison.OrdinalIgnoreCase))
                 {
                     // The client IP is dealt with separately for backwards
                     // compatibility purposes.
                     data.ClientIP = entry.Value.ToString();
                 }
-                else if (entry.Key.Equals(Constants.EVIDENCE_SESSIONID))
+                else if (entry.Key.Equals(Constants.EVIDENCE_SESSIONID,
+                    StringComparison.OrdinalIgnoreCase))
                 {
                     // The SessionID is dealt with separately.
                     data.SessionId = entry.Value.ToString();
                 }
-                else if (entry.Key.Equals(Constants.EVIDENCE_SEQUENCE))
+                else if (entry.Key.Equals(Constants.EVIDENCE_SEQUENCE,
+                    StringComparison.OrdinalIgnoreCase))
                 {
                     // The Sequence is dealt with separately.
                     var sequence = 0;
@@ -660,7 +736,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                         string category = "";
                         string field = entry.Key;
 
-                        int firstSeperator = entry.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR);
+                        int firstSeperator = entry.Key.IndexOf(
+                            Core.Constants.EVIDENCE_SEPERATOR,
+                            StringComparison.OrdinalIgnoreCase);
                         if (firstSeperator > 0)
                         {
                             category = entry.Key.Remove(firstSeperator);
@@ -711,18 +789,20 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                     {
                         SendDataTask = Task.Run(() =>
                         {
-                            try
-                            {
-                                BuildAndSendXml();
-                            }
-                            catch (Exception ex)
+                            BuildAndSendXml();
+                        }).ContinueWith(t =>
+                        {
+                            // If an uncaught error has occurred then 
+                            // cancel further usage sharing and log
+                            // an error.
+                            if(t.Exception != null)
                             {
                                 IsCanceled = true;
-                                _logger.LogError(
-                                    ex,
-                                    "Share usage was canceled due to an error.");
+                                Logger.LogError(
+                                    t.Exception,
+                                    Messages.MessageShareUsageCancelled);
                             }
-                        });
+                        }, TaskScheduler.Default);
                     }
                 }
             }
@@ -743,8 +823,16 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="data">
         /// The <see cref="ShareUsageData"/> to write.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied arguments are null
+        /// </exception>
         protected virtual void WriteData(XmlWriter writer, ShareUsageData data)
         {
+            if(writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+
             writer.WriteStartElement("Device");
 
             WriteDeviceData(writer, data);
@@ -761,16 +849,31 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="data">
         /// The <see cref="ShareUsageData"/> to write.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied arguments are null
+        /// </exception>
         protected void WriteDeviceData(XmlWriter writer, ShareUsageData data)
         {
+            if (writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             _flagBadSchema = false;
 
             // The SessionID used to track a series of requests
             writer.WriteElementString("SessionId", data.SessionId);
             // The sequence number of the request in a series of requests.
-            writer.WriteElementString("Sequence", data.Sequence.ToString());
+            writer.WriteElementString("Sequence", data.Sequence.ToString(
+                CultureInfo.InvariantCulture));
             // The UTC date/time this entry was written
-            writer.WriteElementString("DateSent", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss"));
+            writer.WriteElementString("DateSent", DateTime.UtcNow.ToString(
+                "yyyy-MM-ddTHH:mm:ss", 
+                CultureInfo.InvariantCulture));
             // The version number of the Pipeline API
             writer.WriteElementString("Version", _coreVersion);
             // Write Pipeline information
@@ -814,8 +917,16 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <summary>
         /// Virtual method to write details about the pipeline.
         /// </summary>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied writer is null
+        /// </exception>
         protected virtual void WritePipelineInfo(XmlWriter writer)
         {
+            if (writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+
             // The product name
             writer.WriteElementString("Product", "Pipeline");
             // The flow elements in the current pipeline
@@ -828,8 +939,16 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <summary>
         /// encodes any unusual characters into their hex representation
         /// </summary>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied text is null
+        /// </exception>
         public string EncodeInvalidXMLChars(string text)
         {
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+
             // Validate characters in string. If not valid check chars 
             // individually and build new string with encoded chars. Set _flag 
             // to add "bad schema" element into usage data.
@@ -850,7 +969,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                     }
                     else
                     {
-                        tmp.Append("\\x" + Convert.ToByte(c).ToString("x4"));
+                        tmp.Append("\\x" + Convert.ToByte(c).ToString("x4", 
+                            CultureInfo.InvariantCulture));
                     }
                 };
 

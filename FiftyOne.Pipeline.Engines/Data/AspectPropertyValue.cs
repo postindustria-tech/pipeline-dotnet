@@ -121,26 +121,80 @@ namespace FiftyOne.Pipeline.Engines.Data
             Value = value;
         }
 
+        /// <summary>
+        /// Get the string representation of this instance.
+        /// </summary>
+        /// <returns>
+        /// The string representation of the value of this instance or
+        /// 'NULL' if it has explicitly been set to null.
+        /// </returns>
+        /// <exception cref="NoValueException">
+        /// This exception will be thrown if the instance does not 
+        /// contain a value.
+        /// </exception>
         public override string ToString()
         {
             return Value?.ToString() ?? "NULL";
         }
 
+        /// <summary>
+        /// Check if this instance is equal to the specified object.
+        /// <see cref="AspectPropertyValue{T}"/> instances are considered 
+        /// equal they have the same generic type parameter and:
+        /// 1. They both have hasValue == false.
+        /// 2. They both have Value explicitly set to null.
+        /// 3. The Value properties are considered equal.
+        /// </summary>
+        /// <param name="obj">
+        /// The object to check for equality
+        /// </param>
+        /// <returns>
+        /// True if this instance is equal to the specified object.
+        /// False if it is not.
+        /// </returns>
         public override bool Equals(object obj)
         {
             bool result = false;
             var other = obj as AspectPropertyValue<T>;
             if (other != null)
             {
-                result = this.Value?.Equals(other.Value) 
-                    ?? other.Value == null;
+                result = (this.HasValue == false && other.HasValue == false) ||
+                    (this.Value?.Equals(other.Value) ?? other.Value == null);
             }
             return result;
         }
 
+        /// <summary>
+        /// Get the hash code for this instance.
+        /// If value has been set to null then this will return 0.
+        /// If HasValue = false then this will return -1.
+        /// Otherwise, this will return the result of GetHashCode for the
+        /// stored value.
+        /// </summary>
+        /// <remarks> 
+        /// In order to avoid the most problematic hash collisions, 
+        /// where GetHashCode for the stored value returns 0 or -1 it 
+        /// will be changed to 1 or -2 respectively.
+        /// </remarks>
+        /// <returns>
+        /// The hash code for this instance.
+        /// </returns>
         public override int GetHashCode()
         {
-            return Value?.GetHashCode() ?? 0;
+            var result = -1;
+            if (HasValue)
+            {
+                result = 0;
+                if(Value != null)
+                {
+                    result = Value.GetHashCode();
+                    // Avoid hash collisions with results that would 
+                    // indicate no value or a null value.
+                    if (result == -1) { result = -2; }
+                    if (result == 0) { result = 1; }
+                }
+            }
+            return result;
         }
     }
 }

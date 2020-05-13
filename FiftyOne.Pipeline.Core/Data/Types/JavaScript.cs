@@ -31,6 +31,9 @@ namespace FiftyOne.Pipeline.Core.Data.Types
     /// A value being of type JavaScript indicates that it is intended to be
     /// run on a client browser.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", 
+        "CA1036:Override methods on comparable types", 
+        Justification = "Mathematical-style operators are not appropriate for this type")]
     public class JavaScript : IComparable<string>, IEquatable<string>
     {
         #region Private Properties
@@ -56,23 +59,50 @@ namespace FiftyOne.Pipeline.Core.Data.Types
         #endregion
 
         #region Public Interface Methods
-
+        /// <summary>
+        /// Compare the specified value to this instance.
+        /// </summary>
+        /// <param name="other">
+        /// The value to compare with
+        /// </param>
+        /// <returns>
+        /// 0 if the instances have the same value
+        /// </returns>
         public int CompareTo(string other)
         {
-            return _value.CompareTo(other);
+            return string.CompareOrdinal(_value, other);
         }
 
+        /// <summary>
+        /// Check if the specified value is equal to this instance.
+        /// </summary>
+        /// <param name="other">
+        /// The value to check for equality
+        /// </param>
+        /// <returns>
+        /// True if the values are equal, false otherwise
+        /// </returns>
         public bool Equals(string other)
         {
-            return _value.Equals(other);
+            return _value.Equals(other, StringComparison.Ordinal);
         }
 
         #endregion
 
         #region Public Overrides
-
+        /// <summary>
+        /// Check if the current instance is equal to the specified
+        /// object.
+        /// </summary>
+        /// <param name="obj">
+        /// The object to check for equality
+        /// </param>
+        /// <returns>
+        /// True if the values are equal, false otherwise
+        /// </returns>
         public override bool Equals(object obj)
         {
+            if (obj == null) return false;
             if (obj.GetType().Equals(typeof(JavaScript)))
             {
                 return Equals(((JavaScript)obj)._value);
@@ -80,11 +110,27 @@ namespace FiftyOne.Pipeline.Core.Data.Types
             return base.Equals(obj);
         }
 
+        /// <summary>
+        /// Get a hash code for this instance
+        /// </summary>
+        /// <remarks>
+        /// The hash code is taken directly from the string representation
+        /// of this instance.
+        /// </remarks>
+        /// <returns>
+        /// The hash code for this instance
+        /// </returns>
         public override int GetHashCode()
         {
             return _value.GetHashCode();
         }
 
+        /// <summary>
+        /// Get the string representation of this instance.
+        /// </summary>
+        /// <returns>
+        /// The string representation of this instance.
+        /// </returns>
         public override string ToString()
         {
             return _value;

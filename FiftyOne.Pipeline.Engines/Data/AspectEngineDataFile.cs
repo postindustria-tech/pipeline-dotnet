@@ -42,8 +42,14 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// The data update service that this engine is 
         /// registered with (if any)
         /// </summary>
-        protected IDataUpdateService _dataUpdateService;
+        private IDataUpdateService _dataUpdateService;
 
+        /// <summary>
+        /// The name or identifier for this data file object.
+        /// Note that this is not the same as the filename.
+        /// It is used by engines that require multiple data-files to 
+        /// determine what a given data file object relates to. 
+        /// </summary>
         public string Identifier { get; set;  }
 
         /// <summary>
@@ -124,11 +130,20 @@ namespace FiftyOne.Pipeline.Engines.Data
             }
         }
 
-
+        /// <summary>
+        /// The date/time that a data update is expected to be available.
+        /// </summary>
         public DateTime UpdateAvailableTime { get; set; }
 
+        /// <summary>
+        /// The data/time that this data was published.
+        /// </summary>
         public DateTime DataPublishedDateTime { get; set; }
 
+        /// <summary>
+        /// The configuration parameters used when creating this 
+        /// data file instance.
+        /// </summary>
         public IDataFileConfiguration Configuration { get; set; }
 
 
@@ -144,17 +159,28 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// parameters that are needed to retrieve the data.
         /// By default, no query string parameters are added to the URL.
         /// </summary>
-        public virtual string FormattedUrl
+        [Obsolete("Use the FormattedUri property instead. " +
+            "This property may be removed in future versions")]
+#pragma warning disable CA1056 // Uri properties should not be strings
+        public virtual string FormattedUrl => FormattedUri.AbsoluteUri;
+#pragma warning restore CA1056 // Uri properties should not be strings
+
+        /// <summary>
+        /// Get the data update URL complete with any query string 
+        /// parameters that are needed to retrieve the data.
+        /// By default, no query string parameters are added to the URL.
+        /// </summary>
+        public virtual Uri FormattedUri
         {
             get
             {
                 if (Configuration.UrlFormatter == null)
                 {
-                    return Configuration.DataUpdateUrl;
+                    return new Uri(Configuration.DataUpdateUrl);
                 }
                 else
                 {
-                    return Configuration.UrlFormatter.GetFormattedDataUpdateUrl(this);
+                    return Configuration.UrlFormatter.GetFormattedDataUpdateUri(this);
                 }
             }
         }
@@ -197,6 +223,13 @@ namespace FiftyOne.Pipeline.Engines.Data
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
+        /// <summary>
+        /// Dispose of this instance
+        /// </summary>
+        /// <param name="disposing">
+        /// True if this is called from the Dispose method. 
+        /// False if this is called from the finalizer.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -222,11 +255,23 @@ namespace FiftyOne.Pipeline.Engines.Data
             }
         }
 
-        // This code added to correctly implement the disposable pattern.
+        /// <summary>
+        /// Dispose of this instance's resources.
+        /// </summary>
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            // Do not change this code. 
+            // Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Finalizer
+        /// </summary>
+        ~AspectEngineDataFile()
+        {
+            Dispose(false);
         }
         #endregion
     }

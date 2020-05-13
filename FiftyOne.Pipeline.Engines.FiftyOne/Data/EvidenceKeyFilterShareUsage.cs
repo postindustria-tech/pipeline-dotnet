@@ -23,6 +23,7 @@
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.Engines.FiftyOne.Trackers;
+using System;
 using System.Collections.Generic;
 
 namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
@@ -31,7 +32,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
     /// This filter is used by the <see cref="ShareUsageElement"/>.
     /// It will include anything that is:
     /// 1) An HTTP header that is not blocked by the constructor parameter.
-    /// 2) A cookie that starts with <see cref="Constants.FIFTYONE_COOKIE_PREFIX"/>
+    /// 2) A cookie that starts with <see cref="Engines.Constants.FIFTYONE_COOKIE_PREFIX"/>
     ///     or is the asp session cookie (if configured in the constructor).
     /// 3) An query string parameters that have been configured to be shared
     ///     using the constructor parameter.
@@ -78,6 +79,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// </summary>
         private HashSet<string> _includedQueryStringParams = new HashSet<string>();
 
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -96,17 +98,34 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// <param name="aspSessionCookieName">
         /// The name of the cookie that contains the asp.net session id. 
         /// </param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", 
+            "CA1308:Normalize strings to uppercase", 
+            Justification = "Pipeline specification requires keys to be " +
+                "all lower-case")]
         public EvidenceKeyFilterShareUsage(
             List<string> blockedHttpHeaders,
             List<string> includedQueryStringParams,
             bool includeSession,
             string aspSessionCookieName)
         {
+            if(blockedHttpHeaders == null)
+            {
+                throw new ArgumentNullException(nameof(blockedHttpHeaders));
+            }
+            if (includedQueryStringParams == null)
+            {
+                throw new ArgumentNullException(nameof(includedQueryStringParams));
+            }
+            if (aspSessionCookieName == null)
+            {
+                throw new ArgumentNullException(nameof(aspSessionCookieName));
+            }
+
             _includeSession = includeSession;
-            _aspSessionCookieName = aspSessionCookieName.ToLower();
+            _aspSessionCookieName = aspSessionCookieName.ToLowerInvariant();
             foreach (var header in blockedHttpHeaders)
             {
-                var lowerHeader = header.ToLower();
+                var lowerHeader = header.ToLowerInvariant();
                 if (!_blockedHttpHeaders.Contains(lowerHeader))
                 {
                     _blockedHttpHeaders.Add(lowerHeader);
@@ -114,7 +133,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
             }
             foreach (var parameter in includedQueryStringParams)
             {
-                var lowerParameter = parameter.ToLower();
+                var lowerParameter = parameter.ToLowerInvariant();
                 if (!_includedQueryStringParams.Contains(lowerParameter))
                 {
                     _includedQueryStringParams.Add(lowerParameter);
@@ -131,10 +150,19 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// <returns>
         /// True if the key is included and false if not.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied key is null
+        /// </exception>
         public virtual bool Include(string key)
         {
+            if(key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
             bool result = false;
-            int firstSeperator = key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR);
+            int firstSeperator = key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR,
+                StringComparison.OrdinalIgnoreCase);
             if (firstSeperator > 0)
             {
                 string firstPart = key.Remove(firstSeperator);
@@ -145,26 +173,36 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
                     // Add the header to the list if the header name does not 
                     // appear in the list of blocked headers.
                     result = _blockedHttpHeaders
-                        .Contains(lastPart.ToLower()) == false;
+#pragma warning disable CA1308 // Normalize strings to uppercase
+                        // Pipeline specification is for keys to be lower-case.
+                        .Contains(lastPart.ToLowerInvariant()) == false;
+#pragma warning restore CA1308 // Normalize strings to uppercase
                 }
                 else if (firstPart == Core.Constants.EVIDENCE_COOKIE_PREFIX)
                 {
                     // Only add cookies that start with the 51Degrees cookie 
                     // prefix.
-                    result = lastPart.StartsWith(Constants.FIFTYONE_COOKIE_PREFIX) ||
-                        (_includeSession && lastPart.Equals(_aspSessionCookieName));
+                    result = lastPart.StartsWith(Engines.Constants.FIFTYONE_COOKIE_PREFIX, 
+                        StringComparison.OrdinalIgnoreCase) ||
+                        (_includeSession && lastPart.Equals(_aspSessionCookieName, 
+                            StringComparison.OrdinalIgnoreCase));
                 }
                 else if (firstPart == Core.Constants.EVIDENCE_SESSION_PREFIX)
                 {
                     // Only add session values that start with the 51Degrees
                     // cookie prefix.
-                    result = lastPart.StartsWith(Constants.FIFTYONE_COOKIE_PREFIX);
+                    result = lastPart.StartsWith(Engines.Constants.FIFTYONE_COOKIE_PREFIX, 
+                        StringComparison.OrdinalIgnoreCase);
                 }
                 else if (firstPart == Core.Constants.EVIDENCE_QUERY_PREFIX)
                 {
                     // Only include query string parameters that have been
                     // specified in the constructor.
-                    result = _includedQueryStringParams.Contains(lastPart.ToLower());
+                    result = _includedQueryStringParams.Contains(
+#pragma warning disable CA1308 // Normalize strings to uppercase
+                        // Pipeline specification is for keys to be lower-case.
+                        lastPart.ToLowerInvariant());
+#pragma warning restore CA1308 // Normalize strings to uppercase
                 }
                 else
                 { 
@@ -180,6 +218,21 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
             return result;
         }
 
+        /// <summary>
+        /// Return the 'order of precedence of the specified evidence
+        /// key.
+        /// Lower values indicate evidence where the value is more likely
+        /// to provide differentiation between requests. This is used by 
+        /// features such as Caching to improve performance when checking
+        /// if one set of evidence matches another.
+        /// </summary>
+        /// <param name="key">
+        /// The key to get the order for.
+        /// </param>
+        /// <returns>
+        /// The order, where lower values indicate a higher order of 
+        /// precedence. 
+        /// </returns>
         public int? Order(string key)
         {
             return 100;

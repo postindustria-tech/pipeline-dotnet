@@ -37,6 +37,7 @@ using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using System.Collections.Generic;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
+using FiftyOne.Pipeline.Web.Shared;
 
 namespace FiftyOne.Pipeline.Web
 {
@@ -143,7 +144,8 @@ namespace FiftyOne.Pipeline.Web
         /// The application configuration object
         /// </param>
         /// <param name="pipelineBuilder">
-        /// an <see cref="IPipelineBuilder"/> instance
+        /// a pipeline builder instance to use when constructing the
+        /// <see cref="IPipeline"/>.
         /// </param>
         /// <returns>
         /// A new <see cref="IPipeline"/> instance
@@ -161,7 +163,7 @@ namespace FiftyOne.Pipeline.Web
                 options.Elements.Count == 0)
             {
                 throw new PipelineConfigurationException(
-                    "Could not find pipeline configuration information");
+                    Messages.ExceptionNoConfiguration);
             }
 
             PipelineWebIntegrationOptions webOptions = new PipelineWebIntegrationOptions();
@@ -171,7 +173,7 @@ namespace FiftyOne.Pipeline.Web
             var sequenceConfig = options.Elements.Where(e =>
                 e.BuilderName.Contains(nameof(SequenceElement),
                     StringComparison.OrdinalIgnoreCase));
-            if (sequenceConfig.Count() == 0)
+            if (sequenceConfig.Any() == false)
             {
                 // The sequence element is not included so add it.
                 // Make sure it's added as the first element.
@@ -193,10 +195,10 @@ namespace FiftyOne.Pipeline.Web
                     e.BuilderName.Contains(nameof(JavaScriptBuilderElement),
                         StringComparison.OrdinalIgnoreCase));
 
-                var jsIndex = javascriptConfig.Count() > 0 ? 
+                var jsIndex = javascriptConfig.Any() ? 
                     options.Elements.IndexOf(javascriptConfig.First()) : -1;
 
-                if (jsonConfig.Count() == 0)
+                if (jsonConfig.Any() == false)
                 {
                     // The json builder is not included so add it.
                     var newElementOptions = new ElementOptions()

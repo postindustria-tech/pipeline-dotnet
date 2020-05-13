@@ -32,7 +32,7 @@ namespace FiftyOne.Pipeline.Core.Data
     {
         /// <summary>
         /// Get the data contained in this instance as an 
-        /// <see cref="IReadOnlyDictionary{string, object}"/>.
+        /// <see cref="IReadOnlyDictionary{TKey, TValue}"/>
         /// </summary>
         /// <returns>
         /// The data

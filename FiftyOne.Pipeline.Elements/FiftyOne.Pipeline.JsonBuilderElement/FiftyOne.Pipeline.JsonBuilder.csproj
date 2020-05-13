@@ -1,21 +1,29 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Platforms>AnyCPU</Platforms>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-	
-	<!-- NuGet package properties -->
-	<PackageId>FiftyOne.Pipeline.JsonBuilder</PackageId>
-	<Title>Json builder element for the 51Degrees Pipeline API</Title>
-	<PackageDescription>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. The package contains an element that serializes all values in flowdata into a json message.</PackageDescription>
-	<Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+    <DocumentationFile>FiftyOne.Pipeline.JsonBuilder.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+
+    <!-- NuGet package properties -->
+    <PackageId>FiftyOne.Pipeline.JsonBuilder</PackageId>
+    <Title>JSON builder element for the 51Degrees Pipeline API</Title>
+    <PackageDescription>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains an element that serializes all values in flowdata into a JSON formatted string.</PackageDescription>
+    <Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
     <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
-	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
-	<Copyright>51Degrees Mobile Experts Limited</Copyright>
-	<PackageTags>51degrees,pipeline,data service</PackageTags>
-	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+    <PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
+    <Copyright>51Degrees Mobile Experts Limited</Copyright>
+    <PackageTags>51degrees,pipeline,data service</PackageTags>
+    <RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+    <PackageIcon>51d-logo.png</PackageIcon>
+    <RepositoryType>git</RepositoryType>
+    <NeutralLanguage>en</NeutralLanguage>
+    <Description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains an element that serializes all values in flowdata into a JSON formatted string.</Description>
+    <PackageProjectUrl>www.51degrees.com</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -24,6 +32,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" Version="1.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -32,7 +44,29 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines.FiftyOne\FiftyOne.Pipeline.Engines.FiftyOne.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Messages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Messages.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Messages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Messages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Images\51d-logo.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -41,7 +41,16 @@ namespace FiftyOne.Pipeline.Engines.Data.Readers
         {
             return JsonConvert.DeserializeObject<T>(reader.ReadToEnd());
         }
-        
+
+        /// <summary>
+        /// Load data from a file.
+        /// </summary>
+        /// <param name="filePath">
+        /// The complete path to the file to load data from.
+        /// </param>
+        /// <returns>
+        /// The data in the file as a new instance of type 'T'.
+        /// </returns>
         public T LoadData(string filePath)
         {
             using (StreamReader reader = new StreamReader(filePath))
@@ -49,7 +58,16 @@ namespace FiftyOne.Pipeline.Engines.Data.Readers
                 return LoadData(reader);
             }
         }
-        
+
+        /// <summary>
+        /// Load data from a stream.
+        /// </summary>
+        /// <param name="data">
+        /// The stream to load data from.
+        /// </param>
+        /// <returns>
+        /// The data in the stream as a new instance of type 'T'.
+        /// </returns>
         public T LoadData(Stream data)
         {
             using (StreamReader reader = new StreamReader(data))

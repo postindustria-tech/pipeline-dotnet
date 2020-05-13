@@ -21,10 +21,15 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.AspNetCore.Http;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
+    /// <summary>
+    /// This class provides easy access to the results of 
+    /// <see cref="IPipeline"/> processing.
+    /// </summary>
     public class FlowDataProvider : IFlowDataProvider
     {
         private IHttpContextAccessor _context;
@@ -40,6 +45,12 @@ namespace FiftyOne.Pipeline.Web.Services
             _context = context;
         }
 
+        /// <summary>
+        /// Get the <see cref="IFlowData"/> instance containing results
+        /// from processing performed by the <see cref="IPipeline"/>
+        /// on the current request. 
+        /// </summary>
+        /// <returns></returns>
         public IFlowData GetFlowData()
         {
             return _context.HttpContext.Items[Constants.HTTPCONTEXT_FLOWDATA] as IFlowData;

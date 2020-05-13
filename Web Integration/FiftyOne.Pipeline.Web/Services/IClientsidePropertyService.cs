@@ -24,6 +24,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
+    /// <summary>
+    /// Interface for <see cref="ClientsidePropertyService"/>
+    /// </summary>
     public interface IClientsidePropertyService
     {
         /// <summary>

@@ -97,7 +97,7 @@ namespace FiftyOne.Pipeline.Core.Data
                     if (_logger.IsEnabled(LogLevel.Debug))
                     {
                         _logger.LogDebug(
-                            $"Data '{GetType().Name}'-'{GetHashCode()}' " +
+                            $"Data '{GetType().Name}' " +
                             $"overwriting existing value for '{key}' " +
                             $"(old value '{AsTruncatedString(_data[key])}', " +
                             $"new value '{AsTruncatedString(value)}').");
@@ -135,8 +135,15 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <param name="values">
         /// The values to transfer to this data instance.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied dictionary is null
+        /// </exception>
         public void PopulateFromDictionary(IDictionary<string, object> values)
         {
+            if(values == null)
+            {
+                throw new ArgumentNullException(nameof(values));
+            }
             foreach(var value in values)
             {
                 this[value.Key] = value.Value;
@@ -167,10 +174,10 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </exception>
         protected virtual T GetAs<T>(string key)
         {
-            if (key == null) throw new ArgumentNullException("key");
+            if (key == null) throw new ArgumentNullException(nameof(key));
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug($"Data '{GetType().Name}'-'{GetHashCode()}' " +
+                _logger.LogDebug($"Data '{GetType().Name}' " +
                     $"property value requested for key '{key}'.");
             }
             T result = default(T);
