@@ -82,6 +82,12 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                 .Build();
         }
 
+        /// <summary>
+        /// Check that a property set before processing an engine will not
+        /// be reset by that engine unless it actively makes a change.
+        /// ValueOne is set to 1 by the engine but ValueThree should be 
+        /// unchanged.
+        /// </summary>
         [TestMethod]
         public void MultiEngineData_SimpleTest()
         {
@@ -96,14 +102,21 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                 _engine,
                 null));
             engineData.ValueOne = 0;
-            engineData.ValueTwo = 50;
+            engineData.ValueThree = 50;
             data.Process();
 
             var result = data.Get<EmptyEngineData>();
             Assert.AreEqual(1, result.ValueOne);
-            Assert.AreEqual(50, result.ValueTwo);
+            Assert.AreEqual(50, result.ValueThree);
         }
 
+        /// <summary>
+        /// Check that a property set before processing a engine with
+        /// lazy loading enabled will not be reset by that engine unless 
+        /// it actively makes a change.
+        /// ValueOne is set to 1 by the engine but ValueThree should be 
+        /// unchanged.
+        /// </summary>
         [TestMethod]
         public void MultiEngineData_LazyLoadingTest()
         {
@@ -117,14 +130,13 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                 f,
                 _engine,
                 null));
-            engineData.ValueOne = 0;
-            engineData.ValueTwo = 50;
+            engineData.ValueThree = 50;
 
             data.Process();
 
             var result = data.Get<EmptyEngineData>();
             Assert.AreEqual(1, result.ValueOne);
-            Assert.AreEqual(50, result.ValueTwo);
+            Assert.AreEqual(50, result.ValueThree);
         }
 
     }

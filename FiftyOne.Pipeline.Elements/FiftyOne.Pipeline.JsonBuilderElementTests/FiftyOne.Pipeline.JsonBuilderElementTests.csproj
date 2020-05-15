@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines.TestHelpers\FiftyOne.Pipeline.Engines.TestHelpers.csproj" />
     <ProjectReference Include="..\FiftyOne.Pipeline.JsonBuilderElement\FiftyOne.Pipeline.JsonBuilder.csproj" />
   </ItemGroup>
 

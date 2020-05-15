@@ -97,6 +97,33 @@ namespace FiftyOne.Pipeline.Engines {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to retrieve {0} because processing threw an exception in engine(s) &apos;{1}&apos;..
+        /// </summary>
+        internal static string ExceptionProcessingError {
+            get {
+                return ResourceManager.GetString("ExceptionProcessingError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to retrieve {0} because processing threw multiple exceptions in engine(s) &apos;{1}&apos;..
+        /// </summary>
+        internal static string ExceptionProcessingMultipleErrors {
+            get {
+                return ResourceManager.GetString("ExceptionProcessingMultipleErrors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to retrieve {0} because the processing for engine(s) &apos;{1}&apos; took longer than the specified timeout..
+        /// </summary>
+        internal static string ExceptionProcessingTimeout {
+            get {
+                return ResourceManager.GetString("ExceptionProcessingTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Update randomization timespan too large. Must be less than {0} seconds but is {1} seconds.
         /// </summary>
         internal static string ExceptionRandomizationTooLarge {
@@ -174,15 +201,6 @@ namespace FiftyOne.Pipeline.Engines {
         internal static string MessageAutoUpdateUnhandledError {
             get {
                 return ResourceManager.GetString("MessageAutoUpdateUnhandledError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to .
-        /// </summary>
-        internal static string String1 {
-            get {
-                return ResourceManager.GetString("String1", resourceCulture);
             }
         }
     }

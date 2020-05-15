@@ -57,9 +57,10 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
                 MissingPropertyService.Instance);
         }
 
-        public void SetProcessCost(long ticks)
+        public EmptyEngineBuilder SetProcessCost(long ticks)
         {
             _processCostTicks = ticks;
+            return this;
         }
 
         protected override EmptyEngine NewEngine(List<string> properties)

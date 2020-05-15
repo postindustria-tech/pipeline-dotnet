@@ -38,6 +38,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using FiftyOne.Pipeline.Engines.TestHelpers;
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
+using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace FiftyOne.Pipeline.JsonBuilderElementTests
 {
@@ -63,7 +67,7 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
 
             _loggerFactory = new LoggerFactory();
 
-            _jsonBuilderElement = (JsonBuilder.FlowElement.JsonBuilderElement)new JsonBuilderElementBuilder(_loggerFactory)
+            _jsonBuilderElement = new JsonBuilderElementBuilder(_loggerFactory)
                 .Build();
 
             _elementDataMock = new Mock<IElementData>();
@@ -101,23 +105,7 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
 
             _jsonBuilderElement.Process(flowData.Object);
 
-            Assert.IsTrue(IsValidJson(result.Json));
-        }
-
-        private bool IsValidJson(string json)
-        {
-            JObject obj = JObject.Parse(json);
-            var results = obj["test"].Children().ToList();
-
-            foreach (var result in results)
-            {
-                var res = result.ToString();
-                if (res.Contains("property") && res.Contains("thisIsAValue"))
-                {
-                    return true;
-                }
-            }
-            return false;
+            Assert.IsTrue(IsExpectedJson(result.Json));
         }
 
         /// <summary>
@@ -143,6 +131,80 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
                 }
             }
 
+        }
+
+        /// <summary>
+        /// Check that the JSON produced by the JsonBuilder is correct 
+        /// when lazy loading is enabled.
+        /// </summary>
+        [TestMethod]
+        public void JsonBuilder_LazyLoading()
+        {
+            var engine = new EmptyEngineBuilder(_loggerFactory)
+                .SetLazyLoadingTimeout(1000)
+                .SetProcessCost(TimeSpan.FromMilliseconds(500).Ticks)
+                .Build();
+            var jsonBuilder = new JsonBuilderElementBuilder(_loggerFactory)
+                .Build();
+            var sequenceElement = new SequenceElementBuilder(_loggerFactory)
+                .Build();
+            var pipeline = new PipelineBuilder(_loggerFactory)
+                .AddFlowElement(sequenceElement)
+                .AddFlowElement(engine)
+                .AddFlowElement(jsonBuilder)
+                .Build();
+
+            var flowData = pipeline.CreateFlowData();
+            Trace.WriteLine("Process starting");
+            flowData.Process();
+            Trace.WriteLine("Process complete");
+
+            var jsonResult = flowData.Get<IJsonBuilderElementData>();
+            Assert.IsNotNull(jsonResult);
+            Assert.IsNotNull(jsonResult.Json);
+
+            var jsonData = JsonConvert.DeserializeObject<JsonData>(jsonResult.Json);
+            Assert.AreEqual(1, jsonData.EmptyAspect.Valueone);
+            Assert.AreEqual(2, jsonData.EmptyAspect.Valuetwo);
+            Trace.WriteLine("Data validated");
+        }
+
+        public class JsonData
+        {
+            [JsonProperty("empty-aspect")]
+            public EmptyAspect EmptyAspect { get; set; }
+
+            [JsonProperty("json-builder")]
+            public JsonBuilder JsonBuilder { get; set; }
+        }
+
+        public class EmptyAspect
+        {
+            [JsonProperty("valueone")]
+            public long Valueone { get; set; }
+
+            [JsonProperty("valuetwo")]
+            public long Valuetwo { get; set; }
+        }
+
+        public class JsonBuilder
+        {
+        }
+
+        private bool IsExpectedJson(string json)
+        {
+            JObject obj = JObject.Parse(json);
+            var results = obj["test"].Children().ToList();
+
+            foreach (var result in results)
+            {
+                var res = result.ToString();
+                if (res.Contains("property") && res.Contains("thisIsAValue"))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private string TestIteration(int iteration)
