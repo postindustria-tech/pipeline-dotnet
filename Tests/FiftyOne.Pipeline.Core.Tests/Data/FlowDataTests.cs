@@ -70,7 +70,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         /// Check that the Process method will not allow multiple calls
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(PipelineException))]
         public void FlowData_ProcessAlreadyDone()
         {
             _flowData.Process();
@@ -318,7 +318,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         /// has not yet been processed.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(PipelineException))]
         public void FlowData_GetBeforeProcess_String()
         {
             var result = _flowData.Get("key");
@@ -329,7 +329,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         /// has not yet been processed.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(PipelineException))]
         public void FlowData_GetBeforeProcess_TypedKey()
         {
             var result = _flowData.Get(new TypedKey<TestElementData>("key"));
@@ -340,7 +340,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         /// has not yet been processed.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(PipelineException))]
         public void FlowData_GetBeforeProcess_FlowElement()
         {
             var result = _flowData.GetFromElement(new TestElement());
@@ -492,7 +492,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         /// throws the expected error if flow data has not yet been processed
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(PipelineDataException))]
+        [ExpectedException(typeof(PipelineException))]
         public void FlowData_GetAs_NotProcessed()
         {
             ConfigureMultiElementValues();

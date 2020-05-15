@@ -71,13 +71,52 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         #endregion
 
         #region Public Interface
-
+        /// <summary>
+        /// The profiles that are present in the data source for this engine.
+        /// A Profile is a set of specific property values.
+        /// Each profile is associated with a component.
+        /// For example, the 'hardwareProfile' component has an 'iPhone 8' 
+        /// profile that would contain properties relating to that 
+        /// hardware device.
+        /// </summary>
         public abstract IEnumerable<IProfileMetaData> Profiles { get; }
 
+        /// <summary>
+        /// The components that are present in the data source for this engine.
+        /// A 'component' refers to a logical sub-set of the collection 
+        /// of properties related to an event (usually an HTTP request).
+        /// For example, the 'hardwareProfile' component groups all 
+        /// properties related to the hardware device that is being used 
+        /// to make the request.
+        /// Examples of other components would be: the operating system, 
+        /// the browser software, the physical location the request is 
+        /// being made from, the ISP serving the request, etc.
+        /// </summary>
         public abstract IEnumerable<IComponentMetaData> Components { get; }
 
+        /// <summary>
+        /// The values that are present in the data source for this engine.
+        /// A 'value' is uniquely identified by the combination of a 
+        /// property and a value that property can have.
+        /// For example, 'HardwareModel' is a property and a possible 
+        /// value could be 'A1234'.
+        /// If another property 'HardwareVariants' had the same value of
+        /// 'A1234', that would be a separate IValueMetaData instance.
+        /// </summary>
         public abstract IEnumerable<IValueMetaData> Values { get; }
 
+        /// <summary>
+        /// The default value for the 'Type' parameter when checking for
+        /// updates from the 51Degrees 'Distributor' web service.
+        /// </summary>
+        /// <param name="identifier">
+        /// The identifier for the data file that we want to get the 
+        /// download type for.
+        /// </param>
+        /// <returns>
+        /// The string value to use for the 'Type' parameter when 
+        /// making a request to the 51Degrees Distributor.
+        /// </returns>
         public abstract string GetDataDownloadType(string identifier);        
         #endregion
     }

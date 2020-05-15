@@ -53,6 +53,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </summary>
         public override IList<IElementPropertyMetaData> Properties => _properties;
 
+        /// <summary>
+        /// Called when the element is disposed.
+        /// </summary>
         protected override void ManagedResourcesCleanup()
         {
         }
@@ -63,40 +66,54 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// If they do exist in evidence then the sequence number is incremented
         /// and added back to the evidence.
         /// </summary>
-        /// <param name="data"></param>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> instance to process.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied data instance is null
+        /// </exception>
         protected override void ProcessInternal(IFlowData data)
         {
+            if(data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             var evidence = data.GetEvidence().AsDictionary();
 
             // If the evidence does not contain a session id then create a new one.
-            if (evidence.ContainsKey(FlowElements.Constants.EVIDENCE_SESSIONID) == false)
+            if (evidence.ContainsKey(Constants.EVIDENCE_SESSIONID) == false)
             {
-                data.AddEvidence(FlowElements.Constants.EVIDENCE_SESSIONID, GetNewSessionId());
+                data.AddEvidence(Constants.EVIDENCE_SESSIONID, GetNewSessionId());
             }
 
             // If the evidence does not have a sequence then add one. Otherwise
             // increment it.
-            if (evidence.ContainsKey(FlowElements.Constants.EVIDENCE_SEQUENCE) == false)
+            if (evidence.ContainsKey(Constants.EVIDENCE_SEQUENCE) == false)
             {
-                data.AddEvidence(FlowElements.Constants.EVIDENCE_SEQUENCE, 1);
+                data.AddEvidence(Constants.EVIDENCE_SEQUENCE, 1);
             }
-            else if (evidence.TryGetValue(FlowElements.Constants.EVIDENCE_SEQUENCE, out object sequence))
+            else if (evidence.TryGetValue(Constants.EVIDENCE_SEQUENCE, out object sequence))
             {
                 if (sequence is int result || (sequence is string seq && int.TryParse(seq, out result)))
                 {
-                    data.AddEvidence(FlowElements.Constants.EVIDENCE_SEQUENCE, result + 1);
+                    data.AddEvidence(Constants.EVIDENCE_SEQUENCE, result + 1);
                 }
                 else
                 {
-                    _logger.LogError("Failed to increment usage sequence number.");
+                    Logger.LogError(Messages.MessageFailSequenceNumberIncrement);
                 }
             }
             else
             {
-                _logger.LogError("Failed to retrieve sequence number.");
+                Logger.LogError(Messages.MessageFailSequenceNumberRetreive);
             }
         }
 
+        /// <summary>
+        /// Called as part of object disposal.
+        /// This element has no unmanaged resources so this method is empty.
+        /// </summary>
         protected override void UnmanagedResourcesCleanup()
         {
         }

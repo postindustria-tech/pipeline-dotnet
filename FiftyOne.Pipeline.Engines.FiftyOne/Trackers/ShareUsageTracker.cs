@@ -55,6 +55,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Trackers
         /// The <see cref="IEvidenceKeyFilter"/> that defines the evidence
         /// values to use when creating a key from an <see cref="IFlowData"/>.
         /// </param>
+        /// <param name="interval">
+        /// The tracker will return a match and update the matching entry 
+        /// if it is younger than this time interval.
+        /// If it is older then it will not return a match.
+        /// </param>
         public ShareUsageTracker(
             CacheConfiguration configuration,
 			TimeSpan interval,
@@ -83,7 +88,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Trackers
         /// The flow data
         /// </param>
         /// <param name="value">
-        /// The meta-data value associated with the flow data in teh tracker.
+        /// The meta-data value associated with the flow data in the tracker.
         /// </param>
         /// <returns>
         /// Boolean - if tracked values age is less than the period set by 
@@ -95,7 +100,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Trackers
 			var now = DateTime.Now;
 			if (value <= (now - _interval))
 			{
-				value = now;
 				return true;
 			}
 			else

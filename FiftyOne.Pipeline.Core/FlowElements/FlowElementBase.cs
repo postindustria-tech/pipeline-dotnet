@@ -65,12 +65,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// in the <see cref="IFlowData"/>.
         /// </summary>
         private ITypedKey<T> _typedKey = null;
-
-        /// <summary>
-        /// Logger.
-        /// </summary>
-        protected ILogger<FlowElementBase<T, TMeta>> _logger;
-
+        
         /// <summary>
         /// The pipelines that this element has been added to
         /// </summary>
@@ -80,6 +75,11 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// that are populated by this flow element.
         /// </summary>
         private Func<IPipeline, FlowElementBase<T, TMeta>, T> _elementDataFactory;
+
+        /// <summary>
+        /// The logger for this instance
+        /// </summary>
+        protected ILogger<FlowElementBase<T, TMeta>> Logger { get; private set; }
 
         /// <summary>
         /// Get a read only list of the pipelines that this element has
@@ -187,8 +187,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             ILogger<FlowElementBase<T, TMeta>> logger,
             Func<IPipeline, FlowElementBase<T, TMeta>, T> elementDataFactory)
         {
-            _logger = logger;
-            _logger.LogInformation($"FlowElement '{GetType().Name}'-'{GetHashCode()}' created.");
+            Logger = logger;
+            Logger.LogInformation($"FlowElement '{GetType().Name}' created.");
             _elementDataFactory = elementDataFactory;
         }
 
@@ -199,23 +199,35 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The <see cref="IFlowData"/> instance that provides input evidence
         /// and carries the output data to the user.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied data parameter is null.
+        /// </exception>
         public virtual void Process(IFlowData data)
         {
-            Stopwatch sw = null;
-            if (data.Stop == false)
+            if(data == null)
             {
-                bool log = _logger.IsEnabled(LogLevel.Debug);
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            Stopwatch sw = null;
+#pragma warning disable CS0618 // Type or member is obsolete
+            // This usage will be replaced once the Cancellation Token
+            // mechanism is available.
+            if (data.Stop == false)
+#pragma warning restore CS0618 // Type or member is obsolete
+            {
+                bool log = Logger.IsEnabled(LogLevel.Debug);
                 if (log)
                 {
-                    _logger.LogDebug($"FlowElement " +
-                    $"'{GetType().Name}'-'{GetHashCode()}' started processing.");
+                    Logger.LogDebug($"FlowElement " +
+                    $"'{GetType().Name}' started processing.");
                     sw = Stopwatch.StartNew();
                 }
                 ProcessInternal(data);
                 if (log)
                 {
-                    _logger.LogDebug($"FlowElement " +
-                        $"'{GetType().Name}'-'{GetHashCode()}' finished processing. " +
+                    Logger.LogDebug($"FlowElement " +
+                        $"'{GetType().Name}' finished processing. " +
                         $"Elapsed time: {sw.ElapsedMilliseconds}ms");
                 }
             }
@@ -251,7 +263,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         {
             if(_elementDataFactory == null)
             {
-                _logger.LogError($"Need to specify an elementDataFactory " +
+                Logger.LogError($"Need to specify an elementDataFactory " +
                     $"in constructor for '{GetType().Name}'.");
             }
             return _elementDataFactory(pipeline, this);
@@ -274,7 +286,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <param name="disposing">
         /// True if Dispose is being called 'correctly' from the Dispose
         /// method.
-        /// False if Dispose is being called by the finaliser.
+        /// False if Dispose is being called by the finalizer.
         /// </param>
         protected virtual void Dispose(bool disposing)
         {
@@ -282,7 +294,15 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             {
                 if (disposing)
                 {
+                    Logger.LogInformation($"FlowElement '{GetType().Name}' disposed.");
                     ManagedResourcesCleanup();
+                }
+                else
+                {
+                    Logger.LogWarning($"FlowElement '{GetType().Name}' " +
+                        $"finalized. It is recommended that instance lifetimes are " +
+                        $"managed explicitly with a 'using' block or calling the Dispose " +
+                        $"method as part of a 'finally' block.");
                 }
                 UnmanagedResourcesCleanup();
 
@@ -291,14 +311,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         }
 
         /// <summary>
-        /// Finaliser
+        /// Finalizer
         /// </summary>
         ~FlowElementBase()
         {
-            _logger.LogWarning($"FlowElement '{GetType().Name}'-'{GetHashCode()}'" +
-                $" finalised. It is recommended that instance lifetimes are " +
-                $"managed explicitly with a 'using' block or calling the Dispose " +
-                $"method as part of a 'finally' block.");
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(false);
         }
@@ -308,10 +324,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </summary>
         public void Dispose()
         {
-            _logger.LogInformation($"FlowElement '{GetType().Name}'-'{GetHashCode()}' disposed.");
             Dispose(true);
-            // This line is required to prevent the finaliser above from
-            // firing when this instance is finalised.
+            // This line is required to prevent the finalizer above from
+            // firing when this instance is finalized.
             GC.SuppressFinalize(this);
         }
         #endregion

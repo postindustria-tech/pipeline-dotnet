@@ -22,6 +22,7 @@
 
 using FiftyOne.Caching;
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Configuration;
 using System;
@@ -55,18 +56,23 @@ namespace FiftyOne.Pipeline.Engines.Caching
         /// </param>
         public DataKeyedCacheBase(CacheConfiguration configuration)
         {
+            if(configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
             _internalCache = configuration.Builder.Build<DataKey, TValue>(configuration.Size) 
                 as IPutCache<DataKey, TValue>;
             if(_internalCache == null)
             {
-                throw new Exception(
+                throw new PipelineConfigurationException(
                     $"Cache builder '{configuration.Builder.GetType().Name}' " +
                     $"does not produce caches conforming to 'IPutCache'");
             }
         }
 
         /// <summary>
-        /// Get the <see cref="TValue"/> associated with the key generated 
+        /// Get the <code>TValue</code> associated with the key generated 
         /// from the supplied <see cref="IFlowData"/> instance.
         /// </summary>
         /// <param name="data">
@@ -74,12 +80,25 @@ namespace FiftyOne.Pipeline.Engines.Caching
         /// </param>
         /// <returns>
         /// If a matching item exists in the cache then the 
-        /// <see cref="TValue"/> is returned. If not, the default value
+        ///  <code>TValue</code> is returned. If not, the default value
         /// is returned. (i.e. null for reference types, 0 for int, etc) 
         /// </returns>
+#pragma warning disable CA1043 // Use Integral Or String Argument For Indexers
+        // At a lower level, the flow data is converted to a string 
+        // key that is used on the cache itself.
+        // We allow an IFlowData instance to be supplied as the key
+        // at this level for convenience.
         public virtual TValue this[IFlowData data]
+#pragma warning restore CA1043 // Use Integral Or String Argument For Indexers
         {
-           get { return _internalCache[data.GenerateKey(GetFilter())]; }
+            get
+            {
+                if (data == null)
+                {
+                    throw new ArgumentNullException(nameof(data));
+                }
+                return _internalCache[data.GenerateKey(GetFilter())];
+            }
         }
 
         /// <summary>
@@ -89,10 +108,15 @@ namespace FiftyOne.Pipeline.Engines.Caching
         /// The <see cref="IFlowData"/> to use as a key.
         /// </param>
         /// <param name="value">
-        /// The <see cref="TValue"/> to store with the key.
+        /// The <code>TValue</code> to store with the key.
         /// </param>
         public virtual void Put(IFlowData data, TValue value)
         {
+            if(data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             _internalCache.Put(data.GenerateKey(GetFilter()), value);
         }
 
@@ -111,6 +135,27 @@ namespace FiftyOne.Pipeline.Engines.Caching
         /// IDisposable support
         /// </summary>
         public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Finalizer
+        /// </summary>
+        ~DataKeyedCacheBase()
+        {
+            Dispose(false);
+        }
+
+        /// <summary>
+        /// Dispose of this instance
+        /// </summary>
+        /// <param name="disposing">
+        /// True if this is called from the Dispose method.
+        /// False if it is called from the finalizer.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
         {
             _internalCache.Dispose();
         }

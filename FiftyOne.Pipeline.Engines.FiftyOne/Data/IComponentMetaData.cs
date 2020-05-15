@@ -49,7 +49,12 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// List of the properties which come under the umbrella of this
         /// component.
         /// </summary>
+#pragma warning disable CA1721 // Property names should not match get methods
+        // This would be a breaking change.
+        // Note that 'GetProperties' has a slightly different purpose as
+        // it returns an IEnumerable where 'Properties' returns an IReadOnlyList.
         IReadOnlyList<IFiftyOneAspectPropertyMetaData> Properties { get; }
+#pragma warning restore CA1721 // Property names should not match get methods
 
         /// <summary>
         /// Get the properties which come under the umbrella of this component.

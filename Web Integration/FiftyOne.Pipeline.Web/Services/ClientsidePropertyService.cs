@@ -32,6 +32,8 @@ using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
+using System.Globalization;
+using FiftyOne.Pipeline.Web.Shared;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
@@ -46,11 +48,6 @@ namespace FiftyOne.Pipeline.Web.Services
     /// </summary>
     public class ClientsidePropertyService : IClientsidePropertyService
     {
-        /// <summary>
-        /// Character used by profile override logic to separate profile IDs 
-        /// </summary>
-        protected const char PROFILE_OVERRIDES_SPLITTER = '|';
-
         /// <summary>
         /// Device provider
         /// </summary>
@@ -81,10 +78,15 @@ namespace FiftyOne.Pipeline.Web.Services
         /// </summary>
         /// <param name="flowDataProvider"></param>
         /// <param name="pipeline"></param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         public ClientsidePropertyService(
             IFlowDataProvider flowDataProvider,
             IPipeline pipeline)
         {
+            if (pipeline == null) throw new ArgumentNullException(nameof(pipeline));
+
             _flowDataProvider = flowDataProvider;
             _pipeline = pipeline;
 
@@ -106,8 +108,12 @@ namespace FiftyOne.Pipeline.Web.Services
                 if (whitelist != null)
                 {
                     headersAffectingJavaScript.AddRange(whitelist.Whitelist
-                        .Where(entry => entry.Key.StartsWith(Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR))
-                        .Select(entry => entry.Key.Substring(entry.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR) + 1)));
+                        .Where(entry => entry.Key.StartsWith(
+                            Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR, 
+                            StringComparison.OrdinalIgnoreCase))
+                        .Select(entry => entry.Key.Substring(entry.Key.IndexOf(
+                            Core.Constants.EVIDENCE_SEPERATOR, 
+                            StringComparison.OrdinalIgnoreCase) + 1)));
                 }
             }
             _headersAffectingJavaScript = new StringValues(headersAffectingJavaScript.ToArray());
@@ -120,8 +126,13 @@ namespace FiftyOne.Pipeline.Web.Services
         /// The HttpContext containing the HttpResponse to add the 
         /// JavaScript to.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         public void ServeJavascript(HttpContext context)
         {
+            if (context == null) throw new ArgumentNullException(nameof(context));
+
             // Get the hash code.
             var flowData = _flowDataProvider.GetFlowData();
             // TODO: Should this use a Guid version of the hash code to
@@ -139,16 +150,14 @@ namespace FiftyOne.Pipeline.Web.Services
                 var builder = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
                 if(builder == null)
                 {
-                    throw new PipelineConfigurationException("Client-side " +
-                        "JavaScript has been requested from the Pipeline. " +
-                        "However, the JavaScriptBundlerElement is not present. " +
-                        "To resolve this error, either disable client-side " +
-                        "evidence or ensure the JavaScriptBundlerElement is " +
-                        "added to your Pipeline.");
+                    throw new PipelineConfigurationException(
+                        Messages.ExceptionNoJavaScriptBuilder);
                 }
                 var builderData = flowData.GetFromElement(builder);
 
-                SetHeaders(context, hash.ToString(), builderData.JavaScript.Length);
+                SetHeaders(context, 
+                    hash.ToString(CultureInfo.InvariantCulture), 
+                    builderData.JavaScript.Length);
 
                 context.Response.WriteAsync(builderData.JavaScript);
             }

@@ -169,8 +169,16 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <param name="dataFile">
         /// The data file to add.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if supplied data file is null.
+        /// </exception>
         public virtual void AddDataFile(IAspectEngineDataFile dataFile)
         {
+            if(dataFile == null)
+            {
+                throw new ArgumentNullException(nameof(dataFile));
+            }
+
             if (_dataFiles.Any(f => f.Identifier == dataFile.Identifier) == false)
             {
                 dataFile.Engine = this;

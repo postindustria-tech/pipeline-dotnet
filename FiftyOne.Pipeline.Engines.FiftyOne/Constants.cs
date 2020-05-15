@@ -20,12 +20,20 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
+using System.Resources;
+[assembly: NeutralResourcesLanguage("en")]
+
+namespace FiftyOne.Pipeline.Engines.FiftyOne
 {
     /// <summary>
     /// Constants used by 51Degrees Aspect Engines.
     /// </summary>
-    public class Constants
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming",
+        "CA1707:Identifiers should not contain underscores",
+        Justification = "51Degrees code style for public constants and " +
+        "enum names is to use all caps with underscores as a separator.")]
+    public static class Constants
     {
         /// <summary>
         /// The maximum length of a piece of evidence's value which can be
@@ -77,6 +85,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </summary>
         internal const string SHARE_USAGE_DEFAULT_URL = "https://devices-v4.51degrees.com/new.ashx";
 
+        /// <summary>
+        /// The suffix for 'session id' data populated and used by
+        /// the <see cref="SequenceElement"/> and other internal
+        /// Pipeline elements.
+        /// </summary>
         public const string EVIDENCE_SESSIONID_SUFFIX = "session-id";
 
         /// <summary>
@@ -87,10 +100,15 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             Core.Constants.EVIDENCE_SEPERATOR +
             EVIDENCE_SESSIONID_SUFFIX;
 
+        /// <summary>
+        /// The suffix for 'sequence' data populated and used by
+        /// the <see cref="SequenceElement"/> and other internal
+        /// Pipeline elements.
+        /// </summary>
         public const string EVIDENCE_SEQUENCE_SUFIX = "sequence";
 
         /// <summary>
-        /// Sequence evidence contant.
+        /// Sequence evidence constant.
         /// </summary>
         public const string EVIDENCE_SEQUENCE =
             Core.Constants.EVIDENCE_QUERY_PREFIX +

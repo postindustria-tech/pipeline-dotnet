@@ -31,6 +31,12 @@ namespace FiftyOne.Pipeline.Core.Configuration
     /// Configuration object that describes how to build an 
     /// <see cref="IFlowElement"/>.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", 
+        "CA2227:Collection properties should be read only", 
+        Justification = "This would be a breaking change. " +
+        "The ElementOptions class is just a POCO data store for " +
+        "configuration information so having settable collections" +
+        "is not a problem.")]
     public class ElementOptions
     {
         /// <summary>
@@ -58,6 +64,7 @@ namespace FiftyOne.Pipeline.Core.Configuration
         /// class also had [AlternateNameAttribute(Name = "DDEngine")]
         /// </remarks>
         public string BuilderName { get; set; }
+
 
         /// <summary>
         /// The dictionary keys are method names or names of parameters on

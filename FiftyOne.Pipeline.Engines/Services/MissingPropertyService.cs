@@ -30,11 +30,18 @@ using FiftyOne.Pipeline.Engines.FlowElements;
 
 namespace FiftyOne.Pipeline.Engines.Services
 {
+    /// <summary>
+    /// Service that determines the reason for a property not being populated 
+    /// by an engine.
+    /// </summary>
     public class MissingPropertyService : IMissingPropertyService
     {
         private static IMissingPropertyService _instance;
         private static object _lock = new object();
 
+        /// <summary>
+        /// Get the singleton instance of this service.
+        /// </summary>
         public static IMissingPropertyService Instance
         {
             get
@@ -103,6 +110,11 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// </returns>
         public MissingPropertyResult GetMissingPropertyReason(string propertyName, IAspectEngine engine)
         {
+            if(engine == null)
+            {
+                throw new ArgumentNullException(nameof(engine));
+            }
+
             MissingPropertyResult result = new MissingPropertyResult();
             MissingPropertyReason reason = MissingPropertyReason.Unknown;
 

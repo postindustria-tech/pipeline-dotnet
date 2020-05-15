@@ -31,6 +31,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -75,16 +76,17 @@ namespace FiftyOne.Pipeline.Engines.Tests.Performance
         public void PipelineOverhead_NoCache()
         {
             int iterations = 10000;
-            var start = DateTime.UtcNow;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             for (int i = 0; i < iterations; i++)
             {
                 _pipeline.CreateFlowData()
                     .Process();
             }
-            var end = DateTime.UtcNow;
+            stopwatch.Stop();
 
             double msOverheadPerCall =
-                end.Subtract(start).TotalMilliseconds / iterations;
+                stopwatch.ElapsedMilliseconds / iterations;
             Assert.IsTrue(msOverheadPerCall < 0.1,
                 $"Pipeline overhead per Process call was " +
                 $"{msOverheadPerCall}ms. Maximum permitted is 0.1ms");

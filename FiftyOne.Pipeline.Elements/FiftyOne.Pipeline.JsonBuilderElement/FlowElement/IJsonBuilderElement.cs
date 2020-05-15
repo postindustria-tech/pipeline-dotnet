@@ -29,6 +29,9 @@ using FiftyOne.Pipeline.Core.Data;
 
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
+    /// <summary>
+    /// The Interface for the <see cref="JsonBuilderElement"/>
+    /// </summary>
     public interface IJsonBuilderElement : 
         IFlowElement<IJsonBuilderElementData, IElementPropertyMetaData>
     {

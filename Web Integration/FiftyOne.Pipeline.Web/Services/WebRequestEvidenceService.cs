@@ -21,11 +21,16 @@
  * ********************************************************************* */
 
 using System;
+using System.Globalization;
 using FiftyOne.Pipeline.Core.Data;
 using Microsoft.AspNetCore.Http;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
+    /// <summary>
+    /// A helper service that is used to add evidence from a web request 
+    /// to a <see cref="IFlowData"/> instance.
+    /// </summary>
     public class WebRequestEvidenceService : IWebRequestEvidenceService
     {
 
@@ -66,7 +71,12 @@ namespace FiftyOne.Pipeline.Web.Services
                         _sessionEnabled = false;
                     }
                 }
+#pragma warning disable CA1031 // Do not catch general exception types
+                // This is a non-critical operation so we just
+                // want to catch any exceptions and handle them
+                // the same way, by disabling the feature.
                 catch (Exception)
+#pragma warning restore CA1031 // Do not catch general exception types
                 {
                     _sessionEnabled = false;
                 }
@@ -85,8 +95,14 @@ namespace FiftyOne.Pipeline.Web.Services
         /// <param name="httpRequest">
         /// The <see cref="HttpRequest"/> to pull values from.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         public void AddEvidenceFromRequest(IFlowData flowData, HttpRequest httpRequest)
         {
+            if (httpRequest == null) throw new ArgumentNullException(nameof(httpRequest));
+            if (flowData == null) throw new ArgumentNullException(nameof(flowData));
+
             foreach (var header in httpRequest.Headers)
             {
                 string evidenceKey = Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + 
@@ -100,7 +116,8 @@ namespace FiftyOne.Pipeline.Web.Services
                 CheckAndAdd(
                     flowData, 
                     evidenceKey, 
-                    cookie.Value == null ? "" : cookie.Value.ToString());
+                    cookie.Value == null ? "" : 
+                        cookie.Value.ToString(CultureInfo.InvariantCulture));
             }
             foreach (var queryValue in httpRequest.Query)
             {

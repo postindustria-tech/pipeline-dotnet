@@ -26,28 +26,73 @@ using System.Text;
 
 namespace FiftyOne.Pipeline.Core
 {
+    /// <summary>
+    /// Class containing values for commonly used evidence keys
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", 
+        "CA1707:Identifiers should not contain underscores", 
+        Justification = "51Degrees coding style is for constant names " +
+            "to be all-caps with an underscore to separate words.")]
     public static class Constants
     {
-        // Evidence Separator
+        /// <summary>
+        /// The string used to split evidence name parts
+        /// </summary>
         public const string EVIDENCE_SEPERATOR = ".";
 
-        // Evidence Prefixes
+        /// <summary>
+        /// Used to prefix evidence that is obtained from HTTP headers 
+        /// </summary>
         public const string EVIDENCE_HTTPHEADER_PREFIX = "header";
+        /// <summary>
+        /// Used to prefix evidence that is obtained from HTTP bookies 
+        /// </summary>
         public const string EVIDENCE_COOKIE_PREFIX = "cookie";
+        /// <summary>
+        /// Used to prefix evidence that is obtained from an HTTP request's
+        /// query string or is passed into the pipeline for off-line 
+        /// processing.
+        /// </summary>
         public const string EVIDENCE_QUERY_PREFIX = "query";
+        /// <summary>
+        /// Used to prefix evidence that is obtained from the server
+        /// that the Pipeline is running on.
+        /// </summary>
         public const string EVIDENCE_SERVER_PREFIX = "server";
+        /// <summary>
+        /// Used to prefix evidence that is obtained relating to the user's
+        /// session.
+        /// </summary>
         public const string EVIDENCE_SESSION_PREFIX = "session";
 
-        // Evidence Suffixes
-        public static string EVIDENCE_USERAGENT = "User-Agent";
+        /// <summary>
+        /// The suffix used when the User-Agent is passed as evidence.
+        /// </summary>
+        public const string EVIDENCE_USERAGENT = "user-agent";
 
-        // Evidence Keys
-        public static string EVIDENCE_CLIENTIP_KEY = EVIDENCE_SERVER_PREFIX + EVIDENCE_SEPERATOR + "client-ip";
+        /// <summary>
+        /// The complete key to be used when the client IP address is
+        /// passed as evidence
+        /// </summary>
+        public const string EVIDENCE_CLIENTIP_KEY = EVIDENCE_SERVER_PREFIX + EVIDENCE_SEPERATOR + "client-ip";
 
-        public static string EVIDENCE_QUERY_USERAGENT_KEY = EVIDENCE_QUERY_PREFIX + EVIDENCE_SEPERATOR + EVIDENCE_USERAGENT;
+        /// <summary>
+        /// The complete key to be used when the User-Agent is
+        /// passed as evidence in the query string or is set from
+        /// a data store for off-line processing.
+        /// </summary>
+        public const string EVIDENCE_QUERY_USERAGENT_KEY = EVIDENCE_QUERY_PREFIX + EVIDENCE_SEPERATOR + EVIDENCE_USERAGENT;
 
-        public static string EVIDENCE_HEADER_USERAGENT_KEY = EVIDENCE_HTTPHEADER_PREFIX + EVIDENCE_SEPERATOR + EVIDENCE_USERAGENT;
+        /// <summary>
+        /// The complete key to be used when the User-Agent is
+        /// passed as evidence in the HTTP headers.
+        /// </summary>
+        public const string EVIDENCE_HEADER_USERAGENT_KEY = EVIDENCE_HTTPHEADER_PREFIX + EVIDENCE_SEPERATOR + EVIDENCE_USERAGENT;
 
-        public static string EVIDENCE_SESSION_KEY = EVIDENCE_SESSION_PREFIX + EVIDENCE_SEPERATOR + "session";
+        /// <summary>
+        /// Used by the Pipeline to store the session object if one 
+        /// is available.
+        /// </summary>
+        public const string EVIDENCE_SESSION_KEY = EVIDENCE_SESSION_PREFIX + EVIDENCE_SEPERATOR + "session";
     }
 }

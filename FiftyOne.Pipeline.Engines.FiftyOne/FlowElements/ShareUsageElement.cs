@@ -211,7 +211,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                   aspSessionCookieName,
                   tracker)
         {
-            _logger = logger;
         }
 
         /// <summary>
@@ -222,8 +221,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         {
             List<ShareUsageData> allData = new List<ShareUsageData>();
             ShareUsageData currentData;
-            while (_evidenceCollection.TryTake(out currentData, _takeTimeout) &&
-                allData.Count < _minEntriesPerMessage * 2)
+            while (EvidenceCollection.TryTake(out currentData, TakeTimeout) &&
+                allData.Count < MinEntriesPerMessage * 2)
             {
                 allData.Add(currentData);
             }
@@ -233,7 +232,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             {
                 using (GZipStream compressedStream = new GZipStream(
                     memory, CompressionMode.Compress, true))
-                using (XmlWriter writer = XmlWriter.Create(compressedStream, _writerSettings))
+                using (XmlWriter writer = XmlWriter.Create(compressedStream, WriterSettings))
                 {
                     writer.WriteStartElement("Devices");
                     // Write each element in turn.
@@ -245,16 +244,18 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                 }
 
                 memory.Position = 0;
-                var content = new StreamContent(memory);
-                content.Headers.Add("content-encoding", "gzip");
-                content.Headers.Add("content-type", "text/xml");
-
-                var res = _httpClient.PostAsync(_shareUsageUrl, content).Result;
-                if (res.StatusCode != HttpStatusCode.OK)
+                using (var content = new StreamContent(memory))
                 {
-                    throw new HttpRequestException(
-                        $"HTTP response was {res.StatusCode}: " +
-                        $"{res.Content.ToString()}.");
+                    content.Headers.Add("content-encoding", "gzip");
+                    content.Headers.Add("content-type", "text/xml");
+
+                    var res = HttpClient.PostAsync(ShareUsageUri, content).Result;
+                    if (res.StatusCode != HttpStatusCode.OK)
+                    {
+                        throw new HttpRequestException(
+                            $"HTTP response was {res.StatusCode}: " +
+                            $"{res.Content.ToString()}.");
+                    }
                 }
             }
         }

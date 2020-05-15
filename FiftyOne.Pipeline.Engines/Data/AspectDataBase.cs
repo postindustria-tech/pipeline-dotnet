@@ -21,12 +21,15 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,8 +51,15 @@ namespace FiftyOne.Pipeline.Engines.Data
 
         private List<IAspectEngine> _engines;
 
+        /// <summary>
+        /// The <see cref="IMissingPropertyService"/> instance to be queried
+        /// when there is no entry for a requested key.
+        /// </summary>
         protected IMissingPropertyService MissingPropertyService { get; }
 
+        /// <summary>
+        /// The logger to be used by this instance.
+        /// </summary>
         protected ILogger<AspectDataBase> Logger { get; }
 
         /// <summary>
@@ -199,43 +209,66 @@ namespace FiftyOne.Pipeline.Engines.Data
             }
         }
 
+        /// <summary>
+        /// Get the value for the specified property as the specified type.
+        /// </summary>
+        /// <remarks>
+        /// This overrides the default implementation to provide additional
+        /// capabilities such as lazy loading and exposing a reason for  
+        /// properties that are not present in the data.
+        /// </remarks>
+        /// <typeparam name="T">
+        /// The type to return
+        /// </typeparam>
+        /// <param name="key">
+        /// The key of the property to get
+        /// </param>
+        /// <returns>
+        /// The value for the specified property.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if key is null.
+        /// </exception>
+        /// <exception cref="PropertyMissingException">
+        /// Thrown if there is no entry matching the specified key.
+        /// </exception>
+        /// <exception cref="OperationCanceledException">
+        /// Thrown if lazy loading is enabled and the cancellation token
+        /// has been used to cancel processing before it was completed.
+        /// </exception>
+        /// <exception cref="TimeoutException">
+        /// Thrown if lazy loading is enabled and processing did not
+        /// complete before the configured timeout expired. 
+        /// </exception>
+        /// <exception cref="AggregateException">
+        /// Thrown if lazy loading is enabled and multiple errors occurred 
+        /// during processing.
+        /// </exception>
         protected override T GetAs<T>(string key)
         {
             // Check parameter
-            if (key == null) throw new ArgumentNullException("key");
+            if (key == null) throw new ArgumentNullException(nameof(key));
             // Log the request
             if (Logger != null && Logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.LogDebug($"AspectData '{GetType().Name}'-'{GetHashCode()}' " +
+                Logger.LogDebug($"AspectData '{GetType().Name}' " +
                     $"property value requested for key '{key}'.");
             }
 
             // Attempt to get the property value.
             T propertyValue = default(T);
-            var lazyLoadEngines = Engines.Where(e => e != null &&
-                e.LazyLoadingConfiguration != null);
-            bool lazyLoad = lazyLoadEngines.Any();
-            CancellationTokenSource tokenSource = null;
 
-            if (lazyLoad == true)
+            var gotProperty = TryGetValue(key, out propertyValue);
+            if (gotProperty == false)
             {
-                tokenSource = CancellationTokenSource.CreateLinkedTokenSource(
-                    lazyLoadEngines
-                    .Where(e => e.LazyLoadingConfiguration.CancellationToken.HasValue)
-                    .Select(e => e.LazyLoadingConfiguration.CancellationToken.Value)
-                    .ToArray());
-            }
+                var lazyLoadingEnabled = WaitForLazyLoad();
 
-            IList<Exception> errors = null;
-            // Only access the dictionary if:
-            // 1. Engine is not configured for lazy loading.
-            // 2. The process task has finished
-            if (lazyLoad == false ||
-                (errors = WaitOnAllProcessTasks(
-                    lazyLoadEngines.Max(e => e.LazyLoadingConfiguration.PropertyTimeoutMs),
-                    tokenSource.Token)).Count == 0)
-            {
-                if (TryGetValue(key, out propertyValue) == false &&
+                if (lazyLoadingEnabled)
+                {
+                    gotProperty = TryGetValue(key, out propertyValue);
+                }
+
+                if (gotProperty == false &&
                     MissingPropertyService != null)
                 {
                     // If there was no entry for the key then use the missing
@@ -245,57 +278,33 @@ namespace FiftyOne.Pipeline.Engines.Data
                     if (Logger != null && Logger.IsEnabled(LogLevel.Warning))
                     {
                         Logger.LogWarning($"Property '{key}' missing from aspect " +
-                        $"data '{GetType().Name}'-'{GetHashCode()}'. " +
-                        $"{missingReason.Reason}");
+                        $"data '{GetType().Name}'. {missingReason.Reason}");
                     }
                     throw new PropertyMissingException(missingReason.Reason,
                         key, missingReason.Description);
                 }
             }
-            else
-            {
-                Exception e = null;
-                if (errors.Count == 1)
-                {
-                    e = errors[0];
-                    if (e is OperationCanceledException) {
-                        // The property is being lazy loaded but been canceled, so
-                        // pass the exception up.
-                        throw (OperationCanceledException)e;
-                    }
-                    else if (e is TimeoutException) {
-                        // The property is being lazy loaded but has timed out
-                        // or been canceled so throw the appropriate exception.
-                        throw new TimeoutException(
-                            $"Failed to retrieve property '" + key + "' " +
-                            $"because the processing for engine(s) " +
-                            $"{string.Join(", ", Engines.Select(i => i.GetType().Name).Distinct())}" +
-                            $" took longer than the specified timeout.",
-                            e);
-                    }
-                    else {
-                        // The property is being lazy loaded but an error
-                        // occurred in the engine's process method
-                        throw new Exception(
-                            $"Failed to retrieve property '" + key + "' " +
-                            $"because processing threw an exception in engine(s) " +
-                            $"{string.Join(", ", Engines.Select(i => i.GetType().Name).Distinct())}.",
-                            e);
-                    }
-                }
-                else
-                {
-                    // The property is being lazy loaded but multiple errors have
-                    // occurred in the engine's process method
-                    throw new AggregateException(
-                        $"Failed to retrieve property '" + key + "' " +
-                        $"because processing threw multiple exceptions in engine(s) " +
-                        $"{string.Join(", ", Engines.Select(i => i.GetType().Name).Distinct())}.",
-                        errors);
-                }
-            }
-            
+
             return propertyValue;
+        }
+
+        /// <inheritdoc/>
+        /// <exception cref="OperationCanceledException">
+        /// Thrown if lazy loading is enabled and the cancellation token
+        /// has been used to cancel processing before it was completed.
+        /// </exception>
+        /// <exception cref="TimeoutException">
+        /// Thrown if lazy loading is enabled and processing did not
+        /// complete before the configured timeout expired. 
+        /// </exception>
+        /// <exception cref="AggregateException">
+        /// Thrown if lazy loading is enabled and multiple errors occurred 
+        /// during processing.
+        /// </exception>
+        public override IReadOnlyDictionary<string, object> AsDictionary()
+        {
+            WaitForLazyLoad();
+            return base.AsDictionary();
         }
 
         /// <summary>
@@ -315,7 +324,11 @@ namespace FiftyOne.Pipeline.Engines.Data
         protected virtual bool TryGetValue<T>(string key, out T value)
         {
             object obj;
-            if (AsDictionary().TryGetValue(key, out obj))
+            // Very important that we call 'base.AsDictionary'
+            // and not 'AsDictionary' here because calling
+            // 'AsDictionary' will wait for lazy loading if it 
+            // is enabled and we don't want that.
+            if (base.AsDictionary().TryGetValue(key, out obj))
             {
                 try
                 {
@@ -323,7 +336,7 @@ namespace FiftyOne.Pipeline.Engines.Data
                 }
                 catch (InvalidCastException)
                 {
-                    throw new Exception(
+                    throw new PipelineException(
                         $"Expected property '{key}' to be of " +
                         $"type '{typeof(T).Name}' but it is " +
                         $"'{obj.GetType().Name}'");
@@ -335,6 +348,113 @@ namespace FiftyOne.Pipeline.Engines.Data
         }
 
         /// <summary>
+        /// If lazy loading is configured then wait for engines to finish
+        /// processing (or timeouts to be exceeded or cancellation tokens 
+        /// to be triggered) before returning.
+        /// </summary>
+        /// <param name="key">
+        /// The key of the parameter that is being accessed if any.
+        /// </param>
+        /// <returns>
+        /// True if lazy loading is enabled, false if not.
+        /// </returns>
+        /// <exception cref="OperationCanceledException">
+        /// Thrown if lazy loading is enabled and the cancellation token
+        /// has been used to cancel processing before it was completed.
+        /// </exception>
+        /// <exception cref="TimeoutException">
+        /// Thrown if lazy loading is enabled and processing did not
+        /// complete before the configured timeout expired. 
+        /// </exception>
+        /// <exception cref="AggregateException">
+        /// Thrown if lazy loading is enabled and multiple errors occurred 
+        /// during processing.
+        /// </exception>
+        private bool WaitForLazyLoad(string key = null)
+        {
+            var lazyLoadEngines = Engines.Where(e => e != null &&
+                e.LazyLoadingConfiguration != null);
+            bool lazyLoadEnabled = lazyLoadEngines.Any();
+            CancellationTokenSource tokenSource = null;
+
+            if (lazyLoadEnabled == true)
+            {
+                var engineCancellationTokens = lazyLoadEngines
+                        .Where(e => e.LazyLoadingConfiguration.CancellationToken.HasValue)
+                        .Select(e => e.LazyLoadingConfiguration.CancellationToken.Value);
+                tokenSource = engineCancellationTokens.Any() ?
+                    CancellationTokenSource.CreateLinkedTokenSource(
+                        engineCancellationTokens.ToArray()) : null;
+            }
+
+            try
+            {
+                IList<Exception> errors = null;
+
+                // If lazy loading is enabled then wait for tasks to complete.
+                if (lazyLoadEnabled == true &&
+                    (errors = WaitOnAllProcessTasks(
+                        lazyLoadEngines.Max(e => e.LazyLoadingConfiguration.PropertyTimeoutMs),
+                        tokenSource?.Token)).Count > 0)
+                {
+                    var itemText = string.IsNullOrEmpty(key) ? "data" : $"property '{key}'";
+                    var enginesText = string.Join(", ", Engines.Select(i => i.GetType().Name).Distinct());
+
+                    Exception e = null;
+                    if (errors.Count == 1)
+                    {
+                        e = errors[0];
+                        if (e is OperationCanceledException)
+                        {
+                            // The property is being lazy loaded but 
+                            // been canceled, so pass the exception up.
+                            throw (OperationCanceledException)e;
+                        }
+                        else if (e is TimeoutException)
+                        {
+                            // The property is being lazy loaded but has 
+                            // timed out or been canceled so throw the 
+                            // appropriate exception.
+                            var msg = string.Format(
+                                CultureInfo.InvariantCulture,
+                                Messages.ExceptionProcessingTimeout,
+                                itemText, enginesText);
+                            throw new TimeoutException(msg, e);
+                        }
+                        else
+                        {
+                            // The property is being lazy loaded but an error
+                            // occurred in the engine's process method
+                            var msg = string.Format(
+                                CultureInfo.InvariantCulture,
+                                Messages.ExceptionProcessingError,
+                                itemText, enginesText);
+                            throw new PipelineException(msg, e);
+                        }
+                    }
+                    else
+                    {
+                        // The property is being lazy loaded but multiple 
+                        // errors have occurred in the engine's process method.
+                        var msg = string.Format(
+                            CultureInfo.InvariantCulture,
+                            Messages.ExceptionProcessingMultipleErrors,
+                            itemText, enginesText);
+                        throw new AggregateException(msg, errors.ToArray());
+                    }
+                }
+            }
+            finally
+            {
+                // Make sure we dispose of the cancellation token source.
+                tokenSource?.Dispose();
+            }
+
+            return lazyLoadEnabled;
+        }
+
+
+        /// <summary>
         /// Waits for the completion of all process tasks which must complete
         /// before fetching a property value. Any exceptions which are thrown
         /// by a task are returned as a list.
@@ -344,7 +464,7 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// <returns>list of exceptions that occurred</returns>
         private IList<Exception> WaitOnAllProcessTasks(
             int timeoutMillis,
-            CancellationToken token)
+            CancellationToken? token)
         {
             IList<Exception> errors = new List<Exception>();
 
@@ -352,27 +472,43 @@ namespace FiftyOne.Pipeline.Engines.Data
             {
                 try
                 {
-                    if (task.Wait(timeoutMillis, token) == false)
+                    bool taskCompleted = false;
+                    if(token == null)
                     {
-                        if (token.IsCancellationRequested)
+                        taskCompleted = task.Wait(timeoutMillis);
+                    }
+                    else
+                    {
+                        taskCompleted = task.Wait(timeoutMillis, token.Value);
+                    }
+
+                    if (taskCompleted == false)
+                    {
+                        if (token.Value.IsCancellationRequested)
                         {
-                            // The property is being lazy loaded but been canceled, so
-                            // pass the exception up.
+                            // The property is being lazy loaded but 
+                            // been canceled, so pass the exception up.
                             errors.Add(new OperationCanceledException());
                         }
                         else
                         {
-                            // The property is being lazy loaded but has timed out
-                            // or been canceled so throw the appropriate exception.
+                            // The property is being lazy loaded but 
+                            // has timed out or been canceled so throw 
+                            // the appropriate exception.
                             errors.Add(new TimeoutException());
                         }
                     }
                 }
-                catch (Exception e)
+                catch (AggregateException e)
+                {
+                    errors.Add(e);
+                }
+                catch (OperationCanceledException e)
                 {
                     errors.Add(e);
                 }
             }
+
             return errors;
         }
     }

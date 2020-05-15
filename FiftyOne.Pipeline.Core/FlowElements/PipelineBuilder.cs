@@ -27,6 +27,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -98,7 +99,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         {
             if (options == null)
             {
-                throw new ArgumentNullException("options");
+                throw new ArgumentNullException(nameof(options));
             }
 
             // Clear the list of flow elements ready to be populated
@@ -137,8 +138,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             }
             catch (PipelineConfigurationException ex)
             {
-                Logger.LogCritical(ex, "Problem with pipeline configuration, " +
-                    "failed to create pipeline.");
+                Logger.LogCritical(ex, Messages.MessagePipelineCreationFailed);
                 throw;
             }
             // As the elements are all created within the builder, the user
@@ -164,7 +164,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()
 #if DEBUG
                 // Exclude VisualStudio assemblies
-                .Where(a => !a.FullName.StartsWith("Microsoft.VisualStudio"))
+                .Where(a => !a.FullName.StartsWith("Microsoft.VisualStudio", 
+                    StringComparison.OrdinalIgnoreCase))
 #endif
                 )
             {
@@ -176,10 +177,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                         _elementBuilders.AddRange(assembly.GetTypes()
                             .Where(t => t.GetMethods()
                                 // ..method called 'Build'..
-                                .Count(m => m.Name == "Build" &&
+                                .Any(m => m.Name == "Build" &&
                                 // ..where the return type is or implements IFlowElement
                                 (m.ReturnType == typeof(IFlowElement) ||
-                                m.ReturnType.GetInterfaces().Contains(typeof(IFlowElement)))) > 0)
+                                m.ReturnType.GetInterfaces().Contains(typeof(IFlowElement)))))
                         .ToList());
                     }
                     // Catch type load exceptions when assembly can't be loaded 
@@ -237,7 +238,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 .Where(m => m.Name == "Build");
             // If there are no 'Build' methods or if there is no default 
             // constructor then throw an error.
-            if (buildMethods.Count() == 0)
+            if (buildMethods.Any() == false)
             {
                 throw new PipelineConfigurationException(
                     $"Builder '{builderType.FullName}' for " +
@@ -285,8 +286,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // If there are no matching build methods or multiple possible 
             // build methods based on our parameters then throw an exception.
             var possibleBuildMethods = buildMethods.Where(m =>
-                m.GetParameters().Count() == buildParameterList.Count &&
-                m.GetParameters().All(p => buildParameterList.Contains(p.Name.ToLower())));
+                m.GetParameters().Length == buildParameterList.Count &&
+                m.GetParameters().All(p => buildParameterList.Contains(p.Name.ToUpperInvariant())));
 
             StringBuilder buildSignatures = new StringBuilder();
             buildSignatures.AppendLine();
@@ -297,13 +298,18 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     $"{p.Name} ({p.ParameterType.Name})")));
             }
 
-            if (possibleBuildMethods.Count() == 0)
+            if (possibleBuildMethods.Any() == false)
             {
                 StringBuilder methodSignatures = new StringBuilder();
                 methodSignatures.AppendLine();
+                // Build a list of the 'set' methods on this builder
+                // along with their parameter.
                 foreach (var method in builderType.GetRuntimeMethods()
-                    .Where(m => m.IsPublic && m.GetParameters().Count() == 1
-                        && m.DeclaringType.Name.ToLower().Contains("pipeline")))
+                    // Include any methods that are:
+                    // 1. public
+                    // 2. have a single parameter
+                    .Where(m => m.IsPublic && m.GetParameters().Length == 1
+                        && m.DeclaringType.Name.ToUpperInvariant().Contains("BUILDER")))
                 {
                     methodSignatures.AppendLine($"{method.Name} ({method.GetParameters()[0].GetType().Name})");
                 }
@@ -332,12 +338,12 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // values to the parameter list.
             List<object> parameters = new List<object>();
             var buildMethod = possibleBuildMethods.Single();
+            var caseInsensitiveParameters = elementOptions.BuildParameters
+                .ToDictionary(d => d.Key.ToUpperInvariant(), d => d.Value);
             foreach (var parameterInfo in buildMethod.GetParameters())
             {
-                var caseInsensitiveParameters = elementOptions.BuildParameters
-                    .ToDictionary(d => d.Key.ToLower(), d => d.Value);
                 var paramType = parameterInfo.ParameterType;
-                object paramValue = caseInsensitiveParameters[parameterInfo.Name.ToLower()];
+                object paramValue = caseInsensitiveParameters[parameterInfo.Name.ToUpperInvariant()];
                 if (paramType != typeof(string))
                 {
                     paramValue = ParseToType(paramType,
@@ -425,7 +431,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             var parallelInstance = new ParallelElements(
                 LoggerFactory.CreateLogger<ParallelElements>(),
                 parallelElements.ToArray());
-            FlowElements.Add(parallelInstance);
+            elements.Add(parallelInstance);
         }
 
         /// <summary>
@@ -440,12 +446,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // constructor, or a constructor taking a logger factory as an
             // argument.
             var defaultConstructors = builderType.GetConstructors()
-                .Where(c => c.GetParameters().Count() == 0);
+                .Where(c => c.GetParameters().Length == 0);
             var loggerConstructors = builderType.GetConstructors()
-                .Where(c => c.GetParameters().Count() == 1 &&
+                .Where(c => c.GetParameters().Length == 1 &&
                 c.GetParameters()[0].ParameterType == typeof(ILoggerFactory));
-            if (defaultConstructors.Count() == 0 &&
-                loggerConstructors.Count() == 0)
+
+            if (defaultConstructors.Any() == false &&
+                loggerConstructors.Any() == false)
             {
                 return null;
             }
@@ -453,7 +460,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // Create the builder instance using the constructor with a logger
             // factory, or the default constructor if one taking a logger
             // factory is not available.
-            if (loggerConstructors.Count() != 0)
+            if (loggerConstructors.Any())
             {
                 return Activator.CreateInstance(builderType, LoggerFactory);
             }
@@ -494,7 +501,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// are to be used as mandatory parameters to the Build method 
         /// rather than optional builder methods.
         /// </returns>
-        private List<string> ProcessBuildParameters(
+        private static List<string> ProcessBuildParameters(
             IDictionary<string, object> buildParameters,
             Type builderType,
             object builderInstance,
@@ -513,7 +520,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 {
                     // If not then add the parameter to the list of parameters
                     // to pass to the Build method instead. 
-                    buildParameterList.Add(parameter.Key.ToLower());
+                    buildParameterList.Add(parameter.Key.ToUpperInvariant());
                 }
                 else
                 {
@@ -527,13 +534,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                         // The parameter corresponds to a method on the builder
                         // so get the parameters associated with that method.
                         var methodParams = method.GetParameters();
-                        if (methodParams.Count() != 1)
+                        if (methodParams.Length != 1)
                         {
                             throw new PipelineConfigurationException(
                                 $"Method '{method.Name}' on builder " +
                                 $"'{builderType.FullName}' for " +
                                 $"{elementConfigLocation} takes " +
-                                $"{(methodParams.Count() == 0 ? "no parameters " : "more than one parameter. ")}" +
+                                $"{(methodParams.Length == 0 ? "no parameters " : "more than one parameter. ")}" +
                                 $"This is not supported.");
                         }
                         // Call any methods which relate to the build parameters
@@ -585,7 +592,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// This will be added to error messages to help the user identify
         /// any problems.
         /// </param>
-        private void TryParseAndCallMethod(
+        private static void TryParseAndCallMethod(
             object paramValue,
             MethodInfo method,
             Type builderType,
@@ -670,12 +677,12 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The <see cref="MethodInfo"/> of the matching method or null if no
         /// match could be found.
         /// </returns>
-        private List<MethodInfo> GetMethods(string methodName,
+        private static List<MethodInfo> GetMethods(string methodName,
             IEnumerable<MethodInfo> methods)
         {
             int tries = 0;
             List<MethodInfo> matchingMethods = null;
-            string lowerMethodName = methodName.ToLower();
+            string upperMethodName = methodName.ToUpperInvariant();
 
             while (tries < 3 && matchingMethods == null)
             {
@@ -686,13 +693,15 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     case 0:
                         // First try and find a method that matches the
                         // supplied name exactly.
-                        potentialMethods = methods.Where(m => m.Name.ToLower() == lowerMethodName);
+                        potentialMethods = methods.Where(m => 
+                            m.Name.ToUpperInvariant() == upperMethodName);
                         break;
                     case 1:
                         // Next, try and find a method that matches the
                         // supplied name with 'set' added to the start.
-                        string tempName = "set" + lowerMethodName;
-                        potentialMethods = methods.Where(m => m.Name.ToLower() == tempName);
+                        string tempName = "SET" + upperMethodName;
+                        potentialMethods = methods.Where(m => 
+                            m.Name.ToUpperInvariant() == tempName);
                         break;
                     case 2:
                         // Finally, see if there is a method that has an
@@ -703,18 +712,19 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                             try
                             {
                                 var attributes = method.GetCustomAttributes<AlternateNameAttribute>();
-                                if (attributes.Any(a => a.Name.ToLower() == lowerMethodName))
+                                if (attributes.Any(a => a.Name.ToUpperInvariant() == upperMethodName))
                                 {
                                     tempMethods.Add(method);
                                 }
                                 else if (attributes.Any(
-                                    a => a.Name.ToLower() ==
-                                    "set" + lowerMethodName))
+                                    a => a.Name.ToUpperInvariant() ==
+                                    "SET" + upperMethodName))
                                 {
                                     tempMethods.Add(method);
                                 }
                             }
-                            catch { }
+                            catch (NotSupportedException) { }
+                            catch (TypeLoadException) { }
                         }
                         potentialMethods = tempMethods;
                         break;
@@ -722,7 +732,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                         break;
                 }
 
-                if (potentialMethods != null && potentialMethods.Count() > 0)
+                if (potentialMethods != null && potentialMethods.Any())
                 {
                     matchingMethods = potentialMethods.ToList();
                 }
@@ -753,7 +763,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         {
             int tries = 0;
             Type builderType = null;
-            string lowerBuilderName = builderName.ToLower();
+            string upperBuilderName = builderName.ToUpperInvariant();
 
             while (tries < 3 && builderType == null)
             {
@@ -765,14 +775,14 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                         // First try and find a builder that matches the
                         // supplied name exactly.
                         potentialBuilders = _elementBuilders
-                            .Where(t => t.Name.ToLower() == lowerBuilderName);
+                            .Where(t => t.Name.ToUpperInvariant() == upperBuilderName);
                         break;
                     case 1:
-                        string tempName = lowerBuilderName + "builder";
+                        string tempName = upperBuilderName + "BUILDER";
                         // Next, try and find a builder that matches the
                         // supplied name with 'builder' added to the end.
                         potentialBuilders = _elementBuilders
-                            .Where(t => t.Name.ToLower() == tempName);
+                            .Where(t => t.Name.ToUpperInvariant() == tempName);
                         break;
                     case 2:
                         // Finally, see if there is a builder that has an
@@ -783,12 +793,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                             try
                             {
                                 var attributes = builder.GetCustomAttributes<AlternateNameAttribute>();
-                                if (attributes.Any(a => a.Name.ToLower() == lowerBuilderName))
+                                if (attributes.Any(a => a.Name.ToUpperInvariant() == upperBuilderName))
                                 {
                                     builders.Add(builder);
                                 }
                             }
-                            catch { }
+                            catch (NotSupportedException) { }
+                            catch (TypeLoadException) { }
                         }
                         potentialBuilders = builders;
                         break;
@@ -824,7 +835,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             return builderType;
         }
         
-        private object ParseToType(Type targetType, string value, string errorTextPrefix)
+        private static object ParseToType(Type targetType, string value, string errorTextPrefix)
         {
             object result = null;
 
@@ -899,7 +910,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             return result;
         }
         
-        private IEnumerable<string> ParseCsv(string csv)
+        private static IEnumerable<string> ParseCsv(string csv)
         {
             int pos = 0;
             bool inquotes = false;

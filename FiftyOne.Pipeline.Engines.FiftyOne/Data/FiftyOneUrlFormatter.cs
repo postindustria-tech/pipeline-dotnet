@@ -35,8 +35,48 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
     /// </summary>
     public class FiftyOneUrlFormatter : IDataUpdateUrlFormatter
     {
+        /// <summary>
+        /// Get the URL to call to request an updated version of the 
+        /// supplied data file.
+        /// </summary>
+        /// <param name="dataFile">
+        /// The data file to build an update URL for.
+        /// </param>
+        /// <returns>
+        /// The URL to call in order to check for and download an update.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied data file is null
+        /// </exception>
+        [Obsolete("Use the GetFormattedDataUpdateUri method instead." +
+            "This method may be removed in future versions.")]
+#pragma warning disable CA1055 // Uri return values should not be strings
         public string GetFormattedDataUpdateUrl(IAspectEngineDataFile dataFile)
+#pragma warning restore CA1055 // Uri return values should not be strings
         {
+            return GetFormattedDataUpdateUri(dataFile).AbsoluteUri;
+        }
+
+        /// <summary>
+        /// Get the URL to call to request an updated version of the 
+        /// supplied data file.
+        /// </summary>
+        /// <param name="dataFile">
+        /// The data file to build an update URL for.
+        /// </param>
+        /// <returns>
+        /// The URL to call in order to check for and download an update.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied data file is null
+        /// </exception>
+        public Uri GetFormattedDataUpdateUri(IAspectEngineDataFile dataFile)
+        {
+            if (dataFile == null)
+            {
+                throw new ArgumentNullException(nameof(dataFile));
+            }
+
             var fiftyOneDataFile = dataFile as IFiftyOneDataFile;
             if (fiftyOneDataFile != null)
             {
@@ -46,11 +86,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
                 "Download=True",
                 "Type=" + fiftyOneDataFile.DataDownloadType,
                 };
-                return $"{dataFile.Configuration.DataUpdateUrl}?{string.Join("&", parameters)}";
+                return new Uri($"{dataFile.Configuration.DataUpdateUrl}?{string.Join("&", parameters)}");
             }
             else
             {
-                return dataFile.Configuration.DataUpdateUrl;
+                return new Uri(dataFile.Configuration.DataUpdateUrl);
             }
         }
     }

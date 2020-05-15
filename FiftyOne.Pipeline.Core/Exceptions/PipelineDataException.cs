@@ -30,7 +30,7 @@ namespace FiftyOne.Pipeline.Core.Exceptions
     /// Exception that can be thrown when the available data does not 
     /// match that which is expected.
     /// </summary>
-    public class PipelineDataException : Exception
+    public class PipelineDataException : PipelineException
     {
         /// <summary>
         /// Constructor

@@ -34,7 +34,9 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
     /// <summary>
     /// Extension methods used by the Web.Framework project.
     /// </summary>
+#pragma warning disable CA1724 // Type names should not match namespaces
     public static class Extensions
+#pragma warning restore CA1724 // Type names should not match namespaces
     {
         /// <summary>
         /// Find and add a configuration file in the web application's

@@ -22,6 +22,7 @@
 
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -35,6 +36,15 @@ namespace FiftyOne.Pipeline.JsonBuilder.Data
     /// </summary>
     public class JsonBuilderElementData : ElementDataBase, IJsonBuilderElementData
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="logger">
+        /// The logger for this instance
+        /// </param>
+        /// <param name="pipeline">
+        /// The pipeline this instance was created by.
+        /// </param>
         public JsonBuilderElementData(
             ILogger<JsonBuilderElementData> logger,
             IPipeline pipeline)
@@ -42,7 +52,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.Data
         { }
 
         /// <summary>
-        /// Json object property.
+        /// The JSON output produced by the 
+        /// <see cref="JsonBuilderElement"/>
         /// </summary>
         public string Json
         {

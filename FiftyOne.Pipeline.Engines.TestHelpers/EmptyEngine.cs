@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace FiftyOne.Pipeline.Engines.TestHelpers
 {
@@ -86,8 +87,9 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
             aspectData.ValueOne = 1;
             if (_processCost.HasValue)
             {
-                Thread.Sleep(_processCost.Value);
+                Task.Delay(_processCost.Value).Wait();
             }
+            aspectData.ValueTwo = 2;
         }
 
         protected override void ManagedResourcesCleanup()

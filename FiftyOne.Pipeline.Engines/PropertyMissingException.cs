@@ -53,6 +53,27 @@ namespace FiftyOne.Pipeline.Engines
         /// <summary>
         /// Constructor
         /// </summary>
+        /// <param name="message">
+        /// The exception message
+        /// </param>
+        public PropertyMissingException(string message) : base(message) { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="message">
+        /// The exception message
+        /// </param>
+        /// <param name="innerException">
+        /// The inner exception that triggered this exception.
+        /// </param>
+        public PropertyMissingException(string message, 
+            Exception innerException) 
+            : base(message, innerException) { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
         /// <param name="reason">
         /// The reason the property is not present
         /// </param>

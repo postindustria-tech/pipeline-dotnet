@@ -24,9 +24,21 @@ using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FiftyOne.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
+using System;
 
 namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
+    /// <summary>
+    /// A base class for engine builders for on-premise engines that use 
+    /// a single data file and use the 51Degrees Distributor web service to 
+    /// check for and download data updates.
+    /// </summary>
+    /// <typeparam name="TBuilder">
+    /// The specific type of the builder.
+    /// </typeparam>
+    /// <typeparam name="TEngine">
+    /// The type of the engine that this builder builds.
+    /// </typeparam>
     public abstract class FiftyOneOnPremiseAspectEngineBuilderBase<TBuilder, TEngine> :
         SingleFileAspectEngineBuilderBase<TBuilder, TEngine>
         where TBuilder : FiftyOneOnPremiseAspectEngineBuilderBase<TBuilder, TEngine>
@@ -34,6 +46,10 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     {
         private string _dataDownloadType;
 
+        /// <summary>
+        /// The default value to use for the 'Type' parameter when sending
+        /// a request to the Distributor
+        /// </summary>
         protected abstract string DefaultDataDownloadType { get; }
 
         /// <summary>
@@ -44,7 +60,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             IDataUpdateService dataUpdateService) : 
             base(dataUpdateService)
         {
-            SetDataUpdateUrl("https://distributor.51degrees.com/api/v2/download");
+            SetDataUpdateUrl(new Uri("https://distributor.51degrees.com/api/v2/download"));
             SetDataUpdateUrlFormatter(new FiftyOneUrlFormatter());
         }
 
@@ -69,6 +85,15 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             return this as TBuilder;
         }
 
+        /// <summary>
+        /// This method is called when the builder needs to create a new 
+        /// <see cref="AspectEngineDataFile"/> instance.
+        /// </summary>
+        /// <returns>
+        /// A new <see cref="FiftyOneDataFile"/> instance with the 
+        /// DataDownloadType property set based on the configuration
+        /// of this builder.
+        /// </returns>
         protected override AspectEngineDataFile NewAspectEngineDataFile()
         {
             return new FiftyOneDataFile(typeof(TEngine))

@@ -35,7 +35,12 @@ namespace FiftyOne.Pipeline.Core.FlowElements
     /// which then automatically use the pipeline when their Process 
     /// method is called.
     /// </summary>
+#pragma warning disable CA1724 // Class name 'Pipeline' conflicts with namespace
+    // Pipeline is the correct name for both the Class and the namespace.
+    // Users will generally be dealing with the IPipeline interface 
+    // rather than the class directly.
     public class Pipeline : IPipelineInternal
+#pragma warning restore CA1724 // Class name 'Pipeline' conflicts with namespace
     {
         /// <summary>
         /// The pipeline maintains a dictionary of the elements it contains 
@@ -253,6 +258,11 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </param>
         public void Process(IFlowData data)
         {
+            if(data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             _logger.LogDebug($"Pipeline '{GetHashCode()}' started processing.");
 
             foreach (var element in _flowElements)
@@ -260,9 +270,17 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 try
                 {
                     element.Process(data);
+#pragma warning disable CS0618 // Type or member is obsolete
+                    // This usage will be replaced once the Cancellation Token
+                    // mechanism is available.
                     if (data.Stop) break;
+#pragma warning restore CS0618 // Type or member is obsolete
                 }
+#pragma warning disable CA1031 // Do not catch general exception types
+                // We want to catch any exception here so that the
+                // Pipeline can manage it.
                 catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
                 {
                     // If an error occurs then store it in the 
                     // FlowData object.
@@ -437,7 +455,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 // Get any properties that match the supplied name.
                 var properties = FlowElements
                     .SelectMany(e => e.Properties)
-                    .Where(p => p.Name.ToLower() == propertyName.ToLower());
+                    .Where(p => p.Name.ToUpperInvariant() == propertyName.ToUpperInvariant());
 
 
                 // If there is more than one matching property then log an error.
@@ -450,7 +468,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     throw new PipelineDataException(message);
                 }
                 // If there are no matching properties then log an error.
-                if (properties.Count() == 0)
+                if (properties.Any() == false)
                 {
                     string message = $"Could not find property '{propertyName}'.";
                     _logger.LogError(message);
@@ -471,18 +489,29 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <param name="disposing">
         /// True if Dispose is being called 'correctly' from the Dispose
         /// method.
-        /// False if Dispose is being called by the finaliser.
+        /// False if Dispose is being called by the finalizer.
         /// </param>
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
             {
-                if (disposing && _autoDisposeElements)
+                if (disposing)
                 {
-                    foreach (var element in _flowElements)
+                    _logger.LogInformation($"Pipeline '{GetHashCode()}' disposed.");
+                    if (_autoDisposeElements)
                     {
-                        (element as IDisposable).Dispose();
+                        foreach (var element in _flowElements)
+                        {
+                            (element as IDisposable).Dispose();
+                        }
                     }
+                }
+                else
+                {
+                    _logger.LogWarning($"Pipeline '{GetHashCode()}' finalized. " +
+                        $"It is recommended that instance lifetimes are managed " +
+                        $"explicitly with a 'using' block or calling the Dispose " +
+                        $"method as part of a 'finally' block.");
                 }
 
                 _disposed = true;
@@ -490,13 +519,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         }
 
         /// <summary>
-        /// Finaliser
+        /// Finalizer
         /// </summary>
         ~Pipeline()
         {
-            _logger.LogWarning($"Pipeline '{GetHashCode()}' finalised. It is recommended " +
-                $"that instance lifetimes are managed explicitly with a 'using' " +
-                $"block or calling the Dispose method as part of a 'finally' block.");
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(false);
         }
@@ -506,10 +532,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </summary>
         public void Dispose()
         {
-            _logger.LogInformation($"Pipeline '{GetHashCode()}' disposed.");
             Dispose(true);
-            // This line is required to prevent the finaliser above from
-            // firing when this instance is finalised.
+            // This line is required to prevent the finalizer above from
+            // firing when this instance is finalized.
             GC.SuppressFinalize(this);
         }
         #endregion

@@ -150,6 +150,22 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// </returns>
         public TBuilder SetDataUpdateUrl(string url)
         {
+            _dataFileBuilder.SetDataUpdateUrl(new Uri(url));
+            return this as TBuilder;
+        }
+
+        /// <summary>
+        /// Configure the engine to use the specified URL when looking for
+        /// an updated data file.
+        /// </summary>
+        /// <param name="url">
+        /// The URL to check for a new data file.
+        /// </param>
+        /// <returns>
+        /// This builder instance.
+        /// </returns>
+        public TBuilder SetDataUpdateUrl(Uri url)
+        {
             _dataFileBuilder.SetDataUpdateUrl(url);
             return this as TBuilder;
         }

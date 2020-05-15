@@ -46,6 +46,12 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         where TBuilder : AspectEngineBuilderBase<TBuilder, TEngine>
         where TEngine : IAspectEngine
     {
+        /// <summary>
+        /// A list of the string keys of properties that the user wants
+        /// the engine to determine values for.
+        /// Where this is an empty list, all properties should be
+        /// included.
+        /// </summary>
         protected List<string> Properties { get; } = new List<string>();
         private CacheConfiguration _cacheConfig;
         private LazyLoadingConfiguration _lazyLoadingConfig;
@@ -162,7 +168,10 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
             if (_cacheConfig != null)
             {
                 // Create and register the results cache.
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                // The engine manages the cache lifetime.
                 engine.SetCache(new DefaultFlowCache(_cacheConfig));
+#pragma warning restore CA2000 // Dispose objects before losing scope
             }
             if(_lazyLoadingConfig != null)
             {

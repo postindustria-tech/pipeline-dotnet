@@ -19,15 +19,13 @@
  * in the end user terms of the application under an appropriate heading, 
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
-
-using FiftyOne.Pipeline.Core.FlowElements;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-
+ 
 namespace FiftyOne.Pipeline.Engines.FlowElements
 {
+    /// <summary>
+    /// An interface for aspect engines that process responses from
+    /// a cloud service.
+    /// </summary>
     public interface ICloudAspectEngine : IAspectEngine
     {
     }

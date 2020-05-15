@@ -31,7 +31,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.IO;
 
 
-/// @example ExampleWebSite/Startup.cs
+/// @example NetCore2.1/Startup.cs
 /// ASP.NET core example
 /// 
 /// This example shows how to:

@@ -27,10 +27,12 @@ using FiftyOne.Pipeline.Core.TypedMap;
 using FiftyOne.Pipeline.Engines.Caching;
 using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.TestHelpers;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -111,7 +113,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                 engineData.ProcessTask.IsCompleted == false;
 
             // Assert
-            Assert.AreEqual(1, engineData.ValueOne);
+            Assert.AreEqual(2, engineData.ValueTwo);
             // Check that the task is now complete (because the code to get
             // the property value will wait until it is complete)
             bool valueReturnedAfterTaskComplete =
@@ -157,7 +159,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             _engine.Process(data);
             // Attempt to get the value. This should cause the timeout 
             // to be triggered.
-            var result = engineData.ValueOne;
+            var result = engineData.ValueTwo;
 
             // No asserts needed. Just the ExpectedException attribute
             // on the method.
@@ -221,7 +223,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             }
 
             // Attempt to get the value.
-            var result = engineData.ValueOne;
+            var result = engineData.ValueTwo;
             // These asserts are not really needed but can help work out
             // what is happening if the test fails to throw the expected
             // exception.
@@ -342,6 +344,118 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                     $"One or more errors occurred. ({exceptionMessage})",
                     ((AggregateException)e).InnerExceptions[1].Message);
             }
+        }
+
+
+
+        /// <summary>
+        /// Test that accessing results from an engine with Lazy Loading 
+        /// enabled works as expected.
+        /// <list type="number">
+        /// <item>
+        /// The call to <c>flowData.Process()</c> should complete well before
+        /// the configured 'process cost' of the dummy engine.
+        /// </item>
+        /// <item>
+        /// As 'ValueOne' is populated before the dummy engine starts waiting
+        /// to simulate an expensive operation, it's value should be 
+        /// accessible almost immediately.
+        /// </item>
+        /// <item>
+        /// As 'ValueTwo' is populated after the dummy engine has
+        /// finished waiting, it's value should not be accessible 
+        /// until after the configured 'process cost' time has passed.
+        /// </item>
+        /// </list>
+        /// </summary>
+        [TestMethod]
+        public void AspectEngineLazyLoad_Itegrated()
+        {
+            // Arrange
+            // Set the process time to half of the configured timeout
+            var processCostMs = _timeoutMS / 2;
+            _engine.SetProcessCost(TimeSpan.TicksPerMillisecond * processCostMs);
+            var pipeline = new PipelineBuilder(_loggerFactory)
+                .AddFlowElement(_engine)
+                .Build();
+
+            // Act
+            var stopwatch = new Stopwatch();
+            var flowData = pipeline.CreateFlowData();
+            Trace.WriteLine("Process starting");
+            stopwatch.Start();
+            flowData.Process();
+            long processTimeMs = stopwatch.ElapsedMilliseconds;
+            Trace.WriteLine($"Process complete in {processTimeMs} ms");
+            Assert.IsTrue(processTimeMs < processCostMs,
+                $"Process time should have been less than " +
+                $"{processCostMs} ms but it took {processTimeMs} ms.");
+
+            // Assert
+            var data = flowData.Get<EmptyEngineData>();
+            Assert.IsNotNull(data);
+            Assert.AreEqual(1, data.ValueOne);
+            long valueOneTimeMs = stopwatch.ElapsedMilliseconds;
+            Trace.WriteLine($"Value one accessed after {valueOneTimeMs} ms");
+            Assert.AreEqual(2, data.ValueTwo);
+            long valueTwoTimeMs = stopwatch.ElapsedMilliseconds;
+            Trace.WriteLine($"Value two accessed after {valueTwoTimeMs} ms");
+
+            Assert.IsTrue(valueOneTimeMs < processCostMs,
+                $"Accessing value one should have taken less than " +
+                $"{processCostMs} ms from the time the Process method" +
+                $"was called but it took {valueOneTimeMs} ms.");
+            // Note - this should really take at least 'processCostMs'
+            // but the accuracy of the timer seems to cause issues
+            // if we are being that exact.
+            Assert.IsTrue(valueTwoTimeMs >= processCostMs / 2,
+                $"Accessing value two should have taken at least " +
+                $"{processCostMs / 2} ms from the time the Process method" +
+                $"was called but it only took {valueTwoTimeMs} ms.");
+        }
+
+        /// <summary>
+        /// Test that accessing results using the 'AsDictionary' method
+        /// from an engine with Lazy Loading enabled works as expected.
+        /// The call to 'AsDictionary' should wait until processing 
+        /// is complete before returning and all expected properties
+        /// should be present in the dictionary.
+        /// </summary>
+        [TestMethod]
+        public void AspectEngineLazyLoad_Itegrated_AsDictionary()
+        {
+            // Arrange
+            var processCostMs = _timeoutMS / 2;
+            _engine.SetProcessCost(TimeSpan.TicksPerMillisecond * processCostMs);
+            var pipeline = new PipelineBuilder(_loggerFactory)
+                .AddFlowElement(_engine)
+                .Build();
+
+            // Act
+            var stopwatch = new Stopwatch();
+            var flowData = pipeline.CreateFlowData();
+            Trace.WriteLine("Process starting");
+            stopwatch.Start();
+            flowData.Process();
+            long processTimeMs = stopwatch.ElapsedMilliseconds;
+            Trace.WriteLine($"Process complete in {processTimeMs} ms");
+
+            // Assert
+            var data = flowData.Get<EmptyEngineData>();
+            Assert.IsNotNull(data);
+            var dictionary = data.AsDictionary();
+            long dictTimeMs = stopwatch.ElapsedMilliseconds;
+            Trace.WriteLine($"Dictionary retrieved after {dictTimeMs} ms");
+            Assert.AreEqual(1, dictionary[EmptyEngineData.VALUE_ONE_KEY]);
+            Assert.AreEqual(2, dictionary[EmptyEngineData.VALUE_TWO_KEY]);
+
+            // Note - this should really take at least 'processCostMs'
+            // but the accuracy of the timer seems to cause issues
+            // if we are being that exact.
+            Assert.IsTrue(dictTimeMs > processCostMs / 2,
+                $"Accessing the dictionary should have taken at least " +
+                $"{processCostMs / 2} ms from the time the Process method" +
+                $"was called but it only took {dictTimeMs} ms.");
         }
     }
 }

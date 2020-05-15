@@ -37,7 +37,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// <summary>
         /// URL relating to the property.
         /// </summary>
+#pragma warning disable CA1056 // Uri properties should not be strings
         string Url { get; }
+#pragma warning restore CA1056 // Uri properties should not be strings
 
         /// <summary>
         /// Order to display the property.
@@ -72,23 +74,37 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// <summary>
         /// The component which the property belongs to.
         /// </summary>
+#pragma warning disable CA1721 // Property names should not match get methods
+        // Method marked as obsolete. warning suppression can
+        // be removed once the method is removed.
         IComponentMetaData Component { get; }
+#pragma warning restore CA1721 // Property names should not match get methods
 
         /// <summary>
         /// The list of values which relate to the property i.e. the values
         /// which can be returned for this property.
         /// </summary>
+#pragma warning disable CA1721 // Property names should not match get methods
+        // This would be a breaking change.
+        // Note that 'GetValues' has a slightly different purpose as
+        // it returns an IEnumerable where 'Value' returns an IReadOnlyList.
         IReadOnlyList<IValueMetaData> Values { get; }
+#pragma warning restore CA1721 // Property names should not match get methods
 
         /// <summary>
         /// The default value for this property.
         /// </summary>
+#pragma warning disable CA1721 // Property names should not match get methods
+        // Method marked as obsolete. warning suppression can
+        // be removed once the method is removed.
         IValueMetaData DefaultValue { get; }
+#pragma warning restore CA1721 // Property names should not match get methods
 
         /// <summary>
         /// Get the component which the property belongs to.
         /// </summary>
         /// <returns>The component</returns>
+        [Obsolete("Will be removed in a future version")]
         IComponentMetaData GetComponent();
 
         /// <summary>
@@ -113,6 +129,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// Get the default value for this property.
         /// </summary>
         /// <returns>Default value</returns>
+        [Obsolete("Will be removed in a future version")]
         IValueMetaData GetDefaultValue();
     }
 }

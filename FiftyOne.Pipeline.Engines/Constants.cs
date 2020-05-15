@@ -20,17 +20,44 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using System.Resources;
 using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("FiftyOne.Pipeline.Engines.Tests")]
 
 namespace FiftyOne.Pipeline.Engines
 {
-    public class Constants
+    /// <summary>
+    /// Static class containing various constants that are used by the 
+    /// Pipeline and/or are helpful to callers. 
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming",
+        "CA1707:Identifiers should not contain underscores",
+        Justification = "51Degrees coding style is for constant names " +
+            "to be all-caps with an underscore to separate words.")]
+    public static class Constants
     {
+        /// <summary>
+        /// The prefix that is added to all cookies set by 51Degrees
+        /// client-side code that can be used as evidence.
+        /// </summary>
         public const string FIFTYONE_COOKIE_PREFIX = "51d_";
+        /// <summary>
+        /// The default name of the cookie that holds the ID for the 
+        /// ASP.NET session.
+        /// </summary>
         public const string DEFAULT_ASP_COOKIE_NAME = "asp.net_sessionid";
 
+        /// <summary>
+        /// Default polling interval for the data update service
+        /// in seconds.
+        /// </summary>
         public const int DATA_UPDATE_POLLING_DEFAULT = 30 * 60;
+        /// <summary>
+        /// Default randomization to be applied to the calculated
+        /// update timer interval in seconds.
+        /// This is used to help prevent many requests hitting the 
+        /// update distribution endpoint at exactly the same time.
+        /// </summary>
         public const int DATA_UPDATE_RANDOMISATION_DEFAULT = 10 * 60;
     }
 }

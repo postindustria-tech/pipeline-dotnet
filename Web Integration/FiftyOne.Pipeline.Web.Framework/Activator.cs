@@ -64,7 +64,11 @@ namespace FiftyOne.Pipeline.Web.Framework
                 {
                     RegisterModule();
                 }
+#pragma warning disable CA1031 // Do not catch general exception types
+                // Regardless of the exception that occurs here,
+                // we don't want to prevent the server from starting up.
                 catch (Exception)
+#pragma warning restore CA1031 // Do not catch general exception types
                 {
                     // Don't prevent the server from starting up.
                 }

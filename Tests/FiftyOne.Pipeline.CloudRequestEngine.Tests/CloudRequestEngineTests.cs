@@ -60,7 +60,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         {
             string resourceKey = "resource_key";
             string userAgent = "iPhone";
-            ConfigureMockedClient();
+            ConfigureMockedClient(r => 
+                r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
+                && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
+            );
 
             var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
                 .SetResourceKey(resourceKey)
@@ -86,8 +89,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ItExpr.Is<HttpRequestMessage>(req =>
                   req.Method == HttpMethod.Post  // we expected a POST request
                   && req.RequestUri == expectedUri // to this uri
-                  && req.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
-                  && req.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
                ),
                ItExpr.IsAny<CancellationToken>()
             );
@@ -103,11 +104,19 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             string resourceKey = "resource_key";
             string userAgent = "iPhone";
             string licenseKey = "ABCDEFG";
-            ConfigureMockedClient();
+            ConfigureMockedClient(r =>
+                  r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
+                  && r.Content.ReadAsStringAsync().Result.Contains($"license={licenseKey}") // content contains licenseKey
+                  && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains user agent
+            );
 
+#pragma warning disable CS0618 // Type or member is obsolete
+            // SetLicensekey is obsolete but we still want to test that
+            // it works as intended.
             var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
                 .SetResourceKey(resourceKey)
                 .SetLicenseKey(licenseKey)
+#pragma warning restore CS0618 // Type or member is obsolete
                 .Build();
 
             using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
@@ -130,9 +139,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ItExpr.Is<HttpRequestMessage>(req =>
                   req.Method == HttpMethod.Post  // we expected a POST request
                   && req.RequestUri == expectedUri // to this uri
-                  && req.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
-                  && req.Content.ReadAsStringAsync().Result.Contains($"license={licenseKey}") // content contains licenseKey
-                  && req.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains user agent
                ),
                ItExpr.IsAny<CancellationToken>()
             );
@@ -188,7 +194,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         }
     }
 }";
-            ConfigureMockedClient();
+            ConfigureMockedClient(r => true);
 
             var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
                 .SetResourceKey("key")
@@ -209,7 +215,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         /// <summary>
         /// Setup _httpClient to respond with the configured messages.
         /// </summary>
-        private void ConfigureMockedClient()
+        private void ConfigureMockedClient(
+            Func<HttpRequestMessage, bool> expectedJsonParameters)
         {
             // ARRANGE
             _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
@@ -219,8 +226,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                // Setup the PROTECTED method to mock
                .Setup<Task<HttpResponseMessage>>(
                   "SendAsync",
-                  ItExpr.Is<HttpRequestMessage>(r =>
-                      r.RequestUri.AbsolutePath.ToLower().EndsWith("json")),
+                  ItExpr.Is<HttpRequestMessage>(r => expectedJsonParameters(r)
+                      && r.RequestUri.AbsolutePath.ToLower().EndsWith("json")),
                   ItExpr.IsAny<CancellationToken>()
                )
                // prepare the expected response of the mocked http call

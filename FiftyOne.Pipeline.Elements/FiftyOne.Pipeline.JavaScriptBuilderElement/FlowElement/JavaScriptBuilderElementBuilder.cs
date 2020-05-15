@@ -29,6 +29,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.Data;
+using System.Globalization;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 {
@@ -37,15 +38,39 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
     /// </summary>
     public class JavaScriptBuilderElementBuilder
     {
-        protected ILoggerFactory _loggerFactory;
-        protected ILogger _logger;
+        private ILoggerFactory _loggerFactory;
+        /// <summary>
+        /// The logger for this instance.
+        /// </summary>
+        protected ILogger Logger { get; private set; }
+        
+        /// <summary>
+        /// The host name to use when creating a callback URL.
+        /// </summary>
+        protected string Host { get; private set;} = string.Empty;
+        /// <summary>
+        /// The end point (i.e. the relative URL) to use when creating 
+        /// a callback URL.
+        /// </summary>
+        protected string Endpoint { get; private set; } = string.Empty;
+        /// <summary>
+        /// The protocol to use when creating a callback URL.
+        /// </summary>
+        protected string Protocol { get; private set; } = string.Empty;
+        /// <summary>
+        /// The name of the JavaScript object that will be created.
+        /// </summary>
+        protected string ObjName { get; private set; } = string.Empty;
+        /// <summary>
+        /// If set to false, the JavaScript will automatically delete
+        /// any cookies prefixed with 51D_
+        /// </summary>
+        protected bool EnableCookies { get; private set; }
 
-        protected string _host = string.Empty;
-        protected string _endpoint = string.Empty;
-        protected string _protocol = string.Empty;
-        protected string _objName = string.Empty;
-        protected bool _enableCookies;
-        protected bool _minify = true;
+        /// <summary>
+        /// If set to true, the JavaScript output will be minified
+        /// </summary>
+        protected bool Minify { get; private set; } = true;
 
         /// <summary>
         /// Constructor.
@@ -56,7 +81,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         public JavaScriptBuilderElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
-            _logger = _loggerFactory.CreateLogger<JavaScriptBuilderElementBuilder>();
+            Logger = _loggerFactory.CreateLogger<JavaScriptBuilderElementBuilder>();
         }
 
         /// <summary>
@@ -67,7 +92,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetEnableCookies(bool enableCookies)
         {
-            _enableCookies = enableCookies;
+            EnableCookies = enableCookies;
             return this;
         }
 
@@ -79,7 +104,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetHost(string host)
         {
-            _host = host;
+            Host = host;
             return this;
         }
 
@@ -90,7 +115,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <returns></returns>
         public JavaScriptBuilderElementBuilder SetEndpoint(string endpoint)
         {
-            _endpoint = endpoint;
+            Endpoint = endpoint;
             return this;
         }
 
@@ -106,7 +131,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             if (string.Equals(protocol, "http", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(protocol, "https", StringComparison.OrdinalIgnoreCase))
             {
-                _protocol = protocol;
+                Protocol = protocol;
             }
             else
             {
@@ -129,24 +154,37 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 
             if (match.Value == objName)
             {
-                _objName = objName;
+                ObjName = objName;
             }
             else
             {
-                var ex = new PipelineConfigurationException("JavaScriptBuilder" +
-                    " ObjectName is invalid. This must be a valid JavaScript" +
-                    " type identifier.");
-
-                _logger.LogCritical(ex, "Value for ObjectName is invalid.");
-                throw ex;
+                var msg = string.Format(CultureInfo.InvariantCulture,
+                    Messages.ExceptionObjectNameInvalid,
+                    objName);
+                Logger.LogCritical(msg);
+                throw new PipelineConfigurationException(msg);
             }
 
             return this;
         }
 
+        /// <summary>
+        /// Enable or disable minification of the JavaScript that is 
+        /// produced by the <see cref="JavaScriptBuilderElement"/>.
+        /// </summary>
+        /// <remarks>
+        /// The <code>NUglify</code> package is used to minify the
+        /// output.
+        /// </remarks>
+        /// <param name="minify">
+        /// True to minify the output. False to not.
+        /// </param>
+        /// <returns>
+        /// This builder.
+        /// </returns>
         public JavaScriptBuilderElementBuilder SetMinify(bool minify)
         {
-            _minify = minify;
+            Minify = minify;
             return this;
         }
 
@@ -158,12 +196,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         {
             return new JavaScriptBuilderElement(_loggerFactory.CreateLogger<JavaScriptBuilderElement>(),
                 CreateData,
-                _endpoint,
-                _objName,
-                _enableCookies,
-                _minify, 
-                _host, 
-                _protocol);
+                Endpoint,
+                ObjName,
+                EnableCookies,
+                Minify, 
+                Host, 
+                Protocol);
         }
 
         private IJavaScriptBuilderElementData CreateData(

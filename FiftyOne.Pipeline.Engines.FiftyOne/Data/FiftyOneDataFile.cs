@@ -29,8 +29,16 @@ using System.Text;
 
 namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
+    /// <summary>
+    /// Class that stores meta-data relating to a data file associated
+    /// with a 51Degrees engine.
+    /// </summary>
     public class FiftyOneDataFile : AspectEngineDataFile, IFiftyOneDataFile
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="engineType"></param>
         public FiftyOneDataFile(Type engineType) : 
             base(engineType)
         {

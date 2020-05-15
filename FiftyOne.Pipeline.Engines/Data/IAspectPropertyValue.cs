@@ -24,9 +24,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using FiftyOne.Pipeline.Engines.Exceptions;
+using FiftyOne.Pipeline.Engines.FlowElements;
+using FiftyOne.Pipeline.Engines.Services;
 
 namespace FiftyOne.Pipeline.Engines.Data
 {
+    /// <summary>
+    /// Aspect 
+    /// </summary>
     public interface IAspectPropertyValue
     {
         /// <summary>
@@ -50,6 +55,23 @@ namespace FiftyOne.Pipeline.Engines.Data
         string NoValueMessage { get; }
     }
 
+    /// <summary>
+    /// Represents a property of an <see cref="IAspectEngine"/> for which 
+    /// we may not know the value.
+    /// </summary>
+    /// <remarks>
+    /// Some reasons for a value not being set could be:
+    /// - Some required evidence was not supplied.
+    /// - No match could be found using the supplied evidence.
+    /// Note that this is distinct from the related concept of a given
+    /// property not being accessible. (For example, due to the property 
+    /// only being available in a larger data file) In that case, 
+    /// the situation is handled by an <see cref="IMissingPropertyService"/>
+    /// instance.
+    /// </remarks>
+    /// <typeparam name="T">
+    /// The type of data stored within the instance.
+    /// </typeparam>
     public interface IAspectPropertyValue<T> : IAspectPropertyValue
     {
         /// <summary>

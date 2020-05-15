@@ -60,13 +60,29 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </summary>
 		private IList<IElementPropertyMetaData> _properties;
 
-        protected string _host;
-        protected bool _overrideHost;
-        protected string _endpoint;
-        protected string _protocol;
-        protected bool _overrideProtocol;
-        protected string _objName;
-        protected bool _enableCookies;
+        /// <summary>
+        /// The host name to use when creating a callback URL.
+        /// </summary>
+        protected string Host { get; private set; }
+        /// <summary>
+        /// The end point (i.e. the relative URL) to use when creating 
+        /// a callback URL.
+        /// </summary>
+        protected string Endpoint { get; private set; }
+        /// <summary>
+        /// The protocol to use when creating a callback URL.
+        /// </summary>
+        protected string Protocol { get; private set; }
+        /// <summary>
+        /// The name of the JavaScript object that will be created.
+        /// </summary>
+        protected string ObjName { get; private set; }
+        /// <summary>
+        /// If set to false, the JavaScript will automatically delete
+        /// any cookies prefixed with 51D_
+        /// </summary>
+        protected bool EnableCookies { get; private set; }
+
         private bool _minify;
         private StubbleVisitorRenderer _stubble;
         private Assembly _assembly;
@@ -161,11 +177,11 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                         true)
                 };
 
-            _host = host;
-            _endpoint = endpoint;
-            _protocol = protocol;
-            _objName = string.IsNullOrEmpty(objectName) ? Constants.DEFAULT_OBJECT_NAME : objectName;
-            _enableCookies = enableCookies;
+            Host = host;
+            Endpoint = endpoint;
+            Protocol = protocol;
+            ObjName = string.IsNullOrEmpty(objectName) ? Constants.DEFAULT_OBJECT_NAME : objectName;
+            EnableCookies = enableCookies;
             _minify = minify;
 
             _stubble = new StubbleBuilder().Build();
@@ -179,6 +195,9 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             }
         }
 
+        /// <summary>
+        /// Cleanup any managed resources.
+        /// </summary>
 		protected override void ManagedResourcesCleanup()
 		{ }
 
@@ -186,24 +205,28 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// Default process method.
         /// </summary>
         /// <param name="data"></param>
-		protected override void ProcessInternal(IFlowData data)
-		{
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        protected override void ProcessInternal(IFlowData data)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
             SetUp(data);
         }
 
         private void SetUp(IFlowData data)
         {
-            var host = _host;
-            var protocol = _protocol;
+            var host = Host;
+            var protocol = Protocol;
             bool supportsPromises;
 
-            if (string.IsNullOrEmpty(_host))
+            if (string.IsNullOrEmpty(host))
             {
                 // Try and get the request host name so it can be used to request
                 // the Json refresh in the JavaScript code.
                 data.TryGetEvidence(Constants.EVIDENCE_HOST_KEY, out host);
             }
-            if (string.IsNullOrEmpty(_protocol))
+            if (string.IsNullOrEmpty(protocol))
             {
                 // Try and get the request protocol so it can be used to request
                 // the JSON refresh in the JavaScript code.
@@ -236,8 +259,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             catch (KeyNotFoundException ex)
             {
                 throw new PipelineConfigurationException(
-                    "JsonBuilderElement must run before JavaScriptBuilderElement. " +
-                    "Please check your pipeline configuration.", ex);
+                    Messages.ExceptionJsonBuilderNotRun, ex);
             }
 
             // Generate any required parameters for the JSON request.
@@ -249,16 +271,22 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             var queryEvidence = data
                 .GetEvidence()
                 .AsDictionary()
-                .Where(e => e.Key.StartsWith(Core.Constants.EVIDENCE_QUERY_PREFIX))
-                .Select(k => $"{WebUtility.UrlEncode(k.Key.Remove(0, k.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR) + 1))}" +
-                    $"={WebUtility.UrlEncode(k.Value.ToString())}");
+                .Where(e => e.Key.StartsWith(Core.Constants.EVIDENCE_QUERY_PREFIX, 
+                    StringComparison.OrdinalIgnoreCase))
+                .Select(k =>
+                {
+                    var dotPos = k.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR,
+                        StringComparison.OrdinalIgnoreCase);
+                    return $"{WebUtility.UrlEncode(k.Key.Remove(0, dotPos + 1))}" +
+                        $"={WebUtility.UrlEncode(k.Value.ToString())}";
+                });
 
             parameters.AddRange(queryEvidence);
 
             string queryParams = string.Join("&", parameters);
-            string endpoint = _endpoint;
+            string endpoint = Endpoint;
 
-            string url = null;
+            Uri url = null;
 
             if (string.IsNullOrWhiteSpace(protocol) == false &&
                 string.IsNullOrWhiteSpace(host) == false &&
@@ -277,16 +305,67 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                     endpoint = endpoint.Substring(1);
                 }
 
-                url = $"{protocol}://{host}{endpoint}" +
-                    (String.IsNullOrEmpty(queryParams) ? "" : $"?{queryParams}");
+                url = new Uri($"{protocol}://{host}{endpoint}" +
+                    (String.IsNullOrEmpty(queryParams) ? "" : $"?{queryParams}"));
             }
 
             // With the gathered resources, build a new JavaScriptResource.
             BuildJavaScript(data, jsonObject, supportsPromises, url);
         }
 
+        /// <summary>
+        /// Build the JavaScript content and add it to the supplied
+        /// <see cref="IFlowData"/> instance.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> instance to populate with the
+        /// resulting <see cref="JavaScriptBuilderElementData"/> 
+        /// </param>
+        /// <param name="jsonObject">
+        /// The JSON data object to include in the JavaScript.
+        /// </param>
+        /// <param name="supportsPromises">
+        /// True to build JavaScript that uses promises. False to
+        /// build JavaScript that does not use promises.
+        /// </param>
+        /// <param name="url">
+        /// The callback URL for the JavaScript to send a request to
+        /// when it has new evidence values to supply.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
         protected void BuildJavaScript(IFlowData data, string jsonObject, bool supportsPromises, string url)
         {
+            BuildJavaScript(data, jsonObject, supportsPromises, new Uri(url));
+        }
+
+        /// <summary>
+        /// Build the JavaScript content and add it to the supplied
+        /// <see cref="IFlowData"/> instance.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> instance to populate with the
+        /// resulting <see cref="JavaScriptBuilderElementData"/> 
+        /// </param>
+        /// <param name="jsonObject">
+        /// The JSON data object to include in the JavaScript.
+        /// </param>
+        /// <param name="supportsPromises">
+        /// True to build JavaScript that uses promises. False to
+        /// build JavaScript that does not use promises.
+        /// </param>
+        /// <param name="url">
+        /// The callback URL for the JavaScript to send a request to
+        /// when it has new evidence values to supply.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        protected void BuildJavaScript(IFlowData data, string jsonObject, bool supportsPromises, Uri url)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            
             JavaScriptBuilderElementData elementData = (JavaScriptBuilderElementData)
                 data.GetOrAdd(
                 ElementDataKeyTyped,
@@ -296,17 +375,18 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             if (data.TryGetEvidence(Constants.EVIDENCE_OBJECT_NAME, out string objectName) == false ||
                 string.IsNullOrWhiteSpace(objectName))
             {
-                objectName = _objName;
+                objectName = ObjName;
             }
 
-            var ubdateEnabled = string.IsNullOrWhiteSpace(url) == false;
+            var ubdateEnabled = url != null &&
+                url.AbsoluteUri.Length > 0;
 
             JavaScriptResource javaScriptObj = new JavaScriptResource(
                 objectName,
                 jsonObject,
                 supportsPromises,
                 url,
-                _enableCookies,
+                EnableCookies,
                 ubdateEnabled);
 
             string content = _stubble.Render(_template, javaScriptObj.AsDictionary()/*, _renderSettings*/);
@@ -336,9 +416,14 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                                 $"Column(s) {error.StartColumn}-{error.EndColumn}");
                         }
                         errorText.AppendLine(content);
-                        _logger.LogError(errorText.ToString());
+                        Logger.LogError(errorText.ToString());
                         _lastRequestWasError = true;
+#pragma warning disable CS0618 // Type or member is obsolete
+                        // This usage should be replaced with the 
+                        // CancellationToken implementation once it 
+                        // is available.
                         data.Stop = true;
+#pragma warning restore CS0618 // Type or member is obsolete
                     }
                 }
                 else
@@ -350,7 +435,10 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             elementData.JavaScript = minifiedContent;
         }
 
-		protected override void UnmanagedResourcesCleanup()
+        /// <summary>
+        /// Cleanup any unmanaged resources.
+        /// </summary>
+        protected override void UnmanagedResourcesCleanup()
 		{ }
 	}
 }

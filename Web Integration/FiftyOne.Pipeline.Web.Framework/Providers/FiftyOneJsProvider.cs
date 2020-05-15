@@ -27,6 +27,7 @@ using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -107,9 +108,14 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
                 var whitelist = filter as EvidenceKeyFilterWhitelist;
                 if (whitelist != null)
                 {
+                    var headerPrefix = Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + 
+                        Core.Constants.EVIDENCE_SEPERATOR;
                     headersAffectingJavaScript.AddRange(whitelist.Whitelist
-                        .Where(entry => entry.Key.StartsWith(Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR))
-                        .Select(entry => entry.Key.Substring(entry.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR) + 1)));
+                        .Where(entry => entry.Key.StartsWith(
+                            headerPrefix, StringComparison.OrdinalIgnoreCase))
+                        .Select(entry => entry.Key.Substring(
+                            entry.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR, 
+                                StringComparison.OrdinalIgnoreCase) + 1)));
                 }
             }
             _headersAffectingJavaScript = new StringValues(headersAffectingJavaScript.ToArray());
@@ -135,7 +141,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             var hash = flowData.GenerateKey(
                 flowData.Pipeline.EvidenceKeyFilter).GetHashCode();
 
-            if (hash.ToString() == context.Request.Headers["If-None-Match"])
+            if (hash.ToString(CultureInfo.InvariantCulture) == 
+                context.Request.Headers["If-None-Match"])
             {
                 // The response hasn't changed so respond with a 304.
                 context.Response.StatusCode = 304;
@@ -150,7 +157,9 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
                     // Otherwise, return the minified script to the client.
                     context.Response.Write(bundlerData.JavaScript);
 
-                    SetHeaders(context, hash.ToString(), bundlerData.JavaScript.Length);
+                    SetHeaders(context, 
+                        hash.ToString(CultureInfo.InvariantCulture), 
+                        bundlerData.JavaScript.Length);
                 }
                 else
                 {
@@ -170,7 +179,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         private void SetHeaders(HttpContext context, string hash, int contentLength)
         {
             context.Response.ContentType = "application/x-javascript";
-            context.Response.AddHeader("Content-Length", contentLength.ToString());
+            context.Response.AddHeader("Content-Length", 
+                contentLength.ToString(CultureInfo.InvariantCulture));
             context.Response.StatusCode = 200;
             context.Response.Headers.Add("Cache-Control", _cacheControl);
             if (string.IsNullOrEmpty(_headersAffectingJavaScript.ToString()) == false)

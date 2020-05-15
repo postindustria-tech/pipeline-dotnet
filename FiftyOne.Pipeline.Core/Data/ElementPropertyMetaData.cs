@@ -96,6 +96,11 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <param name="available">
         /// True if the property is available.
         /// </param>
+        /// <param name="itemProperties">
+        /// Where this meta-data instance relates to a list of complex objects, 
+        /// this parameter can contain a list of the property meta-data 
+        /// for items in that list.
+        /// </param>
         public ElementPropertyMetaData(
             IFlowElement element,
             string name,

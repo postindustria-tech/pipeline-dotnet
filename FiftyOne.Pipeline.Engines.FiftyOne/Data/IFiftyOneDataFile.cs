@@ -27,8 +27,16 @@ using System.Text;
 
 namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
+    /// <summary>
+    /// A specialized can of <see cref="IAspectEngineDataFile"/> for files 
+    /// that will be distributed by the 51Degrees 'Distributor' web service.
+    /// </summary>
     public interface IFiftyOneDataFile : IAspectEngineDataFile
     {
+        /// <summary>
+        /// The value for the 'type' parameter that is passed to the 
+        /// distributor service when checking for a new file.
+        /// </summary>
         string DataDownloadType { get; set; }
     }
 }

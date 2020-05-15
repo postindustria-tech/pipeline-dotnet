@@ -45,9 +45,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 
         public override bool Include(string key)
         {
-            if (key == FlowElements.Constants.EVIDENCE_SESSIONID)
+            if (key == Constants.EVIDENCE_SESSIONID)
                 return false;
-            if (key == FlowElements.Constants.EVIDENCE_SEQUENCE)
+            if (key == Constants.EVIDENCE_SEQUENCE)
                 return false;
             return base.Include(key);
         }

@@ -41,9 +41,14 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         private Mock<IPipelineInternal> _pipeline;
         private Mock<ILogger<ParallelElements>> _logger;
 
-        public ParallelElementsTest()
+        [TestInitialize]
+        public void Initialize()
         {
             _pipeline = new Mock<IPipelineInternal>();
+            // We need to set the IsConcurrent property to return true so 
+            // that the FlowData instance will be created with a 
+            // concurrent dictionary instead of a regular one.
+            _pipeline.Setup(p => p.IsConcurrent).Returns(true);
             _logger = new Mock<ILogger<ParallelElements>>();
         }
 
@@ -98,6 +103,7 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
                 element1.Object,
                 element2.Object,
                 element3.Object);
+
             IFlowData data = StaticFactories.CreateFlowData(_pipeline.Object);
             data.Process();
 

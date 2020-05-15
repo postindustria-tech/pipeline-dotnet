@@ -28,8 +28,38 @@ using System.Text;
 
 namespace FiftyOne.Pipeline.Engines.Data
 {
+    /// <summary>
+    /// Represents an class that can build a complete update URL from
+    /// a supplied <see cref="IAspectEngineDataFile"/> instance.
+    /// </summary>
     public interface IDataUpdateUrlFormatter
     {
+        /// <summary>
+        /// Get the URL to call to request an updated version of the 
+        /// supplied data file.
+        /// </summary>
+        /// <param name="dataFile">
+        /// The data file to build an update URL for.
+        /// </param>
+        /// <returns>
+        /// The URL to call in order to check for and download an update.
+        /// </returns>
+        [Obsolete("Use the GetFormattedDataUpdateUri method instead." +
+            "This method may be removed in future versions.")]
+#pragma warning disable CA1055 // Uri return values should not be strings
         string GetFormattedDataUpdateUrl(IAspectEngineDataFile dataFile);
+#pragma warning restore CA1055 // Uri return values should not be strings
+
+        /// <summary>
+        /// Get the URL to call to request an updated version of the 
+        /// supplied data file.
+        /// </summary>
+        /// <param name="dataFile">
+        /// The data file to build an update URL for.
+        /// </param>
+        /// <returns>
+        /// The URL to call in order to check for and download an update.
+        /// </returns>
+        Uri GetFormattedDataUpdateUri(IAspectEngineDataFile dataFile);
     }
 }

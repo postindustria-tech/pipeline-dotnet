@@ -21,12 +21,14 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using System.Web.Configuration;
 
 namespace FiftyOne.Pipeline.Web.Framework.Providers
 {
@@ -36,10 +38,27 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
     /// </summary>
     public class PipelineCapabilities : HttpBrowserCapabilities
     {
-        public readonly IFlowData FlowData;
+        /// <summary>
+        /// The results from <see cref="IPipeline"/> processing.
+        /// </summary>
+        public IFlowData FlowData { get; private set; }
         private readonly HttpRequest _request;
         private readonly HttpBrowserCapabilities _baseCaps;
         
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="baseCaps">
+        /// The parent <see cref="HttpBrowserCapabilities"/> instance to
+        /// create this instance from.
+        /// </param>
+        /// <param name="request">
+        /// The current <see cref="HttpRequest"/>
+        /// </param>
+        /// <param name="flowData">
+        /// The results from the <see cref="IPipeline"/> for the current
+        /// request
+        /// </param>
         public PipelineCapabilities(
             HttpBrowserCapabilities baseCaps,
             HttpRequest request,
@@ -93,7 +112,7 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
                 try
                 {
                     var availableElements = FlowData.Pipeline.ElementAvailableProperties;
-                    if (key.Contains("."))
+                    if (key != null && key.Contains("."))
                     {
                         var keys = key.Split('.');
                         if (availableElements.ContainsKey(keys[0]) &&
@@ -137,7 +156,11 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
                         }
                     }
                 }
-                catch (Exception e)
+#pragma warning disable CA1031 // Do not catch general exception types
+                // Regardless of the error that occurs, we want to handle
+                // it in the same way.
+                catch (Exception)
+#pragma warning restore CA1031 // Do not catch general exception types
                 {
                     // There was an exception, ensure the value is null so it
                     // will be retrieved from the base class.
@@ -150,6 +173,9 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             }
         }
 
+        /// <summary>
+        /// Returns true if the current request was made from a mobile device.
+        /// </summary>
         public override bool IsMobileDevice
         {
             get
@@ -166,6 +192,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             }
         }
 
+        /// <summary>
+        /// Returns true if the current request was made from a device
+        /// that has voice call capability.
+        /// </summary>
         public override bool CanInitiateVoiceCall
         {
             get
@@ -182,6 +212,9 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             }
         }
 
+        /// <summary>
+        /// Returns the name of manufacturer of the device that made the request.
+        /// </summary>
         public override string MobileDeviceManufacturer
         {
             get
@@ -198,6 +231,9 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             }
         }
 
+        /// <summary>
+        /// Returns the name of model name of the device that made the request.
+        /// </summary>
         public override string MobileDeviceModel
         {
             get
@@ -214,6 +250,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             }
         }
 
+        /// <summary>
+        /// Returns the screen height in pixels of the device that 
+        /// made the request.
+        /// </summary>
         public override int ScreenPixelsHeight {
             get
             {
@@ -229,6 +269,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             }
         }
 
+        /// <summary>
+        /// Returns the screen width in pixels of the device that 
+        /// made the request.
+        /// </summary>
         public override int ScreenPixelsWidth
         {
             get
@@ -246,54 +290,196 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         }
 
         #region Unaltered Properties
-            
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override int DefaultSubmitButtonLimit { get { return _baseCaps.DefaultSubmitButtonLimit; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool CanCombineFormsInDeck { get { return _baseCaps.CanCombineFormsInDeck; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool CanRenderAfterInputOrSelectElement { get { return _baseCaps.CanRenderAfterInputOrSelectElement; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool CanRenderEmptySelects { get { return _baseCaps.CanRenderEmptySelects; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool CanRenderInputAndSelectElementsTogether { get { return _baseCaps.CanRenderInputAndSelectElementsTogether; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool CanRenderMixedSelects { get { return _baseCaps.CanRenderMixedSelects; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool CanRenderOneventAndPrevElementsTogether { get { return _baseCaps.CanRenderOneventAndPrevElementsTogether; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool CanRenderPostBackCards { get { return _baseCaps.CanRenderPostBackCards; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool CanRenderSetvarZeroWithMultiSelectionList { get { return _baseCaps.CanRenderSetvarZeroWithMultiSelectionList; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool CanSendMail { get { return _baseCaps.CanSendMail; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override int GatewayMajorVersion { get { return _baseCaps.GatewayMajorVersion; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override double GatewayMinorVersion { get { return _baseCaps.GatewayMinorVersion; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override string GatewayVersion { get { return _baseCaps.GatewayVersion; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool HasBackButton { get { return _baseCaps.HasBackButton; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool HidesRightAlignedMultiselectScrollbars { get { return _baseCaps.HidesRightAlignedMultiselectScrollbars; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override string InputType { get { return _baseCaps.InputType; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override int MaximumHrefLength { get { return _baseCaps.MaximumHrefLength; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override int MaximumRenderedPageSize { get { return _baseCaps.MaximumRenderedPageSize; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override int MaximumSoftkeyLabelLength { get { return _baseCaps.MaximumSoftkeyLabelLength; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override int NumberOfSoftkeys { get { return _baseCaps.NumberOfSoftkeys; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override string PreferredRenderingMime { get { return _baseCaps.PreferredRenderingMime; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override string PreferredRenderingType { get { return _baseCaps.PreferredRenderingType; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override string PreferredRequestEncoding { get { return _baseCaps.PreferredRequestEncoding; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override string PreferredResponseEncoding { get { return _baseCaps.PreferredResponseEncoding; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RendersBreakBeforeWmlSelectAndInput { get { return _baseCaps.RendersBreakBeforeWmlSelectAndInput; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RendersBreaksAfterHtmlLists { get { return _baseCaps.RendersBreaksAfterHtmlLists; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RendersBreaksAfterWmlAnchor { get { return _baseCaps.RendersBreaksAfterWmlAnchor; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RendersBreaksAfterWmlInput { get { return _baseCaps.RendersBreaksAfterWmlInput; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RendersWmlDoAcceptsInline { get { return _baseCaps.RendersWmlDoAcceptsInline; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RendersWmlSelectsAsMenuCards { get { return _baseCaps.RendersWmlSelectsAsMenuCards; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override string RequiredMetaTagNameValue { get { return _baseCaps.RequiredMetaTagNameValue; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresAttributeColonSubstitution { get { return _baseCaps.RequiresAttributeColonSubstitution; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresContentTypeMetaTag { get { return _baseCaps.RequiresContentTypeMetaTag; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresDBCSCharacter { get { return _baseCaps.RequiresDBCSCharacter; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresHtmlAdaptiveErrorReporting { get { return _baseCaps.RequiresHtmlAdaptiveErrorReporting; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresLeadingPageBreak { get { return _baseCaps.RequiresLeadingPageBreak; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresNoBreakInFormatting { get { return _baseCaps.RequiresNoBreakInFormatting; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresOutputOptimization { get { return _baseCaps.RequiresOutputOptimization; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresPhoneNumbersAsPlainText { get { return _baseCaps.RequiresPhoneNumbersAsPlainText; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresSpecialViewStateEncoding { get { return _baseCaps.RequiresSpecialViewStateEncoding; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresUniqueFilePathSuffix { get { return _baseCaps.RequiresUniqueFilePathSuffix; } }
+        /// <summary>
+        /// </summary>
         public override bool RequiresUniqueHtmlCheckboxNames { get { return _baseCaps.RequiresUniqueHtmlCheckboxNames; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresUniqueHtmlInputNames { get { return _baseCaps.RequiresUniqueHtmlInputNames; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool RequiresUrlEncodedPostfieldValues { get { return _baseCaps.RequiresUrlEncodedPostfieldValues; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override int ScreenCharactersHeight { get { return _baseCaps.ScreenCharactersHeight; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override int ScreenCharactersWidth { get { return _baseCaps.ScreenCharactersWidth; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool SupportsAccesskeyAttribute { get { return _baseCaps.SupportsAccesskeyAttribute; } }
+        /// <summary>
+        /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>
+        /// </summary>
         public override bool SupportsBodyColor { get { return _baseCaps.SupportsBodyColor; } }
         /// <summary>
         /// The unaltered implementation from <see cref="HttpCapabilitiesDefaultProvider"/>

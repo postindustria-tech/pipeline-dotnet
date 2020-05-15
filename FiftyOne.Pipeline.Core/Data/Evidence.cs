@@ -30,6 +30,12 @@ namespace FiftyOne.Pipeline.Core.Data
     /// </summary>
     public class Evidence : DataBase, IEvidence
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="logger">
+        /// The logger to be used by this instance
+        /// </param>
         public Evidence(ILogger<Evidence> logger)
             : base(logger)
         {

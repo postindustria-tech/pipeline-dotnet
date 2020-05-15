@@ -37,6 +37,9 @@ namespace FiftyOne.Pipeline.Core.Data
     {
         private List<IEvidenceKeyFilter> _filters;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public EvidenceKeyFilterAggregator() : 
             base(new List<string>(), StringComparer.OrdinalIgnoreCase)
         {

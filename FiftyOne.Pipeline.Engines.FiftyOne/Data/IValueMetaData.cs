@@ -35,7 +35,13 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// The property which the value relates to i.e. the value is a value
         /// which can be returned by the property.
         /// </summary>
+        [Obsolete("Use the 'GetProperty' property instead." +
+            " This property may be removed in future versions.")]
+#pragma warning disable CA1716 // Identifiers should not match keywords
+#pragma warning disable CA1721 // Property names should not match get methods
         IFiftyOneAspectPropertyMetaData Property { get; }
+#pragma warning restore CA1721 // Property names should not match get methods
+#pragma warning restore CA1716 // Identifiers should not match keywords
 
         /// <summary>
         /// The name of the value e.g. "True" or "Samsung".
@@ -50,7 +56,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// <summary>
         /// URL relating to the value if more information is available.
         /// </summary>
+#pragma warning disable CA1056 // Uri properties should not be strings
         string Url { get; }
+#pragma warning restore CA1056 // Uri properties should not be strings
 
         /// <summary>
         /// Get the property which the value relates to i.e. the value is a

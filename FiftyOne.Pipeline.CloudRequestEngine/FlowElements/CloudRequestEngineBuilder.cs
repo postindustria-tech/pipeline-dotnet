@@ -27,11 +27,19 @@ using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
+    /// <summary>
+    /// A fluent builder for <see cref="CloudRequestEngine"/> instances.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", 
+        "CA1054:Uri parameters should not be strings", 
+        Justification = "Changing this could cause implementation issues " +
+        "so it being delayed for the time being.")]
     public class CloudRequestEngineBuilder : 
         AspectEngineBuilderBase<CloudRequestEngineBuilder, CloudRequestEngine>
     {
@@ -69,23 +77,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         }
 
         #endregion
-        
+
         /// <summary>
         /// The root endpoint which the CloudRequestsEngine will query.
         /// This will set the data, properties and evidence keys endpoints.
         /// </summary>
         /// <param name="uri"></param>
         /// <returns></returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
         public CloudRequestEngineBuilder SetEndPoint(string uri)
         {
-            if (uri.EndsWith("/") == false)
+            if (uri == null) throw new ArgumentNullException(nameof(uri));
+
+            if (uri.EndsWith("/", StringComparison.Ordinal) == false)
             {
                 uri += '/';
             }
             return SetDataEndpoint(uri + "json")
                 .SetPropertiesEndpoint(uri + "accessibleproperties")
                 .SetEvidenceKeysEndpoint(uri + "evidencekeys");
-
         }
 
         /// <summary>
@@ -127,8 +139,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <summary>
         /// The resource key to query the endpoint with.
         /// </summary>
-        /// <param name="licenseKey"></param>
-        /// <returns></returns>
+        /// <param name="resourceKey">
+        /// The resource key to use when making requests to the cloud service
+        /// </param>
+        /// <returns>
+        /// This builder
+        /// </returns>
         public CloudRequestEngineBuilder SetResourceKey(string resourceKey)
         {
             _resourceKey = resourceKey;
@@ -140,6 +156,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         /// <param name="licenseKey"></param>
         /// <returns></returns>
+        [Obsolete("License key is no longer used directly. " +
+            "Use a resource key instead.")]
         public CloudRequestEngineBuilder SetLicenseKey(string licenseKey)
         {
             _licenseKey = licenseKey;
@@ -157,14 +175,17 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             return this;
         }
 
+        /// <summary>
+        /// Build and return a new <see cref="CloudRequestEngine"/>
+        /// instance using the current configuration.
+        /// </summary>
+        /// <returns></returns>
         public CloudRequestEngine Build()
         {
             if (string.IsNullOrWhiteSpace(_resourceKey))
             {
-                throw new PipelineConfigurationException("A resource key is " +
-                    "required to access the cloud server. Please use the " +
-                    "'SetResourceKey(string) method to supply your resource " +
-                    "key obtained from https://configure.51degrees.com");
+                throw new PipelineConfigurationException(
+                    Messages.ExceptionResourceKeyNeeded);
             }
 
             return BuildEngine();
@@ -179,14 +200,21 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 (IAspectEngine)engine);
         }
 
+        /// <summary>
+        /// Create a new engine using the current configuration.
+        /// </summary>
+        /// <param name="properties">
+        /// The properties to populate.
+        /// </param>
+        /// <returns>
+        /// A new <see cref="CloudRequestEngine"/> instance.
+        /// </returns>
         protected override CloudRequestEngine NewEngine(List<string> properties)
         {
             if (string.IsNullOrWhiteSpace(_resourceKey))
             {
-                throw new PipelineConfigurationException("A resource key is " +
-                        "required to access the cloud server. Please use the " +
-                        "'setResourceKey(String) method to supply your resource " +
-                        "key obtained from https://configure.51degrees.com");
+                throw new PipelineConfigurationException(
+                    Messages.ExceptionResourceKeyNeeded);
             }
 
             return new CloudRequestEngine(

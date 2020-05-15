@@ -24,6 +24,9 @@ using FiftyOne.Pipeline.Core.Data;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
+    /// <summary>
+    /// Interface for <see cref="FlowDataProvider"/>
+    /// </summary>
     public interface IFlowDataProvider
     {
         /// <summary>

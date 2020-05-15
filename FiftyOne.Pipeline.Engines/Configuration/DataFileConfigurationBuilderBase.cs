@@ -26,6 +26,7 @@ using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -91,9 +92,33 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if url parameter is null or and empty string
+        /// </exception>
         public TBuilder SetDataUpdateUrl(string url)
         {
+            if(string.IsNullOrEmpty(url)) throw new ArgumentNullException(nameof(url));
             _dataUpdateUrlOverride = url;
+            return this as TBuilder;
+        }
+
+        /// <summary>
+        /// Configure the engine to use the specified URL when looking for
+        /// an updated data file.
+        /// </summary>
+        /// <param name="url">
+        /// The URL to check for a new data file.
+        /// </param>
+        /// <returns>
+        /// This builder instance.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if url parameter is null
+        /// </exception>
+        public TBuilder SetDataUpdateUrl(Uri url)
+        {
+            if (url == null) throw new ArgumentNullException(nameof(url));
+            _dataUpdateUrlOverride = url.AbsoluteUri;
             return this as TBuilder;
         }
 
@@ -241,7 +266,15 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         public TBuilder SetUpdatePollingInterval(TimeSpan pollingInterval)
         {
             var seconds = pollingInterval.TotalSeconds;
-            if (seconds > int.MaxValue) { throw new ArgumentException("Polling interval timespan too large.", "pollingInterval"); }
+            if (seconds > int.MaxValue)
+            {
+                throw new ArgumentException(
+                    string.Format(CultureInfo.InvariantCulture,
+                        Messages.ExceptionPollingIntervalTooLarge,
+                        int.MaxValue,
+                        seconds),
+                    nameof(pollingInterval));
+            }
             _updatePollingIntervalSeconds = (int)seconds;
             return this as TBuilder;
         }
@@ -276,13 +309,19 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown if the supplied deviation is too large.
+        /// </exception>
         public TBuilder SetUpdateRandomisationMax(TimeSpan maximumDeviation)
         {
             var seconds = maximumDeviation.TotalSeconds;
             if (seconds > int.MaxValue)
             {
                 throw new ArgumentException(
-                    "Update randomisation timespan too large.", "pollingInterval");
+                    string.Format(CultureInfo.InvariantCulture,
+                        Messages.ExceptionRandomizationTooLarge,
+                        int.MaxValue, seconds), 
+                    nameof(maximumDeviation));
             }
             _updateMaxRandomisationSeconds = (int)seconds;
             return this as TBuilder;
@@ -322,9 +361,16 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// </summary>
         /// <param name="keys">51Degrees license keys</param>
         /// <returns>This builder</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied array is null
+        /// </exception>
         public TBuilder SetDataUpdateLicenseKeys(
             string[] keys)
         {
+            if(keys == null)
+            {
+                throw new ArgumentNullException(nameof(keys));
+            }
             foreach (var key in keys)
             {
                 DataUpdateLicenseKeys.Add(key);

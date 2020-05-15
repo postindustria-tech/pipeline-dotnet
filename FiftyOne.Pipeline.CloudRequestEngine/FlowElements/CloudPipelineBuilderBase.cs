@@ -24,6 +24,7 @@ using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Net.Http;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
@@ -36,16 +37,19 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
     public abstract class CloudPipelineBuilderBase<TBuilder> : PrePackagedPipelineBuilderBase<TBuilder>
         where TBuilder : CloudPipelineBuilderBase<TBuilder>
     {
-        protected HttpClient _httpClient;
+        /// <summary>
+        /// The HTTP client to be used when making web requests
+        /// </summary>
+        protected HttpClient HttpClient { get; private set; }
         
         /// <summary>
         /// The base URL on the cloud service.
         /// </summary>
-        protected string Url { get; set; } = string.Empty;
+        protected Uri Url { get; set; } = new Uri(string.Empty);
         /// <summary>
         /// The URL to the JSON resource on the cloud service.
         /// </summary>
-        protected string JsonEndpoint { get; set; } = string.Empty;
+        protected Uri JsonEndpoint { get; set; } = new Uri(string.Empty);
         /// <summary>
         /// The URL for the AccessileProperties endpoint on the cloud service.
         /// </summary>
@@ -75,7 +79,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             ILoggerFactory loggerFactory,
             HttpClient httpClient) : base(loggerFactory)
         {
-            _httpClient = httpClient;
+            HttpClient = httpClient;
         }
 
         /// <summary>
@@ -87,6 +91,20 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </param>
         /// <returns>This builder</returns>
         public TBuilder SetEndPoint(string url)
+        {
+            Url = new Uri(url);
+            return this as TBuilder;
+        }
+
+        /// <summary>
+        /// Set the base path for the cloud service. This will update the URL 
+        /// for the JSON endpoint and the AccessileProperties endpoint.
+        /// </summary>
+        /// <param name="url">
+        /// The base URL to use.
+        /// </param>
+        /// <returns>This builder</returns>
+        public TBuilder SetEndPoint(Uri url)
         {
             Url = url;
             return this as TBuilder;
@@ -100,6 +118,19 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </param>
         /// <returns>This builder</returns>
         public TBuilder SetJSONEndpoint(string url)
+        {
+            JsonEndpoint = new Uri(url);
+            return this as TBuilder;
+        }
+
+        /// <summary>
+        /// Set the URL to the JSON endpoint on the cloud service.
+        /// </summary>
+        /// <param name="url">
+        /// The URL which points to the JSON endpoint.
+        /// </param>
+        /// <returns>This builder</returns>
+        public TBuilder SetJSONEndpoint(Uri url)
         {
             JsonEndpoint = url;
             return this as TBuilder;
@@ -152,6 +183,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         /// <param name="key"></param>
         /// <returns>This builder</returns>
+        [Obsolete("License key is no longer used directly. " +
+            "Use a resource key instead.")]
         public TBuilder SetLicenseKey(string key)
         {
             LicenceKey = key;
@@ -168,7 +201,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         public override IPipeline Build()
         {
             // Configure and build the cloud request engine
-            var cloudRequestEngineBuilder = new CloudRequestEngineBuilder(LoggerFactory, _httpClient);
+            var cloudRequestEngineBuilder = new CloudRequestEngineBuilder(LoggerFactory, HttpClient);
             if (LazyLoading)
             {
                 cloudRequestEngineBuilder.SetLazyLoading(new LazyLoadingConfiguration(
@@ -179,13 +212,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 cloudRequestEngineBuilder.SetCache(new CacheConfiguration() { Size = ResultsCacheSize });
             }
-            if (string.IsNullOrEmpty(Url) == false)
+            if (Url != null && 
+                Url.AbsoluteUri.Length != 0)
             {
-                cloudRequestEngineBuilder.SetEndPoint(Url);
+                cloudRequestEngineBuilder.SetEndPoint(Url.AbsoluteUri);
             }
-            if (string.IsNullOrEmpty(JsonEndpoint) == false)
+            if (JsonEndpoint != null &&
+                JsonEndpoint.AbsoluteUri.Length != 0)
             {
-                cloudRequestEngineBuilder.SetDataEndpoint(JsonEndpoint);
+                cloudRequestEngineBuilder.SetDataEndpoint(JsonEndpoint.AbsoluteUri);
             }
             if (string.IsNullOrEmpty(EvidenceKeysEndpoint) == false)
             {
@@ -201,7 +236,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             if (string.IsNullOrEmpty(LicenceKey) == false)
             {
+#pragma warning disable CS0618 // Type or member is obsolete
+                // Retained for backward compatibility
                 cloudRequestEngineBuilder.SetLicenseKey(LicenceKey);
+#pragma warning restore CS0618 // Type or member is obsolete
             }
             var cloudRequestEngine = cloudRequestEngineBuilder.Build();
 

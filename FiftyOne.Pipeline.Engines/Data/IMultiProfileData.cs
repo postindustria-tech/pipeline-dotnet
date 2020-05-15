@@ -25,11 +25,32 @@ using System.Collections.Generic;
 
 namespace FiftyOne.Pipeline.Engines.Data
 {
+    /// <summary>
+    /// Represents a specific type of <see cref="IAspectData"/> that
+    /// contains multiple <see cref="IAspectData"/> instances.
+    /// This is used in cases where an engine can return multiple 
+    /// results for a single evidence value.
+    /// </summary>
+    /// <typeparam name="T">
+    /// The type of the <see cref="IAspectData"/> instances to store
+    /// in the list.
+    /// </typeparam>
     public interface IMultiProfileData<T> : IAspectData
         where T : IAspectData
     {
+        /// <summary>
+        /// Get a list of the <see cref="IAspectData"/> objects that 
+        /// have been added to this instance.
+        /// </summary>
         IReadOnlyList<T> Profiles { get; }
         
+        /// <summary>
+        /// Add the specified <see cref="IAspectData"/> object to
+        /// this instance.
+        /// </summary>
+        /// <param name="profile">
+        /// The data object to add to the list.
+        /// </param>
         void AddProfile(T profile);
     }
 }

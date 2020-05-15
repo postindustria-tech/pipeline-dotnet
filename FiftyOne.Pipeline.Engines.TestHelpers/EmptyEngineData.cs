@@ -34,6 +34,10 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
 {
     public class EmptyEngineData : AspectDataBase
     {
+        public const string VALUE_ONE_KEY = "valueone";
+        public const string VALUE_TWO_KEY = "valuetwo";
+        public const string VALUE_THREE_KEY = "valuethree";
+
         public EmptyEngineData(
             ILogger<EmptyEngineData> logger,
             IPipeline pipeline,
@@ -47,11 +51,11 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
         {
             get
             {
-                return (int)base["valueone"];
+                return (int)base[VALUE_ONE_KEY];
             }
             set
             {
-                base["valueone"] = value;
+                base[VALUE_ONE_KEY] = value;
             }
         }
 
@@ -59,11 +63,23 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
         {
             get
             {
-                return (int)base["valuetwo"];
+                return (int)base[VALUE_TWO_KEY];
             }
             set
             {
-                base["valuetwo"] = value;
+                base[VALUE_TWO_KEY] = value;
+            }
+        }
+
+        public int ValueThree
+        {
+            get
+            {
+                return (int)base[VALUE_THREE_KEY];
+            }
+            set
+            {
+                base[VALUE_THREE_KEY] = value;
             }
         }
     }

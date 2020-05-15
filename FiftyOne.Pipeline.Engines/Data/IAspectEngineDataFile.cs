@@ -105,7 +105,18 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// parameters that are needed to retrieve the data.
         /// By default, no query string parameters are added to the URL.
         /// </summary>
+        [Obsolete("Use the FormattedUri property instead. " +
+            "This property may be removed in future versions")]
+#pragma warning disable CA1056 // Uri properties should not be strings
         string FormattedUrl { get; }
+#pragma warning restore CA1056 // Uri properties should not be strings
+
+        /// <summary>
+        /// Get the data update URL complete with any query string 
+        /// parameters that are needed to retrieve the data.
+        /// By default, no query string parameters are added to the URL.
+        /// </summary>
+        Uri FormattedUri { get; }
 
         /// <summary>
         /// Returns true if this file has been registered with the 

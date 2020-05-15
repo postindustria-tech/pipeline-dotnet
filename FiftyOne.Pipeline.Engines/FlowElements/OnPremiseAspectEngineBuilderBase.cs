@@ -53,13 +53,27 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
 
         private IDataUpdateService _dataUpdateService;
 
+#pragma warning disable CA2227 // Collection properties should be read only
+        /// <summary>
+        /// A list of the <see cref="IDataFileConfiguration"/> instances 
+        /// for all data files being supplied to the engine.
+        /// </summary>
+        // This would be a breaking change.
+        // The collections in question are protected rather than public,
+        // which limits the exposure.
         protected List<IDataFileConfiguration> DataFileConfigs { get; set; } = new List<IDataFileConfiguration>();
 
-        // Used to store a temporary list of the data file 
-        // meta data between their creation and the creation
-        // of the engine.
+        /// <summary>
+        /// Used to store a temporary list of the data file 
+        /// meta data between their creation and the creation
+        /// of the engine.
+        /// </summary>
         protected List<AspectEngineDataFile> DataFiles { get; set; } = new List<AspectEngineDataFile>();
+#pragma warning restore CA2227 // Collection properties should be read only
 
+        /// <summary>
+        /// The directory to use for temporary files when needed
+        /// </summary>
         protected string TempDir { get; set; } = Path.GetTempPath();
 
         /// <summary>
@@ -82,6 +96,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// </summary>
         /// <param name="configuration">
         /// The data file configuration to add to this engine.
+        /// </param>
         /// <returns>
         /// This engine builder instance.
         /// </returns>
@@ -157,7 +172,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
                         if (dataFileConfig.UpdateOnStartup) { features.Add("update on startup"); }
                         if (dataFileConfig.FileSystemWatcherEnabled) { features.Add("file system watcher"); }
 
-                        throw new Exception(
+                        throw new PipelineException(
                             $"Some enabled features ({string.Join(",", features)}) " +
                             "require an IDataUpdateService but one has not been supplied. " +
                             "This can be corrected by passing an IDataUpdateService " +

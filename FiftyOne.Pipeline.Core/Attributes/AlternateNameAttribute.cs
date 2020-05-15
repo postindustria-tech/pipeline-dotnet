@@ -24,11 +24,25 @@ using System;
 
 namespace FiftyOne.Pipeline.Core.Attributes
 {
+    /// <summary>
+    /// This attribute can be applied to classes and methods to specify 
+    /// an alternative name that can be used for that class/method in 
+    /// Pipeline configuration files.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class AlternateNameAttribute : Attribute
     {
+        /// <summary>
+        /// The alternative name for the class/method.
+        /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="name">
+        /// The alternative name for the class/method.
+        /// </param>
         public AlternateNameAttribute(string name)
         {
             Name = name;
