@@ -45,11 +45,11 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <summary>
         /// The base URL on the cloud service.
         /// </summary>
-        protected Uri Url { get; set; } = new Uri(string.Empty);
+        protected Uri Url { get; set; }
         /// <summary>
         /// The URL to the JSON resource on the cloud service.
         /// </summary>
-        protected Uri JsonEndpoint { get; set; } = new Uri(string.Empty);
+        protected Uri JsonEndpoint { get; set; }
         /// <summary>
         /// The URL for the AccessileProperties endpoint on the cloud service.
         /// </summary>
