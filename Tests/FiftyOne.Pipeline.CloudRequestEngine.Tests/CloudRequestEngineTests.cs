@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.CloudRequestEngine.FlowElements;
+using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -210,6 +211,151 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             Assert.AreEqual("Devices", devicesProperties.Properties[0].Name);
             Assert.IsTrue(devicesProperties.Properties[0].ItemProperties.Any(p => p.Name.Equals("IsMobile")));
             Assert.IsTrue(devicesProperties.Properties[0].ItemProperties.Any(p => p.Name.Equals("IsTablet")));
+        }
+
+
+        /// <summary>
+        /// Test cloud request engine handles errors from the cloud service 
+        /// as expected.
+        /// A PipelineException should be thrown by the cloud request engine
+        /// and the pipeline is configured to throw any exceptions up 
+        /// the stack in an AggregateException.
+        /// We also check that the exception message includes the content 
+        /// from the JSON response.
+        /// </summary>
+        [TestMethod]
+        public void ValidateErrorHandling()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            _jsonResponse = @"{ ""errors"":[""16384440: This resource key is not authorized for use with this domain: . Please visit https://configure.51degrees.com to update your resource key.""]}";
+
+            ConfigureMockedClient(r =>
+                r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
+                && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
+            );
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            Exception exception = null;
+
+            try
+            {
+                using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+                {
+                    var data = pipeline.CreateFlowData();
+                    data.AddEvidence("query.User-Agent", userAgent);
+
+                    data.Process();
+                }
+            }
+            catch(Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception, "Expected exception to occur");
+            Assert.IsInstanceOfType(exception, typeof(AggregateException));
+            var aggEx = exception as AggregateException;
+            Assert.AreEqual(aggEx.InnerExceptions.Count, 1);
+            var realEx = aggEx.InnerExceptions[0];
+            Assert.IsInstanceOfType(realEx, typeof(PipelineException));
+            Assert.IsTrue(realEx.Message.Contains(
+                "This resource key is not authorized for use with this domain"), 
+                "Exception message did not contain the expected text.");
+        }
+
+
+
+        /// <summary>
+        /// Test cloud request engine handles multiple errors from the cloud 
+        /// service as expected.
+        /// An AggregateException should be thrown by the cloud request engine
+        /// and the pipeline is configured to throw any exceptions up 
+        /// the stack as another AggregateException.
+        /// We also check that the exception messages include the content 
+        /// from the JSON response.
+        /// </summary>
+        [TestMethod]
+        public void ValidateErrorHandling_MultipleErrors()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            _jsonResponse = @"{ ""errors"":[""16384440: This resource key is not authorized for use with this domain: . Please visit https://configure.51degrees.com to update your resource key."",""Some other error""]}";
+
+            ConfigureMockedClient(r =>
+                r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
+                && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
+            );
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            Exception exception = null;
+
+            try
+            {
+                using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+                {
+                    var data = pipeline.CreateFlowData();
+                    data.AddEvidence("query.User-Agent", userAgent);
+
+                    data.Process();
+                }
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception, "Expected exception to occur");
+            Assert.IsInstanceOfType(exception, typeof(AggregateException));
+            var aggEx = (exception as AggregateException).Flatten();
+            Assert.AreEqual(aggEx.InnerExceptions.Count, 2);
+            Assert.IsInstanceOfType(aggEx.InnerExceptions[0], typeof(PipelineException));
+            Assert.IsInstanceOfType(aggEx.InnerExceptions[1], typeof(PipelineException));
+            Assert.IsTrue(aggEx.InnerExceptions.Any(e => e.Message.Contains(
+                "This resource key is not authorized for use with this domain")),
+                "Exception message did not contain the expected text.");
+            Assert.IsTrue(aggEx.InnerExceptions.Any(e => e.Message.Contains(
+                "Some other error")),
+                "Exception message did not contain the expected text.");
+        }
+
+        /// <summary>
+        /// Test cloud request engine handles a lack of data from the 
+        /// cloud service as expected.
+        /// An exception should be thrown by the cloud request engine
+        /// and the pipeline is configured to throw any exceptions up 
+        /// the stack as an AggregateException.
+        /// </summary>
+        [TestMethod]
+        [ExpectedException(typeof(AggregateException))]
+        public void ValidateErrorHandling_NoData()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            _jsonResponse = @"{ }";
+
+            ConfigureMockedClient(r =>
+                r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
+                && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
+            );
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data = pipeline.CreateFlowData();
+                data.AddEvidence("query.User-Agent", userAgent);
+
+                data.Process();
+            }
         }
 
         /// <summary>

@@ -117,10 +117,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ExceptionCloudError" xml:space="preserve">
+    <value>Error returned from 51Degrees cloud service: {0}</value>
+  </data>
+  <data name="ExceptionCloudErrorsMultiple" xml:space="preserve">
+    <value>Multiple errors returned from 51Degrees cloud service. See inner exceptions for details.</value>
+  </data>
   <data name="ExceptionFailedToLoadProperties" xml:space="preserve">
     <value>Failed to load aspect properties</value>
   </data>
   <data name="ExceptionResourceKeyNeeded" xml:space="preserve">
     <value>A resource key is required to access the 51Degrees cloud service. Please use the 'SetResourceKey' method to supply your resource key. You can obtain one for free from https://configure.51degrees.com</value>
+  </data>
+  <data name="MessageNoDataInResponse" xml:space="preserve">
+    <value>No data in response from cloud service at '{0}'</value>
   </data>
 </root>

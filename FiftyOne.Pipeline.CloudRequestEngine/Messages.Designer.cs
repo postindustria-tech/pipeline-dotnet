@@ -61,6 +61,24 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error returned from 51Degrees cloud service: {0}.
+        /// </summary>
+        internal static string ExceptionCloudError {
+            get {
+                return ResourceManager.GetString("ExceptionCloudError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Multiple errors returned from 51Degrees cloud service. See inner exceptions for details..
+        /// </summary>
+        internal static string ExceptionCloudErrorsMultiple {
+            get {
+                return ResourceManager.GetString("ExceptionCloudErrorsMultiple", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to load aspect properties.
         /// </summary>
         internal static string ExceptionFailedToLoadProperties {
@@ -75,6 +93,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         internal static string ExceptionResourceKeyNeeded {
             get {
                 return ResourceManager.GetString("ExceptionResourceKeyNeeded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No data in response from cloud service at &apos;{0}&apos;.
+        /// </summary>
+        internal static string MessageNoDataInResponse {
+            get {
+                return ResourceManager.GetString("MessageNoDataInResponse", resourceCulture);
             }
         }
     }
