@@ -88,6 +88,24 @@ namespace FiftyOne.Pipeline.Engines {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Some enabled features ({0}) require an IDataUpdateService but one has not been supplied. This can be corrected by passing an IDataUpdateService instance to the engine builder constructor. If building from configuration, an IServiceProvider instance, able to resolve an IDataUpdateService, must be passed to the pipeline builder..
+        /// </summary>
+        internal static string ExceptionMissingDataUpdateService {
+            get {
+                return ResourceManager.GetString("ExceptionMissingDataUpdateService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Some enabled features ({0}) require a license key but one has not been supplied. This can be corrected by passing a license key to the engine builder. If building from configuration, check the associated builder implementation to determine the correct parameter name to use..
+        /// </summary>
+        internal static string ExceptionMissingLicenseKey {
+            get {
+                return ResourceManager.GetString("ExceptionMissingLicenseKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Polling interval timespan too large. Must be less than {0} seconds but is {1} seconds.
         /// </summary>
         internal static string ExceptionPollingIntervalTooLarge {

@@ -624,13 +624,13 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         /// Set up the pipeline and flow data with an element which contains
         /// properties which can used to test the GetWhere method.
         /// </summary>
-        private void ConfigureGetWhere()
+        private void ConfigureGetWhere(bool includePropertyWithException = false)
         {
             // Mock the element
             var element1 = new Mock<IFlowElement>();
             element1.SetupGet(e => e.ElementDataKey).Returns("element1");
             // Set up the properties
-            element1.SetupGet(e => e.Properties).Returns(
+            var propertyMetaData =
                 new List<IElementPropertyMetaData>()
                 {
                     new ElementPropertyMetaData(element1.Object, "available", typeof(string),true, "category"),
@@ -638,13 +638,32 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
                     new ElementPropertyMetaData(element1.Object, "unavailable", typeof(string), false, "category"),
                     new ElementPropertyMetaData(element1.Object, "differentcategory", typeof(string),true, "another category"),
                     new ElementPropertyMetaData(element1.Object, "nocategory", typeof(string), true)
-                });
+                };
+            if (includePropertyWithException)
+            {
+                propertyMetaData.Add(new ElementPropertyMetaData(element1.Object, "throws", typeof(string), true));
+            }
+            element1.SetupGet(e => e.Properties).Returns(propertyMetaData);
+
+            IElementData elementData1 = null;
+            // Use a different element data instance based on whether 
+            // we want it to be able to throw an exception or not.
+            if (includePropertyWithException == false)
+            {
+                elementData1 = new DictionaryElementData(new TestLogger<DictionaryElementData>(), _pipeline.Object);
+            }
+            else
+            {
+                var data = new PropertyExceptionElementData(new TestLogger<DictionaryElementData>(), _pipeline.Object);
+                data.ConfigureExceptionForProperty("throws", new Exception("This property is broken!"));
+                elementData1 = data;
+            }
             // Set up the values for the available properties
-            DictionaryElementData elementData1 = new DictionaryElementData(new TestLogger<DictionaryElementData>(), _pipeline.Object);
             elementData1["available"] = "a value";
             elementData1["anotheravailable"] = "a value";
             elementData1["differentcategory"] = "a value";
             elementData1["nocategory"] = "a value";
+
             // Set up the process method to add the values to the flow data
             _pipeline.Setup(p => p.Process(It.IsAny<IFlowData>()))
                 .Callback((IFlowData data) =>
@@ -718,6 +737,29 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
                 Assert.IsNotNull(value.Key);
                 Assert.IsTrue(value.Key.StartsWith("element1."));
                 Assert.AreNotEqual("element1.unavailable", value.Key);
+                Assert.IsNotNull(value.Value);
+                Assert.AreEqual(_flowData.Get("element1")[value.Key.Split(".")[1]], value.Value);
+            }
+            Assert.AreEqual(4, _flowData.GetWhere(i => true).Count());
+        }
+
+        /// <summary>
+        /// Test that when calling the GetWhere method, a property that
+        /// would throw an exception is just ignored rather than
+        /// the exception being thrown to the caller.
+        /// </summary>
+        [TestMethod]
+        public void FlowData_GetWhere_PropertyThrowsException()
+        {
+            ConfigureGetWhere();
+            _flowData.Process();
+            foreach (var value in _flowData.GetWhere(i => true))
+            {
+                Assert.IsNotNull(value);
+                Assert.IsNotNull(value.Key);
+                Assert.IsTrue(value.Key.StartsWith("element1."));
+                Assert.AreNotEqual("element1.unavailable", value.Key);
+                Assert.AreNotEqual("element1.throws", value.Key);
                 Assert.IsNotNull(value.Value);
                 Assert.AreEqual(_flowData.Get("element1")[value.Key.Split(".")[1]], value.Value);
             }
