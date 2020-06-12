@@ -193,7 +193,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
                         if (dataFileConfig.UpdateOnStartup) { features.Add("update on startup"); }
 
                         string msg = string.Format(CultureInfo.InvariantCulture,
-                            Messages.ExceptionMissingDataUpdateService,
+                            Messages.ExceptionMissingLicenseKey,
                             string.Join(", ", features));
                         throw new PipelineConfigurationException(msg);
                     }
