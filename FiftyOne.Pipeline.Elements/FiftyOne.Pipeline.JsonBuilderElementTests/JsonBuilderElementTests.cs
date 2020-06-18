@@ -169,6 +169,47 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             Trace.WriteLine("Data validated");
         }
 
+        /// <summary>
+        /// Check that entries will not appear in the output 
+        /// for blacklisted elements.
+        /// </summary>
+        [TestMethod]
+        public void JsonBuilder_ElementBlacklist()
+        {
+            var flowData = new Mock<IFlowData>();
+            IJsonBuilderElementData result = null;
+            var _missingPropertyService = new Mock<IMissingPropertyService>();
+            flowData.Setup(d => d.ElementDataAsDictionary()).Returns(
+                new Dictionary<string, object>() {
+                    { "test", _elementDataMock.Object },
+                    { "cloud-response", _elementDataMock.Object },
+                    { "json-builder", _elementDataMock.Object }
+                });
+            flowData.Setup(d => d.GetOrAdd(
+                It.IsAny<TypedKey<IJsonBuilderElementData>>(),
+                It.IsAny<Func<IPipeline, IJsonBuilderElementData>>()))
+                .Returns<TypedKey<IJsonBuilderElementData>, Func<IPipeline, IJsonBuilderElementData>>(
+                (k, f) =>
+                {
+                    result = f(flowData.Object.Pipeline);
+                    return result;
+                });
+
+            string session = "somesessionid";
+            flowData.Setup(d => d.TryGetEvidence("query.session-id", out session)).Returns(true);
+            int iteration = 1;
+            flowData.Setup(d => d.TryGetEvidence("query.sequence", out iteration)).Returns(true);
+
+            _jsonBuilderElement.Process(flowData.Object);
+
+            Assert.IsTrue(IsExpectedJson(result.Json));
+            JObject obj = JObject.Parse(result.Json);
+            Assert.AreEqual(1, obj.Children().Count(), 
+                $"There should only be the 'test' key at the top level as " +
+                $"the other elements should have been ignored. Complete JSON: " +
+                Environment.NewLine + result.Json);
+        }
+
         public class JsonData
         {
             [JsonProperty("empty-aspect")]

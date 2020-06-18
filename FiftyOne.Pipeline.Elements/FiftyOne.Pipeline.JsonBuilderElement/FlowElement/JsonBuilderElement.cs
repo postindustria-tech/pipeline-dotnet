@@ -52,7 +52,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         private EvidenceKeyFilterWhitelist _evidenceKeyFilter;
         private List<IElementPropertyMetaData> _properties;
         private List<string> _blacklist;
-               
+        private HashSet<string> _elementBlacklist;
+
         // An array of custom converters to use when serializing 
         // the property values.
         private static JsonConverter[] JSON_CONVERTERS = new JsonConverter[]
@@ -94,6 +95,10 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
             // Blacklist of properties which should not be added to the Json.
             _blacklist = new List<string>() { "products", "properties" };
+            // Blacklist of the element data keys of elements that should 
+            // not be added to the Json.
+            _elementBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase) 
+                { "cloud-response", "json-builder" };
 
             JSON_CONVERTERS = JSON_CONVERTERS.Concat(jsonConverters).ToArray();
         }
@@ -294,12 +299,12 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
             Dictionary<string, object> allProperties = new Dictionary<string, object>();
 
-            foreach (var element in data.ElementDataAsDictionary())
+            foreach (var element in data.ElementDataAsDictionary().Where(elementData => 
+                _elementBlacklist.Contains(elementData.Key) == false))
             {
                 if (allProperties.ContainsKey(element.Key.ToLowerInvariant()) == false)
                 {
                     var values = GetValues((element.Value as IElementData).AsDictionary());
-
                     allProperties.Add(element.Key.ToLowerInvariant(), values);
                 }
             }
