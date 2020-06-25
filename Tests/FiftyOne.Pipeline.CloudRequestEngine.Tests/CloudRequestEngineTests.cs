@@ -50,6 +50,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         private string _evidenceKeysResponse = "['query.User-Agent']";
         private string _accessiblePropertiesResponse = 
             "{'Products': {'device': {'DataTier': 'tier','Properties': [{'Name': 'value','Type': 'String','Category': 'Device'}]}}}";
+        private HttpStatusCode _accessiblePropertiesResponseStatus = HttpStatusCode.OK;
 
 
         /// <summary>
@@ -268,6 +269,52 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         }
 
 
+        /// <summary>
+        /// Test cloud request engine handles errors from the cloud service 
+        /// as expected.
+        /// An AggregateException should be thrown by the cloud request engine
+        /// containing the errors from the cloud service
+        /// and the pipeline is configured to throw any exceptions up 
+        /// the stack in an AggregateException.
+        /// We also check that the exception message includes the content 
+        /// from the JSON response.
+        /// </summary>
+        [TestMethod]
+        public void ValidateErrorHandling_InvalidResourceKey()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            _accessiblePropertiesResponse = @"{ ""errors"":[""58982060: resource_key not a valid resource key""]}";
+            _accessiblePropertiesResponseStatus = HttpStatusCode.BadRequest;
+
+            ConfigureMockedClient(r =>
+                r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
+                && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
+            );
+
+            Exception exception = null;
+
+            try { 
+                var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                    .SetResourceKey(resourceKey)
+                    .Build();
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception, "Expected exception to occur");
+            Assert.IsInstanceOfType(exception, typeof(AggregateException));
+            var aggEx = exception as AggregateException;
+            Assert.AreEqual(1, aggEx.InnerExceptions.Count);
+            var realEx = aggEx.InnerExceptions[0];
+            Assert.IsInstanceOfType(realEx, typeof(PipelineException));
+            Assert.IsTrue(realEx.Message.Contains(
+                "resource_key not a valid resource key"),
+                "Exception message did not contain the expected text.");
+        }
+
 
         /// <summary>
         /// Test cloud request engine handles multiple errors from the cloud 
@@ -413,7 +460,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                // prepare the expected response of the mocked http call
                .ReturnsAsync(new HttpResponseMessage()
                {
-                   StatusCode = HttpStatusCode.OK,
+                   StatusCode = _accessiblePropertiesResponseStatus,
                    Content = new StringContent(_accessiblePropertiesResponse),
                })
                .Verifiable();

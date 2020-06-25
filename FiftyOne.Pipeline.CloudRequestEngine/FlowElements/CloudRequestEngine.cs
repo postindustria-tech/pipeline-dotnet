@@ -328,17 +328,33 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         private void GetCloudProperties()
         {
+            HttpResponseMessage result = null;
             string jsonResult = string.Empty;
 
             try
             {
                 var request = _httpClient.GetAsync($"{_propertiesEndpoint}?resource={_resourceKey}");
-                jsonResult = request.Result.Content.ReadAsStringAsync().Result;
+                result = request.Result;
+                jsonResult = result.Content.ReadAsStringAsync().Result;
             }
             catch (Exception ex)
             {
                 throw new Exception ($"Failed to retrieve available properties " +
                     $"from cloud service at {_propertiesEndpoint}.", ex);
+            }
+            
+            if (result.IsSuccessStatusCode == false)
+            {
+                List<Exception> exceptions = new List<Exception>();
+                if (string.IsNullOrEmpty(jsonResult) == false)
+                {
+                    var res = JsonConvert.DeserializeObject<LicencedProducts>(jsonResult);
+                    foreach (var e in res.Errors)
+                    {
+                        exceptions.Add(new PipelineException(e));
+                    }
+                }
+                throw new AggregateException(exceptions);
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)
