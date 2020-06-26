@@ -337,7 +337,6 @@
     this.promise.then(function(value) {
         // JSON has been updated so replace the current instance.
         update.call(parent, value);
-        resolve(parent);
         completed = true;
     }).catch(catchError);
 {{/_supportsPromises}}
