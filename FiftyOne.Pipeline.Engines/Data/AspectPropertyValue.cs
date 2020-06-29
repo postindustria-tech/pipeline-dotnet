@@ -93,6 +93,9 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// This exception will be thrown if the instance does not 
         /// contain a value.
         /// </exception>
+        /// <exception cref="InvalidCastException">
+        /// Will be thrown if the supplied value is not of the expected type.
+        /// </exception>
         object IAspectPropertyValue.Value {
             get => Value;
             set

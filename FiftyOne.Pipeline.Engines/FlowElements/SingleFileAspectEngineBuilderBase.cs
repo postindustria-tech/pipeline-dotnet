@@ -373,7 +373,11 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <summary>
         /// Set the license key to use when updating the Engine's data file.
         /// </summary>
-        /// <param name="key">51Degrees license key</param>
+        /// <param name="key">
+        /// 51Degrees license key.
+        /// This parameter can be set to null, but doing so will disable 
+        /// automatic updates for this file.
+        /// </param>
         /// <returns>This builder</returns>
         public TBuilder SetDataUpdateLicenseKey(
             string key)

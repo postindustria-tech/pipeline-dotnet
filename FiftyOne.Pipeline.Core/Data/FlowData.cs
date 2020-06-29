@@ -268,20 +268,36 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// All the element data AspectPropertyValues that match the predicate
         /// </returns>
+        /// <exception cref="PipelineException">
+        /// Thrown if this FlowData instance has not been processed yet.
+        /// </exception>
         public IEnumerable<KeyValuePair<string, object>> GetWhere(
             Func<IElementPropertyMetaData, bool> predicate)
         {
-            foreach (var element in PipelineInternal.FlowElements)
+            var data = _data.AsStringKeyDictionary();
+
+            foreach (var element in PipelineInternal.FlowElements
+                .Where(e => data.ContainsKey(e.ElementDataKey)))
             {
-                foreach (var property in
-                    element.Properties.Where(predicate).Where(i => i.Available))
+                var elementData = data[element.ElementDataKey] as IElementData;
+                if (elementData != null)
                 {
+                    var elementDataDictionary = elementData.AsDictionary();
+
+                    foreach (var property in
+                        element.Properties.Where(predicate).Where(i =>
+                            i.Available &&
+                            // Check if the property is actually present in 
+                            // the element data before trying to access it.
+                            elementDataDictionary.ContainsKey(i.Name)))
+                    {
 #pragma warning disable CA1308 // Normalize strings to uppercase
-                    // Pipeline specification is for keys to be lower-case.      
-                    yield return new KeyValuePair<string, object>(
-                        element.ElementDataKey + "." + property.Name.ToLowerInvariant(),
-                        Get(element.ElementDataKey)[property.Name.ToLowerInvariant()]);
+                        // Pipeline specification is for keys to be lower-case.      
+                        yield return new KeyValuePair<string, object>(
+                            element.ElementDataKey + "." + property.Name.ToLowerInvariant(),
+                            elementDataDictionary[property.Name.ToLowerInvariant()]);
 #pragma warning restore CA1308 // Normalize strings to uppercase
+                    }
                 }
             }
         }

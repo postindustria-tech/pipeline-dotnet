@@ -28,6 +28,7 @@ using FiftyOne.Pipeline.Engines.Services;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -165,6 +166,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
                     dataFileConfig.UpdateOnStartup ||
                     dataFileConfig.FileSystemWatcherEnabled)
                 {
+                    // If data update service is null then throw an exception.
                     if (_dataUpdateService == null)
                     {
                         List<string> features = new List<string>();
@@ -172,15 +174,31 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
                         if (dataFileConfig.UpdateOnStartup) { features.Add("update on startup"); }
                         if (dataFileConfig.FileSystemWatcherEnabled) { features.Add("file system watcher"); }
 
-                        throw new PipelineException(
-                            $"Some enabled features ({string.Join(",", features)}) " +
-                            "require an IDataUpdateService but one has not been supplied. " +
-                            "This can be corrected by passing an IDataUpdateService " +
-                            "instance to the engine builder constructor. " +
-                            "If building from configuration, an IServiceProvider " +
-                            "instance, able to resolve an IDataUpdateService, " +
-                            "must be passed to the pipeline builder.");
+                        string msg = string.Format(CultureInfo.InvariantCulture,
+                            Messages.ExceptionMissingDataUpdateService,
+                            string.Join(", ", features));
+                        throw new PipelineException(msg);
                     }
+                    // If license key is required for requesting data updates
+                    // but has not been set then throw an exception.
+                    if (dataFileConfig.LicenseKeyRequiredForUpdates &&
+                        (dataFileConfig.AutomaticUpdatesEnabled ||
+                        dataFileConfig.UpdateOnStartup) &&
+                        (dataFileConfig.DataUpdateLicenseKeys == null ||
+                        dataFileConfig.DataUpdateLicenseKeys.Count == 0 ||
+                        dataFileConfig.DataUpdateLicenseKeys.All(k => string.IsNullOrEmpty(k))))
+                    {
+                        List<string> features = new List<string>();
+                        if (dataFileConfig.AutomaticUpdatesEnabled) { features.Add("auto update"); }
+                        if (dataFileConfig.UpdateOnStartup) { features.Add("update on startup"); }
+
+                        string msg = string.Format(CultureInfo.InvariantCulture,
+                            Messages.ExceptionMissingLicenseKey,
+                            string.Join(", ", features));
+                        throw new PipelineConfigurationException(msg);
+                    }
+
+                    // Register the data file with the update service.
                     _dataUpdateService.RegisterDataFile(dataFile);
                 }
                 DataFiles.Add(dataFile);

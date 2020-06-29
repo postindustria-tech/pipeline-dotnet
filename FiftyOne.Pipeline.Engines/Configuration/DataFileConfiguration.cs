@@ -164,5 +164,14 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// and the engine has loaded the new file.
         /// </summary>
         public bool UpdateOnStartup { get; set; } = false;
+
+        /// <summary>
+        /// If true then, if updates are enabled, the software will 
+        /// check that a license key is present when the associated 
+        /// engine is built.
+        /// If a license key has not been supplied, an exception will
+        /// be thrown.
+        /// </summary>
+        public bool LicenseKeyRequiredForUpdates { get; set; } = false;
     }
 }

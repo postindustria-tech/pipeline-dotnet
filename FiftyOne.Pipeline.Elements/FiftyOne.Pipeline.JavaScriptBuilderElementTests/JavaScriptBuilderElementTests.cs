@@ -34,6 +34,9 @@ using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using System;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines.Data;
+using FiftyOne.Pipeline.Engines;
+using FiftyOne.Pipeline.Core.Exceptions;
 
 namespace FiftyOne.Pipeline.JavaScript.Tests
 {
@@ -85,35 +88,24 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         [DataRow("device", "browsername", null)]
         public void JavaScriptBuilderElement_JavaScript(string key, string property, object value)
         {
-            _javaScriptBuilderElement = 
+            _javaScriptBuilderElement =
                 new JavaScriptBuilderElementBuilder(_loggerFactory).Build();
 
             dynamic json = new JObject();
-            
-            if(value == null)
+
+            if (value == null)
             {
-                json[key] = new JObject(new JProperty(property, value), new JProperty(property+"nullreason", "No value set"));
+                json[key] = new JObject(new JProperty(property, value), new JProperty(property + "nullreason", "No value set"));
                 value = "No value set";
             } else
             {
                 json[key] = new JObject(new JProperty(property, value));
             }
-            IJavaScriptBuilderElementData result = null;
-            var flowData = new Mock<IFlowData>();
 
-            flowData.Setup(d => d.Get<IJsonBuilderElementData>()).Returns(() =>
-            {
-                var d = new JsonBuilderElementData(new Mock<ILogger<JsonBuilderElementData>>().Object, flowData.Object.Pipeline);
-                d.Json = json.ToString();
-                return d;
-            });
-            
-            flowData.Setup(d => d.GetAsString(It.IsAny<string>())).Returns("None");
-            flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(new Dictionary<string, object>() {
-                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, "localhost" },
-                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, "https" },
-            });
-            flowData.Setup(d => d.Get(It.IsAny<string>())).Returns(_elementDataMock.Object);
+            var flowData = new Mock<IFlowData>();
+            Configure(flowData,  json);
+
+            IJavaScriptBuilderElementData result = null;
             flowData.Setup(d => d.GetOrAdd(
                 It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
                 It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
@@ -122,12 +114,11 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                     result = f(flowData.Object.Pipeline);
                     return result;
                 });
+
             _javaScriptBuilderElement.Process(flowData.Object);
 
             Assert.IsTrue(IsValidFodObject(result.JavaScript, key, property, value));
         }
-
-        delegate void GetValueCallback(string key, out string result);
 
         /// <summary>
         /// Check that the callback URL is generated correctly.
@@ -143,29 +134,10 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                 new JavaScriptBuilderElementBuilder(_loggerFactory)
                 .SetEndpoint("/json")
                 .Build();
-
+            
             var flowData = new Mock<IFlowData>();
-            flowData.Setup(d => d.Get<IJsonBuilderElementData>()).Returns(() =>
-            {
-                var d = new JsonBuilderElementData(new Mock<ILogger<JsonBuilderElementData>>().Object, null);
-                d.Json = @"{ ""test"": ""value"" }";
-                return d;
-            });
-            // Setup the TryGetEvidence methods that are used to get 
-            // host and protocol for the callback URL
-            flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, out It.Ref<string>.IsAny))
-                .Callback(new GetValueCallback((string key, out string result) => { result = "localhost"; }));
-            flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, out It.Ref<string>.IsAny))
-                .Callback(new GetValueCallback((string key, out string result) => { result = "https"; }));
-            // Setup the evidence dictionary accessor.
-            // This is used to get the query parameters to add to the 
-            // callback URL.
-            flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(new Dictionary<string, object>() {
-                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, "localhost" },
-                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, "https" },
-            });
-            // Setup the GetOrAdd method to catch the data object that is
-            // set by the element so we can check it's values.
+            Configure(flowData);
+
             IJavaScriptBuilderElementData result = null;
             flowData.Setup(d => d.GetOrAdd(
                 It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
@@ -179,11 +151,106 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             _javaScriptBuilderElement.Process(flowData.Object);
 
             string expectedUrl = "https://localhost/json";
-            Assert.IsTrue(result.JavaScript.Contains(expectedUrl), 
+            Assert.IsTrue(result.JavaScript.Contains(expectedUrl),
                 $"JavaScript does not contain expected URL '{expectedUrl}'.");
         }
 
 
+        public enum ExceptionType
+        {
+            PropertyMissingException,
+            PipelineDataException,
+            InvalidCastException,
+            KeyNotFoundException,
+            Exception,
+            None
+        }
+
+        /// <summary>
+        /// Check that accessing the 'Promise' property works as intended 
+        /// in a range of scenarios
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(ExceptionType.PropertyMissingException, false)]
+        [DataRow(ExceptionType.Exception, true)]
+        [DataRow(ExceptionType.InvalidCastException, false)]
+        [DataRow(ExceptionType.KeyNotFoundException, false)]
+        [DataRow(ExceptionType.None, false)]
+        [DataRow(ExceptionType.PipelineDataException, false)]
+        public void JavaScriptBuilderElement_Promise(ExceptionType exceptionThrownByPromiseProperty, bool exceptionExpected)
+        {
+            _javaScriptBuilderElement =
+                new JavaScriptBuilderElementBuilder(_loggerFactory).Build();
+
+            var flowData = new Mock<IFlowData>();
+            Configure(flowData);
+
+            IJavaScriptBuilderElementData result = null;
+            flowData.Setup(d => d.GetOrAdd(
+                It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
+                It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
+                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
+                {
+                    result = f(flowData.Object.Pipeline);
+                    return result;
+                });
+
+            switch (exceptionThrownByPromiseProperty)
+            {
+                case ExceptionType.PropertyMissingException:
+                    flowData.Setup(d => d.GetAs<IAspectPropertyValue<string>>("Promise"))
+                        .Throws(new PropertyMissingException("Problem!"));
+                    break;
+                case ExceptionType.PipelineDataException:
+                    flowData.Setup(d => d.GetAs<IAspectPropertyValue<string>>("Promise"))
+                        .Throws(new PipelineDataException("Problem!"));
+                    break;
+                case ExceptionType.InvalidCastException:
+                    flowData.Setup(d => d.GetAs<IAspectPropertyValue<string>>("Promise"))
+                        .Throws(new InvalidCastException("Problem!"));
+                    break;
+                case ExceptionType.KeyNotFoundException:
+                    flowData.Setup(d => d.GetAs<IAspectPropertyValue<string>>("Promise"))
+                        .Throws(new KeyNotFoundException("Problem!"));
+                    break;
+                case ExceptionType.Exception:
+                    flowData.Setup(d => d.GetAs<IAspectPropertyValue<string>>("Promise"))
+                        .Throws(new Exception("Problem!"));
+                    break;
+                case ExceptionType.None:
+                    flowData.Setup(d => d.GetAs<IAspectPropertyValue<string>>("Promise"))
+                        .Returns(new AspectPropertyValue<string>("Full"));
+                    break;
+                default:
+                    break;
+            }
+
+            Exception thrown = null;
+
+            try
+            {
+                _javaScriptBuilderElement.Process(flowData.Object);
+            }
+            catch(Exception ex)
+            {
+                thrown = ex;
+            }
+
+            if (exceptionExpected)
+            {
+                Assert.IsNotNull(thrown, "Expected an exception to be " +
+                    "visible externally but it was not.");
+            }
+            else
+            {
+                Assert.IsNull(thrown, "Did not expect an exception " +
+                    "to be visible externally but one was.");
+                Assert.IsNotNull(result.JavaScript, "Expected JavaScript " +
+                    "output to be populated but it was not.");
+                Assert.AreNotEqual("", result.JavaScript, "Expected " +
+                    "JavaScript output to be populated but it was not.");
+            }
+        }
 
         /// <summary>
         /// Test the JavaScript include by accessing the given property.
@@ -204,6 +271,59 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                 return true;
             else
                 return false;
+        }
+
+        delegate void GetValueCallback(string key, out string result);
+
+        /// <summary>
+        /// Configure the flow data to respond in the way we want for 
+        /// this test.
+        /// </summary>
+        /// <param name="flowData">
+        /// The mock flow data instance to configure 
+        /// </param>
+        /// <param name="jsonData">
+        /// The JSON data to embed in the flow data.
+        /// This will be copied into the JavaScript that is produced.
+        /// </param>
+        /// <param name="hostName">
+        /// The host name to add to the evidence.
+        /// The JavaScriptBuilder should use this to generate the 
+        /// callback URL.
+        /// </param>
+        /// <param name="protocol">
+        /// The protocol to add to the evidence.
+        /// The JavaScriptBuilder should use this to generate the 
+        /// callback URL.
+        /// </param>
+        private void Configure(Mock<IFlowData> flowData, JObject jsonData = null, string hostName = "localhost", string protocol = "https")
+        {
+            if (jsonData == null)
+            {
+                jsonData = new JObject();
+                jsonData["device"] = new JObject(new JProperty("ismobile", true));
+            }
+
+            flowData.Setup(d => d.Get<IJsonBuilderElementData>()).Returns(() =>
+            {
+                var d = new JsonBuilderElementData(new Mock<ILogger<JsonBuilderElementData>>().Object, flowData.Object.Pipeline);
+                d.Json = jsonData.ToString();
+                return d;
+            });
+
+            // Setup the TryGetEvidence methods that are used to get 
+            // host and protocol for the callback URL
+            flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, out It.Ref<string>.IsAny))
+                .Callback(new GetValueCallback((string key, out string result) => { result = "localhost"; }));
+            flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, out It.Ref<string>.IsAny))
+                .Callback(new GetValueCallback((string key, out string result) => { result = "https"; }));
+
+            flowData.Setup(d => d.GetAsString(It.IsAny<string>())).Returns("None");
+            flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(new Dictionary<string, object>() {
+                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, hostName },
+                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, protocol },
+            });
+            flowData.Setup(d => d.Get(It.IsAny<string>())).Returns(_elementDataMock.Object);
         }
     }
 }

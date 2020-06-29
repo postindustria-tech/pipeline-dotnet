@@ -43,6 +43,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Configuration
         {
             // Default to using the 51Degrees URL formatter
             UrlFormatter = new FiftyOneUrlFormatter();
+            // Require a license key by default
+            LicenseKeyRequiredForUpdates = true;
         }
     }
 }

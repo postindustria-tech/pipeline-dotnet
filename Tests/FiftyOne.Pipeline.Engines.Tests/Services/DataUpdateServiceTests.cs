@@ -1444,7 +1444,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 AutomaticUpdatesEnabled = true,
                 PollingIntervalSeconds = 10,
                 MaxRandomisationSeconds = 0,
-                DataUpdateUrl = "https://test.com"
+                DataUpdateUrl = "https://test.com",
+                FileSystemWatcherEnabled = false
             };
             var file = new AspectEngineDataFile()
             {
@@ -1452,6 +1453,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 Configuration = config,
                 UpdateAvailableTime = DateTime.UtcNow.AddDays(-1)
             };
+            ConfigureFileNoUpdate(engine, file);
             ConfigureHttpTooManyRequests();
             ConfigureTimerImmediateCallbackOnce();
             // Configure a ManualResetEvent to be set when processing

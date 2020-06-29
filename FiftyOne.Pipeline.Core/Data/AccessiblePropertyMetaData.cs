@@ -43,6 +43,11 @@ namespace FiftyOne.Pipeline.Core.Data
         /// accessible properties.
         /// </summary>
         public Dictionary<string, ProductMetaData> Products { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public List<string> Errors { get; set; }
     }
 
     /// <summary>

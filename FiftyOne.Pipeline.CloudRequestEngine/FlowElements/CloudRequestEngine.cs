@@ -22,13 +22,17 @@
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 
@@ -218,6 +222,71 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
 
             aspectData.JsonResponse = jsonResult;
+
+            ValidateResponse(jsonResult);
+        }
+
+        /// <summary>
+        /// Validate the JSON response from the cloud service.
+        /// </summary>
+        /// <param name="jsonResult">
+        /// The JSON content that is returned from the cloud service.
+        /// </param>
+        /// <exception cref="AggregateException">
+        /// Thrown if there are multiple errors returned from the 
+        /// cloud service.
+        /// </exception>
+        /// <exception cref="PipelineException">
+        /// Thrown if there is an error from the cloud service or
+        /// there is no data in the response.
+        /// </exception>
+        private void ValidateResponse(string jsonResult)
+        {
+            var hasData = string.IsNullOrEmpty(jsonResult) == false;
+            List<string> messages = new List<string>();
+
+            if (hasData)
+            {
+                var jObj = JObject.Parse(jsonResult);
+                var hasErrors = jObj.ContainsKey("errors");
+                hasData = hasErrors ?
+                    jObj.Values().Count() > 1 :
+                    jObj.Values().Any();
+
+                if (hasErrors)
+                {
+                    var errors = jObj.Value<JArray>("errors");
+                    messages.AddRange(errors.Children<JValue>().Select(t => t.Value.ToString()));
+                }
+            }
+            
+            // If there were no errors but there was also no other data
+            // in the response then add an explanation to the list of 
+            // messages.
+            if (messages.Count == 0 &&
+                hasData == false)
+            {
+                var msg = string.Format(CultureInfo.InvariantCulture,
+                    Messages.MessageNoDataInResponse,
+                    _dataEndpoint);
+                messages.Add(msg);
+            }
+
+            // If there are any errors returned from the cloud service 
+            // then throw an exception
+            if (messages.Count > 1)
+            {
+                throw new AggregateException(
+                    Messages.ExceptionCloudErrorsMultiple,
+                    messages.Select(m => new PipelineException(m)));
+            }
+            else if (messages.Count == 1)
+            {
+                var msg = string.Format(CultureInfo.InvariantCulture,
+                    Messages.ExceptionCloudError,
+                    messages[0]);
+                throw new PipelineException(msg);
+            }
         }
 
         /// <summary>
@@ -259,17 +328,33 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         private void GetCloudProperties()
         {
+            HttpResponseMessage result = null;
             string jsonResult = string.Empty;
 
             try
             {
                 var request = _httpClient.GetAsync($"{_propertiesEndpoint}?resource={_resourceKey}");
-                jsonResult = request.Result.Content.ReadAsStringAsync().Result;
+                result = request.Result;
+                jsonResult = result.Content.ReadAsStringAsync().Result;
             }
             catch (Exception ex)
             {
                 throw new Exception ($"Failed to retrieve available properties " +
                     $"from cloud service at {_propertiesEndpoint}.", ex);
+            }
+            
+            if (result.IsSuccessStatusCode == false)
+            {
+                List<Exception> exceptions = new List<Exception>();
+                if (string.IsNullOrEmpty(jsonResult) == false)
+                {
+                    var res = JsonConvert.DeserializeObject<LicencedProducts>(jsonResult);
+                    foreach (var e in res.Errors)
+                    {
+                        exceptions.Add(new PipelineException(e));
+                    }
+                }
+                throw new AggregateException(exceptions);
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)

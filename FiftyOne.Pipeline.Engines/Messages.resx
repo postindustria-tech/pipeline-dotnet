@@ -126,6 +126,12 @@
   <data name="ExceptionAutoUpdateRefreshEngine" xml:space="preserve">
     <value>An error occurred when applying a data update to engine '{0}'</value>
   </data>
+  <data name="ExceptionMissingDataUpdateService" xml:space="preserve">
+    <value>Some enabled features ({0}) require an IDataUpdateService but one has not been supplied. This can be corrected by passing an IDataUpdateService instance to the engine builder constructor. If building from configuration, an IServiceProvider instance, able to resolve an IDataUpdateService, must be passed to the pipeline builder.</value>
+  </data>
+  <data name="ExceptionMissingLicenseKey" xml:space="preserve">
+    <value>Some enabled features ({0}) require a license key but one has not been supplied. This can be corrected by passing a license key to the engine builder. If building from configuration, check the associated builder implementation to determine the correct parameter name to use.</value>
+  </data>
   <data name="ExceptionPollingIntervalTooLarge" xml:space="preserve">
     <value>Polling interval timespan too large. Must be less than {0} seconds but is {1} seconds</value>
   </data>

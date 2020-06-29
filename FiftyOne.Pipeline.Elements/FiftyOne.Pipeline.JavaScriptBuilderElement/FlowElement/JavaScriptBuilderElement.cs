@@ -40,6 +40,7 @@ using System.IO;
 using System.Reflection;
 using Stubble.Core.Settings;
 using FiftyOne.Pipeline.Engines.Data;
+using FiftyOne.Pipeline.Engines;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 {
@@ -94,6 +95,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// true.
         /// </summary>
         private bool _lastRequestWasError;
+        /// <summary>
+        /// Flag used to remember if the promise property is available
+        /// or not.
+        /// Used to prevent performance-impacting internal exceptions.
+        /// </summary>
+        private bool _promisePropertyAvailable = true;
 
         /// <summary>
         /// Key to identify engine.
@@ -114,6 +121,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </summary>
 		public override IList<IElementPropertyMetaData> Properties => 
 			_properties;
+
 
         /// <summary>
         /// Default constructor.
@@ -218,7 +226,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         {
             var host = Host;
             var protocol = Protocol;
-            bool supportsPromises;
+            bool supportsPromises = false;
 
             if (string.IsNullOrEmpty(host))
             {
@@ -241,14 +249,24 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             // If device detection is in the Pipeline then we can check
             // if the client's browser supports promises.
             // This can be used to customize the JavaScript response. 
-            try
+            if (_promisePropertyAvailable)
             {
-                var promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
-                supportsPromises = promise != null && promise.HasValue && promise.Value == "Full";
+                try
+                {
+                    var promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
+                    supportsPromises = promise != null && promise.HasValue && promise.Value == "Full";
+                }
+                catch (PropertyMissingException)
+                {
+                    // This exception will be thrown on every call to get 
+                    // the property so short-circuit future calls.
+                    _promisePropertyAvailable = false;
+                    supportsPromises = false;
+                }
+                catch (PipelineDataException) { supportsPromises = false; }
+                catch (InvalidCastException) { supportsPromises = false; }
+                catch (KeyNotFoundException) { supportsPromises = false; }
             }
-            catch (PipelineDataException) { supportsPromises = false; }
-            catch (InvalidCastException) { supportsPromises = false; }
-            catch (KeyNotFoundException) { supportsPromises = false; }
 
             // Get the JSON include to embed into the JavaScript include.
             string jsonObject = string.Empty;

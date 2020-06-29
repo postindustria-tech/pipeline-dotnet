@@ -45,7 +45,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Data
         /// </summary>
         public string JsonResponse
         {
-            get { return base[JSON_RESPONSE_KEY].ToString(); }
+            get { return base[JSON_RESPONSE_KEY]?.ToString(); }
             set { base[JSON_RESPONSE_KEY] = value; }
         }
 
