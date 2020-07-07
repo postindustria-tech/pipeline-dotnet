@@ -253,6 +253,56 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         }
 
         /// <summary>
+        /// Verify that valid JavaScript is produced when there are
+        /// delayed execution properties in the payload.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(true)]
+        [DataRow(false)]
+        public void JavaScriptBuilderElement_DelayExecution(bool minify)
+        {
+            _javaScriptBuilderElement = 
+                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                .SetMinify(minify)
+                .Build();
+            
+            dynamic json = new JObject();
+
+            var locationData = new JObject();
+            locationData.Add(new JProperty("postcode", null));
+            locationData.Add(new JProperty("postcodenullreason", 
+                "Evidence for this property has not been retrieved. Ensure the 'complete' method is called, passing the name of this property in the second parameter."));
+            locationData.Add(new JProperty("postcodeevidenceproperties", new[] { "location.javascript" }));
+            locationData.Add(new JProperty("javascript", "if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(function() { // 51D replace this comment with callback function. }); }"));
+            locationData.Add(new JProperty("javascriptdelayexecution", true));
+            json["location"] = locationData;
+
+            var flowData = new Mock<IFlowData>();
+            Configure(flowData, json);
+
+            IJavaScriptBuilderElementData result = null;
+            flowData.Setup(d => d.GetOrAdd(
+                It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
+                It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
+                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
+                {
+                    result = f(flowData.Object.Pipeline);
+                    return result;
+                });
+
+            _javaScriptBuilderElement.Process(flowData.Object);
+
+            if (minify == false)
+            {
+                Assert.IsTrue(result.JavaScript.Contains("getEvidencePropertiesFromObject"),
+                    "Expected the generated JavaScript to contain the " +
+                    "'getEvidencePropertiesFromObject' function but it does not.");
+            }
+            // Attempt to evaluate the JavaScript.
+            context.Eval(result.JavaScript);
+        }
+
+        /// <summary>
         /// Test the JavaScript include by accessing the given property.
         /// </summary>
         /// <param name="javaScript"></param>

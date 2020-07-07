@@ -51,18 +51,14 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
         private IJsonBuilderElement _jsonBuilderElement;
         private Mock<IElementData> _elementDataMock;
         private ILoggerFactory _loggerFactory;
-        
+        private Mock<IPipeline> _pipeline;
+
         private Mock<IAspectEngine> _testEngine;
 
         [TestInitialize]
         public void Init()
         {
             _testEngine = new Mock<IAspectEngine>();
-            _testEngine.Setup(e => e.Properties).Returns(new List<IAspectPropertyMetaData>()
-            {
-                new AspectPropertyMetaData(_testEngine.Object, "property", typeof(string), "", new List<string>(), true),
-                new AspectPropertyMetaData(_testEngine.Object, "jsproperty", typeof(JavaScript), "", new List<string>(), true)
-            });
             _testEngine.Setup(e => e.ElementDataKey).Returns("test");
 
             _loggerFactory = new LoggerFactory();
@@ -76,6 +72,11 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
                     { "property", "thisIsAValue" },
                     { "jsproperty", "var = 'some js code';" }
                 });
+
+            _pipeline = new Mock<IPipeline>();
+            _pipeline.Setup(p => p.GetHashCode()).Returns(1);
+            var propertyMetaData = new Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>();
+            _pipeline.Setup(p => p.ElementAvailableProperties).Returns(propertyMetaData);
         }
 
         /// <summary>
@@ -84,30 +85,11 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
         [TestMethod]
         public void JsonBuilder_ValidJson()
         {
-            var flowData = new Mock<IFlowData>();
-            IJsonBuilderElementData result = null;
-            var _missingPropertyService = new Mock<IMissingPropertyService>();
-            flowData.Setup(d => d.ElementDataAsDictionary()).Returns(new Dictionary<string, object>() { { "test", _elementDataMock.Object } });
-            flowData.Setup(d => d.GetOrAdd(
-                It.IsAny<TypedKey<IJsonBuilderElementData>>(),
-                It.IsAny<Func<IPipeline, IJsonBuilderElementData>>()))
-                .Returns<TypedKey<IJsonBuilderElementData>, Func<IPipeline, IJsonBuilderElementData>>(
-                (k, f) =>
-                {
-                    result = f(flowData.Object.Pipeline);
-                    return result;
-                });
+            var json = TestIteration(1);
 
-            string session = "somesessionid";
-            flowData.Setup(d => d.TryGetEvidence("query.session-id", out session)).Returns(true);
-            int iteration = 1;
-            flowData.Setup(d => d.TryGetEvidence("query.sequence", out iteration)).Returns(true);
-
-            _jsonBuilderElement.Process(flowData.Object);
-
-            Assert.IsTrue(IsExpectedJson(result.Json));
+            Assert.IsTrue(IsExpectedJson(json));
         }
-
+        
         /// <summary>
         /// Check that the JSON element removes JavaScript properties from the 
         /// response after max number of iterations has been reached.
@@ -117,20 +99,241 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
         {
             for (var i = 0; true; i++)
             {
-                var json = TestIteration(i);
-                var result = TestJsonIterations(json);
-
-                if (i >= Pipeline.JsonBuilder.Constants.MAX_JAVASCRIPT_ITERATIONS)
+                var jsProperties = new Dictionary<string, object>() 
                 {
-                    Assert.IsTrue(result);
+                    { "test.jsproperty", new AspectPropertyValue<JavaScript>(new JavaScript("var = 'some js code';")) }
+                };
+                var json = TestIteration(i, null, jsProperties);
+                var result = ContainsJavaScriptProperties(json);
+
+                if (i >= Constants.MAX_JAVASCRIPT_ITERATIONS)
+                {
+                    Assert.IsFalse(result);
                     break;
                 }
                 else
                 {
-                    Assert.IsFalse(result);
+                    Assert.IsTrue(result);
                 }
             }
+        }
 
+        /// <summary>
+        /// Check that entries will not appear in the output 
+        /// for blacklisted elements.
+        /// </summary>
+        [TestMethod]
+        public void JsonBuilder_ElementBlacklist()
+        {
+            var json = TestIteration(1,
+               new Dictionary<string, object>() {
+                    { "test", _elementDataMock.Object },
+                    { "cloud-response", _elementDataMock.Object },
+                    { "json-builder", _elementDataMock.Object }
+               });
+
+            Assert.IsTrue(IsExpectedJson(json));
+            JObject obj = JObject.Parse(json);
+            Assert.AreEqual(1, obj.Children().Count(),
+                $"There should only be the 'test' key at the top level as " +
+                $"the other elements should have been ignored. Complete JSON: " +
+                Environment.NewLine + json);
+        }
+
+        /// <summary>
+        /// Data class used in the nested properties test.
+        /// </summary>
+        private class NestedData : ElementDataBase
+        {
+            public NestedData(ILogger<ElementDataBase> logger, IPipeline pipeline)
+                : base(logger, pipeline)
+            { }
+
+            public string Value1
+            {
+                get { return this["Value1"] as string; }
+                set { this["Value1"] = value; }
+            }
+            public int Value2
+            {
+                get { return (int)this["Value2"]; }
+                set { this["Value2"] = value; }
+            }
+        }
+
+        /// <summary>
+        /// Check that nested properties are serialised as expected
+        /// </summary>
+        [TestMethod]
+        public void JsonBuilder_NestedProperties()
+        {
+            _elementDataMock.Setup(ed => ed.AsDictionary()).
+                Returns(new Dictionary<string, object>() {
+                    { "property", new List<NestedData>() {
+                        new NestedData(_loggerFactory.CreateLogger<NestedData>(), _pipeline.Object) { Value1 = "abc", Value2 = 123 },
+                        new NestedData(_loggerFactory.CreateLogger<NestedData>(), _pipeline.Object) { Value1 = "xyz", Value2 = 789 }
+                    } },
+                });
+
+            // Configure the property meta-data as needed for
+            // this test.
+            var propertyMetaData = new Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>();
+            var testElementMetaData = new Dictionary<string, IElementPropertyMetaData>();
+            var nestedMetaData = new List<IElementPropertyMetaData>() {
+                new ElementPropertyMetaData(_testEngine.Object, "value1", typeof(string), true),
+                new ElementPropertyMetaData(_testEngine.Object, "value2", typeof(int), true),
+            };
+            var p1 = new ElementPropertyMetaData(_testEngine.Object, "property", typeof(List<NestedData>), true, "", nestedMetaData);
+            testElementMetaData.Add("property", p1);
+            propertyMetaData.Add("test", testElementMetaData);
+            _pipeline.Setup(p => p.ElementAvailableProperties).Returns(propertyMetaData);
+
+            var json = TestIteration(1);
+
+            JObject obj = JObject.Parse(json);
+            Assert.IsTrue(obj.Children().Count() == 1 &&
+                (obj.Children().Single() as JProperty)?.Name == "test",
+                $"There should only be the 'test' key at the top level. " +
+                $"Complete JSON: " + Environment.NewLine + json);
+            var element = obj.Children().Single();
+            var x = element.Children().Single().Children().Single();
+            Assert.IsTrue(element.Children().Children().Single().Count() == 1 &&
+                (element.Children().Single().Children().Single() as JProperty)?.Name == "property",
+                $"There should only be one property, named 'property'," +
+                $" under the 'test' element. " +
+                $"Complete JSON: " + Environment.NewLine + json);
+            element = element.Children().Single().Children().Single();
+            Assert.AreEqual(2, element.Children().Single().Children().Count(),
+                $"There should be two entries under the 'test.property' property. " +
+                $"Complete JSON: " + Environment.NewLine + json);
+            var v1 = element.Children().Single().Children().ElementAt(0);
+            var v2 = element.Children().Single().Children().ElementAt(1);
+            Assert.IsTrue(v1.Children().Count() == 2 &&
+                v1.Children().Any(t => (t as JProperty)?.Name == "value1") &&
+                v1.Children().Any(t => (t as JProperty)?.Name == "value2"),
+                $"There should be two properties, 'value1' and 'value2', " +
+                $"under the 'test.property[0]' entry. " +
+                $"Complete JSON: " + Environment.NewLine + json);
+            Assert.IsTrue(v2.Children().Count() == 2 &&
+                v2.Children().Any(t => (t as JProperty)?.Name == "value1") &&
+                v2.Children().Any(t => (t as JProperty)?.Name == "value2"),
+                $"There should be two properties, 'value1' and 'value2', " +
+                $"under the 'test.property[0]' entry. " +
+                $"Complete JSON: " + Environment.NewLine + json);
+        }
+
+        /// <summary>
+        /// Check that delayed execution and evidence properties values
+        /// are populated correctly.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(true, true)]
+        [DataRow(false, true)]
+        [DataRow(true, false)]
+        [DataRow(false, false)]
+        public void JsonBuilder_DelayedExecution(
+            bool delayExecution, 
+            bool propertyValueNull)
+        {
+            // If the flag is set then initialise the 'property' value to null.
+            if (propertyValueNull)
+            {
+                _elementDataMock.Setup(ed => ed.AsDictionary()).
+                    Returns(new Dictionary<string, object>() {
+                    { "property", null },
+                    { "jsproperty", "var = 'some js code';" }
+                    });
+            }
+
+            // Configure the property meta-data as needed for
+            // this test.
+            var propertyMetaData = new Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>();
+            var testElementMetaData = new Dictionary<string, IElementPropertyMetaData>();
+            var p1 = new ElementPropertyMetaData(_testEngine.Object, "property", typeof(string), true, "", null, false, new List<string>() { "jsproperty" });
+            testElementMetaData.Add("property", p1);
+            var p2 = new ElementPropertyMetaData(_testEngine.Object, "jsproperty", typeof(JavaScript), true, "", null, delayExecution);
+            testElementMetaData.Add("jsproperty", p2);
+            propertyMetaData.Add("test", testElementMetaData);
+            _pipeline.Setup(p => p.ElementAvailableProperties).Returns(propertyMetaData);
+
+            // Run the test
+            var json = TestIteration(1);
+
+            // Verify that the *delayexecution and *evidenceproperties
+            // values are populated as expected.
+            JObject obj = JObject.Parse(json);
+            var results = obj["test"].Children().ToList();
+
+            bool hasEvidenceProperties = results.Any(t => t.ToString().Contains("propertyevidenceproperties"));
+            bool hasDelayedExecution = results.Any(t => t.ToString().Contains("jspropertydelayexecution"));
+
+            Assert.AreEqual(delayExecution ? true : false, hasEvidenceProperties,
+                $"The JSON data does {(delayExecution ? "not" : "")} " +
+                $"contain a 'propertyevidenceproperties' property. " +
+                $"Complete JSON: {json}");
+            Assert.AreEqual(delayExecution ? true : false, hasDelayedExecution,
+                $"The JSON data does {(delayExecution ? "not" : "")} " +
+                $"contain a 'jspropertydelayexecution' property. " +
+                $"Complete JSON: {json}");
+        }
+        
+        /// <summary>
+        /// Check that delayed execution and evidence properties values
+        /// are populated correctly when a property has multiple 
+        /// evidence properties
+        /// </summary>
+        [DataTestMethod]
+        public void JsonBuilder_MultipleEvidenceProperties()
+        {
+            // Configure the property meta-data as needed for
+            // this test.
+            // property is populated by 2 JavaScript properties: 
+            // jsproperty and jsproperty2.
+            // jsproperty has delayed execution true and
+            // jsproperty2 does not.
+            var propertyMetaData = new Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>();
+            var testElementMetaData = new Dictionary<string, IElementPropertyMetaData>();
+            var p1 = new ElementPropertyMetaData(_testEngine.Object, "property", typeof(string), true, "", null, false, new List<string>() { "jsproperty", "jsproperty2" });
+            testElementMetaData.Add("property", p1);
+            var p2 = new ElementPropertyMetaData(_testEngine.Object, "jsproperty", typeof(JavaScript), true, "", null, true);
+            testElementMetaData.Add("jsproperty", p2);
+            var p3 = new ElementPropertyMetaData(_testEngine.Object, "jsproperty2", typeof(JavaScript), true, "", null, false);
+            testElementMetaData.Add("jsproperty2", p2);
+            propertyMetaData.Add("test", testElementMetaData);
+            _pipeline.Setup(p => p.ElementAvailableProperties).Returns(propertyMetaData);
+
+            _elementDataMock.Setup(ed => ed.AsDictionary()).
+                Returns(new Dictionary<string, object>() {
+                    { "property", "thisIsAValue" },
+                    { "jsproperty", "var = 'some js code';" },
+                    { "jsproperty2", "var = 'some js code';" }
+                });
+
+            // Run the test
+            var json = TestIteration(1);
+
+            // Verify that the *delayexecution and *evidenceproperties
+            // values are populated as expected.
+            JObject obj = JObject.Parse(json);
+            var results = obj["test"].Children().ToList();
+
+            Assert.IsTrue(results.Any(t => t.ToString().Contains("propertyevidenceproperties")),
+                $"Expected the JSON to contain a 'propertyevidenceproperties' " +
+                $"item." +
+                $"Complete JSON: {json}");
+            var pep = results.Where(t => t.ToString().Contains("propertyevidenceproperties")).Single();
+            Assert.AreEqual("test.jsproperty", pep.Values().Single().ToString(),
+                $"Expected the JSON to contain a 'propertyevidenceproperties' " +
+                $"item where the value is an array with one item, 'test.jsproperty'." +
+                $"Complete JSON: {json}");
+            Assert.IsTrue(results.Any(t => t.ToString().Contains("jspropertydelayexecution")),
+                $"Expected the JSON to contain a 'jspropertydelayexecution' " +
+                $"item." +
+                $"Complete JSON: {json}");
+            Assert.IsFalse(results.Any(t => t.ToString().Contains("jsproperty2delayexecution")),
+                $"Expected the JSON not to contain a 'jsproperty2delayexecution' " +
+                $"item." +
+                $"Complete JSON: {json}");
         }
 
         /// <summary>
@@ -169,47 +372,6 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             Trace.WriteLine("Data validated");
         }
 
-        /// <summary>
-        /// Check that entries will not appear in the output 
-        /// for blacklisted elements.
-        /// </summary>
-        [TestMethod]
-        public void JsonBuilder_ElementBlacklist()
-        {
-            var flowData = new Mock<IFlowData>();
-            IJsonBuilderElementData result = null;
-            var _missingPropertyService = new Mock<IMissingPropertyService>();
-            flowData.Setup(d => d.ElementDataAsDictionary()).Returns(
-                new Dictionary<string, object>() {
-                    { "test", _elementDataMock.Object },
-                    { "cloud-response", _elementDataMock.Object },
-                    { "json-builder", _elementDataMock.Object }
-                });
-            flowData.Setup(d => d.GetOrAdd(
-                It.IsAny<TypedKey<IJsonBuilderElementData>>(),
-                It.IsAny<Func<IPipeline, IJsonBuilderElementData>>()))
-                .Returns<TypedKey<IJsonBuilderElementData>, Func<IPipeline, IJsonBuilderElementData>>(
-                (k, f) =>
-                {
-                    result = f(flowData.Object.Pipeline);
-                    return result;
-                });
-
-            string session = "somesessionid";
-            flowData.Setup(d => d.TryGetEvidence("query.session-id", out session)).Returns(true);
-            int iteration = 1;
-            flowData.Setup(d => d.TryGetEvidence("query.sequence", out iteration)).Returns(true);
-
-            _jsonBuilderElement.Process(flowData.Object);
-
-            Assert.IsTrue(IsExpectedJson(result.Json));
-            JObject obj = JObject.Parse(result.Json);
-            Assert.AreEqual(1, obj.Children().Count(), 
-                $"There should only be the 'test' key at the top level as " +
-                $"the other elements should have been ignored. Complete JSON: " +
-                Environment.NewLine + result.Json);
-        }
-
         public class JsonData
         {
             [JsonProperty("empty-aspect")]
@@ -232,6 +394,47 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
         {
         }
 
+        private string TestIteration(int iteration,
+            Dictionary<string, object> data = null, 
+            Dictionary<string, object> jsProperties = null)
+        {
+            if(data == null)
+            {
+                data = new Dictionary<string, object>() { { "test", _elementDataMock.Object } };
+            }
+            if(jsProperties == null)
+            {
+                jsProperties = new Dictionary<string, object>();
+            }
+
+            var flowData = new Mock<IFlowData>();
+            var _missingPropertyService = new Mock<IMissingPropertyService>();
+
+            flowData.Setup(d => d.ElementDataAsDictionary()).Returns(data);
+            string session = "somesessionid";
+            flowData.Setup(d => d.TryGetEvidence("query.session-id", out session)).Returns(true);
+            flowData.Setup(d => d.TryGetEvidence("query.sequence", out iteration)).Returns(true);
+            flowData.Setup(d => d.GetWhere(It.IsAny<Func<IElementPropertyMetaData, bool>>())).Returns(jsProperties);
+
+            IJsonBuilderElementData result = null;
+            flowData.Setup(d => d.GetOrAdd(
+                It.IsAny<TypedKey<IJsonBuilderElementData>>(),
+                It.IsAny<Func<IPipeline, IJsonBuilderElementData>>()))
+                .Returns<TypedKey<IJsonBuilderElementData>, Func<IPipeline, IJsonBuilderElementData>>(
+                (k, f) =>
+                {
+                    result = f(flowData.Object.Pipeline);
+                    return result;
+                });
+            flowData.Setup(d => d.Pipeline).Returns(_pipeline.Object);
+
+            _jsonBuilderElement.Process(flowData.Object);
+
+            var json = result["json"].ToString();
+
+            return json;
+        }
+
         private bool IsExpectedJson(string json)
         {
             JObject obj = JObject.Parse(json);
@@ -248,36 +451,7 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             return false;
         }
 
-        private string TestIteration(int iteration)
-        {
-            var flowData = new Mock<IFlowData>();
-            var _missingPropertyService = new Mock<IMissingPropertyService>();
-
-            flowData.Setup(d => d.ElementDataAsDictionary()).Returns(new Dictionary<string, object>() { { "test", _elementDataMock.Object } });
-            string session = "somesessionid";
-            flowData.Setup(d => d.TryGetEvidence("query.session-id", out session)).Returns(true);
-            flowData.Setup(d => d.TryGetEvidence("query.sequence", out iteration)).Returns(true);
-            flowData.Setup(d => d.GetWhere(It.IsAny<Func<IElementPropertyMetaData, bool>>())).Returns(new List<KeyValuePair<string, object>>() { new KeyValuePair<string, object>("test.jsproperty", new AspectPropertyValue<JavaScript>(new JavaScript("var = 'some js code';"))) }.AsEnumerable());
-
-            IJsonBuilderElementData result = null;
-            flowData.Setup(d => d.GetOrAdd(
-                It.IsAny<TypedKey<IJsonBuilderElementData>>(),
-                It.IsAny<Func<IPipeline, IJsonBuilderElementData>>()))
-                .Returns<TypedKey<IJsonBuilderElementData>, Func<IPipeline, IJsonBuilderElementData>>(
-                (k, f) =>
-                {
-                    result = f(flowData.Object.Pipeline);
-                    return result;
-                });
-
-            _jsonBuilderElement.Process(flowData.Object);
-
-            var json = result["json"].ToString();
-
-            return json;
-        }
-
-        private bool TestJsonIterations(string json)
+        private bool ContainsJavaScriptProperties(string json)
         {
             JObject obj = JObject.Parse(json);
             var results = obj.Children().ToList();
@@ -287,10 +461,10 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
                 var res = result.ToString();
                 if (res.Contains("javascriptProperties"))
                 {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
     }
 }

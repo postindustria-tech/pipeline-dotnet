@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.FlowElements;
 using System;
 using System.Collections.Generic;
@@ -30,51 +31,31 @@ namespace FiftyOne.Pipeline.Core.Data
     /// <summary>
     /// Meta-data relating to properties that are populated by Flow Elements.
     /// </summary>
-    /// <remarks>
-    /// This can be used as a simple implementation of the generic, 
-    /// abstract base class.
-    /// </remarks>
     public class ElementPropertyMetaData : IElementPropertyMetaData
     {
-        /// <summary>
-        /// The name of the property. Must match the string key used to
-        /// store the property value in the <see cref="IElementData"/> instance.
-        /// </summary>
+        /// <inheritdoc/>
         public string Name { get; private set; }
 
-        /// <summary>
-        /// The <see cref="IFlowElement"/> that this property is associated 
-        /// with.
-        /// </summary>
+        /// <inheritdoc/>
         public IFlowElement Element { get; private set; }
 
-        /// <summary>
-        /// The category the property belongs to.
-        /// </summary>
+        /// <inheritdoc/>
         public string Category { get; private set; }
 
-        /// <summary>
-        /// The type of the property values
-        /// </summary>
+        /// <inheritdoc/>
         public Type Type { get; private set; }
 
-        /// <summary>
-        /// True if the property is available in the results for the
-        /// associated <see cref="IFlowElement"/>, false otherwise.
-        /// </summary>
+        /// <inheritdoc/>
         public bool Available { get; private set; }
 
-        /// <summary>
-        /// This is only relevant where Type is a collection of complex 
-        /// objects. 
-        /// It contains a list of the property meta-data for the
-        /// items in the value for this property.
-        /// For example, if this meta-data instance represents a list of 
-        /// hardware devices, ItemProperties will contain a list of the 
-        /// meta-data for properties available on each hardware device
-        /// element within that list.
-        /// </summary>
+        /// <inheritdoc/>
         public IReadOnlyList<IElementPropertyMetaData> ItemProperties { get; }
+
+        /// <inheritdoc/>
+        public bool DelayExecution { get; private set; }
+
+        /// <inheritdoc/>
+        public IReadOnlyList<string> EvidenceProperties { get; }
 
         /// <summary>
         /// Constructor
@@ -101,13 +82,31 @@ namespace FiftyOne.Pipeline.Core.Data
         /// this parameter can contain a list of the property meta-data 
         /// for items in that list.
         /// </param>
+        /// <param name="delayExecution">
+        /// Only relevant if <see cref="Type"/> is <see cref="JavaScript"/>.
+        /// Defaults to false.
+        /// If set to true then the JavaScript in this property will
+        /// not be executed automatically on the client device.
+        /// </param>
+        /// <param name="evidenceProperties">
+        /// The names of any <see cref="JavaScript"/> properties that,
+        /// when executed, will obtain additional evidence that can help
+        /// in determining the value of this property.
+        /// Note that these names should include any parts after the 
+        /// element data key.
+        /// I.e. if the complete property name is 
+        /// 'devices.profiles.screenwidthpixelsjavascript' then the
+        /// name in this list must be 'profiles.screenwidthpixelsjavascript'
+        /// </param>
         public ElementPropertyMetaData(
             IFlowElement element,
             string name,
             Type type,
             bool available,
             string category = "",
-            IReadOnlyList<IElementPropertyMetaData> itemProperties = null)
+            IReadOnlyList<IElementPropertyMetaData> itemProperties = null,
+            bool delayExecution = false,
+            IReadOnlyList<string> evidenceProperties = null)
         {
             Element = element;
             Name = name;
@@ -115,6 +114,8 @@ namespace FiftyOne.Pipeline.Core.Data
             Category = category;
             Available = available;
             ItemProperties = itemProperties;
+            DelayExecution = delayExecution;
+            EvidenceProperties = evidenceProperties;
         }
     }
 }

@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using System;
 using System.Collections.Generic;
@@ -83,6 +84,22 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// Only relevant if this meta-data instance relates to a 
         /// collection of complex objects.
         /// </param>
+        /// <param name="delayExecution">
+        /// Only relevant if `Type` is <see cref="JavaScript"/>.
+        /// Defaults to false.
+        /// If set to true then the JavaScript in this property will
+        /// not be executed automatically on the client device.
+        /// </param>
+        /// <param name="evidenceProperties">
+        /// The names of any <see cref="JavaScript"/> properties that,
+        /// when executed, will obtain additional evidence that can help
+        /// in determining the value of this property.
+        /// Note that these names should include any parts after the 
+        /// element data key.
+        /// I.e. if the complete property name is 
+        /// 'devices.profiles.screenwidthpixelsjavascript' then the
+        /// name in this list must be 'profiles.screenwidthpixelsjavascript'
+        /// </param>
         public AspectPropertyMetaData(
             IAspectEngine element,
             string name,
@@ -91,8 +108,10 @@ namespace FiftyOne.Pipeline.Engines.Data
             IList<string> dataTiersWherePresent,
             bool available,
             string description = "",
-            IReadOnlyList<IElementPropertyMetaData> itemProperties = null) : 
-            base(element, name, type, available, category, itemProperties)
+            IReadOnlyList<IElementPropertyMetaData> itemProperties = null,
+            bool delayExecution = false,
+            IReadOnlyList<string> evidenceProperties = null) : 
+            base(element, name, type, available, category, itemProperties, delayExecution, evidenceProperties)
         {
             DataTiersWherePresent = dataTiersWherePresent;
             Description = description;

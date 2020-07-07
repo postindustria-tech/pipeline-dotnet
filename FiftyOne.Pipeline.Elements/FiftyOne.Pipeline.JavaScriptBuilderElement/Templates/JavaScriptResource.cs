@@ -37,6 +37,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
         private Uri _url;
         private bool _enableCookies;
         private bool _updateEnabled;
+        private bool _hasDelayedProperties;
 
         /// <summary>
         /// Constructor
@@ -76,13 +77,18 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
         /// must be initiated by the user in order for the server to 
         /// access the additional evidence gathered by client-side code.
         /// </param>
+        /// <param name="hasDelayedProperties">
+        /// True to include support for JavaScript properties that are
+        /// not executed immediately when the JavaScript is loaded.
+        /// </param>
         public JavaScriptResource(
             string objName,
             string jsonObject,
             bool supportsPromises,
             string url,
             bool enableCookies,
-            bool updateEnabled)
+            bool updateEnabled,
+            bool hasDelayedProperties)
         {
             _objName = objName;
             _jsonObject = string.IsNullOrWhiteSpace(jsonObject) == false
@@ -91,6 +97,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
             _url = new Uri(url);
             _enableCookies = enableCookies;
             _updateEnabled = updateEnabled;
+            _hasDelayedProperties = hasDelayedProperties;
         }
 
         /// <summary>
@@ -131,13 +138,18 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
         /// must be initiated by the user in order for the server to 
         /// access the additional evidence gathered by client-side code.
         /// </param>
+        /// <param name="hasDelayedProperties">
+        /// True to include support for JavaScript properties that are
+        /// not executed immediately when the JavaScript is loaded.
+        /// </param>
         public JavaScriptResource(
             string objName,
             string jsonObject,
             bool supportsPromises,
             Uri url,
             bool enableCookies,
-            bool updateEnabled)
+            bool updateEnabled,
+            bool hasDelayedProperties)
         {
             _objName = objName;
             _jsonObject = string.IsNullOrWhiteSpace(jsonObject) == false
@@ -146,6 +158,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
             _url = url;
             _enableCookies = enableCookies;
             _updateEnabled = updateEnabled;
+            _hasDelayedProperties = hasDelayedProperties;
         }
 
         /// <summary>
@@ -166,6 +179,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
             hash.Add("_url", _url?.AbsoluteUri);
             hash.Add("_enableCookies", _enableCookies);
             hash.Add("_updateEnabled", _updateEnabled);
+            hash.Add("_hasDelayedProperties", _hasDelayedProperties);
+            
 
             return hash;
         }

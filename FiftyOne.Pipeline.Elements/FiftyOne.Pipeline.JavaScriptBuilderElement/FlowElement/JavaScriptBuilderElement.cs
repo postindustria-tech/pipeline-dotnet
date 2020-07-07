@@ -399,13 +399,19 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             var ubdateEnabled = url != null &&
                 url.AbsoluteUri.Length > 0;
 
+            // This check won't be 100% fool-proof but it only needs to be 
+            // reasonably accurate and not take too long.
+            var hasDelayedProperties = jsonObject != null && 
+                jsonObject.Contains("delayexecution");
+
             JavaScriptResource javaScriptObj = new JavaScriptResource(
                 objectName,
                 jsonObject,
                 supportsPromises,
                 url,
                 EnableCookies,
-                ubdateEnabled);
+                ubdateEnabled,
+                hasDelayedProperties);
 
             string content = _stubble.Render(_template, javaScriptObj.AsDictionary()/*, _renderSettings*/);
 

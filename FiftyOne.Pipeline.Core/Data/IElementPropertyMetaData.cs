@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.FlowElements;
 using System;
 using System.Collections.Generic;
@@ -72,5 +73,33 @@ namespace FiftyOne.Pipeline.Core.Data
         /// element within that list.
         /// </summary>
         IReadOnlyList<IElementPropertyMetaData> ItemProperties { get; }
+
+        /// <summary>
+        /// Only relevant if <see cref="Type"/> is <see cref="JavaScript"/>.
+        /// Defaults to false.
+        /// If set to true then the JavaScript in this property will
+        /// not be executed automatically on the client device.
+        /// This is used where executing the JavaScript would result in  
+        /// undesirable behavior. 
+        /// For example, attempting to access the location of the device 
+        /// will cause the browser to show a pop-up confirming if the 
+        /// user is happy too allow the website access to their location.
+        /// In general, we don't want this to happen immediately when a
+        /// user enters a website, but when they try to use a feature that
+        /// requires location data (e.g. show restaurants near me).
+        /// </summary>
+        bool DelayExecution { get; }
+
+        /// <summary>
+        /// Get the names of any <see cref="JavaScript"/> properties that,
+        /// when executed, will obtain additional evidence that can help
+        /// in determining the value of this property.
+        /// For example, the ScreenPixelsWidthJavascript property will
+        /// get the pixel width of the client-device's screen.
+        /// This is used to update the ScreenPixelsWidth property.
+        /// As such, ScreenPixelsWidth will have ScreenPixelWidthJavascript 
+        /// in its list of evidence properties.
+        /// </summary>
+        IReadOnlyList<string> EvidenceProperties { get; }
     }
 }

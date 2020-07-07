@@ -37,6 +37,8 @@ using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.JsonBuilder.Converters;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Engines.FiftyOne;
+using System.Collections.Concurrent;
+using Newtonsoft.Json.Serialization;
 
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
@@ -45,14 +47,75 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
     /// key:values to the Json object. The element will also add any errors 
     /// which have been recorded in the FlowData.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization",
+        "CA1308:Normalize strings to uppercase",
+        Justification = "Pipeline API specification is for JSON " +
+        "data to always use fully lower-case keys")]
     public class JsonBuilderElement : 
         FlowElementBase<IJsonBuilderElementData, IElementPropertyMetaData>, 
         IJsonBuilderElement
     {
+        /// <summary>
+        /// This contract resolver ensurers that property names 
+        /// are always converted to lowercase.
+        /// </summary>
+        private class LowercaseContractResolver : DefaultContractResolver
+        {
+            protected override string ResolvePropertyName(string propertyName)
+            {
+
+                return JAVASCRIPT_PROPERTIES_NAME == propertyName ? 
+                    propertyName : propertyName.ToLowerInvariant();
+            }
+        }
+
+        private const string JAVASCRIPT_PROPERTIES_NAME = "javascriptProperties";
+
         private EvidenceKeyFilterWhitelist _evidenceKeyFilter;
         private List<IElementPropertyMetaData> _properties;
         private List<string> _blacklist;
         private HashSet<string> _elementBlacklist;
+
+        /// <summary>
+        /// Contains configuration information relating to a particular 
+        /// pipeline.
+        /// In most cases, a single instance of this element will only 
+        /// be added to one pipeline at a time but it does support being 
+        /// added to multiple pipelines.
+        /// simultaneously.
+        /// </summary>
+        protected class PipelineConfig 
+        {
+            /// <summary>
+            /// A collection of the complete string names of any properties 
+            /// with the 'delay execution' flag set to true.
+            /// Note that 'complete name' means that the name will include 
+            /// the element data key and any other parts of the segmented
+            /// name.
+            /// For example, `device.ismobile`
+            /// </summary>
+            public HashSet<string> DelayedExecutionProperties { get; } = 
+                new HashSet<string>();
+            /// <summary>
+            /// A collection containing the details of relevant evidence 
+            /// properties.
+            /// The key is the complete property name.
+            /// Note that 'complete name' means that the name will include 
+            /// the element data key and any other parts of the segmented
+            /// name.
+            /// For example, `device.ismobile`
+            /// The value is a list of the JavaScript properties that,
+            /// when executed, will provide values that can help determine
+            /// the value of the key property. 
+            /// </summary>
+            public Dictionary<string, IReadOnlyList<string>> DelayedEvidenceProperties { get; } = 
+                new Dictionary<string, IReadOnlyList<string>>();
+        }
+
+
+        private ConcurrentDictionary<IPipeline, PipelineConfig> _pipelineConfigs 
+            = new ConcurrentDictionary<IPipeline, PipelineConfig>();
+
 
         // An array of custom converters to use when serializing 
         // the property values.
@@ -100,6 +163,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             _elementBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase) 
                 { "cloud-response", "json-builder" };
 
+            _pipelineConfigs = new ConcurrentDictionary<IPipeline, PipelineConfig>();
+
             JSON_CONVERTERS = JSON_CONVERTERS.Concat(jsonConverters).ToArray();
         }
 
@@ -144,10 +209,16 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
+            if(_pipelineConfigs.TryGetValue(data.Pipeline, out PipelineConfig config) == false)
+            {
+                config = PopulateMetaDataCollections(data.Pipeline);
+                config = _pipelineConfigs.GetOrAdd(data.Pipeline, config);
+            }
+
             var elementData = data.GetOrAdd(
                     ElementDataKeyTyped,
                     CreateElementData);
-            var jsonString = BuildJson(data);
+            var jsonString = BuildJson(data, config);
             elementData.Json = jsonString;
         }
 
@@ -155,16 +226,17 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// Create and populate a JSON string from the specified data.
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="config">The configuration to use</param>
         /// <returns>
         /// A string containing the data in JSON format.
         /// </returns>
-        protected virtual string BuildJson(IFlowData data)
+        protected virtual string BuildJson(IFlowData data, PipelineConfig config)
         {
             int sequenceNumber = GetSequenceNumber(data);
 
             // Get property values from all the elements and add the ones that
             // are accessible to a dictionary.
-            Dictionary<String, object> allProperties = GetAllProperties(data);
+            Dictionary<String, object> allProperties = GetAllProperties(data, config);
 
             // Only populate the JavaScript properties if the sequence 
             // has not reached max iterations.
@@ -198,7 +270,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 new JsonSerializerSettings
                 {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                    Converters = JSON_CONVERTERS
+                    Converters = JSON_CONVERTERS,
+                    ContractResolver = new LowercaseContractResolver()
                 });
         }
 
@@ -282,20 +355,20 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
 
         /// <summary>
-        /// Get all the proeprties.
+        /// Get all the properties.
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="config">The configuration to use</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown if the supplied flow data is null.
         /// </exception>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", 
-            "CA1308:Normalize strings to uppercase", 
-            Justification = "Pipeline API specification is for JSON " +
-            "data to always use fully lower-case keys")]
-        protected virtual Dictionary<String, object> GetAllProperties(IFlowData data)
+        protected virtual Dictionary<string, object> GetAllProperties(
+            IFlowData data, 
+            PipelineConfig config)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
+            if (config == null) throw new ArgumentNullException(nameof(config));
 
             Dictionary<string, object> allProperties = new Dictionary<string, object>();
 
@@ -304,7 +377,9 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             {
                 if (allProperties.ContainsKey(element.Key.ToLowerInvariant()) == false)
                 {
-                    var values = GetValues((element.Value as IElementData).AsDictionary());
+                    var values = GetValues(element.Key.ToLowerInvariant(),
+                        (element.Value as IElementData).AsDictionary(),
+                        config);
                     allProperties.Add(element.Key.ToLowerInvariant(), values);
                 }
             }
@@ -312,34 +387,21 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             return allProperties;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization",
-            "CA1308:Normalize strings to uppercase",
-            Justification = "Pipeline API specification is for JSON " +
-            "data to always use fully lower-case keys")]
-        private Dictionary<string, object> GetValues(IReadOnlyDictionary<string, object> readOnlyDictionary)
+        private Dictionary<string, object> GetValues(string dataPath, 
+            IReadOnlyDictionary<string, object> readOnlyDictionary, 
+            PipelineConfig config)
         {
             var values = new Dictionary<string, object>();
 
             foreach(var value in readOnlyDictionary)
             {
+                object propertyValue = null;
+
                 if(value.Value is IAspectPropertyValue aspectProperty)
                 {
                     if (aspectProperty.HasValue) 
                     {
-                        if(aspectProperty.Value is IList elementDatas &&
-                            aspectProperty.Value.GetType().GetElementType() == typeof(IElementData))
-                        {
-                            var results = new List<object>();
-                            foreach(var elementData in elementDatas)
-                            {
-                                results.Add(GetValues(((IElementData)elementData).AsDictionary()));
-                            }
-                            values.Add(value.Key.ToLowerInvariant(), results);
-                        }
-                        else
-                        {
-                            values.Add(value.Key.ToLowerInvariant(), aspectProperty.Value);
-                        } 
+                        propertyValue = aspectProperty.Value;
                     }
                     else
                     {
@@ -350,7 +412,46 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 } 
                 else
                 {
-                    values.Add(value.Key.ToLowerInvariant(), value.Value);
+                    propertyValue = value.Value;
+                }
+
+                var completeName = dataPath +
+                    Core.Constants.EVIDENCE_SEPERATOR +
+                    value.Key.ToLowerInvariant();
+
+                if (propertyValue != null)
+                {
+                    // If the value is a list of complex types then
+                    // recursively call this method for each instance
+                    // in the list.
+                    if (propertyValue is IList elementDatas &&
+                        (typeof(IElementData).IsAssignableFrom(propertyValue.GetType().GetElementType())  ||
+                        typeof(IElementData).IsAssignableFrom(propertyValue.GetType().GenericTypeArguments[0])))
+                    {
+                        var results = new List<object>();
+                        foreach (var elementData in elementDatas)
+                        {
+                            results.Add(GetValues($"{dataPath}.{value.Key.ToLowerInvariant()}",
+                                ((IElementData)elementData).AsDictionary(), config));
+                        }
+                        propertyValue = results;
+                    }
+
+                    // Add this value to the output
+                    values.Add(value.Key.ToLowerInvariant(), propertyValue);
+
+                    // Add 'delayexecution' flag if needed.
+                    if (config.DelayedExecutionProperties.Contains(completeName))
+                    {
+                        values.Add(value.Key.ToLowerInvariant() + "delayexecution", true);
+                    }
+                }
+                // Add evidence properties list if needed. 
+                // (i.e. if the evidence property has delay execution = true)
+                if (config.DelayedEvidenceProperties.TryGetValue(completeName,
+                    out IReadOnlyList<string> evidenceProperties))
+                {
+                    values.Add(value.Key.ToLowerInvariant() + "evidenceproperties", evidenceProperties);
                 }
             }
             return values;
@@ -428,6 +529,135 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 javascriptPropeties.Add(property.Key);
             }
             return javascriptPropeties;
-        } 
+        }
+
+        /// <summary>
+        /// Executed on first request in order to build some collections 
+        /// from the meta-data exposed by the Pipeline.
+        /// </summary>
+        private PipelineConfig PopulateMetaDataCollections(IPipeline pipeline)
+        {
+            var config = new PipelineConfig();
+
+            // Populate the collection that contains a list of the
+            // properties with 'delay execution' = true.
+            foreach (var element in pipeline.ElementAvailableProperties)
+            {
+                foreach (var propertyName in GetDelayedPropertyNames(
+                    element.Key.ToLowerInvariant(), 
+                    element.Value.Select(kvp => kvp.Value))) 
+                {
+                    config.DelayedExecutionProperties.Add(propertyName);
+                }
+            }
+
+            // Now use that information to populate a list of the 
+            // evidence property links that we need.
+            // This means only those where the evidence property has
+            // the delayed execution flag set.
+            foreach (var element in pipeline.ElementAvailableProperties)
+            {
+                foreach (var property in GetEvidencePropertyNames(
+                    config.DelayedExecutionProperties,
+                    element.Key.ToLowerInvariant(),
+                    element.Key.ToLowerInvariant(),
+                    element.Value.Select(kvp => kvp.Value)))
+                {
+                    config.DelayedEvidenceProperties.Add(
+                        property.Key, 
+                        property.Value.ToList());
+                }
+            }
+
+            return config;
+        }
+
+        /// <summary>
+        /// Get the complete names of any properties that have the
+        /// delay execution flag set.
+        /// </summary>
+        /// <param name="dataPath"></param>
+        /// <param name="properties"></param>
+        /// <returns></returns>
+        private IEnumerable<string> GetDelayedPropertyNames (
+            string dataPath, 
+            IEnumerable<IElementPropertyMetaData> properties)
+        {
+            // Return the names of any delayed execution properties.
+            foreach(var property in properties.Where(p =>
+                p.DelayExecution &&
+                p.Type == typeof(JavaScript)))
+            {
+                yield return $"{dataPath}{Core.Constants.EVIDENCE_SEPERATOR}" +
+                    $"{property.Name.ToLowerInvariant()}";
+            }
+
+            // Call recursively for any properties that have sub-properties.
+            foreach (var collection in properties.Where(p =>
+                 p.ItemProperties != null &&
+                 p.ItemProperties.Count > 0))
+            {
+                foreach (var propertyName in GetDelayedPropertyNames(
+                    $"{dataPath}{Core.Constants.EVIDENCE_SEPERATOR}{collection.Name}",
+                    collection.ItemProperties))
+                {
+                    yield return propertyName;
+                }
+            }
+        }
+
+        private IEnumerable<KeyValuePair<string, IEnumerable<string>>> GetEvidencePropertyNames(
+                HashSet<string> delayedExecutionProperties,
+                string elementDataKey,
+                string propertyDataPath,
+                IEnumerable<IElementPropertyMetaData> properties)
+        {
+            foreach (var property in properties)
+            {
+                // Build a list of any evidence properties for this property
+                // where the evidence property has the delayed execution 
+                // flag set.
+                List<string> evidenceProperties = new List<string>();
+                if (property.EvidenceProperties != null)
+                {
+                    foreach (var evidenceProperty in property.EvidenceProperties)
+                    {
+                        var evidenceName =
+                            $"{elementDataKey}{Core.Constants.EVIDENCE_SEPERATOR}" +
+                            $"{evidenceProperty.ToLowerInvariant()}";
+                        if (delayedExecutionProperties.Contains(evidenceName))
+                        {
+                            evidenceProperties.Add(evidenceName);
+                        }
+                    }
+                }
+                // Only return an entry for this property if it has one or
+                // more evidence properties.
+                if (evidenceProperties.Count > 0)
+                {
+                    yield return new KeyValuePair<string, IEnumerable<string>>(
+                        $"{propertyDataPath}{Core.Constants.EVIDENCE_SEPERATOR}" +
+                        $"{property.Name.ToLowerInvariant()}",
+                        evidenceProperties);
+                }
+            }
+
+            // Call recursively for any properties that have sub-properties.
+            foreach (var collection in properties.Where(p =>
+                 p.ItemProperties != null &&
+                 p.ItemProperties.Count > 0))
+            {
+                foreach (var property in GetEvidencePropertyNames(
+                    delayedExecutionProperties,
+                    elementDataKey,
+                    $"{propertyDataPath}{Core.Constants.EVIDENCE_SEPERATOR}" +
+                    $"{collection.Name}",
+                    collection.ItemProperties))
+                {
+                    yield return property;
+                }
+            }
+        }
+
     }
 }
