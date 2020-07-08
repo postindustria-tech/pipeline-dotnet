@@ -387,13 +387,50 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             return allProperties;
         }
 
-        private Dictionary<string, object> GetValues(string dataPath, 
-            IReadOnlyDictionary<string, object> readOnlyDictionary, 
+        /// <summary>
+        /// Get the names and values for all the JSON properties required
+        /// to represent the given source data.
+        /// The method adds meta-properties as required such as
+        /// *nullreason, *delayexecution, etc.
+        /// </summary>
+        /// <param name="dataPath">
+        /// The . separated name of the container that the supplied 
+        /// data will be added to.
+        /// For example, 'location' or 'devices.profiles'
+        /// </param>
+        /// <param name="sourceData">
+        /// The source data to use when populating the result.
+        /// </param>
+        /// <param name="config">
+        /// The configuration to use.
+        /// </param>
+        /// <returns>
+        /// A new dictionary with string keys and object values.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if required parameters are null
+        /// </exception>
+        protected Dictionary<string, object> GetValues(string dataPath, 
+            IReadOnlyDictionary<string, object> sourceData, 
             PipelineConfig config)
         {
+            if (dataPath == null)
+            {
+                throw new ArgumentNullException(nameof(dataPath));
+            }
+            if (sourceData == null)
+            {
+                throw new ArgumentNullException(nameof(sourceData));
+            }
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            dataPath = dataPath.ToLowerInvariant();
             var values = new Dictionary<string, object>();
 
-            foreach(var value in readOnlyDictionary)
+            foreach(var value in sourceData)
             {
                 object propertyValue = null;
 
