@@ -816,7 +816,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 							// correctly so that the 'If-Modified-Since' 
 							// header will be set to the expected value.
 							_fileSystem.File.SetCreationTimeUtc(
-								uncompressedTempFile, DateTime.UtcNow);
+								dataFile.DataFilePath, DateTime.UtcNow);
 						}
 						catch (Exception ex)
 						{
