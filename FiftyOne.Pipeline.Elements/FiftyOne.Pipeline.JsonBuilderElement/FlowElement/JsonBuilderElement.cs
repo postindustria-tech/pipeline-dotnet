@@ -264,7 +264,6 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         {
             // Build the JSON object from the property list containing property 
             // values and errors.
-            // TODO: Remove formatting
             return JsonConvert.SerializeObject(allProperties,
                 Formatting.Indented,
                 new JsonSerializerSettings
@@ -377,7 +376,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             {
                 if (allProperties.ContainsKey(element.Key.ToLowerInvariant()) == false)
                 {
-                    var values = GetValues(element.Key.ToLowerInvariant(),
+                    var values = GetValues(data,
+                        element.Key.ToLowerInvariant(),
                         (element.Value as IElementData).AsDictionary(),
                         config);
                     allProperties.Add(element.Key.ToLowerInvariant(), values);
@@ -393,6 +393,9 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// The method adds meta-properties as required such as
         /// *nullreason, *delayexecution, etc.
         /// </summary>
+        /// <param name="flowData">
+        /// The <see cref="IFlowData"/> for the current request.
+        /// </param>
         /// <param name="dataPath">
         /// The . separated name of the container that the supplied 
         /// data will be added to.
@@ -410,7 +413,9 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// <exception cref="ArgumentNullException">
         /// Thrown if required parameters are null
         /// </exception>
-        protected Dictionary<string, object> GetValues(string dataPath, 
+        protected virtual Dictionary<string, object> GetValues(
+            IFlowData flowData,
+            string dataPath, 
             IReadOnlyDictionary<string, object> sourceData, 
             PipelineConfig config)
         {
@@ -427,71 +432,130 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 throw new ArgumentNullException(nameof(config));
             }
 
-            dataPath = dataPath.ToLowerInvariant();
             var values = new Dictionary<string, object>();
-
             foreach(var value in sourceData)
             {
-                object propertyValue = null;
-
-                if(value.Value is IAspectPropertyValue aspectProperty)
-                {
-                    if (aspectProperty.HasValue) 
-                    {
-                        propertyValue = aspectProperty.Value;
-                    }
-                    else
-                    {
-                        values.Add(value.Key.ToLowerInvariant(), null);
-                        values.Add(value.Key.ToLowerInvariant() + "nullreason", 
-                            aspectProperty.NoValueMessage);
-                    }
-                } 
-                else
-                {
-                    propertyValue = value.Value;
-                }
-
-                var completeName = dataPath +
-                    Core.Constants.EVIDENCE_SEPERATOR +
-                    value.Key.ToLowerInvariant();
-
-                if (propertyValue != null)
-                {
-                    // If the value is a list of complex types then
-                    // recursively call this method for each instance
-                    // in the list.
-                    if (propertyValue is IList elementDatas &&
-                        (typeof(IElementData).IsAssignableFrom(propertyValue.GetType().GetElementType())  ||
-                        typeof(IElementData).IsAssignableFrom(propertyValue.GetType().GenericTypeArguments[0])))
-                    {
-                        var results = new List<object>();
-                        foreach (var elementData in elementDatas)
-                        {
-                            results.Add(GetValues($"{dataPath}.{value.Key.ToLowerInvariant()}",
-                                ((IElementData)elementData).AsDictionary(), config));
-                        }
-                        propertyValue = results;
-                    }
-
-                    // Add this value to the output
-                    values.Add(value.Key.ToLowerInvariant(), propertyValue);
-
-                    // Add 'delayexecution' flag if needed.
-                    if (config.DelayedExecutionProperties.Contains(completeName))
-                    {
-                        values.Add(value.Key.ToLowerInvariant() + "delayexecution", true);
-                    }
-                }
-                // Add evidence properties list if needed. 
-                // (i.e. if the evidence property has delay execution = true)
-                if (config.DelayedEvidenceProperties.TryGetValue(completeName,
-                    out IReadOnlyList<string> evidenceProperties))
-                {
-                    values.Add(value.Key.ToLowerInvariant() + "evidenceproperties", evidenceProperties);
-                }
+                AddJsonValuesForProperty(flowData, values, dataPath, 
+                    value.Key, value.Value, config);
             }
             return values;
+        }
+
+        /// <summary>
+        /// Add entries to the supplied jsonValues dictionary to
+        /// represent the supplied property name and value.
+        /// </summary>
+        /// <param name="flowData">
+        /// The <see cref="IFlowData"/> for the current request.
+        /// </param>
+        /// <param name="jsonValues">
+        /// A dictionary containing the key/value pairs that are going 
+        /// to appear in the JSON output.
+        /// This method will add new entries to this dictionary for 
+        /// the supplied property.
+        /// </param>
+        /// <param name="dataPath">
+        /// The . separated name of the container that the supplied 
+        /// property will be added to.
+        /// For example, 'location' or 'devices.profiles'
+        /// </param>
+        /// <param name="name">
+        /// The name of the property to add to jsonValues.
+        /// </param>
+        /// <param name="value">
+        /// The value of the property to add to jsonValues.
+        /// </param>
+        /// <param name="config">
+        /// The configuration to use.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if required parameters are null
+        /// </exception>
+        protected virtual void AddJsonValuesForProperty(
+            IFlowData flowData,
+            Dictionary<string, object> jsonValues, 
+            string dataPath, 
+            string name, 
+            object value, 
+            PipelineConfig config)
+        {
+            if (jsonValues == null)
+            {
+                throw new ArgumentNullException(nameof(jsonValues));
+            }
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+            if (dataPath == null)
+            {
+                throw new ArgumentNullException(nameof(dataPath));
+            }
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            // Make sure property names are lowercase
+            name = name.ToLowerInvariant();
+            dataPath = dataPath.ToLowerInvariant();
+
+            var completeName = dataPath +
+                Core.Constants.EVIDENCE_SEPERATOR +
+                name;
+            object propertyValue = null;
+
+            if (value is IAspectPropertyValue aspectProperty)
+            {
+                if (aspectProperty.HasValue)
+                {
+                    propertyValue = aspectProperty.Value;
+                }
+                else
+                {
+                    jsonValues.Add(name, null);
+                    jsonValues.Add(name + "nullreason", aspectProperty.NoValueMessage);
+                }
+            }
+            else
+            {
+                propertyValue = value;
+            }
+
+            if (propertyValue != null)
+            {
+                // If the value is a list of complex types then
+                // recursively call this method for each instance
+                // in the list.
+                if (propertyValue is IList elementDatas &&
+                    (typeof(IElementData).IsAssignableFrom(propertyValue.GetType().GetElementType()) ||
+                    typeof(IElementData).IsAssignableFrom(propertyValue.GetType().GenericTypeArguments[0])))
+                {
+                    var results = new List<object>();
+                    foreach (var elementData in elementDatas)
+                    {
+                        results.Add(GetValues(flowData, completeName,
+                            ((IElementData)elementData).AsDictionary(), config));
+                    }
+                    propertyValue = results;
+                }
+
+                // Add this value to the output
+                jsonValues.Add(name, propertyValue);
+
+                // Add 'delayexecution' flag if needed.
+                if (config.DelayedExecutionProperties.Contains(completeName))
+                {
+                    jsonValues.Add(name + "delayexecution", true);
+                }
+            }
+            // Add evidence properties list if needed. 
+            // (i.e. if the evidence property has delay execution = true)
+            if (config.DelayedEvidenceProperties.TryGetValue(completeName,
+                out IReadOnlyList<string> evidenceProperties))
+            {
+                jsonValues.Add(name + "evidenceproperties", evidenceProperties);
+            }
         }
 
         /// <summary>
