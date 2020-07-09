@@ -428,7 +428,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             return dict.Select(kvp => new KeyValuePair<string, 
                 IReadOnlyDictionary<string, IElementPropertyMetaData>>(
                 kvp.Key, (IReadOnlyDictionary<string, IElementPropertyMetaData>)kvp.Value))
-                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>

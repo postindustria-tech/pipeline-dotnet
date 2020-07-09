@@ -75,6 +75,12 @@ namespace FiftyOne.Pipeline.Core.Data
         IReadOnlyList<IElementPropertyMetaData> ItemProperties { get; }
 
         /// <summary>
+        /// Get the <see cref="ItemProperties"/> as a dictionary keyed
+        /// on property name.
+        /// </summary>
+        IReadOnlyDictionary<string, IElementPropertyMetaData> ItemPropertyDictionary { get; }
+
+        /// <summary>
         /// Only relevant if <see cref="Type"/> is <see cref="JavaScript"/>.
         /// Defaults to false.
         /// If set to true then the JavaScript in this property will

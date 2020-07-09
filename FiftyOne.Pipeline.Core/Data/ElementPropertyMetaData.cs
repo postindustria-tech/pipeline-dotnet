@@ -24,6 +24,7 @@ using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.FlowElements;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace FiftyOne.Pipeline.Core.Data
@@ -50,6 +51,17 @@ namespace FiftyOne.Pipeline.Core.Data
 
         /// <inheritdoc/>
         public IReadOnlyList<IElementPropertyMetaData> ItemProperties { get; }
+
+
+        private Lazy<IReadOnlyDictionary<string, IElementPropertyMetaData>> _itemPropertyDictionary;
+        /// <inheritdoc/>
+        public IReadOnlyDictionary<string, IElementPropertyMetaData> ItemPropertyDictionary
+        {
+            get
+            {
+                return _itemPropertyDictionary.Value;
+            }
+        }
 
         /// <inheritdoc/>
         public bool DelayExecution { get; private set; }
@@ -116,6 +128,11 @@ namespace FiftyOne.Pipeline.Core.Data
             ItemProperties = itemProperties;
             DelayExecution = delayExecution;
             EvidenceProperties = evidenceProperties;
+
+            _itemPropertyDictionary = new Lazy<IReadOnlyDictionary<string, IElementPropertyMetaData>>(() =>
+            {
+                return ItemProperties?.ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
+            });
         }
     }
 }
