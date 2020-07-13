@@ -102,5 +102,17 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Properties of sub-items
         /// </summary>
         public IList<PropertyMetaData> ItemProperties { get; set; }
+
+        /// <summary>
+        /// Delay execution flag
+        /// </summary>
+        /// <seealso cref="IElementPropertyMetaData.DelayExecution"/>
+        public bool DelayExecution { get; private set; }
+
+        /// <summary>
+        /// Evidence properties
+        /// </summary>
+        /// <seealso cref="IElementPropertyMetaData.EvidenceProperties"/>
+        public IReadOnlyList<string> EvidenceProperties { get; }
     }
 }

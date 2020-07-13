@@ -323,7 +323,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     new List<string>(),
                     true,
                     "",
-                    subProperties);
+                    subProperties,
+                    property.DelayExecution,
+                    property.EvidenceProperties);
             }
             else
             {

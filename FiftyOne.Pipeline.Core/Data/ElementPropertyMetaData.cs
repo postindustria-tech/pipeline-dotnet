@@ -120,6 +120,11 @@ namespace FiftyOne.Pipeline.Core.Data
             bool delayExecution = false,
             IReadOnlyList<string> evidenceProperties = null)
         {
+            // WARNING: If you are adding properties to this constructor 
+            // that need to be exposed through the cloud service then you'll
+            // also need to update:
+            // - Pipeline.Core.Data.PropertyMetaData
+            // - FiftyOne.Pipeline.CloudRequestEngine.FlowElements.CloudRequestEngineBase.LoadProperty()
             Element = element;
             Name = name;
             Type = type;
