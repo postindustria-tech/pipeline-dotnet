@@ -436,7 +436,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             foreach(var value in sourceData)
             {
                 AddJsonValuesForProperty(flowData, values, dataPath, 
-                    value.Key, value.Value, config);
+                    value.Key, value.Value, config, true);
             }
             return values;
         }
@@ -468,6 +468,15 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// <param name="config">
         /// The configuration to use.
         /// </param>
+        /// <param name="includeValueDataOnly">
+        /// Flag used to indicate if additional meta-data properties should 
+        /// be written or not.
+        /// These are needed when the JSON is going to be used by the
+        /// `JavaScriptBuilderElement` to generate content for use on
+        /// the client.
+        /// They are not needed to simply serialize the values stored in
+        /// aspect properties.
+        /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if required parameters are null
         /// </exception>
@@ -477,7 +486,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             string dataPath, 
             string name, 
             object value, 
-            PipelineConfig config)
+            PipelineConfig config,
+            bool includeValueDataOnly)
         {
             if (jsonValues == null)
             {
@@ -544,14 +554,16 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 jsonValues.Add(name, propertyValue);
 
                 // Add 'delayexecution' flag if needed.
-                if (config.DelayedExecutionProperties.Contains(completeName))
+                if (includeValueDataOnly == false && 
+                    config.DelayedExecutionProperties.Contains(completeName))
                 {
                     jsonValues.Add(name + "delayexecution", true);
                 }
             }
             // Add evidence properties list if needed. 
             // (i.e. if the evidence property has delay execution = true)
-            if (config.DelayedEvidenceProperties.TryGetValue(completeName,
+            if (includeValueDataOnly == false && 
+                config.DelayedEvidenceProperties.TryGetValue(completeName,
                 out IReadOnlyList<string> evidenceProperties))
             {
                 jsonValues.Add(name + "evidenceproperties", evidenceProperties);
