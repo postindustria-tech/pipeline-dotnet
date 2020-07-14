@@ -107,12 +107,63 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Delay execution flag
         /// </summary>
         /// <seealso cref="IElementPropertyMetaData.DelayExecution"/>
-        public bool DelayExecution { get; private set; }
+        public bool DelayExecution { get; set; }
 
         /// <summary>
         /// Evidence properties
         /// </summary>
         /// <seealso cref="IElementPropertyMetaData.EvidenceProperties"/>
-        public IReadOnlyList<string> EvidenceProperties { get; }
+        public IReadOnlyList<string> EvidenceProperties { get; set; }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public PropertyMetaData()
+        { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="property"></param>
+        public PropertyMetaData(IElementPropertyMetaData property)
+        {
+            if(property == null) { throw new ArgumentNullException(nameof(property)); }
+
+            Name = property.Name;
+            Type = GetTypeName(property.Type);
+            Category = property.Category;
+            DelayExecution = property.DelayExecution;
+            EvidenceProperties = property.EvidenceProperties;
+
+            ItemProperties = null;
+            if (property.ItemProperties != null &&
+                property.ItemProperties.Count > 0)
+            {
+                var newList = new List<PropertyMetaData>();
+                foreach (var itemProperty in property.ItemProperties)
+                {
+                    newList.Add(new PropertyMetaData(itemProperty));
+                }
+                ItemProperties = newList;
+            }
+        }
+
+
+        /// <summary>
+        /// Translate the type name from the c# type to the JSON type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private string GetTypeName(Type type)
+        {
+            switch (type.Name)
+            {
+                case "List`1":
+                case "IReadOnlyList`1":
+                    return "Array";
+                default:
+                    return type.Name;
+            }
+        }
     }
 }
