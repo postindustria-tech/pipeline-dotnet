@@ -436,7 +436,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             foreach(var value in sourceData)
             {
                 AddJsonValuesForProperty(flowData, values, dataPath, 
-                    value.Key, value.Value, config, true);
+                    value.Key, value.Value, config, false);
             }
             return values;
         }
