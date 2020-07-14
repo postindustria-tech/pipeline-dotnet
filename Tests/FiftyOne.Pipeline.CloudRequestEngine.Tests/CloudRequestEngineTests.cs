@@ -404,6 +404,35 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 data.Process();
             }
         }
+        
+        /// <summary>
+        /// Verify that the 'DelayExecution' and 'EvidenceProperties'
+        /// properties are populated correctly by the CloudRequestEngine.
+        /// </summary>
+        [TestMethod]
+        public void ValidateDelayedExecutionProperties()
+        {
+            _accessiblePropertiesResponse =
+                "{'Products': {'location': {'DataTier': 'tier','Properties': [" +
+                    "{'Name': 'javascript','Type': 'JavaScript','Category': 'Unspecified','DelayExecution':true}," +
+                    "{'Name': 'postcode','Type': 'String','Category': 'Unspecified','EvidenceProperties':[ 'location.javascript' ]}]}}}";
+
+            ConfigureMockedClient(r => true);
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey("key")
+                .Build();
+
+            Assert.AreEqual(1, engine.PublicProperties.Count);
+            var locationProperties = engine.PublicProperties["location"];
+            Assert.AreEqual(2, locationProperties.Properties.Count);
+            var javascript = locationProperties.Properties.Where(p => p.Name.Equals("javascript")).Single();
+            var postcode = locationProperties.Properties.Where(p => p.Name.Equals("postcode")).Single();
+            Assert.AreEqual(true, javascript.DelayExecution);
+            Assert.AreEqual(1, postcode.EvidenceProperties.Count);
+            Assert.AreEqual("location.javascript", postcode.EvidenceProperties.Single());
+        }
+
 
         /// <summary>
         /// Setup _httpClient to respond with the configured messages.
