@@ -275,6 +275,12 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
                 $"The JSON data does {(delayExecution ? "not" : "")} " +
                 $"contain a 'jspropertydelayexecution' property. " +
                 $"Complete JSON: {json}");
+            if (delayExecution)
+            {
+                var evidenceProperties = results.Single(t => (t as JProperty)?.Name.Equals("propertyevidenceproperties") ?? false) as JProperty;
+                Assert.IsInstanceOfType(evidenceProperties.Value, typeof(JArray));
+                Assert.AreEqual("test.jsproperty", (evidenceProperties.Value as JArray).Single().ToString());
+            }
         }
         
         /// <summary>
