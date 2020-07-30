@@ -34,6 +34,7 @@ using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using System.Globalization;
 using FiftyOne.Pipeline.Web.Shared;
+using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
@@ -64,6 +65,12 @@ namespace FiftyOne.Pipeline.Web.Services
         /// </summary>
         private StringValues _headersAffectingJavaScript;
 
+        private enum ContentType
+        {
+            JavaScript,
+            Json
+        }
+
         /// <summary>
         /// The cache control values that will be set for the JavaScript
         /// </summary>
@@ -91,14 +98,8 @@ namespace FiftyOne.Pipeline.Web.Services
             _pipeline = pipeline;
 
             var headersAffectingJavaScript = new List<string>();
-            // Get evidence filters for all elements that have
-            // JavaScript properties.
-            var filters = _pipeline.FlowElements
-                .Where(e => e.Properties.Any(p => 
-                    p.Type != null && 
-                    p.Type == typeof(JavaScript)))
-                .Select(e => e.EvidenceKeyFilter);
-            foreach (var filter in filters)
+
+            foreach (var filter in _pipeline.FlowElements.Select(e => e.EvidenceKeyFilter))
             {
                 // If the filter is a white list or derived type then
                 // get all HTTP header evidence keys from white list
@@ -131,12 +132,31 @@ namespace FiftyOne.Pipeline.Web.Services
         /// </exception>
         public void ServeJavascript(HttpContext context)
         {
+            ServeContent(context, ContentType.JavaScript);
+        }
+
+        /// <summary>
+        /// Add the JSON from the flow data object to the HttpResponse
+        /// </summary>
+        /// <param name="context">
+        /// The HttpContext containing the HttpResponse to add the 
+        /// JSON to.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
+        public void ServeJson(HttpContext context)
+        {
+            ServeContent(context, ContentType.Json);
+        }
+
+
+        private void ServeContent(HttpContext context, ContentType contentType)
+        { 
             if (context == null) throw new ArgumentNullException(nameof(context));
 
             // Get the hash code.
             var flowData = _flowDataProvider.GetFlowData();
-            // TODO: Should this use a Guid version of the hash code to
-            // allow a larger key space or is int sufficient?
             var hash = flowData.GenerateKey(_pipeline.EvidenceKeyFilter).GetHashCode();
 
             if (hash == context.Request.Headers["If-None-Match"])
@@ -146,20 +166,40 @@ namespace FiftyOne.Pipeline.Web.Services
             }
             else
             {
-                // Otherwise, return the minified script to the client.
-                var builder = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
-                if(builder == null)
+                // Otherwise, return the requested content to the client.
+                string content = null;
+                switch (contentType)
                 {
-                    throw new PipelineConfigurationException(
-                        Messages.ExceptionNoJavaScriptBuilder);
+                    case ContentType.JavaScript:
+                        var jsElement = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
+                        if (jsElement == null)
+                        {
+                            throw new PipelineConfigurationException(
+                                Messages.ExceptionNoJavaScriptBuilder);
+                        }
+                        var jsData = flowData.GetFromElement(jsElement);
+                        content = jsData?.JavaScript;
+                        break;
+                    case ContentType.Json:
+                        var jsonElement = flowData.Pipeline.GetElement<JsonBuilderElement>();
+                        if (jsonElement == null)
+                        {
+                            throw new PipelineConfigurationException(
+                                Messages.ExceptionNoJsonBuilder);
+                        }
+                        var jsonData = flowData.GetFromElement(jsonElement);
+                        content = jsonData?.Json;
+                        break;
+                    default:
+                        break;
                 }
-                var builderData = flowData.GetFromElement(builder);
 
                 SetHeaders(context, 
                     hash.ToString(CultureInfo.InvariantCulture), 
-                    builderData.JavaScript.Length);
+                    content?.Length ?? 0,
+                    contentType == ContentType.JavaScript ? "x-javascript" : "json");
 
-                context.Response.WriteAsync(builderData.JavaScript);
+                context.Response.WriteAsync(content);
             }
 
         }
@@ -170,9 +210,10 @@ namespace FiftyOne.Pipeline.Web.Services
         /// <param name="context"></param>
         /// <param name="hash"></param>
         /// <param name="contentLength"></param>
-        private void SetHeaders(HttpContext context, string hash, int contentLength)
+        /// <param name="contentType"></param>
+        private void SetHeaders(HttpContext context, string hash, int contentLength, string contentType)
         {
-            context.Response.ContentType = "application/x-javascript";
+            context.Response.ContentType = $"application/{contentType}";
             context.Response.ContentLength = contentLength;
             context.Response.StatusCode = 200;
             context.Response.Headers.Add("Cache-Control", _cacheControl);

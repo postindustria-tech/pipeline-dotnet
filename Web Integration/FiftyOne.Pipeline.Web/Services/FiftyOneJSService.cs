@@ -91,5 +91,40 @@ namespace FiftyOne.Pipeline.Web.Services
                 ClientsidePropertyService.ServeJavascript(context);
             }
         }
+
+        /// <summary>
+        /// Check if the 51Degrees JSON is being requested and
+        /// write it to the response if it is
+        /// </summary>
+        /// <param name="context">
+        /// The HttpContext
+        /// </param>
+        /// <returns>
+        /// True if JSON was written to the response, false otherwise.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
+        public bool ServeJson(HttpContext context)
+        {
+            if (context == null) throw new ArgumentNullException(nameof(context));
+
+            bool result = false;
+            if (context.Request.Path.Value.EndsWith("51dpipeline/json",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                ServeCoreJson(context);
+                result = true;
+            }
+            return result;
+        }
+
+        private void ServeCoreJson(HttpContext context)
+        {
+            if (Options.Value.ClientSideEvidenceEnabled)
+            {
+                ClientsidePropertyService.ServeJson(context);
+            }
+        }
     }
 }

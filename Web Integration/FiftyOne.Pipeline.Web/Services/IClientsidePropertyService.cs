@@ -37,5 +37,14 @@ namespace FiftyOne.Pipeline.Web.Services
         /// JavaScript to.
         /// </param>
         void ServeJavascript(HttpContext context);
+
+        /// <summary>
+        /// Add the JSON from the FlowData object to the HttpResponse
+        /// </summary>
+        /// <param name="context">
+        /// The HttpContext containing the HttpResponse to add the 
+        /// JSON to.
+        /// </param>
+        void ServeJson(HttpContext context);
     }
 }

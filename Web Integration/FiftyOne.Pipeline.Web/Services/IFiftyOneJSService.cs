@@ -40,5 +40,17 @@ namespace FiftyOne.Pipeline.Web.Services
         /// True if JavaScript was written to the response, false otherwise.
         /// </returns>
         bool ServeJS(HttpContext context);
+
+        /// <summary>
+        /// Check if the current request is for the Pipeline JSON data or not.
+        /// Write it to the response if it is
+        /// </summary>
+        /// <param name="context">
+        /// The HttpContext
+        /// </param>
+        /// <returns>
+        /// True if JSON was written to the response, false otherwise.
+        /// </returns>
+        bool ServeJson(HttpContext context);
     }
 }
