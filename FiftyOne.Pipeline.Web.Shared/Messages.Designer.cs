@@ -77,5 +77,14 @@ namespace FiftyOne.Pipeline.Web.Shared {
                 return ResourceManager.GetString("ExceptionNoJavaScriptBuilder", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to JSON data has been requested from the Pipeline. However, the JsonBuilderElement is not present. To resolve this error, either disable client-side evidence or ensure the JsonBuilderElement is added to your Pipeline..
+        /// </summary>
+        public static string ExceptionNoJsonBuilder {
+            get {
+                return ResourceManager.GetString("ExceptionNoJsonBuilder", resourceCulture);
+            }
+        }
     }
 }

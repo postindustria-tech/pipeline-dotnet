@@ -223,10 +223,20 @@ namespace FiftyOne.Pipeline.Web
                     options.Elements.Add(new ElementOptions()
                     {
                         BuilderName = nameof(JavaScriptBuilderElement),
-                        BuildParameters = new Dictionary<string, object>() {
-                            { "EnableCookies", true }
+                        BuildParameters = new Dictionary<string, object>()
+                        {
+                            { "EndPoint", "/51dpipeline/json" }
                         }
                     });
+                }
+                else
+                {
+                    // There is already a JavaScript builder config so check if 
+                    // the endpoint is specified. If not, add it.
+                    if (jsonConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
+                    {
+                        jsonConfig.Single().BuildParameters.Add("EndPont", "/51dpipeline/json");
+                    }
                 }
             }
 

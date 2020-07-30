@@ -95,10 +95,11 @@ namespace FiftyOne.Pipeline.Web
             // Populate the request properties and store against the 
             // HttpContext.
             PipelineResultService.Process(context);
-            
-            // If 51Degrees JavaScript is being requested then serve it.
+
+            // If 51Degrees JavaScript or JSON is being requested then serve it.
             // Otherwise continue down the middleware Pipeline.
-            if (JsService.ServeJS(context) == false)
+            if (JsService.ServeJS(context) == false && 
+                JsService.ServeJson(context) == false)
             {
                 await Next.Invoke(context).ConfigureAwait(false);
             }

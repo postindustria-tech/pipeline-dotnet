@@ -123,4 +123,7 @@
   <data name="ExceptionNoJavaScriptBuilder" xml:space="preserve">
     <value>Client-side JavaScript has been requested from the Pipeline. However, the JavaScriptBuilderElement is not present. To resolve this error, either disable client-side evidence or ensure the JavaScriptBuilderElement is added to your Pipeline.</value>
   </data>
+  <data name="ExceptionNoJsonBuilder" xml:space="preserve">
+    <value>JSON data has been requested from the Pipeline. However, the JsonBuilderElement is not present. To resolve this error, either disable client-side evidence or ensure the JsonBuilderElement is added to your Pipeline.</value>
+  </data>
 </root>
