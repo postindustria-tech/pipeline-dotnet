@@ -365,13 +365,13 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             // host and protocol for the callback URL
             flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, out It.Ref<string>.IsAny))
                 .Callback(new GetValueCallback((string key, out string result) => { result = "localhost"; }));
-            flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, out It.Ref<string>.IsAny))
+            flowData.Setup(d => d.TryGetEvidence(Pipeline.Core.Constants.EVIDENCE_PROTOCOL, out It.Ref<string>.IsAny))
                 .Callback(new GetValueCallback((string key, out string result) => { result = "https"; }));
 
             flowData.Setup(d => d.GetAsString(It.IsAny<string>())).Returns("None");
             flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(new Dictionary<string, object>() {
                 { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, hostName },
-                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_PROTOCOL, protocol },
+                { Pipeline.Core.Constants.EVIDENCE_PROTOCOL, protocol },
             });
             flowData.Setup(d => d.Get(It.IsAny<string>())).Returns(_elementDataMock.Object);
         }
