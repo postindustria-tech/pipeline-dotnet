@@ -172,7 +172,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             _evidenceKeyFilter = new EvidenceKeyFilterWhitelist(
                 new List<string>() {
                     Constants.EVIDENCE_HOST_KEY,
-                    Constants.EVIDENCE_PROTOCOL,
+                    Core.Constants.EVIDENCE_PROTOCOL,
                     Constants.EVIDENCE_OBJECT_NAME
                 });
 
@@ -238,7 +238,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             {
                 // Try and get the request protocol so it can be used to request
                 // the JSON refresh in the JavaScript code.
-                data.TryGetEvidence(Constants.EVIDENCE_PROTOCOL, out protocol);
+                data.TryGetEvidence(Core.Constants.EVIDENCE_PROTOCOL, out protocol);
             }
             // Couldn't get protocol from anywhere 
             if (string.IsNullOrEmpty(protocol))

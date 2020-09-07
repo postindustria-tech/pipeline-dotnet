@@ -139,7 +139,9 @@ namespace FiftyOne.Pipeline.Web.Services
 
             CheckAndAdd(flowData, Core.Constants.EVIDENCE_CLIENTIP_KEY,
                 httpRequest.HttpContext.Connection.LocalIpAddress.ToString());
-            
+
+            AddRequestProtocolToEvidence(flowData, httpRequest);
+
         }
 
         /// <summary>
@@ -155,12 +157,40 @@ namespace FiftyOne.Pipeline.Web.Services
         /// <param name="value">
         /// The evidence value
         /// </param>
-        private void CheckAndAdd(IFlowData flowData, string key, object value)
+        private static void CheckAndAdd(IFlowData flowData, string key, object value)
         {
             if (flowData.EvidenceKeyFilter.Include(key))
             {
                 flowData.AddEvidence(key, value);   
             }
+        }
+
+        /// <summary>
+        /// Get the request protocol using .NET's Request object
+        /// 'isHttps'. Fall back to non-standard headers.
+        /// </summary>
+        private void AddRequestProtocolToEvidence(IFlowData flowData, HttpRequest request)
+        {
+            string protocol = "https";
+            if (request.IsHttps)
+            {
+                protocol = "https";
+            }
+            else if (request.Headers.ContainsKey("X-Origin-Proto"))
+            {
+                protocol = request.Headers["X-Origin-Proto"];
+            }
+            else if (request.Headers.ContainsKey("X-Forwarded-Proto"))
+            {
+                protocol = request.Headers["X-Forwarded-Proto"];
+            }
+            else
+            {
+                protocol = "http";
+            }
+
+            // Add protocol to the evidence.
+            CheckAndAdd(flowData, Core.Constants.EVIDENCE_PROTOCOL, protocol);
         }
     }
 }

@@ -94,5 +94,11 @@ namespace FiftyOne.Pipeline.Core
         /// is available.
         /// </summary>
         public const string EVIDENCE_SESSION_KEY = EVIDENCE_SESSION_PREFIX + EVIDENCE_SEPERATOR + "session";
+
+        /// <summary>
+        /// The complete key to be used when the 'Protocol' HTTP header is
+        /// passed as evidence
+        /// </summary>
+        public const string EVIDENCE_PROTOCOL = EVIDENCE_HTTPHEADER_PREFIX + EVIDENCE_SEPERATOR + "protocol";
     }
 }

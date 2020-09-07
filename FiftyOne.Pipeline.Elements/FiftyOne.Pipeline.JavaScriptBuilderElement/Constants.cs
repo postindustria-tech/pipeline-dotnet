@@ -47,14 +47,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder
             Core.Constants.EVIDENCE_SEPERATOR + 
             "Host";
 
-        /// <summary>
-        /// The complete key to be used when the 'Protocol' HTTP header is
-        /// passed as evidence
-        /// </summary>
-        public const string EVIDENCE_PROTOCOL = 
-            Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + 
-            Core.Constants.EVIDENCE_SEPERATOR + 
-            "protocol";
+
 
         /// <summary>
         /// The suffix used when the <see cref="JavaScriptBuilderElement"/> 

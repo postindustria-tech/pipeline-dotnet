@@ -111,6 +111,7 @@ namespace FiftyOne.Pipeline.Web.Tests
             request.SetupGet(r => r.Query).Returns(query);
             request.SetupGet(r => r.HttpContext.Connection.LocalIpAddress)
                 .Returns(ip);
+            request.SetupGet(r => r.IsHttps).Returns(true);
         }
 
         /// <summary>
@@ -122,6 +123,24 @@ namespace FiftyOne.Pipeline.Web.Tests
             flowData.SetupGet(f => f.EvidenceKeyFilter)
                 .Returns(new EvidenceKeyFilterWhitelist(
                     new List<string>() { key }));
+        }
+
+        /// <summary>
+        /// Check thhat the request protocol is always added to the
+        /// evidence.
+        /// </summary>
+        [TestMethod]
+
+        public void WebRequestEvidenceService_ContainsProtocol()
+        {
+            SetRequiredKey(Core.Constants.EVIDENCE_PROTOCOL);
+            service.AddEvidenceFromRequest(flowData.Object, request.Object);
+            flowData.Verify(f => f.AddEvidence(
+                It.IsAny<string>(), It.IsAny<string>()),
+                Times.Once);
+            flowData.Verify(f => f.AddEvidence(
+                Core.Constants.EVIDENCE_PROTOCOL, "https"),
+                Times.Once);
         }
 
         /// <summary>
