@@ -35,6 +35,7 @@ using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using System.Globalization;
 using FiftyOne.Pipeline.Web.Shared;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
+using System.Text;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
@@ -194,9 +195,15 @@ namespace FiftyOne.Pipeline.Web.Services
                         break;
                 }
 
+                int length = 0;
+                if (content != null && content.Length > 0)
+                {
+                    length = Encoding.UTF8.GetBytes(content).Length;
+                }
+
                 SetHeaders(context, 
-                    hash.ToString(CultureInfo.InvariantCulture), 
-                    content?.Length ?? 0,
+                    hash.ToString(CultureInfo.InvariantCulture),
+                    length,
                     contentType == ContentType.JavaScript ? "x-javascript" : "json");
 
                 context.Response.WriteAsync(content);

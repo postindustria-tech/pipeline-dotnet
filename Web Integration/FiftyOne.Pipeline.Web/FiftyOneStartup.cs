@@ -235,7 +235,7 @@ namespace FiftyOne.Pipeline.Web
                     // the endpoint is specified. If not, add it.
                     if (jsonConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
                     {
-                        jsonConfig.Single().BuildParameters.Add("EndPont", "/51dpipeline/json");
+                        jsonConfig.Single().BuildParameters.Add("EndPoint", "/51dpipeline/json");
                     }
                 }
             }

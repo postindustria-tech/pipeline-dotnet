@@ -248,7 +248,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             else
             {
                 Logger.LogError($"Aspect properties could not be " +
-                    $"loaded for {GetType().Name}", this);
+                    $"loaded for {GetType().Name} - '{ElementDataKey}'", this);
                 return false;
             }
         }
@@ -408,9 +408,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                         {
                             var newValue = property.Value;
                             // TODO - Replace this with a more generalized type factory.
-                            if (metaData.Type.GetGenericArguments()[0] == typeof(JavaScript))
+                            var valueType = metaData.Type.GetGenericArguments()[0];
+                            if (valueType == typeof(JavaScript))
                             {
                                 newValue = new JavaScript(newValue.ToString());
+                            }
+                            else if (valueType == typeof(Dictionary<string, string>))
+                            {
+                                newValue = ((Newtonsoft.Json.Linq.JObject)newValue).ToObject<Dictionary<string, string>>();
                             }
                             apv.Value = newValue;
                         }

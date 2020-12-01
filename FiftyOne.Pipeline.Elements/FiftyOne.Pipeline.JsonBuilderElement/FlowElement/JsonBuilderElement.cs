@@ -299,7 +299,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// Thrown if one of the supplied parameters is null
         /// </exception>
         protected static void AddErrors(IFlowData data,
-            Dictionary<String, object> allProperties)
+            Dictionary<string, object> allProperties)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             if (allProperties == null) throw new ArgumentNullException(nameof(allProperties));
@@ -307,19 +307,9 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             // If there are any errors then add them to the Json.
             if (data.Errors != null && data.Errors.Count > 0)
             {
-                var errors = new Dictionary<string, List<string>>();
-                foreach (var error in data.Errors)
-                {
-                    if (errors.ContainsKey(error.FlowElement.ElementDataKey))
-                    {
-                        errors[error.FlowElement.ElementDataKey].Add(error.ExceptionData.Message);
-                    }
-                    else
-                    {
-                        errors.Add(error.FlowElement.ElementDataKey,
-                            new List<string>() { error.ExceptionData.Message });
-                    }
-                }
+                var errors = data.Errors
+                .Select(e => e.ExceptionData.Message);
+
                 allProperties.Add("errors", errors);
             }
         }
