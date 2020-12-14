@@ -21,16 +21,8 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
-using FiftyOne.Pipeline.Core.Data.Types;
-using FiftyOne.Pipeline.Core.FlowElements;
-using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
-using Microsoft.Extensions.Primitives;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FiftyOne.Pipeline.Web.Framework.Adapters;
+using FiftyOne.Pipeline.Web.Shared.Services;
 using System.Web;
 
 namespace FiftyOne.Pipeline.Web.Framework.Providers
@@ -40,6 +32,12 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
     /// </summary>
     internal class FiftyOneJsProvider
     {
+        private enum ContentType
+        {
+            JavaScript,
+            Json
+        }
+
         /// <summary>
         /// The single instance of the provider.
         /// </summary>
@@ -49,21 +47,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         /// Lock used when constructing the instance.
         /// </summary>
         private static readonly object _lock = new object();
-        
-        /// <summary>
-        /// A list of all the HTTP headers that are requested evidence
-        /// for elements that populate JavaScript properties 
-        /// </summary>
-        private StringValues _headersAffectingJavaScript;
 
-        /// <summary>
-        /// The cache control values that will be set for the JavaScript
-        /// </summary>
-        private StringValues _cacheControl = new StringValues(
-            new string[] {
-                "only-if-cached",
-                "max-age=600",
-            });
+        private static IClientsidePropertyService _clientsidePropertyService;
 
         /// <summary>
         /// Get the single instance of the provider. If one does not yet
@@ -90,35 +75,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         /// </summary>
         public FiftyOneJsProvider()
         {
-            var pipeline = WebPipeline.GetInstance().Pipeline;
-            var headersAffectingJavaScript = new List<string>();
-            // Get evidence filters for all elements that have
-            // JavaScript properties.
-            var filters = pipeline.FlowElements
-                .Where(e => e.Properties.Any(p =>
-                    p.Type != null &&
-                    p.Type == typeof(JavaScript)))
-                .Select(e => e.EvidenceKeyFilter);
-            foreach (var filter in filters)
-            {
-                // If the filter is a white list or derived type then
-                // get all HTTP header evidence keys from white list
-                // and add them to the headers that could affect the 
-                // generated JavaScript.
-                var whitelist = filter as EvidenceKeyFilterWhitelist;
-                if (whitelist != null)
-                {
-                    var headerPrefix = Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + 
-                        Core.Constants.EVIDENCE_SEPERATOR;
-                    headersAffectingJavaScript.AddRange(whitelist.Whitelist
-                        .Where(entry => entry.Key.StartsWith(
-                            headerPrefix, StringComparison.OrdinalIgnoreCase))
-                        .Select(entry => entry.Key.Substring(
-                            entry.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR, 
-                                StringComparison.OrdinalIgnoreCase) + 1)));
-                }
-            }
-            _headersAffectingJavaScript = new StringValues(headersAffectingJavaScript.ToArray());
+            _clientsidePropertyService = new ClientsidePropertyService(
+                WebPipeline.GetInstance().Pipeline);
         }
 
         /// <summary>
@@ -130,67 +88,29 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         /// </param>
         public void ServeJavascript(HttpContext context)
         {
-            context.Response.Clear();
-            context.Response.ClearHeaders();
-
-            PipelineCapabilities caps = context.Request.Browser as PipelineCapabilities;
-
-            var flowData = caps.FlowData;
-
-            // Get the hash code.
-            var hash = flowData.GenerateKey(
-                flowData.Pipeline.EvidenceKeyFilter).GetHashCode();
-
-            if (hash.ToString(CultureInfo.InvariantCulture) == 
-                context.Request.Headers["If-None-Match"])
-            {
-                // The response hasn't changed so respond with a 304.
-                context.Response.StatusCode = 304;
-            }
-            else
-            {
-                var bundler = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
-                if (bundler != null)
-                {
-                    var bundlerData = flowData.GetFromElement(bundler);
-
-                    // Otherwise, return the minified script to the client.
-                    context.Response.Write(bundlerData.JavaScript);
-
-                    SetHeaders(context, 
-                        hash.ToString(CultureInfo.InvariantCulture), 
-                        bundlerData.JavaScript.Length);
-                }
-                else
-                {
-                    // There is no bundler element to get the javascript from
-                    // so the response will just be empty.
-                }
-            }
-            context.ApplicationInstance.CompleteRequest();
+            _clientsidePropertyService.ServeJavascript(
+                new ContextAdapter(context), 
+                GetFlowData(context));
         }
 
         /// <summary>
-        /// Set various HTTP headers on the JavaScript response.
+        /// Add the JSON from the flow data object to the HttpResponse
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="hash"></param>
-        /// <param name="contentLength"></param>
-        private void SetHeaders(HttpContext context, string hash, int contentLength)
+        /// <param name="context">
+        /// The HttpContext containing the HttpResponse to add the 
+        /// JSON to.
+        /// </param>
+        public void ServeJson(HttpContext context)
         {
-            context.Response.ContentType = "application/x-javascript";
-            context.Response.AddHeader("Content-Length", 
-                contentLength.ToString(CultureInfo.InvariantCulture));
-            context.Response.StatusCode = 200;
-            context.Response.Headers.Add("Cache-Control", _cacheControl);
-            if (string.IsNullOrEmpty(_headersAffectingJavaScript.ToString()) == false)
-            {
-                context.Response.Headers.Add("Vary", _headersAffectingJavaScript);
-            }
-            context.Response.Headers.Add("ETag", new StringValues(
-                new string[] {
-                    hash,
-                }));
+            _clientsidePropertyService.ServeJson(
+                new ContextAdapter(context), 
+                GetFlowData(context));
+        }
+
+        private static IFlowData GetFlowData(HttpContext context)
+        {
+            PipelineCapabilities caps = context.Request.Browser as PipelineCapabilities;
+            return caps.FlowData;
         }
     }
 }

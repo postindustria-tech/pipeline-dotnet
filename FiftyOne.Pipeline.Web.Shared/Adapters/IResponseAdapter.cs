@@ -1,4 +1,4 @@
-/* *********************************************************************
+﻿/* *********************************************************************
  * This Original Work is copyright of 51 Degrees Mobile Experts Limited.
  * Copyright 2020 51 Degrees Mobile Experts Limited, 5 Charlotte Close,
  * Caversham, Reading, Berkshire, United Kingdom RG4 7BY.
@@ -20,26 +20,45 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace FiftyOne.Pipeline.Web.Framework.Configuration
+namespace FiftyOne.Pipeline.Web.Shared.Adapters
 {
     /// <summary>
-    /// Extends the PipelineOptions class to add web specific options.
+    /// Interface for an adapter class that can be used to translate 
+    /// requests from common services into the appropriate calls
+    /// for a specific HttpResponse implementation.
     /// </summary>
-    public class PipelineWebIntegrationOptions : PipelineOptions
+    public interface IResponseAdapter
     {
         /// <summary>
-        /// True if client-side properties should be enabled. If enabled
-        /// (and the JavaScriptBundlerElement added to the Pipeline), a
-        /// client-side JavaScript file will be served at the URL
-        /// */51Degrees.core.js.
+        /// Get/set the HTTP status code 
         /// </summary>
-        public bool ClientSideEvidenceEnabled { get; set; } = true;
+        int StatusCode { get; set; }
+
+        /// <summary>
+        /// Write the specified content to the response
+        /// </summary>
+        /// <param name="content"></param>
+        void Write(string content);
+
+        /// <summary>
+        /// Add the specified response header name and value.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
+        void SetHeader(string name, string value);
+
+        /// <summary>
+        /// Clear any existing HTTP headers
+        /// </summary>
+        void ClearHeaders();
+
+        /// <summary>
+        /// Clear any existing content
+        /// </summary>
+        void Clear();
     }
 }

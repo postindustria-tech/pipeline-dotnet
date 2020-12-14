@@ -20,6 +20,10 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
+using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
+using FiftyOne.Pipeline.JsonBuilder.FlowElement;
+using FiftyOne.Pipeline.Math;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,6 +42,16 @@ namespace Example_Framework_Website
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            // Make sure the assemblies that are needed by the pipeline
+            // are loaded into the app domain.
+            AppDomain.CurrentDomain.Load(
+                typeof(MathElementBuilder).Assembly.GetName());
+            AppDomain.CurrentDomain.Load(
+                typeof(JavaScriptBuilderElement).Assembly.GetName());
+            AppDomain.CurrentDomain.Load(
+                typeof(JsonBuilderElement).Assembly.GetName());
+            AppDomain.CurrentDomain.Load(
+                typeof(SequenceElementBuilder).Assembly.GetName());
         }
     }
 }

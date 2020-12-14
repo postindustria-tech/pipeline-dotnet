@@ -20,9 +20,10 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using Microsoft.AspNetCore.Http;
+using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Web.Shared.Adapters;
 
-namespace FiftyOne.Pipeline.Web.Services
+namespace FiftyOne.Pipeline.Web.Shared.Services
 {
     /// <summary>
     /// Interface for <see cref="ClientsidePropertyService"/>
@@ -33,18 +34,24 @@ namespace FiftyOne.Pipeline.Web.Services
         /// Add the JavaScript from the FlowData object to the HttpResponse
         /// </summary>
         /// <param name="context">
-        /// The HttpContext containing the HttpResponse to add the 
-        /// JavaScript to.
+        /// An <see cref="IContextAdapter"/> representing the HttpResponse 
+        /// to add the JavaScript to.
         /// </param>
-        void ServeJavascript(HttpContext context);
+        /// <param name="flowData">
+        /// The flow data to get the JavaScript from.
+        /// </param>
+        void ServeJavascript(IContextAdapter context, IFlowData flowData);
 
         /// <summary>
         /// Add the JSON from the FlowData object to the HttpResponse
         /// </summary>
         /// <param name="context">
-        /// The HttpContext containing the HttpResponse to add the 
-        /// JSON to.
+        /// An <see cref="IContextAdapter"/> representing the HttpResponse 
+        /// to add the JSON to.
         /// </param>
-        void ServeJson(HttpContext context);
+        /// <param name="flowData">
+        /// The flow data to get the JSON from.
+        /// </param>
+        void ServeJson(IContextAdapter context, IFlowData flowData);
     }
 }

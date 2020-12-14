@@ -20,6 +20,9 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Web.Adapters;
+using FiftyOne.Pipeline.Web.Shared.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System;
@@ -40,6 +43,11 @@ namespace FiftyOne.Pipeline.Web.Services
         /// The configuration options for this service.
         /// </summary>
         protected IOptions<PipelineWebIntegrationOptions> Options { get; private set; }
+        /// <summary>
+        /// Provides a mechanism to access the current 
+        /// <see cref="IFlowData"/> instance.
+        /// </summary>
+        protected IFlowDataProvider FlowDataProvider { get; private set; }
 
         /// <summary>
         /// Constructor
@@ -48,13 +56,21 @@ namespace FiftyOne.Pipeline.Web.Services
         /// The <see cref="IClientsidePropertyService"/> to use when 
         /// JavaScript needs to be returned to the user.
         /// </param>
-        /// <param name="options"></param>
+        /// <param name="options">
+        /// The configuration options for this service
+        /// </param>
+        /// <param name="flowDataProvider">
+        /// The provider to use when accessing the <see cref="IFlowData"/>
+        /// instance.
+        /// </param>
         public FiftyOneJSService(
             IClientsidePropertyService clientsidePropertyService,
-            IOptions<PipelineWebIntegrationOptions> options)
+            IOptions<PipelineWebIntegrationOptions> options,
+            IFlowDataProvider flowDataProvider)
         {
             ClientsidePropertyService = clientsidePropertyService;
             Options = options;
+            FlowDataProvider = flowDataProvider;
         }
 
         /// <summary>
@@ -88,7 +104,9 @@ namespace FiftyOne.Pipeline.Web.Services
         {
             if (Options.Value.ClientSideEvidenceEnabled)
             {
-                ClientsidePropertyService.ServeJavascript(context);
+                ClientsidePropertyService.ServeJavascript(
+                    new ContextAdapter(context), 
+                    FlowDataProvider.GetFlowData());
             }
         }
 
@@ -123,7 +141,9 @@ namespace FiftyOne.Pipeline.Web.Services
         {
             if (Options.Value.ClientSideEvidenceEnabled)
             {
-                ClientsidePropertyService.ServeJson(context);
+                ClientsidePropertyService.ServeJson(
+                    new ContextAdapter(context),
+                    FlowDataProvider.GetFlowData());
             }
         }
     }

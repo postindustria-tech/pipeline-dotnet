@@ -38,6 +38,7 @@ using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using System.Collections.Generic;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.Web.Shared;
+using FiftyOne.Pipeline.Web.Shared.Services;
 
 namespace FiftyOne.Pipeline.Web
 {

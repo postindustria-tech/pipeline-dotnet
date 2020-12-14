@@ -63,6 +63,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore 2.1 Example", "W
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore 3.1 Example", "Web Integration\Examples\NetCore3.1\AspNetCore 3.1 Example.csproj", "{D3D54E8A-6674-4788-A177-55A3C2FFC9FF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiftyOne.Pipeline.Web.Shared.Tests", "Web Integration\Tests\FiftyOne.Pipeline.Web.Shared.Tests\FiftyOne.Pipeline.Web.Shared.Tests.csproj", "{E9D230EE-88F0-4EC5-AF40-CEFFB8093251}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -141,6 +143,10 @@ Global
 		{D3D54E8A-6674-4788-A177-55A3C2FFC9FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3D54E8A-6674-4788-A177-55A3C2FFC9FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3D54E8A-6674-4788-A177-55A3C2FFC9FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9D230EE-88F0-4EC5-AF40-CEFFB8093251}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9D230EE-88F0-4EC5-AF40-CEFFB8093251}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9D230EE-88F0-4EC5-AF40-CEFFB8093251}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9D230EE-88F0-4EC5-AF40-CEFFB8093251}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -162,6 +168,7 @@ Global
 		{7421904B-85D4-40C2-ACDD-8A668218CA2D} = {AF5A4BF7-6197-4E0F-B796-EC6630C1C9CD}
 		{3D055691-022E-4F62-A674-6E513F2CD0A2} = {AF5A4BF7-6197-4E0F-B796-EC6630C1C9CD}
 		{D3D54E8A-6674-4788-A177-55A3C2FFC9FF} = {AF5A4BF7-6197-4E0F-B796-EC6630C1C9CD}
+		{E9D230EE-88F0-4EC5-AF40-CEFFB8093251} = {5B0DFCCB-A77B-48AF-A50A-5AA3717A6697}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {053DC44B-CB50-4B57-AEBE-33861B756AAF}

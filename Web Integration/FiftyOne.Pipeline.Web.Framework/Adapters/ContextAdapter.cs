@@ -1,4 +1,4 @@
-/* *********************************************************************
+﻿/* *********************************************************************
  * This Original Work is copyright of 51 Degrees Mobile Experts Limited.
  * Copyright 2020 51 Degrees Mobile Experts Limited, 5 Charlotte Close,
  * Caversham, Reading, Berkshire, United Kingdom RG4 7BY.
@@ -20,26 +20,47 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.Configuration;
+using FiftyOne.Pipeline.Web.Shared.Adapters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 
-namespace FiftyOne.Pipeline.Web.Framework.Configuration
+namespace FiftyOne.Pipeline.Web.Framework.Adapters
 {
     /// <summary>
-    /// Extends the PipelineOptions class to add web specific options.
+    /// Adapter class that is used to translate requests from 
+    /// common services into the appropriate calls for the ASP.NET 
+    /// <see cref="HttpContext"/> implementation.
     /// </summary>
-    public class PipelineWebIntegrationOptions : PipelineOptions
+    public class ContextAdapter : IContextAdapter
     {
+        private HttpContext _context;
+        private RequestAdapter _request;
+        private ResponseAdapter _response;
+
         /// <summary>
-        /// True if client-side properties should be enabled. If enabled
-        /// (and the JavaScriptBundlerElement added to the Pipeline), a
-        /// client-side JavaScript file will be served at the URL
-        /// */51Degrees.core.js.
+        /// Constructor
         /// </summary>
-        public bool ClientSideEvidenceEnabled { get; set; } = true;
+        /// <param name="context"></param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if required parameters are null
+        /// </exception>
+        public ContextAdapter(HttpContext context)
+        {
+            if(context == null) { throw new ArgumentNullException(nameof(context)); }
+
+            _context = context;
+            _request = new RequestAdapter(_context.Request);
+            _response = new ResponseAdapter(_context.Response);
+        }
+
+        /// <inheritdoc/>
+        public IRequestAdapter Request => _request;
+
+        /// <inheritdoc/>
+        public IResponseAdapter Response => _response;
     }
 }

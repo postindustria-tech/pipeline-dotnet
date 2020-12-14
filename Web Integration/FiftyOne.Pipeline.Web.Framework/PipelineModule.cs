@@ -72,11 +72,18 @@ namespace FiftyOne.Pipeline.Web.Framework
             HttpContext context = ((HttpApplication)sender).Context;
 
             if (context != null &&
-                context.Request.Path.EndsWith("51Degrees.core.js", 
-                    StringComparison.OrdinalIgnoreCase) &&
-                WebPipeline.GetInstance().ClientSideEvidenceEnabled)
+                  WebPipeline.GetInstance().ClientSideEvidenceEnabled)
             {
-                FiftyOneJsProvider.GetInstance().ServeJavascript(context);
+                if (context.Request.Path.EndsWith("51Degrees.core.js",
+                      StringComparison.OrdinalIgnoreCase))
+                {
+                    FiftyOneJsProvider.GetInstance().ServeJavascript(context);
+                }
+                if (context.Request.Path.EndsWith("51dpipeline/json",
+                      StringComparison.OrdinalIgnoreCase))
+                {
+                    FiftyOneJsProvider.GetInstance().ServeJson(context);
+                }
             }
         }
 

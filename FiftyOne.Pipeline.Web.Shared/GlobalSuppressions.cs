@@ -7,5 +7,5 @@
     "CA1716:Identifiers should not match keywords", 
     Justification = "This would be a breaking change that we are" +
         "not going to resolve at the current time.", 
-    Scope = "namespace", 
-    Target = "FiftyOne.Pipeline.Web.Shared.Data")]
+    Scope = "namespaceanddescendants", 
+    Target = "FiftyOne.Pipeline.Web.Shared")]

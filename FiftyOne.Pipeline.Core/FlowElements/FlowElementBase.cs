@@ -188,7 +188,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             Func<IPipeline, FlowElementBase<T, TMeta>, T> elementDataFactory)
         {
             Logger = logger;
-            Logger.LogInformation($"FlowElement '{GetType().Name}' created.");
+            if (Logger != null)
+            {
+                Logger.LogInformation($"FlowElement '{GetType().Name}' created.");
+            }
             _elementDataFactory = elementDataFactory;
         }
 

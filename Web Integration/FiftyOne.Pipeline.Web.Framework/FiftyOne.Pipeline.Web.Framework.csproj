@@ -58,6 +58,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Activator.cs" />
+    <Compile Include="Adapters\ContextAdapter.cs" />
+    <Compile Include="Adapters\RequestAdapter.cs" />
+    <Compile Include="Adapters\ResponseAdapter.cs" />
     <Compile Include="AspFrameworkSession.cs" />
     <Compile Include="Configuration\Extensions.cs" />
     <Compile Include="Configuration\PipelineWebIntegrationOptions.cs" />

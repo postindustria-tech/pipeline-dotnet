@@ -1,4 +1,4 @@
-/* *********************************************************************
+﻿/* *********************************************************************
  * This Original Work is copyright of 51 Degrees Mobile Experts Limited.
  * Copyright 2020 51 Degrees Mobile Experts Limited, 5 Charlotte Close,
  * Caversham, Reading, Berkshire, United Kingdom RG4 7BY.
@@ -20,26 +20,63 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.Configuration;
+using FiftyOne.Pipeline.Web.Shared.Adapters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 
-namespace FiftyOne.Pipeline.Web.Framework.Configuration
+namespace FiftyOne.Pipeline.Web.Framework.Adapters
 {
     /// <summary>
-    /// Extends the PipelineOptions class to add web specific options.
+    /// Adapter class that is used to translate requests from common 
+    /// services into the appropriate calls for the ASP.NET 
+    /// <see cref="HttpResponse"/> implementation.
     /// </summary>
-    public class PipelineWebIntegrationOptions : PipelineOptions
+    class ResponseAdapter : IResponseAdapter
     {
+        private HttpResponse _response;
+
         /// <summary>
-        /// True if client-side properties should be enabled. If enabled
-        /// (and the JavaScriptBundlerElement added to the Pipeline), a
-        /// client-side JavaScript file will be served at the URL
-        /// */51Degrees.core.js.
+        /// Constructor
         /// </summary>
-        public bool ClientSideEvidenceEnabled { get; set; } = true;
+        /// <param name="response"></param>
+        public ResponseAdapter(HttpResponse response)
+        {
+            _response = response;
+        }
+
+        /// <inheritdoc/>
+        public int StatusCode
+        {
+            get => _response.StatusCode;
+            set => _response.StatusCode = value;
+        }
+
+        /// <inheritdoc/>
+        public void Clear()
+        {
+            _response.Clear();
+        }
+
+        /// <inheritdoc/>
+        public void ClearHeaders()
+        {
+            _response.ClearHeaders();
+        }
+
+        /// <inheritdoc/>
+        public void SetHeader(string name, string value)
+        {
+            _response.AppendHeader(name, value);
+        }
+
+        /// <inheritdoc/>
+        public void Write(string content)
+        {
+            _response.Write(content);
+        }
     }
 }

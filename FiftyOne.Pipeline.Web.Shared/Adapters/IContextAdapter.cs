@@ -1,4 +1,4 @@
-/* *********************************************************************
+﻿/* *********************************************************************
  * This Original Work is copyright of 51 Degrees Mobile Experts Limited.
  * Copyright 2020 51 Degrees Mobile Experts Limited, 5 Charlotte Close,
  * Caversham, Reading, Berkshire, United Kingdom RG4 7BY.
@@ -20,26 +20,27 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace FiftyOne.Pipeline.Web.Framework.Configuration
+namespace FiftyOne.Pipeline.Web.Shared.Adapters
 {
     /// <summary>
-    /// Extends the PipelineOptions class to add web specific options.
+    /// Interface for an adapter class that can be used to translate 
+    /// requests from common services into the appropriate calls
+    /// for a specific HttpContext implementation.
     /// </summary>
-    public class PipelineWebIntegrationOptions : PipelineOptions
+    public interface IContextAdapter
     {
         /// <summary>
-        /// True if client-side properties should be enabled. If enabled
-        /// (and the JavaScriptBundlerElement added to the Pipeline), a
-        /// client-side JavaScript file will be served at the URL
-        /// */51Degrees.core.js.
+        /// Get the adapter for the request associated with this context.
         /// </summary>
-        public bool ClientSideEvidenceEnabled { get; set; } = true;
+        IRequestAdapter Request { get; }
+
+        /// <summary>
+        /// Get the adapter for the response associated with this context.
+        /// </summary>
+        IResponseAdapter Response { get; }
     }
 }

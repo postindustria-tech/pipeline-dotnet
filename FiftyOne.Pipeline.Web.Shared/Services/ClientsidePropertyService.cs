@@ -22,22 +22,21 @@
 
 using System;
 
-using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 
 using Microsoft.Extensions.Primitives;
 using FiftyOne.Pipeline.Core.FlowElements;
 using System.Linq;
 using FiftyOne.Pipeline.Core.Data;
-using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using System.Globalization;
 using FiftyOne.Pipeline.Web.Shared;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using System.Text;
+using FiftyOne.Pipeline.Web.Shared.Adapters;
 
-namespace FiftyOne.Pipeline.Web.Services
+namespace FiftyOne.Pipeline.Web.Shared.Services
 {
     /// <summary>
     /// Class that provides functionality for the 'Client side Overrides'
@@ -50,11 +49,6 @@ namespace FiftyOne.Pipeline.Web.Services
     /// </summary>
     public class ClientsidePropertyService : IClientsidePropertyService
     {
-        /// <summary>
-        /// Device provider
-        /// </summary>
-        private IFlowDataProvider _flowDataProvider;
-
         /// <summary>
         /// Pipeline
         /// </summary>
@@ -84,18 +78,15 @@ namespace FiftyOne.Pipeline.Web.Services
         /// <summary>
         /// Create a new ClientsidePropertyService
         /// </summary>
-        /// <param name="flowDataProvider"></param>
         /// <param name="pipeline"></param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
         public ClientsidePropertyService(
-            IFlowDataProvider flowDataProvider,
             IPipeline pipeline)
         {
             if (pipeline == null) throw new ArgumentNullException(nameof(pipeline));
 
-            _flowDataProvider = flowDataProvider;
             _pipeline = pipeline;
 
             var headersAffectingJavaScript = new List<string>();
@@ -125,42 +116,53 @@ namespace FiftyOne.Pipeline.Web.Services
         /// Add the JavaScript from the flow data object to the HttpResponse
         /// </summary>
         /// <param name="context">
-        /// The HttpContext containing the HttpResponse to add the 
-        /// JavaScript to.
+        /// An <see cref="IContextAdapter"/> representing the HttpResponse 
+        /// to add the JavaScript to.
+        /// </param>
+        /// <param name="flowData">
+        /// The flow data to get the JavaScript from.
         /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
-        public void ServeJavascript(HttpContext context)
+        public void ServeJavascript(IContextAdapter context, IFlowData flowData)
         {
-            ServeContent(context, ContentType.JavaScript);
+            ServeContent(context, flowData, ContentType.JavaScript);
         }
 
         /// <summary>
         /// Add the JSON from the flow data object to the HttpResponse
         /// </summary>
         /// <param name="context">
-        /// The HttpContext containing the HttpResponse to add the 
-        /// JSON to.
+        /// An <see cref="IContextAdapter"/> representing the HttpResponse 
+        /// to add the JSON to.
+        /// </param>
+        /// <param name="flowData">
+        /// The flow data to get the JSON from.
         /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
-        public void ServeJson(HttpContext context)
-        {
-            ServeContent(context, ContentType.Json);
+        public void ServeJson(IContextAdapter context, IFlowData flowData)
+        { 
+            ServeContent(context, flowData, ContentType.Json);
         }
 
 
-        private void ServeContent(HttpContext context, ContentType contentType)
-        { 
+        private void ServeContent(IContextAdapter context, IFlowData flowData, ContentType contentType)
+        {
             if (context == null) throw new ArgumentNullException(nameof(context));
+            if (flowData == null) throw new ArgumentNullException(nameof(flowData));
+
+            context.Response.Clear();
+            context.Response.ClearHeaders();
 
             // Get the hash code.
-            var flowData = _flowDataProvider.GetFlowData();
             var hash = flowData.GenerateKey(_pipeline.EvidenceKeyFilter).GetHashCode();
 
-            if (hash == context.Request.Headers["If-None-Match"])
+            if (int.TryParse(context.Request.GetHeaderValue("If-None-Match"), 
+                    out int previousHash) &&
+                hash == previousHash)
             {
                 // The response hasn't changed so respond with a 304.
                 context.Response.StatusCode = 304;
@@ -201,12 +203,13 @@ namespace FiftyOne.Pipeline.Web.Services
                     length = Encoding.UTF8.GetBytes(content).Length;
                 }
 
+                context.Response.StatusCode = 200;
                 SetHeaders(context, 
                     hash.ToString(CultureInfo.InvariantCulture),
                     length,
                     contentType == ContentType.JavaScript ? "x-javascript" : "json");
 
-                context.Response.WriteAsync(content);
+                context.Response.Write(content);
             }
 
         }
@@ -218,14 +221,18 @@ namespace FiftyOne.Pipeline.Web.Services
         /// <param name="hash"></param>
         /// <param name="contentLength"></param>
         /// <param name="contentType"></param>
-        private void SetHeaders(HttpContext context, string hash, int contentLength, string contentType)
+        private void SetHeaders(IContextAdapter context, string hash, int contentLength, string contentType)
         {
-            context.Response.ContentType = $"application/{contentType}";
-            context.Response.ContentLength = contentLength;
-            context.Response.StatusCode = 200;
-            context.Response.Headers.Add("Cache-Control", _cacheControl);
-            context.Response.Headers.Add("Vary", _headersAffectingJavaScript);
-            context.Response.Headers.Add("ETag", new StringValues(
+            context.Response.SetHeader("Content-Type", 
+                $"application/{contentType}");
+            context.Response.SetHeader("Content-Length", 
+                contentLength.ToString(CultureInfo.InvariantCulture));
+            context.Response.SetHeader("Cache-Control", _cacheControl);
+            if (string.IsNullOrEmpty(_headersAffectingJavaScript.ToString()) == false)
+            {
+                context.Response.SetHeader("Vary", _headersAffectingJavaScript);
+            }
+            context.Response.SetHeader("ETag", new StringValues(
                 new string[] {
                     hash,
                 }));
