@@ -184,7 +184,7 @@
     <value>This is because the property has been excluded when configuring the engine.</value>
   </data>
   <data name="MissingPropertyMessagePropertyNotInCloudResource" xml:space="preserve">
-    <value>This is because your resource key does not include access to this property. Properties that are included for this key under '{0}' are {1}. For more details on resource keys, see our explainer: https://51degrees.com/documentation/4.1/_info__resourcekeys.html</value>
+    <value>This is because your resource key does not include access to this property. Properties that are included for this key under '{0}' are {1}. For more details on resource keys, see our explainer: https://51degrees.com/documentation/4.2/_info__resourcekeys.html</value>
   </data>
   <data name="MissingPropertyMessageUnknown" xml:space="preserve">
     <value>The reason for this is unknown. Please check that the aspect and property name are correct.</value>

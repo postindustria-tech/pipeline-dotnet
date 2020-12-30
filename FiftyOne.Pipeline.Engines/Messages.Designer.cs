@@ -259,7 +259,7 @@ namespace FiftyOne.Pipeline.Engines {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This is because your resource key does not include access to this property. Properties that are included for this key under &apos;{0}&apos; are {1}. For more details on resource keys, see our explainer: https://51degrees.com/documentation/4.1/_info__resourcekeys.html.
+        ///   Looks up a localized string similar to This is because your resource key does not include access to this property. Properties that are included for this key under &apos;{0}&apos; are {1}. For more details on resource keys, see our explainer: https://51degrees.com/documentation/4.2/_info__resourcekeys.html.
         /// </summary>
         internal static string MissingPropertyMessagePropertyNotInCloudResource {
             get {
