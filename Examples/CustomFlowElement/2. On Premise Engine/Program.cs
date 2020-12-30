@@ -49,14 +49,16 @@ namespace Examples.OnPremiseEngine
 
             var dob = new DateTime(1992, 12, 18);
             // Create a new flow data.
-            var flowData = pipeline.CreateFlowData();
-            // Add the evidence and process the data.
-            flowData
-                .AddEvidence("date-of-birth", dob)
-                .Process();
-            // Now get the result of the processing.
-            Console.WriteLine($"With a date of birth of {dob}, " +
-                $"your star sign is {flowData.Get<IStarSignData>().StarSign}.");
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                // Add the evidence and process the data.
+                flowData
+                    .AddEvidence("date-of-birth", dob)
+                    .Process();
+                // Now get the result of the processing.
+                Console.WriteLine($"With a date of birth of {dob}, " +
+                    $"your star sign is {flowData.Get<IStarSignData>().StarSign}.");
+            }
             //! [usage]
         }
 

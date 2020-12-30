@@ -480,20 +480,22 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             var multiplyByElement = pipeline.GetElement<MultiplyByElement>();
 
             // Create, populate and process flow data.
-            var flowData = pipeline.CreateFlowData();
-            flowData
-                .AddEvidence(splitterElement.EvidenceKeys[0], "1,2,abc")
-                .AddEvidence(multiplyByElement.EvidenceKeys[0], 25)
-                .Process();
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData
+                    .AddEvidence(splitterElement.EvidenceKeys[0], "1,2,abc")
+                    .AddEvidence(multiplyByElement.EvidenceKeys[0], 25)
+                    .Process();
 
-            // Get the results and verify them.
-            var splitterData = flowData.GetFromElement(splitterElement);
-            var multiplyByData = flowData.GetFromElement(multiplyByElement);
+                // Get the results and verify them.
+                var splitterData = flowData.GetFromElement(splitterElement);
+                var multiplyByData = flowData.GetFromElement(multiplyByElement);
 
-            Assert.AreEqual("1", splitterData.Result[0]);
-            Assert.AreEqual("2", splitterData.Result[1]);
-            Assert.AreEqual("abc", splitterData.Result[2]);
-            Assert.AreEqual(75, multiplyByData.Result);
+                Assert.AreEqual("1", splitterData.Result[0]);
+                Assert.AreEqual("2", splitterData.Result[1]);
+                Assert.AreEqual("abc", splitterData.Result[2]);
+                Assert.AreEqual(75, multiplyByData.Result);
+            }
         }
 
         /// <summary>
@@ -528,15 +530,17 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             var multiplyByElement = pipeline.GetElement<MultiplyByElement>();
 
             // Create, populate and process flow data.
-            var flowData = pipeline.CreateFlowData();
-            flowData
-                .AddEvidence(multiplyByElement.EvidenceKeys[0], 25)
-                .Process();
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData
+                    .AddEvidence(multiplyByElement.EvidenceKeys[0], 25)
+                    .Process();
 
-            // Get the results and verify them.
-            var multiplyByData = flowData.GetFromElement(multiplyByElement);
+                // Get the results and verify them.
+                var multiplyByData = flowData.GetFromElement(multiplyByElement);
 
-            Assert.AreEqual(75, multiplyByData.Result);
+                Assert.AreEqual(75, multiplyByData.Result);
+            }
         }
 
         /// <summary>
@@ -727,43 +731,45 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             Assert.AreEqual(1, element.EvidenceKeys.Count);
 
             // Create, populate and process flow data.
-            var flowData = pipeline.CreateFlowData();
-            flowData.AddEvidence(element.EvidenceKeys[0], "123,45\"6|789,0")
-                .Process();
-
-            // Get the result and verify it.
-            var elementData = flowData.GetFromElement(element);
-            switch (splitOn)
+            using (var flowData = pipeline.CreateFlowData())
             {
-                case SplitOption.Comma:
-                    Assert.AreEqual("123", elementData.Result[0]);
-                    Assert.AreEqual("45\"6|789", elementData.Result[1]);
-                    Assert.AreEqual("0", elementData.Result[2]);
-                    break;
-                case SplitOption.Pipe:
-                    Assert.AreEqual("123,45\"6", elementData.Result[0]);
-                    Assert.AreEqual("789,0", elementData.Result[1]);
-                    break;
-                case SplitOption.CommaMaxLengthThree:
-                    Assert.AreEqual("123", elementData.Result[0]);
-                    Assert.AreEqual("45\"", elementData.Result[1]);
-                    Assert.AreEqual("6|7", elementData.Result[2]);
-                    Assert.AreEqual("89", elementData.Result[3]);
-                    Assert.AreEqual("0", elementData.Result[4]);
-                    break;
-                case SplitOption.CommaAndPipe:
-                    Assert.AreEqual("123", elementData.Result[0]);
-                    Assert.AreEqual("45\"6", elementData.Result[1]);
-                    Assert.AreEqual("789", elementData.Result[2]);
-                    Assert.AreEqual("0", elementData.Result[3]);
-                    break;
-                case SplitOption.PipeAndQuote:
-                    Assert.AreEqual("123,45", elementData.Result[0]);
-                    Assert.AreEqual("6", elementData.Result[1]);
-                    Assert.AreEqual("789,0", elementData.Result[2]);
-                    break;
-                default:
-                    break;
+                flowData.AddEvidence(element.EvidenceKeys[0], "123,45\"6|789,0")
+                    .Process();
+
+                // Get the result and verify it.
+                var elementData = flowData.GetFromElement(element);
+                switch (splitOn)
+                {
+                    case SplitOption.Comma:
+                        Assert.AreEqual("123", elementData.Result[0]);
+                        Assert.AreEqual("45\"6|789", elementData.Result[1]);
+                        Assert.AreEqual("0", elementData.Result[2]);
+                        break;
+                    case SplitOption.Pipe:
+                        Assert.AreEqual("123,45\"6", elementData.Result[0]);
+                        Assert.AreEqual("789,0", elementData.Result[1]);
+                        break;
+                    case SplitOption.CommaMaxLengthThree:
+                        Assert.AreEqual("123", elementData.Result[0]);
+                        Assert.AreEqual("45\"", elementData.Result[1]);
+                        Assert.AreEqual("6|7", elementData.Result[2]);
+                        Assert.AreEqual("89", elementData.Result[3]);
+                        Assert.AreEqual("0", elementData.Result[4]);
+                        break;
+                    case SplitOption.CommaAndPipe:
+                        Assert.AreEqual("123", elementData.Result[0]);
+                        Assert.AreEqual("45\"6", elementData.Result[1]);
+                        Assert.AreEqual("789", elementData.Result[2]);
+                        Assert.AreEqual("0", elementData.Result[3]);
+                        break;
+                    case SplitOption.PipeAndQuote:
+                        Assert.AreEqual("123,45", elementData.Result[0]);
+                        Assert.AreEqual("6", elementData.Result[1]);
+                        Assert.AreEqual("789,0", elementData.Result[2]);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -777,13 +783,15 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             Assert.AreEqual(1, element.EvidenceKeys.Count);
 
             // Create, populate and process flow data.
-            var flowData = pipeline.CreateFlowData();
-            flowData.AddEvidence(element.EvidenceKeys[0], 5)
-                .Process();
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData.AddEvidence(element.EvidenceKeys[0], 5)
+                    .Process();
 
-            // Get the result and verify it.
-            var elementData = flowData.GetFromElement(element);
-            Assert.AreEqual(40, elementData.Result);
+                // Get the result and verify it.
+                var elementData = flowData.GetFromElement(element);
+                Assert.AreEqual(40, elementData.Result);
+            }
         }
     }
 }

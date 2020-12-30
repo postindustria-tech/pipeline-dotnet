@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using System.Text;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
+using System.Globalization;
 
 namespace FiftyOne.Pipeline.Engines.Services
 {
@@ -132,43 +133,57 @@ namespace FiftyOne.Pipeline.Engines.Services
                 // Check if the property is excluded from the results.
                 else if (property.Available == false)
                 {
-                    reason = MissingPropertyReason.PropertyExculdedFromEngineConfiguration;
+                    reason = MissingPropertyReason.PropertyExcludedFromEngineConfiguration;
                 }
             }
 
             if(reason == MissingPropertyReason.Unknown &&
                 typeof(ICloudAspectEngine).IsAssignableFrom(engine.GetType()))
             {
-                reason = MissingPropertyReason.CloudEngine;
+                if (engine.Properties.Count == 0)
+                {
+                    reason = MissingPropertyReason.ProductNotAccessibleWithResourceKey;
+                }
+                else
+                {
+                    reason = MissingPropertyReason.PropertyNotAccessibleWithResourceKey;
+                }
             }
 
             // Build the message string to return to the caller.
             StringBuilder message = new StringBuilder();
-            message.AppendLine($"Property '{propertyName}' is not present in the results.");
+            message.Append(
+                string.Format(CultureInfo.InvariantCulture,
+                    Messages.MissingPropertyMessagePrefix,
+                    propertyName,
+                    engine.ElementDataKey));
             switch (reason)
             {
                 case MissingPropertyReason.DataFileUpgradeRequired:
-                    message.Append("This is because your license and/or data file " +
-                        "does not include this property. The property is available ");                    
-                    message.Append("with the ");
-                    message.Append(string.Join(",", property.DataTiersWherePresent));
-                    message.Append($" license/data for the {engine.GetType().Name}");
+                    message.Append(
+                        string.Format(CultureInfo.InvariantCulture,
+                            Messages.MissingPropertyMessageDataUpgradeRequired,
+                            string.Join(",", property.DataTiersWherePresent),
+                            engine.GetType().Name));
                     break;
-                case MissingPropertyReason.PropertyExculdedFromEngineConfiguration:
-                    message.Append("This is because the property has been " +
-                        "excluded when configuring the engine.");
+                case MissingPropertyReason.PropertyExcludedFromEngineConfiguration:
+                    message.Append(Messages.MissingPropertyMessagePropertyExcluded);
                     break;
-                case MissingPropertyReason.CloudEngine:
-                    message.Append("This may be because your resource key " +
-                        "does not include this property. " +
-                        "Check the property name is correct. Compare this " +
-                        "to the properties available using the supplied " +
-                        "resource key: ");
-                    message.Append(string.Join(",", engine.Properties.Select(p => p.Name)));
+                case MissingPropertyReason.ProductNotAccessibleWithResourceKey:
+                    message.Append(
+                       string.Format(CultureInfo.InvariantCulture,
+                           Messages.MissingPropertyMessageProductNotInCloudResource,
+                           engine.ElementDataKey));
+                    break;
+                case MissingPropertyReason.PropertyNotAccessibleWithResourceKey:
+                    message.Append(
+                        string.Format(CultureInfo.InvariantCulture,
+                            Messages.MissingPropertyMessagePropertyNotInCloudResource,
+                            engine.ElementDataKey,
+                            string.Join(",", engine.Properties.Select(p => p.Name))));
                     break;
                 case MissingPropertyReason.Unknown:
-                    message.Append("The reason for this is unknown. Please " +
-                        "check that the aspect and property name are correct.");
+                    message.Append(Messages.MissingPropertyMessageUnknown);
                     break;
                 default:
                     break;

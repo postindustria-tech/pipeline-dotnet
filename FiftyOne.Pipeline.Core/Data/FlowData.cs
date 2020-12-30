@@ -84,7 +84,8 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Lock to use when adding errors.
         /// </summary>
         private object _errorsLock;
-        
+        private bool disposedValue;
+
         /// <summary>
         /// The pipeline that was used to create this FlowData instance
         /// </summary>
@@ -820,6 +821,42 @@ namespace FiftyOne.Pipeline.Core.Data
                     .ThenBy(e => e.Key)
                 .Select(e => e.Value)
                 .ToList());
+        }
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        /// <param name="disposing">
+        /// False if called from finalizer
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            _logger.LogDebug($"Dispose called on Flow data {this.GetHashCode()}.");
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    foreach (var elementData in _data.AsStringKeyDictionary().Values)
+                    {
+                        if (typeof(IDisposable).IsAssignableFrom(elementData.GetType()))
+                        {
+                            ((IDisposable)elementData).Dispose();
+                        }
+                    }
+                }
+
+                disposedValue = true;
+            }
+        }
+        
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

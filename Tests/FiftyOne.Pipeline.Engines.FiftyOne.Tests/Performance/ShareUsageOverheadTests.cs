@@ -79,9 +79,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.Performance
             List<IFlowData> data = new List<IFlowData>();
             for (int i = 0; i < iterations; i++)
             {
-                var flowData = _pipeline.CreateFlowData();
-                flowData.AddEvidence(@"header.user-agent", @"Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405");
-                data.Add(flowData);
+                using (var flowData = _pipeline.CreateFlowData())
+                {
+                    flowData.AddEvidence(@"header.user-agent", @"Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405");
+                    data.Add(flowData);
+                }
             }
             var start = DateTime.UtcNow;
             foreach (var entry in data)
@@ -110,13 +112,15 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.Performance
             List<IFlowData> data = new List<IFlowData>();
             for (int i = 0; i < iterations; i++)
             {
-                var flowData = _pipeline.CreateFlowData();
-                for (int j = 0; j < 1000; j++)
+                using (var flowData = _pipeline.CreateFlowData())
                 {
-                    flowData.AddEvidence("header." + j.ToString(), j);
+                    for (int j = 0; j < 1000; j++)
+                    {
+                        flowData.AddEvidence("header." + j.ToString(), j);
+                    }
+                    flowData.AddEvidence(@"header.user-agent", @"Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405");
+                    data.Add(flowData);
                 }
-                flowData.AddEvidence(@"header.user-agent", @"Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405");
-                data.Add(flowData);
             }
             var start = DateTime.UtcNow;
             foreach (var entry in data)

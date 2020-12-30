@@ -65,6 +65,9 @@ namespace FiftyOne.Pipeline.Web.Framework
 
             // Register for an event to capture javascript requests.
             application.BeginRequest += OnBeginRequestJavascript;
+            // Register an event to dispose the flow data once a request has 
+            // ended.
+            application.EndRequest += OnEndRequest;
         }
 
         private void OnBeginRequestJavascript(object sender, EventArgs e)
@@ -87,11 +90,23 @@ namespace FiftyOne.Pipeline.Web.Framework
             }
         }
 
+        private void OnEndRequest(object sender, EventArgs e)
+        {
+            HttpContext context = ((HttpApplication)sender).Context;
+
+            if (context != null)
+            {
+                PipelineCapabilities caps = context.Request.Browser as PipelineCapabilities;
+                caps.FlowData.Dispose();
+            }
+        }
+
         /// <summary>
         /// Dispose of this instance
         /// </summary>
         public void Dispose()
         {
+
         }
     }
 }

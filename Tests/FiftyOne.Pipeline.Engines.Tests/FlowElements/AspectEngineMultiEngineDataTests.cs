@@ -93,21 +93,23 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
         {
             BuildEngine(false);
 
-            IFlowData data = _pipeline.CreateFlowData();
-            EmptyEngineData engineData = data.GetOrAdd(
-                _engine.ElementDataKeyTyped,
-                (f) => new EmptyEngineData(
-                _loggerFactory.CreateLogger<EmptyEngineData>(),
-                f,
-                _engine,
-                null));
-            engineData.ValueOne = 0;
-            engineData.ValueThree = 50;
-            data.Process();
+            using (IFlowData data = _pipeline.CreateFlowData())
+            {
+                EmptyEngineData engineData = data.GetOrAdd(
+                    _engine.ElementDataKeyTyped,
+                    (f) => new EmptyEngineData(
+                    _loggerFactory.CreateLogger<EmptyEngineData>(),
+                    f,
+                    _engine,
+                    null));
+                engineData.ValueOne = 0;
+                engineData.ValueThree = 50;
+                data.Process();
 
-            var result = data.Get<EmptyEngineData>();
-            Assert.AreEqual(1, result.ValueOne);
-            Assert.AreEqual(50, result.ValueThree);
+                var result = data.Get<EmptyEngineData>();
+                Assert.AreEqual(1, result.ValueOne);
+                Assert.AreEqual(50, result.ValueThree);
+            }
         }
 
         /// <summary>
@@ -122,21 +124,23 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
         {
             BuildEngine(true);
 
-            IFlowData data = _pipeline.CreateFlowData();
-            EmptyEngineData engineData = data.GetOrAdd(
-                _engine.ElementDataKeyTyped,
-                (f) => new EmptyEngineData(
-                _loggerFactory.CreateLogger<EmptyEngineData>(),
-                f,
-                _engine,
-                null));
-            engineData.ValueThree = 50;
+            using (IFlowData data = _pipeline.CreateFlowData())
+            {
+                EmptyEngineData engineData = data.GetOrAdd(
+                    _engine.ElementDataKeyTyped,
+                    (f) => new EmptyEngineData(
+                    _loggerFactory.CreateLogger<EmptyEngineData>(),
+                    f,
+                    _engine,
+                    null));
+                engineData.ValueThree = 50;
 
-            data.Process();
+                data.Process();
 
-            var result = data.Get<EmptyEngineData>();
-            Assert.AreEqual(1, result.ValueOne);
-            Assert.AreEqual(50, result.ValueThree);
+                var result = data.Get<EmptyEngineData>();
+                Assert.AreEqual(1, result.ValueOne);
+                Assert.AreEqual(50, result.ValueThree);
+            }
         }
 
     }

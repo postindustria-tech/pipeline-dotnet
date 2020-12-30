@@ -102,7 +102,7 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// then request a property that is not in that list then it 
         /// will not be populated.
         /// </summary>
-        PropertyExculdedFromEngineConfiguration,
+        PropertyExcludedFromEngineConfiguration,
         /// <summary>
         /// 51Degrees cloud engines use a 'resourceKey' to determine
         /// the properties that should be returned in the response.
@@ -111,7 +111,17 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// A new resource key will need to be created that does 
         /// include the property before you will be able to access it.
         /// </summary>
-        CloudEngine,
+        PropertyNotAccessibleWithResourceKey,
+        /// <summary>
+        /// 51Degrees cloud engines use a 'resourceKey' to determine
+        /// the properties that should be returned in the response.
+        /// This reason indicates that the resource key does
+        /// not include any properties for the requested engine.
+        /// A new resource key will need to be created that does 
+        /// include the property before you will be able to access it.
+        /// </summary>
+        ProductNotAccessibleWithResourceKey,
+        //CloudEngine,
         /// <summary>
         /// The reason for the property not being present could not 
         /// be determined.
