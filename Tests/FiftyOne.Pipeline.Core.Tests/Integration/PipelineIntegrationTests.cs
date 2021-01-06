@@ -50,12 +50,14 @@ namespace FiftyOne.Pipeline.Core.Tests.Integration
                 .AddFlowElement(fiveElement)
                 .Build();
 
-            var flowData = pipeline.CreateFlowData();
-            flowData.AddEvidence(fiveElement.EvidenceKeys[0], 2);
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData.AddEvidence(fiveElement.EvidenceKeys[0], 2);
 
-            flowData.Process();
+                flowData.Process();
 
-            Assert.AreEqual(10, flowData.GetFromElement(fiveElement).Result);
+                Assert.AreEqual(10, flowData.GetFromElement(fiveElement).Result);
+            }
         }
 
         /// <summary>
@@ -72,13 +74,15 @@ namespace FiftyOne.Pipeline.Core.Tests.Integration
                 .AddFlowElement(tenElement)
                 .Build();
 
-            var flowData = pipeline.CreateFlowData();
-            flowData.AddEvidence(fiveElement.EvidenceKeys[0], 2);
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData.AddEvidence(fiveElement.EvidenceKeys[0], 2);
 
-            flowData.Process();
+                flowData.Process();
 
-            Assert.AreEqual(10, flowData.GetFromElement(fiveElement).Result);
-            Assert.AreEqual(20, flowData.GetFromElement(tenElement).Result);
+                Assert.AreEqual(10, flowData.GetFromElement(fiveElement).Result);
+                Assert.AreEqual(20, flowData.GetFromElement(tenElement).Result);
+            }
         }
 
         /// <summary>
@@ -94,13 +98,15 @@ namespace FiftyOne.Pipeline.Core.Tests.Integration
                 .AddFlowElementsParallel(fiveElement, tenElement)
                 .Build();
 
-            var flowData = pipeline.CreateFlowData();
-            flowData.AddEvidence(fiveElement.EvidenceKeys[0], 2);
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData.AddEvidence(fiveElement.EvidenceKeys[0], 2);
 
-            flowData.Process();
+                flowData.Process();
 
-            Assert.AreEqual(10, flowData.GetFromElement(fiveElement).Result);
-            Assert.AreEqual(20, flowData.GetFromElement(tenElement).Result);
+                Assert.AreEqual(10, flowData.GetFromElement(fiveElement).Result);
+                Assert.AreEqual(20, flowData.GetFromElement(tenElement).Result);
+            }
         }
 
         /// <summary>
@@ -121,15 +127,17 @@ namespace FiftyOne.Pipeline.Core.Tests.Integration
                 .Build();
 
             // Create and process flow data
-            var flowData = pipeline.CreateFlowData();
-            flowData.Process();
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData.Process();
 
-            // Check that the stop flag is set
+                // Check that the stop flag is set
 #pragma warning disable CS0618 // Type or member is obsolete
-            // This usage will be replaced once the Cancellation Token
-            // mechanism is available.
-            Assert.IsTrue(flowData.Stop);
+                // This usage will be replaced once the Cancellation Token
+                // mechanism is available.
+                Assert.IsTrue(flowData.Stop);
 #pragma warning restore CS0618 // Type or member is obsolete
+            }
             // Check that the second element was never processed
             testElement.Verify(e => e.Process(It.IsAny<IFlowData>()), Times.Never());
         }

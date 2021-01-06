@@ -33,7 +33,7 @@ namespace FiftyOne.Pipeline.Core.Data
     /// The output data is split into groups of related properties called 
     /// 'aspects'.
     /// </summary>
-    public interface IFlowData
+    public interface IFlowData : IDisposable
     {
         /// <summary>
         /// A boolean flag that can be used to stop further elements

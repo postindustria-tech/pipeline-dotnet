@@ -97,7 +97,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
-        public TBuilder SetCache(CacheConfiguration cacheConfig)
+        public virtual TBuilder SetCache(CacheConfiguration cacheConfig)
         {
             _cacheConfig = cacheConfig;
             return this as TBuilder;
@@ -113,7 +113,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
-        public TBuilder SetCacheSize(int cacheSize)
+        public virtual TBuilder SetCacheSize(int cacheSize)
         {
             if (_cacheConfig == null) _cacheConfig = new CacheConfiguration();
             _cacheConfig.Size = cacheSize;

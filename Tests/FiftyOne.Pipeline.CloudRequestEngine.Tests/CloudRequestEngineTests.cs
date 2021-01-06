@@ -229,7 +229,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         {
             string resourceKey = "resource_key";
             string userAgent = "iPhone";
-            _jsonResponse = @"{ ""errors"":[""16384440: This resource key is not authorized for use with this domain: . Please visit https://configure.51degrees.com to update your resource key.""]}";
+            _jsonResponse = @"{ ""errors"": [ ""This resource key is not authorized for use with this domain: . Please visit https://configure.51degrees.com to update your resource key.""] }";
 
             ConfigureMockedClient(r =>
                 r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
@@ -284,7 +284,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         {
             string resourceKey = "resource_key";
             string userAgent = "iPhone";
-            _accessiblePropertiesResponse = @"{ ""errors"":[""58982060: resource_key not a valid resource key""]}";
+            _accessiblePropertiesResponse = @"{ ""errors"":[""resource_key not a valid resource key""]}";
             _accessiblePropertiesResponseStatus = HttpStatusCode.BadRequest;
 
             ConfigureMockedClient(r =>
@@ -330,7 +330,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         {
             string resourceKey = "resource_key";
             string userAgent = "iPhone";
-            _jsonResponse = @"{ ""errors"":[""16384440: This resource key is not authorized for use with this domain: . Please visit https://configure.51degrees.com to update your resource key."",""Some other error""]}";
+            _jsonResponse = @"{ ""errors"": [""This resource key is not authorized for use with this domain: . Please visit https://configure.51degrees.com to update your resource key."",""Some other error""] }";
 
             ConfigureMockedClient(r =>
                 r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key

@@ -363,19 +363,22 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
                 .AddFlowElement(jsonBuilder)
                 .Build();
 
-            var flowData = pipeline.CreateFlowData();
-            Trace.WriteLine("Process starting");
-            flowData.Process();
-            Trace.WriteLine("Process complete");
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                Trace.WriteLine("Process starting");
+                flowData.Process();
+                Trace.WriteLine("Process complete");
 
-            var jsonResult = flowData.Get<IJsonBuilderElementData>();
-            Assert.IsNotNull(jsonResult);
-            Assert.IsNotNull(jsonResult.Json);
 
-            var jsonData = JsonConvert.DeserializeObject<JsonData>(jsonResult.Json);
-            Assert.AreEqual(1, jsonData.EmptyAspect.Valueone);
-            Assert.AreEqual(2, jsonData.EmptyAspect.Valuetwo);
-            Trace.WriteLine("Data validated");
+                var jsonResult = flowData.Get<IJsonBuilderElementData>();
+                Assert.IsNotNull(jsonResult);
+                Assert.IsNotNull(jsonResult.Json);
+
+                var jsonData = JsonConvert.DeserializeObject<JsonData>(jsonResult.Json);
+                Assert.AreEqual(1, jsonData.EmptyAspect.Valueone);
+                Assert.AreEqual(2, jsonData.EmptyAspect.Valuetwo);
+                Trace.WriteLine("Data validated");
+            }
         }
 
         public class JsonData

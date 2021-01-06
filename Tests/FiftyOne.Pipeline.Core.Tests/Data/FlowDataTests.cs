@@ -44,6 +44,7 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         private Mock<IPipelineInternal> _pipeline;
         private Mock<ILogger<FlowData>> _logger;
         private FlowData _flowData;
+        private bool _flowDataDisposed;
 
         [TestInitialize]
         public void Init()
@@ -53,6 +54,25 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
             var evidenceLogger = new Mock<ILogger<Evidence>>();
             _flowData = new FlowData(_logger.Object, _pipeline.Object,
                 new Evidence(evidenceLogger.Object));
+            _flowDataDisposed = false;
+        }
+
+        [TestCleanup]
+        public void Cleanup()
+        {
+            DisposeFlowData();
+        }
+
+         /// <summary>
+         /// This method should be called to properly dispose of
+         /// the global _flowData object.
+         /// </summary>
+        private void DisposeFlowData()
+        {
+    	    if (_flowDataDisposed == false) {
+    		    _flowData.Dispose();
+                _flowDataDisposed = true;
+    	    }
         }
 
         /// <summary>
@@ -775,11 +795,55 @@ namespace FiftyOne.Pipeline.Core.Tests.Data
         [TestMethod]
         public void FlowData_CreateWithNullPipeline()
         {
-            _flowData = new FlowData(null, null, null);
+            _flowData = new FlowData(_logger.Object, null, null);
             Assert.IsNotNull(_flowData);
         }
 
         #endregion
 
+        public interface IDisposableData : IElementData, IDisposable
+        {
+
+        }
+
+        /// <summary>
+        /// Test that when disposing of the FlowData instance, an IDisposable
+        /// ElementData is disposed of.
+        /// </summary>
+        [TestMethod]
+        public void FlowData_Close()
+        {
+            _flowData.Process();
+
+            var data = new Mock<IDisposableData>();
+
+            _flowData.GetOrAdd(
+                "test",
+                (p) => { return data.Object; });
+
+            DisposeFlowData();
+
+            data.Verify(d => d.Dispose(), Times.Once);
+        }
+
+
+        /// <summary>
+        /// Test that when disposing of the FlowData instance that
+        /// an ElementData which is not IDisposable does not
+        /// throw an exception.
+        /// </summary>
+        [TestMethod]
+        public void FlowData_CloseNotDisposable()
+        {
+            _flowData.Process();
+
+            var data = new Mock<IElementData>();
+
+            _flowData.GetOrAdd(
+                "test",
+                (p) => { return data.Object; });
+
+            DisposeFlowData();
+        }
     }
 }

@@ -46,8 +46,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
         private EmptyEngine _engine;
 
         private TestLoggerFactory _loggerFactory;
-
+#if DEBUG
+        private int _timeoutMS = 2000;
+#else
         private int _timeoutMS = 1000;
+#endif
         private CancellationTokenSource _cancellationTokenSource = 
             new CancellationTokenSource();
 
@@ -381,37 +384,39 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 
             // Act
             var stopwatch = new Stopwatch();
-            var flowData = pipeline.CreateFlowData();
-            Trace.WriteLine("Process starting");
-            stopwatch.Start();
-            flowData.Process();
-            long processTimeMs = stopwatch.ElapsedMilliseconds;
-            Trace.WriteLine($"Process complete in {processTimeMs} ms");
-            Assert.IsTrue(processTimeMs < processCostMs,
-                $"Process time should have been less than " +
-                $"{processCostMs} ms but it took {processTimeMs} ms.");
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                Trace.WriteLine("Process starting");
+                stopwatch.Start();
+                flowData.Process();
+                long processTimeMs = stopwatch.ElapsedMilliseconds;
+                Trace.WriteLine($"Process complete in {processTimeMs} ms");
+                Assert.IsTrue(processTimeMs < processCostMs,
+                    $"Process time should have been less than " +
+                    $"{processCostMs} ms but it took {processTimeMs} ms.");
 
-            // Assert
-            var data = flowData.Get<EmptyEngineData>();
-            Assert.IsNotNull(data);
-            Assert.AreEqual(1, data.ValueOne);
-            long valueOneTimeMs = stopwatch.ElapsedMilliseconds;
-            Trace.WriteLine($"Value one accessed after {valueOneTimeMs} ms");
-            Assert.AreEqual(2, data.ValueTwo);
-            long valueTwoTimeMs = stopwatch.ElapsedMilliseconds;
-            Trace.WriteLine($"Value two accessed after {valueTwoTimeMs} ms");
+                // Assert
+                var data = flowData.Get<EmptyEngineData>();
+                Assert.IsNotNull(data);
+                Assert.AreEqual(1, data.ValueOne);
+                long valueOneTimeMs = stopwatch.ElapsedMilliseconds;
+                Trace.WriteLine($"Value one accessed after {valueOneTimeMs} ms");
+                Assert.AreEqual(2, data.ValueTwo);
+                long valueTwoTimeMs = stopwatch.ElapsedMilliseconds;
+                Trace.WriteLine($"Value two accessed after {valueTwoTimeMs} ms");
 
-            Assert.IsTrue(valueOneTimeMs < processCostMs,
-                $"Accessing value one should have taken less than " +
-                $"{processCostMs} ms from the time the Process method" +
-                $"was called but it took {valueOneTimeMs} ms.");
-            // Note - this should really take at least 'processCostMs'
-            // but the accuracy of the timer seems to cause issues
-            // if we are being that exact.
-            Assert.IsTrue(valueTwoTimeMs >= processCostMs / 2,
-                $"Accessing value two should have taken at least " +
-                $"{processCostMs / 2} ms from the time the Process method" +
-                $"was called but it only took {valueTwoTimeMs} ms.");
+                Assert.IsTrue(valueOneTimeMs < processCostMs,
+                    $"Accessing value one should have taken less than " +
+                    $"{processCostMs} ms from the time the Process method" +
+                    $"was called but it took {valueOneTimeMs} ms.");
+                // Note - this should really take at least 'processCostMs'
+                // but the accuracy of the timer seems to cause issues
+                // if we are being that exact.
+                Assert.IsTrue(valueTwoTimeMs >= processCostMs / 2,
+                    $"Accessing value two should have taken at least " +
+                    $"{processCostMs / 2} ms from the time the Process method" +
+                    $"was called but it only took {valueTwoTimeMs} ms.");
+            }
         }
 
         /// <summary>
@@ -433,29 +438,31 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 
             // Act
             var stopwatch = new Stopwatch();
-            var flowData = pipeline.CreateFlowData();
-            Trace.WriteLine("Process starting");
-            stopwatch.Start();
-            flowData.Process();
-            long processTimeMs = stopwatch.ElapsedMilliseconds;
-            Trace.WriteLine($"Process complete in {processTimeMs} ms");
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                Trace.WriteLine("Process starting");
+                stopwatch.Start();
+                flowData.Process();
+                long processTimeMs = stopwatch.ElapsedMilliseconds;
+                Trace.WriteLine($"Process complete in {processTimeMs} ms");
 
-            // Assert
-            var data = flowData.Get<EmptyEngineData>();
-            Assert.IsNotNull(data);
-            var dictionary = data.AsDictionary();
-            long dictTimeMs = stopwatch.ElapsedMilliseconds;
-            Trace.WriteLine($"Dictionary retrieved after {dictTimeMs} ms");
-            Assert.AreEqual(1, dictionary[EmptyEngineData.VALUE_ONE_KEY]);
-            Assert.AreEqual(2, dictionary[EmptyEngineData.VALUE_TWO_KEY]);
+                // Assert
+                var data = flowData.Get<EmptyEngineData>();
+                Assert.IsNotNull(data);
+                var dictionary = data.AsDictionary();
+                long dictTimeMs = stopwatch.ElapsedMilliseconds;
+                Trace.WriteLine($"Dictionary retrieved after {dictTimeMs} ms");
+                Assert.AreEqual(1, dictionary[EmptyEngineData.VALUE_ONE_KEY]);
+                Assert.AreEqual(2, dictionary[EmptyEngineData.VALUE_TWO_KEY]);
 
-            // Note - this should really take at least 'processCostMs'
-            // but the accuracy of the timer seems to cause issues
-            // if we are being that exact.
-            Assert.IsTrue(dictTimeMs > processCostMs / 2,
-                $"Accessing the dictionary should have taken at least " +
-                $"{processCostMs / 2} ms from the time the Process method" +
-                $"was called but it only took {dictTimeMs} ms.");
+                // Note - this should really take at least 'processCostMs'
+                // but the accuracy of the timer seems to cause issues
+                // if we are being that exact.
+                Assert.IsTrue(dictTimeMs > processCostMs / 2,
+                    $"Accessing the dictionary should have taken at least " +
+                    $"{processCostMs / 2} ms from the time the Process method" +
+                    $"was called but it only took {dictTimeMs} ms.");
+            }
         }
     }
 }

@@ -38,6 +38,7 @@ using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using System.Collections.Generic;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.Web.Shared;
+using FiftyOne.Pipeline.Web.Shared.Services;
 
 namespace FiftyOne.Pipeline.Web
 {
@@ -235,7 +236,7 @@ namespace FiftyOne.Pipeline.Web
                     // the endpoint is specified. If not, add it.
                     if (jsonConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
                     {
-                        jsonConfig.Single().BuildParameters.Add("EndPont", "/51dpipeline/json");
+                        jsonConfig.Single().BuildParameters.Add("EndPoint", "/51dpipeline/json");
                     }
                 }
             }

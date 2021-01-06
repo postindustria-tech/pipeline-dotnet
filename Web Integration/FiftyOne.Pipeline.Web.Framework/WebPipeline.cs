@@ -102,24 +102,25 @@ namespace FiftyOne.Pipeline.Web.Framework
             IConfiguration config = new ConfigurationBuilder()
                 .AddPipelineConfig()
                 .Build();
-            PipelineWebIntegrationOptions options = new PipelineWebIntegrationOptions();
-            config.Bind("PipelineOptions", options);
+            _options = new PipelineWebIntegrationOptions();
+            config.Bind("PipelineOptions", _options);
 
-            if (options == null ||
-                options.Elements == null)
+            if (_options == null ||
+                _options.Elements == null)
             {
                 throw new PipelineConfigurationException(
                    Messages.ExceptionNoConfiguration);
             }
 
             // Add the sequence element.
-            var sequenceConfig = options.Elements.Where(e =>
+            var sequenceConfig = _options.Elements.Where(e =>
                 e.BuilderName.IndexOf(nameof(SequenceElement),
                     StringComparison.OrdinalIgnoreCase) >= 0);
             if (sequenceConfig.Any() == false)
             {
                 // The sequence element is not included so add it.
-                options.Elements.Add(new ElementOptions()
+                // Make sure it's added as the first element.
+                _options.Elements.Insert(0, new ElementOptions()
                 {
                     BuilderName = nameof(SequenceElement)
                 });
@@ -130,35 +131,60 @@ namespace FiftyOne.Pipeline.Web.Framework
                 // Client-side evidence is enabled so make sure the 
                 // JsonBuilderElement and JavaScriptBundlerElement has been 
                 // included.
-                var jsonConfig = options.Elements.Where(e =>
-                    e.BuilderName.IndexOf(nameof(JsonBuilderElement),
-                        StringComparison.OrdinalIgnoreCase) >= 0);
+                var jsonConfig = _options.Elements.Where(e =>
+                    e.BuilderName.StartsWith(nameof(JsonBuilderElement),
+                        StringComparison.OrdinalIgnoreCase));
+                var javascriptConfig = _options.Elements.Where(e =>
+                    e.BuilderName.StartsWith(nameof(JavaScriptBuilderElement),
+                        StringComparison.OrdinalIgnoreCase));
+
+                var jsIndex = javascriptConfig.Any() ?
+                    _options.Elements.IndexOf(javascriptConfig.First()) : -1;
+
                 if (jsonConfig.Any() == false)
                 {
                     // The json builder is not included so add it.
-                    options.Elements.Add(new ElementOptions()
+                    var newElementOptions = new ElementOptions()
                     {
                         BuilderName = nameof(JsonBuilderElement)
-                    });
+                    };
+                    if (jsIndex > -1)
+                    {
+                        // There is already a javascript builder element
+                        // so insert the json builder before it.
+                        _options.Elements.Insert(jsIndex, newElementOptions);
+                    }
+                    else
+                    {
+                        _options.Elements.Add(newElementOptions);
+                    }
                 }
 
-                var builderConfig = options.Elements.Where(e =>
-                    e.BuilderName.IndexOf(nameof(JavaScriptBuilderElement), 
-                        StringComparison.OrdinalIgnoreCase) >= 0);
-                if (builderConfig.Any() == false)
+                if (jsIndex == -1)
                 {
-                    // The bundler is not included so add it.
-                    options.Elements.Add(new ElementOptions()
+                    // The javascript builder is not included so add it.
+                    _options.Elements.Add(new ElementOptions()
                     {
-                        BuilderName = nameof(JavaScriptBuilderElement)
+                        BuilderName = nameof(JavaScriptBuilderElement),
+                        BuildParameters = new Dictionary<string, object>()
+                        {
+                            { "EndPoint", "/51dpipeline/json" }
+                        }
                     });
+                }
+                else
+                {
+                    // There is already a JavaScript builder config so check if 
+                    // the endpoint is specified. If not, add it.
+                    if (jsonConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
+                    {
+                        jsonConfig.Single().BuildParameters.Add("EndPoint", "/51dpipeline/json");
+                    }
                 }
             }
 
             Pipeline = new PipelineBuilder(new LoggerFactory())
-                .BuildFromConfiguration(options);
-
-            _options = options;
+                .BuildFromConfiguration(_options);
         }
 
 

@@ -78,7 +78,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             var result = _service.GetMissingPropertyReason("testProperty", engine.Object);
 
             // Assert
-            Assert.AreEqual(MissingPropertyReason.PropertyExculdedFromEngineConfiguration, result.Reason);
+            Assert.AreEqual(MissingPropertyReason.PropertyExcludedFromEngineConfiguration, result.Reason);
         }
 
         /// <summary>
@@ -100,6 +100,71 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             Assert.AreEqual(MissingPropertyReason.Unknown, result.Reason);
         }
 
+        /// <summary>
+        /// Check that a "product not in resource" reason is returned when a cloud
+        /// engine does not contain the product.
+        ///</summary>
+        [TestMethod]
+        public void MissingPropertyService_GetReason_ProductNotInResource() 
+        {
+            // Arrange
+            Mock<ICloudAspectEngine> engine = new Mock<ICloudAspectEngine>();
+            engine.SetupGet(e => e.ElementDataKey).Returns("testElement");
+            engine.SetupGet(e => e.Properties).Returns(new List<IAspectPropertyMetaData>());
+
+            // Act
+            var result = _service.GetMissingPropertyReason(
+                "otherProperty",
+                engine.Object);
+
+            // Assert
+            Assert.AreEqual(
+                MissingPropertyReason.ProductNotAccessibleWithResourceKey,
+                result.Reason);
+            Assert.AreEqual(
+            string.Format(
+                Messages.MissingPropertyMessagePrefix,
+                "otherProperty",
+                "testElement") +
+            string.Format(
+                Messages.MissingPropertyMessageProductNotInCloudResource,
+                "testElement"),
+            result.Description);
+        }
+
+        /// <summary>
+        /// Check that a "property not in resource" reason is returned when a cloud
+        /// engine does contain the product, but not the property.
+        /// </summary>
+        [TestMethod]
+        public void MissingPropertyService_GetReason_PropertyNotInResource() 
+        {
+            // Arrange
+            Mock<ICloudAspectEngine> engine = new Mock<ICloudAspectEngine>();
+            engine.SetupGet(e => e.ElementDataKey).Returns("testElement");
+            ConfigureProperty(engine.As<IAspectEngine>());
+
+            // Act
+            var result = _service.GetMissingPropertyReason(
+                "otherProperty",
+                engine.Object);
+
+            // Assert
+            Assert.AreEqual(
+                MissingPropertyReason.PropertyNotAccessibleWithResourceKey,
+                result.Reason);
+            Assert.AreEqual(
+            string.Format(
+                Messages.MissingPropertyMessagePrefix,
+                "otherProperty",
+                "testElement") +
+            string.Format(
+                Messages.MissingPropertyMessagePropertyNotInCloudResource,
+                "testElement",
+                "testProperty"),
+            result.Description);
+        }
+
 
         /// <summary>
         /// Check that the missing property service works as expected when
@@ -118,6 +183,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
             // Assert
             Assert.AreEqual(MissingPropertyReason.Unknown, result.Reason);
+        }
+
+        private void ConfigureProperty(Mock<IAspectEngine> engine)
+        {
+            ConfigureProperty(engine, true);
         }
 
         /// <summary>

@@ -40,6 +40,6 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
         /// client-side JavaScript file will be served at the URL
         /// */51Degrees.core.js.
         /// </summary>
-        public bool ClientSideEvidenceEnabled { get; set; }
+        public bool ClientSideEvidenceEnabled { get; set; } = true;
     }
 }

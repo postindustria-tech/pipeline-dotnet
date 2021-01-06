@@ -65,6 +65,9 @@ namespace FiftyOne.Pipeline.Web.Framework
 
             // Register for an event to capture javascript requests.
             application.BeginRequest += OnBeginRequestJavascript;
+            // Register an event to dispose the flow data once a request has 
+            // ended.
+            application.EndRequest += OnEndRequest;
         }
 
         private void OnBeginRequestJavascript(object sender, EventArgs e)
@@ -72,11 +75,29 @@ namespace FiftyOne.Pipeline.Web.Framework
             HttpContext context = ((HttpApplication)sender).Context;
 
             if (context != null &&
-                context.Request.Path.EndsWith("51Degrees.core.js", 
-                    StringComparison.OrdinalIgnoreCase) &&
-                WebPipeline.GetInstance().ClientSideEvidenceEnabled)
+                  WebPipeline.GetInstance().ClientSideEvidenceEnabled)
             {
-                FiftyOneJsProvider.GetInstance().ServeJavascript(context);
+                if (context.Request.Path.EndsWith("51Degrees.core.js",
+                      StringComparison.OrdinalIgnoreCase))
+                {
+                    FiftyOneJsProvider.GetInstance().ServeJavascript(context);
+                }
+                if (context.Request.Path.EndsWith("51dpipeline/json",
+                      StringComparison.OrdinalIgnoreCase))
+                {
+                    FiftyOneJsProvider.GetInstance().ServeJson(context);
+                }
+            }
+        }
+
+        private void OnEndRequest(object sender, EventArgs e)
+        {
+            HttpContext context = ((HttpApplication)sender).Context;
+
+            if (context != null)
+            {
+                PipelineCapabilities caps = context.Request.Browser as PipelineCapabilities;
+                caps.FlowData.Dispose();
             }
         }
 
@@ -85,6 +106,7 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// </summary>
         public void Dispose()
         {
+
         }
     }
 }

@@ -38,7 +38,7 @@ using System.Diagnostics;
 /// 
 /// If you want to know more about how result caching works, a complete
 /// explanation can be found in the 
-/// [documentation](https://docs.51degrees.com/documentation/4.1/_features__result_caching.html).
+/// [documentation](https://51degrees.com/documentation/4.2/_features__result_caching.html).
 /// 
 /// This example is available in full on [GitHub](https://github.com/51Degrees/pipeline-dotnet/blob/master/Examples/ResultCaching/Program.cs).
 /// 
@@ -160,24 +160,26 @@ namespace Examples.ResultCaching
         {
             bool prime = false;
             // Create a new flow data instance.
-            var data = pipeline.CreateFlowData();
-            // Set the specified value as the input evidence.
-            data.AddEvidence(Constants.PRIMECHECKER_EVIDENCE_KEY, value);
-            // Start timer to measure processing time
-            Stopwatch timer = new Stopwatch();
-            timer.Start();
-            // Process the evidence.
-            data.Process();
-            // Stop timer
-            timer.Stop();
-            // Read the result back from the flow data.
-            prime = data.Get<IPrimeCheckerData>().IsPrime ?? false;
+            using (var data = pipeline.CreateFlowData())
+            {
+                // Set the specified value as the input evidence.
+                data.AddEvidence(Constants.PRIMECHECKER_EVIDENCE_KEY, value);
+                // Start timer to measure processing time
+                Stopwatch timer = new Stopwatch();
+                timer.Start();
+                // Process the evidence.
+                data.Process();
+                // Stop timer
+                timer.Stop();
+                // Read the result back from the flow data.
+                prime = data.Get<IPrimeCheckerData>().IsPrime ?? false;
 
-            // Output a message displaying the number and whether 
-            // it is prime or not along with the time taken.
-            Console.WriteLine($"{value} {(prime ? "is" : "is not")} prime");
-            Console.WriteLine($"Processing took " +
-                $"{timer.Elapsed.TotalMilliseconds.ToString("N2")}ms");
+                // Output a message displaying the number and whether 
+                // it is prime or not along with the time taken.
+                Console.WriteLine($"{value} {(prime ? "is" : "is not")} prime");
+                Console.WriteLine($"Processing took " +
+                    $"{timer.Elapsed.TotalMilliseconds.ToString("N2")}ms");
+            }
         }
     }
 }

@@ -80,8 +80,10 @@ namespace FiftyOne.Pipeline.Engines.Tests.Performance
             stopwatch.Start();
             for (int i = 0; i < iterations; i++)
             {
-                _pipeline.CreateFlowData()
-                    .Process();
+                using (var flowData = _pipeline.CreateFlowData())
+                {
+                    flowData.Process();
+                }
             }
             stopwatch.Stop();
 
@@ -114,9 +116,10 @@ namespace FiftyOne.Pipeline.Engines.Tests.Performance
             var start = DateTime.UtcNow;
             for (int i = 0; i < iterations; i++)
             {
-                _pipeline.CreateFlowData()
-                    .AddEvidence("test.value", 10)
-                    .Process();
+                using (var flowData = _pipeline.CreateFlowData()) { 
+                    flowData.AddEvidence("test.value", 10)
+                        .Process();
+                }
             }
             var end = DateTime.UtcNow;
 
@@ -150,8 +153,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Performance
                     var start = DateTime.UtcNow;
                     for (int j = 0; j < iterations; j++)
                     {
-                        _pipeline.CreateFlowData()
-                            .Process();
+                        using (var flowData = _pipeline.CreateFlowData()) {
+                            flowData.Process();
+                        }
                     }
                     return DateTime.UtcNow.Subtract(start);
                 }));

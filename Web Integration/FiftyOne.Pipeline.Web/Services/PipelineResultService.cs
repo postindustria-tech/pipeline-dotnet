@@ -74,6 +74,7 @@ namespace FiftyOne.Pipeline.Web.Services
 
             // Create the flowData
             var flowData = _pipeline.CreateFlowData();
+            context.Response.RegisterForDispose(flowData);
             // Extract the required pieces of evidence from the request
             _evidenceService.AddEvidenceFromRequest(flowData, context.Request);
             // Start processing the data

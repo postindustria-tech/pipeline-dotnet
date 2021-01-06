@@ -1,6 +1,6 @@
 pool:
   vmImage: 'windows-2019'
-  
+
 trigger: none
 
 # Configure this to run for both Debug and Release configurations
@@ -14,16 +14,17 @@ strategy:
 
 variables: 
   RestoreBuildProjects: '**/*.sln'
+  DOTNET_NOLOGO: true
 
 steps:
 # Get the data files that are required for device detection automated system tests.
 - powershell: |
-   git lfs install
-   ls
-   git config --global --add filter.lfs.required true
-   git config --global --add filter.lfs.smudge "git-lfs smudge -- %f"
-   git config --global --add filter.lfs.process "git-lfs filter-process"
-   git config --global --add filter.lfs.clean "git-lfs clean -- %f"
+    git lfs install
+    ls
+    git config --global --add filter.lfs.required true
+    git config --global --add filter.lfs.smudge "git-lfs smudge -- %f"
+    git config --global --add filter.lfs.process "git-lfs filter-process"
+    git config --global --add filter.lfs.clean "git-lfs clean -- %f"
   displayName: 'Configure git lfs'
 
 - checkout: self
@@ -34,6 +35,13 @@ steps:
   displayName: 'Use NuGet 5.3.1'
   inputs:
     versionSpec: 5.3.1
+
+- task: UseDotNet@2
+  displayName: 'Use .NET Core 3.1'
+  inputs:
+    packageType: sdk
+    version: 3.1.x
+    performMultiLevelLookup: true
 
 - task: NuGetCommand@2
   displayName: 'NuGet restore'
@@ -56,7 +64,7 @@ steps:
   displayName: 'Visual Studio Test Platform Installer'
   inputs:
     versionSelector: latestStable
-     
+    
 - task: VSTest@2
   displayName: 'VsTest - testAssemblies - dotnet framework'
   inputs:
@@ -82,14 +90,35 @@ steps:
       !**\*TestAdapter*.dll
       !**\*TestFramework*.dll
       !**\obj\**
+      !**\performance_tests.dll
     searchFolder: '$(System.DefaultWorkingDirectory)'
     codeCoverageEnabled: true
     otherConsoleOptions: '/Framework:.NETCoreApp,Version=v3.1 /logger:console;verbosity="normal"'
     configuration: '$(BuildConfiguration)'
     diagnosticsEnabled: true
     testRunTitle: 'dotnetcore-$(BuildConfiguration)'
-  
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      cd performance-tests/
+      mkdir build
+      cd build
+      cmake ..
+      cmake --build .
+      cd ..
+
+- task: PowerShell@2
+  inputs:
+    filePath: '$(System.DefaultWorkingDirectory)/performance-tests/build/runPerf.ps1'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'performance-tests/build'
+    ArtifactName: 'perfout'
+    publishLocation: 'Container'
+  displayName: 'Publish Performance Artifacts'
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact' 
-  
-

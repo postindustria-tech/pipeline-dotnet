@@ -221,5 +221,59 @@ namespace FiftyOne.Pipeline.Engines {
                 return ResourceManager.GetString("MessageAutoUpdateUnhandledError", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This is because your license and/or data file does not include this property. The property is available with the {0} license/data for the {1}.
+        /// </summary>
+        internal static string MissingPropertyMessageDataUpgradeRequired {
+            get {
+                return ResourceManager.GetString("MissingPropertyMessageDataUpgradeRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Property &apos;{0}&apos; not found in data for element &apos;{1}&apos;. .
+        /// </summary>
+        internal static string MissingPropertyMessagePrefix {
+            get {
+                return ResourceManager.GetString("MissingPropertyMessagePrefix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This is because your resource key does not include access to any properties under &apos;{0}&apos;. For more details on resource keys, see our explainer: https://51degrees.com/documentation/_info__resourcekeys.html.
+        /// </summary>
+        internal static string MissingPropertyMessageProductNotInCloudResource {
+            get {
+                return ResourceManager.GetString("MissingPropertyMessageProductNotInCloudResource", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This is because the property has been excluded when configuring the engine..
+        /// </summary>
+        internal static string MissingPropertyMessagePropertyExcluded {
+            get {
+                return ResourceManager.GetString("MissingPropertyMessagePropertyExcluded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This is because your resource key does not include access to this property. Properties that are included for this key under &apos;{0}&apos; are {1}. For more details on resource keys, see our explainer: https://51degrees.com/documentation/4.2/_info__resourcekeys.html.
+        /// </summary>
+        internal static string MissingPropertyMessagePropertyNotInCloudResource {
+            get {
+                return ResourceManager.GetString("MissingPropertyMessagePropertyNotInCloudResource", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The reason for this is unknown. Please check that the aspect and property name are correct..
+        /// </summary>
+        internal static string MissingPropertyMessageUnknown {
+            get {
+                return ResourceManager.GetString("MissingPropertyMessageUnknown", resourceCulture);
+            }
+        }
     }
 }
