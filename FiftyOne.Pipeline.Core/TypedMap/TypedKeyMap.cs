@@ -142,7 +142,7 @@ namespace FiftyOne.Pipeline.Core.TypedMap
             }
             else
             {
-                throw new KeyNotFoundException(key.Name);
+                throw new KeyNotFoundException(GetKeyMissingMessage(key.Name));
             }
             return result;
         }
@@ -172,6 +172,14 @@ namespace FiftyOne.Pipeline.Core.TypedMap
                 throw new PipelineDataException($"This map contains " +
                     $"multiple data instances matching type '{typeof(T).Name}'");
             }
+        }
+
+        private String GetKeyMissingMessage(string key)
+        {
+            return "There is no data for '" + key + "' against this " +
+                "instance of '" + this.GetType().Name +
+                "'. Available keys are: " +
+                string.Join(", ", GetKeys());
         }
 
         /// <summary>
