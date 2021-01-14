@@ -3,7 +3,7 @@
 ![51Degrees](https://51degrees.com/img/logo.png?utm_source=github&utm_medium=repository&utm_content=readme_main&utm_campaign=dotnet-open-source "Data rewards the curious") **Pipeline API**
 
 
-[Developer Documentation](https://51degrees.com/documentation/4.1/index.html?utm_source=github&utm_medium=repository&utm_content=documentation&utm_campaign=dotnet-open-source "developer documentation")
+[Developer Documentation](https://51degrees.com/pipeline-dotnet/4.2/index.html?utm_source=github&utm_medium=repository&utm_content=documentation&utm_campaign=dotnet-open-source "developer documentation")
 
 # Introduction
 This repository contains all the projects required to build the .NET implementation of the Pipeline API.
@@ -90,5 +90,5 @@ The tests can be run from within Visual Studio or (in most cases) by using the `
 
 For complete documentation on the Pipeline API and associated engines, see the [51Degrees documentation site][Documentation].
 
-[Documentation]: https://51degrees.com/documentation/4.1/index.html
+[Documentation]: https://51degrees.com/documentation/4.2/index.html
 [nuget]: https://www.nuget.org/profiles/51Degrees
