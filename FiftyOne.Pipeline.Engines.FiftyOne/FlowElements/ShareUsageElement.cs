@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Engines.Trackers;
 using Microsoft.Extensions.Logging;
 using System;
@@ -43,144 +44,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     /// </summary>
     public class ShareUsageElement : ShareUsageBase
     {
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="logger">
-        /// The logger to use.
-        /// </param>
-        /// <param name="httpClient">
-        /// The <see cref="HttpClient"/> to use when sending request data.
-        /// </param>
-        /// <param name="sharePercentage">
-        /// The approximate proportion of requests to share. 
-        /// 1 = 100%, 0.5 = 50%, etc.
-        /// </param>
-        /// <param name="minimumEntriesPerMessage">
-        /// The minimum number of request entries per message sent to 51Degrees.
-        /// </param>
-        /// <param name="maximumQueueSize">
-        /// The maximum number of items to hold in the queue at one time. This
-        /// must be larger than minimum entries.
-        /// </param>
-        /// <param name="addTimeout">
-        /// The timeout in milliseconds to allow when attempting to add an
-        /// item to the queue. If this timeout is exceeded then usage sharing
-        /// will be disabled.
-        /// </param>
-        /// <param name="takeTimeout">
-        /// The timeout in milliseconds to allow when attempting to take an
-        /// item to the queue.
-        /// </param>
-        /// <param name="repeatEvidenceIntervalMinutes">
-        /// The interval (in minutes) which is used to decide if repeat 
-        /// evidence is old enough to consider a new session.
-        /// </param>
-        /// <param name="trackSession">
-        /// Set if the tracker should consider sessions in share usage.
-        /// </param>
-        /// <param name="shareUsageUrl">
-        /// The URL to send data to
-        /// </param>
-        /// <param name="blockedHttpHeaders">
-        /// A list of the names of the HTTP headers that share usage should
-        /// not send to 51Degrees.
-        /// </param>
-        /// <param name="includedQueryStringParameters">
-        /// A list of the names of query string parameters that share 
-        /// usage should send to 51Degrees.
-        /// </param>
-        /// <param name="ignoreDataEvidenceFilter"></param>
-        /// <param name="aspSessionCookieName">
-        /// The name of the cookie that contains the asp.net session id.
-        /// </param>
+        /// <inheritdoc/>
         internal ShareUsageElement(
-            ILogger<ShareUsageElement> logger,
-            HttpClient httpClient,
-            double sharePercentage,
-            int minimumEntriesPerMessage,
-            int maximumQueueSize,
-            int addTimeout,
-            int takeTimeout,
-            int repeatEvidenceIntervalMinutes,
-            bool trackSession,
-            string shareUsageUrl,
-            List<string> blockedHttpHeaders,
-            List<string> includedQueryStringParameters,
-            List<KeyValuePair<string, string>> ignoreDataEvidenceFilter,
-            string aspSessionCookieName = Engines.Constants.DEFAULT_ASP_COOKIE_NAME)
-            : this(logger,
-                  httpClient,
-                  sharePercentage,
-                  minimumEntriesPerMessage,
-                  maximumQueueSize,
-                  addTimeout,
-                  takeTimeout,
-                  repeatEvidenceIntervalMinutes,
-                  trackSession,
-                  shareUsageUrl,
-                  blockedHttpHeaders,
-                  includedQueryStringParameters,
-                  ignoreDataEvidenceFilter,
-                  aspSessionCookieName,
-                  null)
-        {
-        }
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="logger">
-        /// The logger to use.
-        /// </param>
-        /// <param name="httpClient">
-        /// The <see cref="HttpClient"/> to use when sending request data.
-        /// </param>
-        /// <param name="sharePercentage">
-        /// The approximate proportion of requests to share. 
-        /// 1 = 100%, 0.5 = 50%, etc.
-        /// </param>
-        /// <param name="minimumEntriesPerMessage">
-        /// The minimum number of request entries per message sent to 51Degrees.
-        /// </param>
-        /// <param name="maximumQueueSize">
-        /// The maximum number of items to hold in the queue at one time. This
-        /// must be larger than minimum entries.
-        /// </param>
-        /// <param name="addTimeout">
-        /// The timeout in milliseconds to allow when attempting to add an
-        /// item to the queue. If this timeout is exceeded then usage sharing
-        /// will be disabled.
-        /// </param>
-        /// <param name="takeTimeout">
-        /// The timeout in milliseconds to allow when attempting to take an
-        /// item to the queue.
-        /// </param>
-        /// <param name="repeatEvidenceIntervalMinutes">
-        /// The interval (in minutes) which is used to decide if repeat 
-        /// evidence is old enough to consider a new session.
-        /// </param>
-        /// <param name="trackSession">
-        /// Set if the tracker should consider sessions in share usage.
-        /// </param>
-        /// <param name="shareUsageUrl">
-        /// The URL to send data to
-        /// </param>
-        /// <param name="blockedHttpHeaders">
-        /// A list of the names of the HTTP headers that share usage should
-        /// not send to 51Degrees.
-        /// </param>
-        /// <param name="includedQueryStringParameters">
-        /// A list of the names of query string parameters that share 
-        /// usage should send to 51Degrees.
-        /// </param>
-        /// <param name="ignoreDataEvidenceFilter"></param>
-        /// <param name="aspSessionCookieName">
-        /// The name of the cookie that contains the asp.net session id.
-        /// </param>
-        /// <param name="tracker"></param>
-        internal ShareUsageElement(
-            ILogger<ShareUsageElement> logger,
+            ILogger<ShareUsageBase> logger,
             HttpClient httpClient,
             double sharePercentage,
             int minimumEntriesPerMessage,
@@ -194,7 +60,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             List<string> includedQueryStringParameters,
             List<KeyValuePair<string, string>> ignoreDataEvidenceFilter,
             string aspSessionCookieName,
-            ITracker tracker)
+            ITracker tracker,
+            bool shareAllEvidence)
             : base(logger,
                   httpClient,
                   sharePercentage,
@@ -209,7 +76,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                   includedQueryStringParameters,
                   ignoreDataEvidenceFilter,
                   aspSessionCookieName,
-                  tracker)
+                  tracker,
+                  shareAllEvidence)
         {
         }
 
