@@ -176,9 +176,9 @@ namespace FiftyOne.Pipeline.Web.Framework
                 {
                     // There is already a JavaScript builder config so check if 
                     // the endpoint is specified. If not, add it.
-                    if (jsonConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
+                    if (javascriptConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
                     {
-                        jsonConfig.Single().BuildParameters.Add("EndPoint", "/51dpipeline/json");
+                        javascriptConfig.Single().BuildParameters.Add("EndPoint", "/51dpipeline/json");
                     }
                 }
             }
