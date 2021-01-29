@@ -55,6 +55,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             _engine = new EmptyEngineBuilder(_loggerFactory)
                 .Build();
             _engine.SetCache(_cache.Object);
+            _engine.SetCacheHitOrMiss(true);
         }
 
         [TestCleanup]
@@ -107,6 +108,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             // Verify that the result was added to the cache.
             _cache.Verify(c => c.Put(It.Is<IFlowData>(d => d == data.Object),
                 It.IsAny<EmptyEngineData>()), Times.Once);
+            // Verify the CacheHit flag is false.
+            Assert.IsFalse(aspectData.CacheHit);
         }
 
         /// <summary>
@@ -148,7 +151,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             _cache.Verify(c => c[It.Is<IFlowData>(d => d == data)], Times.Once);
             // Verify that the Put method of the cache was not called.
             _cache.Verify(c => c.Put(It.IsAny<IFlowData>(), It.IsAny<IElementData>()), Times.Never);
+            // Verify the CacheHit flag is true.
+            Assert.IsTrue(cachedData.CacheHit);
         }
-
     }
 }

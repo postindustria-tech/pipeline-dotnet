@@ -57,6 +57,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// relevant evidence values.
         /// </summary>
         private IFlowCache _cache;
+        private bool _cacheHitOrMiss;
 
         /// <summary>
         /// The tier to which the current data source belongs.
@@ -118,6 +119,18 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         {
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _cache.FlowElement = this;
+        }
+
+        /// <summary>
+        /// Set the engine to flag when a cache hit occurs by setting a field 
+        /// on the cached aspect data.
+        /// </summary>
+        /// <param name="cacheHitOrMiss">
+        /// Whether to flag cache hits or not.
+        /// </param>
+        public virtual void SetCacheHitOrMiss(bool cacheHitOrMiss)
+        {
+            _cacheHitOrMiss = cacheHitOrMiss;
         }
 
         /// <summary>
@@ -233,6 +246,13 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
             }
             else
             {
+                // If this aspect engine is configured to record cache hits,
+                // set the cache hit value on the cached aspect data.
+                if (_cacheHitOrMiss) 
+                {
+                    (cacheResult as AspectDataBase).SetCacheHit();
+                }
+
                 // We have a result from the cache so add it 
                 // into the flow data.
                 data.GetOrAdd(ElementDataKeyTyped, (f) =>

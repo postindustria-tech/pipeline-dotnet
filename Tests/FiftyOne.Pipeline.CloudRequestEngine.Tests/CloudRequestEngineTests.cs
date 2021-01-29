@@ -433,6 +433,190 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             Assert.AreEqual("location.javascript", postcode.EvidenceProperties.Single());
         }
 
+        /// <summary>
+        /// For a resource key with access only to device detection properties,
+        /// test that two requests are made using the same user-agent and no 
+        /// other device detection evidence results in a cache miss, followed 
+        /// by a cache hit.
+        /// </summary>
+        [TestMethod]
+        public void ValidateCacheHitOrMiss_SameUserAgent()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            
+            _jsonResponse = @"{ ""device"": { ""ismobile"": true } }";
+            ConfigureMockedClient(r => true);
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            .SetResourceKey(resourceKey)
+            .SetCacheSize(10)
+            .SetCacheHitOrMiss(true)
+            .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data1 = pipeline.CreateFlowData();
+                data1.AddEvidence("query.User-Agent", userAgent);
+                    
+                data1.Process();
+
+                Assert.IsFalse(data1.GetFromElement(engine).CacheHit, "cache miss should occur.");
+
+                var data2 = pipeline.CreateFlowData();
+                data2.AddEvidence("query.User-Agent", userAgent);
+
+                data2.Process();
+
+                Assert.IsTrue(data2.GetFromElement(engine).CacheHit, "cache hit should occur.");
+            }
+        }
+
+        /// <summary>
+        /// For a resource key with access only to device detection properties,
+        /// test two requests made using the same user-agent. The second has a
+        /// x-operamini-phone-ua header. Both requests should be cache misses.
+        /// </summary>
+        [TestMethod]
+        public void ValidateCacheHitOrMiss_SameUserAgent_AdditionalHeaders()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            string xOperaMiniUA1 = "SonyEricsson/W810i";
+            string xOperaMiniUA2 = "Nokia/3310";
+
+            _evidenceKeysResponse = "[ 'query.User-Agent', 'header.X-OperaMini-Phone-UA' ]";
+
+            _jsonResponse = @"{ ""device"": { ""ismobile"": true } }";
+            ConfigureMockedClient(r => true);
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            .SetResourceKey(resourceKey)
+            .SetCacheSize(10)
+            .SetCacheHitOrMiss(true)
+            .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data1 = pipeline.CreateFlowData();
+                data1.AddEvidence("query.User-Agent", userAgent);
+                data1.AddEvidence("header.X-OperaMini-Phone-UA", xOperaMiniUA1);
+
+                data1.Process();
+
+                Assert.IsFalse(data1.GetFromElement(engine).CacheHit, "cache miss should occur.");
+
+                var data2 = pipeline.CreateFlowData();
+                data2.AddEvidence("query.User-Agent", userAgent);
+                data2.AddEvidence("header.X-OperaMini-Phone-UA", xOperaMiniUA2);
+
+                data2.Process();
+
+                Assert.IsFalse(data2.GetFromElement(engine).CacheHit, "cache miss should occur.");
+            }
+        }
+
+        /// <summary>
+        /// For a resource key with differing levels of access, test two 
+        /// requests made using the same user-agent but with different lat/lon
+        /// values
+        /// </summary>
+        [DataTestMethod]
+        // Access to device detection only
+        [DataRow(true, "query.User-Agent")]
+        // Access to device detection and geo-location
+        [DataRow(false, "query.User-Agent", "query.51d_pos_latitude", "query.51d_pos_longitude")]
+        // Access to geo-location only
+        [DataRow(false, "query.51d_pos_latitude", "query.51d_pos_longitude")]
+        public void ValidateCacheHitOrMiss_SameUserAgent_DifferentLocation(bool hit, params string[] evidenceKeys)
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            string latlon1 = "51";
+            string latlon2 = "1";
+
+            _evidenceKeysResponse = $"[ '{string.Join("', '", evidenceKeys)}' ]";
+
+            _jsonResponse = @"{ ""device"": { ""ismobile"": true } }";
+            ConfigureMockedClient(r => true);
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            .SetResourceKey(resourceKey)
+            .SetCacheSize(10)
+            .SetCacheHitOrMiss(true)
+            .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data1 = pipeline.CreateFlowData();
+                data1.AddEvidence("query.User-Agent", userAgent);
+                data1.AddEvidence("query.51d_pos_latitude", latlon1);
+                data1.AddEvidence("query.51d_pos_longitude", latlon1);
+                data1.Process();
+
+                Assert.IsFalse(data1.GetFromElement(engine).CacheHit, "cache miss should occur.");
+
+                var data2 = pipeline.CreateFlowData();
+                data2.AddEvidence("query.User-Agent", userAgent);
+                data2.AddEvidence("query.51d_pos_latitude", latlon2);
+                data2.AddEvidence("query.51d_pos_longitude", latlon2);
+
+                data2.Process();
+
+                Assert.AreEqual(hit, data2.GetFromElement(engine).CacheHit, $"cache hit {(hit ? "should" : "shouldn't")} occur.");
+            }
+        }
+
+        /// <summary>
+        /// For a resource key with differing levels of access, test two 
+        /// requests made using a different user-agent but the same lat/lon
+        /// values.
+        /// </summary>
+        [DataTestMethod]
+        // Access to device detection only
+        [DataRow(false, "query.User-Agent")]
+        // Access to device detection and geo-location
+        [DataRow(false, "query.User-Agent", "query.51d_pos_latitude", "query.51d_pos_longitude")]
+        // Access to geo-location only
+        [DataRow(true, "query.51d_pos_latitude", "query.51d_pos_longitude")]
+        public void ValidateCacheHitOrMiss_DifferentUserAgent_SameLocation(bool hit, params string[] evidenceKeys)
+        {
+            string resourceKey = "resource_key";
+            string userAgent1 = "iPhone";
+            string userAgent2 = "Samsung";
+            string latlon = "51";
+
+            _evidenceKeysResponse = $"[ '{string.Join("', '", evidenceKeys)}' ]";
+
+            _jsonResponse = @"{ ""device"": { ""ismobile"": true } }";
+            ConfigureMockedClient(r => true);
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            .SetResourceKey(resourceKey)
+            .SetCacheSize(10)
+            .SetCacheHitOrMiss(true)
+            .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data1 = pipeline.CreateFlowData();
+                data1.AddEvidence("query.User-Agent", userAgent1);
+                data1.AddEvidence("query.51d_pos_latitude", latlon);
+                data1.AddEvidence("query.51d_pos_longitude", latlon);
+                data1.Process();
+
+                Assert.IsFalse(data1.GetFromElement(engine).CacheHit, "cache miss should occur.");
+
+                var data2 = pipeline.CreateFlowData();
+                data2.AddEvidence("query.User-Agent", userAgent2);
+                data2.AddEvidence("query.51d_pos_latitude", latlon);
+                data2.AddEvidence("query.51d_pos_longitude", latlon);
+
+                data2.Process();
+
+                Assert.AreEqual(hit, data2.GetFromElement(engine).CacheHit, $"cache hit {(hit ? "should" : "shouldn't")} occur.");
+            }
+        }
 
         /// <summary>
         /// Setup _httpClient to respond with the configured messages.

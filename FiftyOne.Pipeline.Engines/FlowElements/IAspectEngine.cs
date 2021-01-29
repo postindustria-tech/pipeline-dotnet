@@ -51,6 +51,15 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         void SetCache(IFlowCache cache);
 
         /// <summary>
+        /// Set the engine to flag when a cache hit occurs by setting a field 
+        /// on the cached aspect data.
+        /// </summary>
+        /// <param name="cacheHitOrMiss">
+        /// Whether to flag cache hits or not.
+        /// </param>
+        void SetCacheHitOrMiss(bool cacheHitOrMiss);
+
+        /// <summary>
         /// The tier to which the current data source belongs.
         /// For 51Degrees this will usually be one of:
         /// Lite

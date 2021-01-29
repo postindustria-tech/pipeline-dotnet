@@ -48,8 +48,8 @@ namespace FiftyOne.Pipeline.Engines.Data
     public abstract class AspectDataBase : ElementDataBase, IAspectData
     {
         private List<Task> _processTasks = new List<Task>();
-
         private List<IAspectEngine> _engines;
+        private bool _cacheHit;
 
         /// <summary>
         /// The <see cref="IMissingPropertyService"/> instance to be queried
@@ -71,6 +71,12 @@ namespace FiftyOne.Pipeline.Engines.Data
             {
                 return _engines as IReadOnlyList<IAspectEngine>;
             }
+        }
+
+        /// <inheritdoc/>
+        public bool CacheHit 
+        {
+            get { return _cacheHit;  }
         }
 
         /// <summary>
@@ -187,6 +193,14 @@ namespace FiftyOne.Pipeline.Engines.Data
             {
                 _processTasks.Add(processTask);
             }
+        }
+
+        /// <summary>
+        /// Set if this instance is a 
+        /// </summary>
+        internal void SetCacheHit()
+        {
+            _cacheHit = true;
         }
 
         /// <summary>
