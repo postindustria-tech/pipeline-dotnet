@@ -55,6 +55,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         protected List<string> Properties { get; } = new List<string>();
         private CacheConfiguration _cacheConfig;
         private LazyLoadingConfiguration _lazyLoadingConfig;
+        private bool _cacheHitOrMiss;
 
         /// <summary>
         /// Configure lazy loading of results.
@@ -121,6 +122,22 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
+        /// Configure the engine to flag whether an element data originates from 
+        /// the engine cache. 
+        /// </summary>
+        /// <param name="cacheHitOrMiss">
+        /// Whether to flag cache hits or not.
+        /// </param>
+        /// <returns>
+        /// This engine builder instance.
+        /// </returns>
+        public virtual TBuilder SetCacheHitOrMiss(bool cacheHitOrMiss)
+        {
+            _cacheHitOrMiss = cacheHitOrMiss;
+            return this as TBuilder;
+        }
+
+        /// <summary>
         /// Configure the properties that the engine will populate in the 
         /// response.
         /// By default all properties will be populated.
@@ -177,6 +194,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
             {
                 engine.SetLazyLoading(_lazyLoadingConfig);
             }
+            engine.SetCacheHitOrMiss(_cacheHitOrMiss);
         }
 
         /// <summary>

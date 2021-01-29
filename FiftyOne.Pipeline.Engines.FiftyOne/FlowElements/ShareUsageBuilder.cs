@@ -96,7 +96,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                 BlockedHttpHeaders,
                 IncludedQueryStringParameters,
                 IgnoreDataEvidenceFilter,
-                AspSessionCookieName);
+                AspSessionCookieName,
+                null,
+                ShareAllEvidence);
         }
     }
 }

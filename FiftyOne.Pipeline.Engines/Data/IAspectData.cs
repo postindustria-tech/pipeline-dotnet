@@ -49,5 +49,12 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// Otherwise, it will be null.
         /// </summary>
         Task ProcessTask { get; }
+
+        /// <summary>
+        /// Get whether this instance of element data was the result of a 
+        /// cache hit, rather than processing of the underlying aspect engine.
+        /// This field is only set if the Aspect Engine is configured to do so.
+        /// </summary>
+        bool CacheHit { get; }
     }
 }

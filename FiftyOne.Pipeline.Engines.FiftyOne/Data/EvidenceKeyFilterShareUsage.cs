@@ -57,6 +57,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         private bool _includeSession;
 
         /// <summary>
+        /// If true then all evidence will always be shared.
+        /// </summary>
+        private bool _shareAll = false;
+
+        /// <summary>
         /// The cookie name being used to store the asp.net session id.
         /// </summary>
         private string _aspSessionCookieName;
@@ -79,6 +84,15 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// </summary>
         private HashSet<string> _includedQueryStringParams = new HashSet<string>();
 
+        /// <summary>
+        /// Constructor
+        /// Using this constructor will create a filter that allows all 
+        /// evidence. I.e. All evidence will be shared.
+        /// </summary>
+        public EvidenceKeyFilterShareUsage()
+        {
+            _shareAll = true;
+        }
 
         /// <summary>
         /// Constructor
@@ -90,6 +104,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
         /// <param name="includedQueryStringParams">
         /// A list of the names of query string parameters that share 
         /// usage should send to 51Degrees.
+        /// If this value is null, all query string parameters are shared.
         /// </param>
         /// <param name="includeSession">
         /// If true then the asp.net session cookie will be included in
@@ -112,10 +127,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
             {
                 throw new ArgumentNullException(nameof(blockedHttpHeaders));
             }
-            if (includedQueryStringParams == null)
-            {
-                throw new ArgumentNullException(nameof(includedQueryStringParams));
-            }
             if (aspSessionCookieName == null)
             {
                 throw new ArgumentNullException(nameof(aspSessionCookieName));
@@ -131,12 +142,19 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
                     _blockedHttpHeaders.Add(lowerHeader);
                 }
             }
-            foreach (var parameter in includedQueryStringParams)
+            if (includedQueryStringParams == null)
             {
-                var lowerParameter = parameter.ToLowerInvariant();
-                if (!_includedQueryStringParams.Contains(lowerParameter))
+                _includedQueryStringParams = null;
+            } 
+            else
+            { 
+                foreach (var parameter in includedQueryStringParams)
                 {
-                    _includedQueryStringParams.Add(lowerParameter);
+                    var lowerParameter = parameter.ToLowerInvariant();
+                    if (!_includedQueryStringParams.Contains(lowerParameter))
+                    {
+                        _includedQueryStringParams.Add(lowerParameter);
+                    }
                 }
             }
         }
@@ -160,59 +178,70 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
                 throw new ArgumentNullException(nameof(key));
             }
 
-            bool result = false;
-            int firstSeperator = key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR,
-                StringComparison.OrdinalIgnoreCase);
-            if (firstSeperator > 0)
-            {
-                string firstPart = key.Remove(firstSeperator);
-                string lastPart = key.Substring(firstSeperator + 1);
+            bool result = _shareAll;
 
-                if (firstPart == Core.Constants.EVIDENCE_HTTPHEADER_PREFIX)
+            if (_shareAll == false)
+            {
+                int firstSeperator = key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR,
+                    StringComparison.OrdinalIgnoreCase);
+                if (firstSeperator > 0)
                 {
-                    // Add the header to the list if the header name does not 
-                    // appear in the list of blocked headers.
-                    result = _blockedHttpHeaders
+                    string firstPart = key.Remove(firstSeperator);
+                    string lastPart = key.Substring(firstSeperator + 1);
+
+                    if (firstPart == Core.Constants.EVIDENCE_HTTPHEADER_PREFIX)
+                    {
+                        // Add the header to the list if the header name does not 
+                        // appear in the list of blocked headers.
+                        result = _blockedHttpHeaders
 #pragma warning disable CA1308 // Normalize strings to uppercase
-                        // Pipeline specification is for keys to be lower-case.
-                        .Contains(lastPart.ToLowerInvariant()) == false;
+                            // Pipeline specification is for keys to be lower-case.
+                            .Contains(lastPart.ToLowerInvariant()) == false;
 #pragma warning restore CA1308 // Normalize strings to uppercase
-                }
-                else if (firstPart == Core.Constants.EVIDENCE_COOKIE_PREFIX)
-                {
-                    // Only add cookies that start with the 51Degrees cookie 
-                    // prefix.
-                    result = lastPart.StartsWith(Engines.Constants.FIFTYONE_COOKIE_PREFIX, 
-                        StringComparison.OrdinalIgnoreCase) ||
-                        (_includeSession && lastPart.Equals(_aspSessionCookieName, 
-                            StringComparison.OrdinalIgnoreCase));
-                }
-                else if (firstPart == Core.Constants.EVIDENCE_SESSION_PREFIX)
-                {
-                    // Only add session values that start with the 51Degrees
-                    // cookie prefix.
-                    result = lastPart.StartsWith(Engines.Constants.FIFTYONE_COOKIE_PREFIX, 
-                        StringComparison.OrdinalIgnoreCase);
-                }
-                else if (firstPart == Core.Constants.EVIDENCE_QUERY_PREFIX)
-                {
-                    // Only include query string parameters that have been
-                    // specified in the constructor.
-                    result = _includedQueryStringParams.Contains(
+                    }
+                    else if (firstPart == Core.Constants.EVIDENCE_COOKIE_PREFIX)
+                    {
+                        // Only add cookies that start with the 51Degrees cookie 
+                        // prefix.
+                        result = lastPart.StartsWith(Engines.Constants.FIFTYONE_COOKIE_PREFIX,
+                            StringComparison.OrdinalIgnoreCase) ||
+                            (_includeSession && lastPart.Equals(_aspSessionCookieName,
+                                StringComparison.OrdinalIgnoreCase));
+                    }
+                    else if (firstPart == Core.Constants.EVIDENCE_SESSION_PREFIX)
+                    {
+                        // Only add session values that start with the 51Degrees
+                        // cookie prefix.
+                        result = lastPart.StartsWith(Engines.Constants.FIFTYONE_COOKIE_PREFIX,
+                            StringComparison.OrdinalIgnoreCase);
+                    }
+                    else if (firstPart == Core.Constants.EVIDENCE_QUERY_PREFIX)
+                    {
+                        // If no query string parameter filter was specified 
+                        // then share all of them.
+                        // Otherwise, only include query string parameters that 
+                        // start with 51d_ or that have been specified in 
+                        // the constructor.
+                        result = _includedQueryStringParams == null ||
+                            lastPart.StartsWith(Engines.Constants.FIFTYONE_COOKIE_PREFIX,
+                            StringComparison.OrdinalIgnoreCase) ||
+                            _includedQueryStringParams.Contains(
 #pragma warning disable CA1308 // Normalize strings to uppercase
-                        // Pipeline specification is for keys to be lower-case.
-                        lastPart.ToLowerInvariant());
+                            // Pipeline specification is for keys to be lower-case.
+                            lastPart.ToLowerInvariant());
 #pragma warning restore CA1308 // Normalize strings to uppercase
+                    }
+                    else
+                    {
+                        // Add anything that is not a cookie, header, session 
+                        // variable or quest string parameter.
+                        result = true;
+                    }
                 }
                 else
-                { 
-                    // Add anything that is not a cookie or a header.
+                {
                     result = true;
                 }
-            }
-            else
-            {
-                result = true;
             }
 
             return result;

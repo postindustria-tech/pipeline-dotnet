@@ -30,6 +30,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -163,8 +164,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             if (LoadAspectProperties(
                                 RequestEngine.GetInstance()) == false)
                             {
-                                throw new PipelineException(
-                                    Messages.ExceptionFailedToLoadProperties);
+                                throw new PipelineException(string.Format(
+                                    CultureInfo.InvariantCulture, 
+                                    Messages.ExceptionFailedToLoadProperties,
+                                    ElementDataKey));
                             }
                         }
                     }

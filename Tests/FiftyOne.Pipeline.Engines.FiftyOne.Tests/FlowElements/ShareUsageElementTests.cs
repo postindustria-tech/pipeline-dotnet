@@ -99,7 +99,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             int interval,
             List<string> blockedHeaders,
             List<string> includedQueryStringParams, 
-            List<KeyValuePair<string, string>> ignoreDataEvidenceFiler)
+            List<KeyValuePair<string, string>> ignoreDataEvidenceFiler,
+            bool shareAll = false)
         {
             _sequenceElement = new SequenceElement(new Mock<ILogger<SequenceElement>>().Object);
             _sequenceElement.AddPipeline(_pipeline.Object);
@@ -118,7 +119,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
                 includedQueryStringParams,
                 ignoreDataEvidenceFiler,
                 Engines.Constants.DEFAULT_ASP_COOKIE_NAME,
-                _tracker.Object);
+                _tracker.Object,
+                shareAll);
             _shareUsageElement.AddPipeline(_pipeline.Object);
         }
 
@@ -596,6 +598,89 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             Assert.IsTrue(_xmlContent[0].Contains("<Sequence>3</Sequence>"));
             Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Constants.EVIDENCE_SESSIONID));
             Assert.IsTrue(data.GetEvidence().AsDictionary().ContainsKey(Constants.EVIDENCE_SEQUENCE));
+        }
+
+        /// <summary>
+        /// Test that the share all function causes all evidence to be shared.
+        /// </summary>
+        [TestMethod]
+        public void ShareUsageElement_ShareAll()
+        {
+            // Arrange
+            CreateShareUsage(1, 1, 1, 
+                new List<string>() { "notblocked" }, 
+                new List<string>(), 
+                new List<KeyValuePair<string, string>>(), true);
+
+            Dictionary<string, object> evidenceData = new Dictionary<string, object>()
+            {
+                { Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + "notblocked", "abc" },
+                { Core.Constants.EVIDENCE_QUERY_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + "somevalue", "123" },
+                { Core.Constants.EVIDENCE_COOKIE_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + "mycookie", "zyx" },
+                { "someprefix" + Core.Constants.EVIDENCE_SEPERATOR + "anothervalue", "987" },
+            };
+            var data = MockFlowData.CreateFromEvidence(evidenceData, false);
+
+            // Act
+            _shareUsageElement.Process(data.Object);
+            // Wait for the consumer task to finish.
+            Assert.IsNotNull(_shareUsageElement.SendDataTask);
+            _shareUsageElement.SendDataTask.Wait();
+
+            // Assert
+            // Check that one and only one HTTP message was sent
+            _httpHandler.Verify(h => h.Send(It.IsAny<HttpRequestMessage>()), Times.Once);
+            Assert.AreEqual(1, _xmlContent.Count);
+
+            // Validate that the XML is well formed by passing it through a reader
+            using (XmlReader xr = XmlReader.Create(new StringReader(_xmlContent[0])))
+            {
+                while (xr.Read()) { }
+            }
+            // Check that the expected values are populated.
+            Assert.IsTrue(_xmlContent[0].Contains("<header Name=\"notblocked\"><![CDATA[abc]]></header>"));
+            Assert.IsTrue(_xmlContent[0].Contains("<query Name=\"somevalue\"><![CDATA[123]]></query>"));
+            Assert.IsTrue(_xmlContent[0].Contains("<cookie Name=\"mycookie\"><![CDATA[zyx]]></cookie>"));
+            Assert.IsTrue(_xmlContent[0].Contains("<someprefix Name=\"anothervalue\"><![CDATA[987]]></someprefix>"));
+        }
+
+        /// <summary>
+        /// Test that passing a null value for the 
+        /// 'included query string parameters' value will
+        /// result in all query. evidence being shared.
+        /// </summary>
+        [TestMethod]
+        public void ShareUsageElement_NullQueryWhitelist()
+        {
+            // Arrange
+            CreateShareUsage(1, 1, 1,
+                new List<string>(), null,
+                new List<KeyValuePair<string, string>>());
+
+            Dictionary<string, object> evidenceData = new Dictionary<string, object>()
+            {
+                { Core.Constants.EVIDENCE_QUERY_PREFIX + Core.Constants.EVIDENCE_SEPERATOR + "somevalue", "123" },
+            };
+            var data = MockFlowData.CreateFromEvidence(evidenceData, false);
+
+            // Act
+            _shareUsageElement.Process(data.Object);
+            // Wait for the consumer task to finish.
+            Assert.IsNotNull(_shareUsageElement.SendDataTask);
+            _shareUsageElement.SendDataTask.Wait();
+
+            // Assert
+            // Check that one and only one HTTP message was sent
+            _httpHandler.Verify(h => h.Send(It.IsAny<HttpRequestMessage>()), Times.Once);
+            Assert.AreEqual(1, _xmlContent.Count);
+
+            // Validate that the XML is well formed by passing it through a reader
+            using (XmlReader xr = XmlReader.Create(new StringReader(_xmlContent[0])))
+            {
+                while (xr.Read()) { }
+            }
+            // Check that the expected values are populated.
+            Assert.IsTrue(_xmlContent[0].Contains("<query Name=\"somevalue\"><![CDATA[123]]></query>"));
         }
 
         /// <summary>

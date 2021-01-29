@@ -114,6 +114,10 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// shared once.
         /// </summary>
         protected bool TrackSession { get; private set; }
+        /// <summary>
+        /// If set to true then all evidence values will be shared.
+        /// </summary>
+        protected bool ShareAllEvidence { get; private set; } = false;
 
         /// <summary>
         /// Constructor
@@ -198,6 +202,44 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         public ShareUsageBuilderBase<T> SetIncludedQueryStringParameter(string queryStringParameterName)
         {
             IncludedQueryStringParameters.Add(queryStringParameterName);
+            return this;
+        }
+
+        /// <summary>
+        /// Configure the usage sharing element to share all query string
+        /// parameters.
+        /// </summary>
+        /// <param name="shareAll">
+        /// If set to true then all query string parameters will be shared
+        /// </param>
+        /// <returns>
+        /// This builder instance
+        /// </returns>
+        public ShareUsageBuilderBase<T> SetShareAllQueryStringParameters(bool shareAll)
+        {
+            if (shareAll)
+            {
+                IncludedQueryStringParameters = null;
+            }
+            else if (IncludedQueryStringParameters == null)
+            {
+                IncludedQueryStringParameters = new List<string>();
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// Configure the usage sharing element to share all evidence.
+        /// </summary>
+        /// <param name="shareAll">
+        /// If set to true then all evidence will be shared
+        /// </param>
+        /// <returns>
+        /// This builder instance
+        /// </returns>
+        public ShareUsageBuilderBase<T> SetShareAllEvidence(bool shareAll)
+        {
+            ShareAllEvidence = shareAll;
             return this;
         }
 

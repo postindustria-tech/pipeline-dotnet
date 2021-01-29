@@ -28,10 +28,38 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
     /// <summary>
     /// Wrapper for EvidenceKeyFilter for Share Usage, to be used with the 
-    /// ShareUsageTracker to excluded specific evidence keys from the filter
+    /// ShareUsageTracker to exclude specific evidence keys from the filter
     /// </summary>
     class EvidenceKeyFilterShareUsageTracker : EvidenceKeyFilterShareUsage
     {
+        /// <summary>
+        /// Constructor
+        /// This constructor will create a filter that will include
+        /// all evidence. (Except the default excluded items)
+        /// </summary>
+        public EvidenceKeyFilterShareUsageTracker()
+            : base()
+        { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="blockedHttpHeaders">
+        /// A list of the names of the HTTP headers that share usage should
+        /// not send to 51Degrees.
+        /// </param>
+        /// <param name="includedQueryStringParams">
+        /// A list of the names of query string parameters that share 
+        /// usage should send to 51Degrees.
+        /// If this value is null, all query string parameters are shared.
+        /// </param>
+        /// <param name="includeSession">
+        /// If true then the asp.net session cookie will be included in
+        /// the filter.
+        /// </param>
+        /// <param name="aspSessionCookieName">
+        /// The name of the cookie that contains the asp.net session id. 
+        /// </param>
         public EvidenceKeyFilterShareUsageTracker(
             List<string> blockedHttpHeaders,
             List<string> includedQueryStringParams,
@@ -45,6 +73,10 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 
         public override bool Include(string key)
         {
+            // Ensure that the session and sequence values are excluded
+            // from the tracker, regardless of the filter settings.
+            // If these were included then all usage would always 
+            // be shared as session id + sequence will always be unique.
             if (key == Constants.EVIDENCE_SESSIONID)
                 return false;
             if (key == Constants.EVIDENCE_SEQUENCE)
