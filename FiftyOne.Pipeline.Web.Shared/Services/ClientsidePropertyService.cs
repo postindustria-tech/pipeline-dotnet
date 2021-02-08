@@ -67,12 +67,13 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         }
 
         /// <summary>
-        /// The cache control values that will be set for the JavaScript
+        /// The cache control values that will be set for the JavaScript and
+        /// JSON.
         /// </summary>
         private StringValues _cacheControl = new StringValues(
             new string[] {
-                "only-if-cached",
-                "max-age=600",
+                "private",
+                "max-age=1800",
             });
 
         /// <summary>
@@ -237,7 +238,5 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                     hash,
                 }));
         }
-
-
     }
 }

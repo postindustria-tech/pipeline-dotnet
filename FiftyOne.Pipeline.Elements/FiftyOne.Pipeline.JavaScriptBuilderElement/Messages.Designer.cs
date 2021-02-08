@@ -61,6 +61,15 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to FlowData instance cannot be null..
+        /// </summary>
+        internal static string ExceptionFlowDataIsNull {
+            get {
+                return ResourceManager.GetString("ExceptionFlowDataIsNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to JsonBuilderElement must run before JavaScriptBuilderElement. Please check your pipeline configuration..
         /// </summary>
         internal static string ExceptionJsonBuilderNotRun {

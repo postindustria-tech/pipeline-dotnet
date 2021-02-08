@@ -41,6 +41,7 @@ using System.Reflection;
 using Stubble.Core.Settings;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines;
+using Newtonsoft.Json;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 {
@@ -101,6 +102,22 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// Used to prevent performance-impacting internal exceptions.
         /// </summary>
         private bool _promisePropertyAvailable = true;
+
+        /// <summary>
+        /// Flag used to remember if the fetch property is available or not.
+        /// Used to prevent performance-impacting internal exceptions.
+        /// </summary>
+        private bool _fetchPropertyAvailable = true;
+
+        /// <summary>
+        /// These parameters are excluded from the parameters object used to 
+        /// configure the JavaScript as they are added explicitly.
+        /// </summary>
+        protected HashSet<string> ExcludedParameters { get; private set; } = new HashSet<string>()
+        {
+            Engines.FiftyOne.Constants.EVIDENCE_SEQUENCE,
+            Engines.FiftyOne.Constants.EVIDENCE_SESSIONID,
+        };
 
         /// <summary>
         /// Key to identify engine.
@@ -227,6 +244,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             var host = Host;
             var protocol = Protocol;
             bool supportsPromises = false;
+            bool supportsFetch = false;
 
             if (string.IsNullOrEmpty(host))
             {
@@ -255,6 +273,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 {
                     var promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
                     supportsPromises = promise != null && promise.HasValue && promise.Value == "Full";
+
                 }
                 catch (PropertyMissingException)
                 {
@@ -266,6 +285,29 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 catch (PipelineDataException) { supportsPromises = false; }
                 catch (InvalidCastException) { supportsPromises = false; }
                 catch (KeyNotFoundException) { supportsPromises = false; }
+            }
+
+            // If device detection is in the Pipeline then we can check
+            // if the client's browser supports fetch.
+            // This can be used to customize the JavaScript response. 
+            if (_fetchPropertyAvailable)
+            {
+                try
+                {
+                    var fetch = data.GetAs<IAspectPropertyValue<bool>>("Fetch");
+                    supportsFetch = fetch != null && fetch.HasValue && fetch.Value;
+
+                }
+                catch (PropertyMissingException)
+                {
+                    // This exception will be thrown on every call to get 
+                    // the property so short-circuit future calls.
+                    _fetchPropertyAvailable = false;
+                    supportsFetch = false;
+                }
+                catch (PipelineDataException) { supportsFetch = false; }
+                catch (InvalidCastException) { supportsFetch = false; }
+                catch (KeyNotFoundException) { supportsFetch = false; }
             }
 
             // Get the JSON include to embed into the JavaScript include.
@@ -280,32 +322,14 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                     Messages.ExceptionJsonBuilderNotRun, ex);
             }
 
-            // Generate any required parameters for the JSON request.
-            List<string> parameters = new List<string>();
+            var parameters = GetParameters(data);
+            var paramsObject = JsonConvert.SerializeObject(parameters);
+            var sessionId = GetSessionId(data);
+            var sequence = GetSequence(data);
 
-            // Any query parameters from this request that were ingested by 
-            // the Pipeline are added to the request URL that will appear 
-            // in the JavaScript.
-            var queryEvidence = data
-                .GetEvidence()
-                .AsDictionary()
-                .Where(e => e.Key.StartsWith(Core.Constants.EVIDENCE_QUERY_PREFIX, 
-                    StringComparison.OrdinalIgnoreCase))
-                .Select(k =>
-                {
-                    var dotPos = k.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR,
-                        StringComparison.OrdinalIgnoreCase);
-                    return $"{WebUtility.UrlEncode(k.Key.Remove(0, dotPos + 1))}" +
-                        $"={WebUtility.UrlEncode(k.Value.ToString())}";
-                });
-
-            parameters.AddRange(queryEvidence);
-
-            string queryParams = string.Join("&", parameters);
             string endpoint = Endpoint;
-
             Uri url = null;
-
+            // Check the call-back URL is formatted correctly.
             if (string.IsNullOrWhiteSpace(protocol) == false &&
                 string.IsNullOrWhiteSpace(host) == false &&
                 string.IsNullOrWhiteSpace(endpoint) == false)
@@ -323,39 +347,94 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                     endpoint = endpoint.Substring(1);
                 }
 
-                url = new Uri($"{protocol}://{host}{endpoint}" +
-                    (String.IsNullOrEmpty(queryParams) ? "" : $"?{queryParams}"));
+                url = new Uri($"{protocol}://{host}{endpoint}");
             }
 
             // With the gathered resources, build a new JavaScriptResource.
-            BuildJavaScript(data, jsonObject, supportsPromises, url);
+            BuildJavaScript(data, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, url, paramsObject);
         }
 
+
+
         /// <summary>
-        /// Build the JavaScript content and add it to the supplied
-        /// <see cref="IFlowData"/> instance.
+        /// Generate any required parameters for the JSON request.
+        /// Any query parameters from this request that were ingested by 
+        /// the Pipeline are added to the request URL by the JavaScript.
         /// </summary>
-        /// <param name="data">
-        /// The <see cref="IFlowData"/> instance to populate with the
-        /// resulting <see cref="JavaScriptBuilderElementData"/> 
-        /// </param>
-        /// <param name="jsonObject">
-        /// The JSON data object to include in the JavaScript.
-        /// </param>
-        /// <param name="supportsPromises">
-        /// True to build JavaScript that uses promises. False to
-        /// build JavaScript that does not use promises.
-        /// </param>
-        /// <param name="url">
-        /// The callback URL for the JavaScript to send a request to
-        /// when it has new evidence values to supply.
-        /// </param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown if the supplied flow data is null.
-        /// </exception>
-        protected void BuildJavaScript(IFlowData data, string jsonObject, bool supportsPromises, string url)
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected virtual Dictionary<string, string> GetParameters(IFlowData data)
         {
-            BuildJavaScript(data, jsonObject, supportsPromises, new Uri(url));
+            if (data == null)
+            {
+                throw new ArgumentException(Messages.ExceptionFlowDataIsNull);
+            }
+
+            var parameters = data
+                .GetEvidence()
+                .AsDictionary()
+                .Where(e => e.Key.StartsWith(Core.Constants.EVIDENCE_QUERY_PREFIX,
+                    StringComparison.OrdinalIgnoreCase))
+                .Where(e => ExcludedParameters.Contains(e.Key) == false)
+                .ToDictionary(k =>
+                {
+                    var dotPos = k.Key.IndexOf(Core.Constants.EVIDENCE_SEPERATOR,
+                        StringComparison.OrdinalIgnoreCase);
+                    return WebUtility.UrlEncode(k.Key.Remove(0, dotPos + 1));
+                }, v => WebUtility.UrlEncode(v.Value.ToString()));
+
+            // Serialise the parameters
+            var paramsObject =
+                JsonConvert.SerializeObject(parameters, Formatting.Indented);
+
+            return parameters;
+        }
+
+        /// <summary>
+        /// Get the sequence evidence if it exists.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected virtual int GetSequence(IFlowData data)
+        {
+            if(data == null)
+            {
+                throw new ArgumentException(Messages.ExceptionFlowDataIsNull);
+            }
+
+            // Get the sequence evidence if it exists.
+            int sequence = 1;
+            if (data.TryGetEvidence(Engines.FiftyOne.Constants.EVIDENCE_SEQUENCE,
+                out object sequenceObject))
+            {
+                if (sequenceObject is int sequenceValue ||
+                    (sequenceObject is string seq && int.TryParse(seq, out sequenceValue)))
+                {
+                    sequence = sequenceValue;
+                }
+            }
+            return sequence;
+        }
+
+        /// <summary>
+        /// Get the session-id evidence if it exists.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected virtual string GetSessionId(IFlowData data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentException(Messages.ExceptionFlowDataIsNull);
+            }
+
+            // Get the session-id evidence if it exists.
+            if (data.TryGetEvidence(Engines.FiftyOne.Constants.EVIDENCE_SESSIONID,
+                out string sessionId) == false)
+            {
+                sessionId = string.Empty;
+            }
+            return sessionId;
         }
 
         /// <summary>
@@ -369,18 +448,85 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <param name="jsonObject">
         /// The JSON data object to include in the JavaScript.
         /// </param>
+        /// <param name="sessionId">
+        /// The session Id to use in the JavaScript response.
+        /// </param>
+        /// <param name="sequence">
+        /// The sequence value to use in the JavaScript response.
+        /// </param>
         /// <param name="supportsPromises">
         /// True to build JavaScript that uses promises. False to
         /// build JavaScript that does not use promises.
+        /// </param>
+        /// <param name="supportsFetch">
+        /// True to build JavaScript that makes use of the
+        /// fetch API. Otherwise, the template will fall back to using 
+        /// XMLHttpRequest.
         /// </param>
         /// <param name="url">
         /// The callback URL for the JavaScript to send a request to
         /// when it has new evidence values to supply.
         /// </param>
+        /// <param name="parameters">The parameters to append to the URL</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if the supplied flow data is null.
         /// </exception>
-        protected void BuildJavaScript(IFlowData data, string jsonObject, bool supportsPromises, Uri url)
+        protected void BuildJavaScript(
+            IFlowData data,
+            string jsonObject,
+            string sessionId,
+            int sequence,
+            bool supportsPromises,
+            bool supportsFetch,
+            string url,
+            string parameters)
+        {
+            BuildJavaScript(data, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, new Uri(url), parameters);
+        }
+
+        /// <summary>
+        /// Build the JavaScript content and add it to the supplied
+        /// <see cref="IFlowData"/> instance.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> instance to populate with the
+        /// resulting <see cref="JavaScriptBuilderElementData"/> 
+        /// </param>
+        /// <param name="jsonObject">
+        /// The JSON data object to include in the JavaScript.
+        /// </param>
+        /// <param name="sessionId">
+        /// The session Id to use in the JavaScript response.
+        /// </param>
+        /// <param name="sequence">
+        /// The sequence value to use in the JavaScript response.
+        /// </param>
+        /// <param name="supportsPromises">
+        /// True to build JavaScript that uses promises. False to
+        /// build JavaScript that does not use promises.
+        /// </param>
+        /// <param name="supportsFetch">
+        /// True to build JavaScript that makes use of the
+        /// fetch API. Otherwise, the template will fall back to using 
+        /// XMLHttpRequest.
+        /// </param>
+        /// <param name="url">
+        /// The callback URL for the JavaScript to send a request to
+        /// when it has new evidence values to supply.
+        /// </param>
+        /// <param name="parameters">The parameters to append to the URL</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        protected void BuildJavaScript(
+            IFlowData data,
+            string jsonObject,
+            string sessionId,
+            int sequence,
+            bool supportsPromises,
+            bool supportsFetch,
+            Uri url,
+            string parameters)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             
@@ -407,13 +553,17 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             JavaScriptResource javaScriptObj = new JavaScriptResource(
                 objectName,
                 jsonObject,
+                sessionId,
+                sequence,
                 supportsPromises,
+                supportsFetch,
                 url,
+                parameters,
                 EnableCookies,
                 ubdateEnabled,
                 hasDelayedProperties);
 
-            string content = _stubble.Render(_template, javaScriptObj.AsDictionary()/*, _renderSettings*/);
+            string content = _stubble.Render(_template, javaScriptObj.AsDictionary());
 
             string minifiedContent = content;
 

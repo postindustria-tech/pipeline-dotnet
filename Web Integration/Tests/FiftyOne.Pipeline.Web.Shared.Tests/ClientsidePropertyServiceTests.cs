@@ -191,7 +191,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
             }
             if (expectedStatusCode == 200)
             {
-                _response.Verify(r => r.SetHeader("Cache-Control", $"only-if-cached,max-age=600"));
+                _response.Verify(r => r.SetHeader("Cache-Control", $"private,max-age=1800"));
             }
             else
             {

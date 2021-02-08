@@ -1,0 +1,3 @@
+[submodule "FiftyOne.Pipeline.Elements/FiftyOne.Pipeline.JavaScriptBuilderElement/Templates/javascript"]
+	path = FiftyOne.Pipeline.Elements/FiftyOne.Pipeline.JavaScriptBuilderElement/Templates/javascript
+	url=../javascript
