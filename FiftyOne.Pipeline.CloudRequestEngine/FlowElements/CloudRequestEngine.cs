@@ -290,30 +290,117 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         }
 
         /// <summary>
-        /// Generate the Content to send in the POST request
+        /// Generate the Content to send in the POST request. The evidence keys
+        /// e.g. 'query.' and 'header.' have an order of precedence. These are
+        /// added to the evidence in reverse order, if there is conflict then 
+        /// the queryData value is overwritten. 
+        /// 
+        /// 'query.' evidence should take precedence over all other evidence.
+        /// If there are evidence keys other than 'query.' that conflict then
+        /// this is unexpected so an error will be logged.
         /// </summary>
         /// <param name="data"></param>
         /// <returns>Evidence in a FormUrlEncodedContent object</returns>
         private FormUrlEncodedContent GetContent(IFlowData data)
         {
-            var evidence = data.GetEvidence().AsDictionary();
-
             var queryData = new Dictionary<string, string>();
 
             queryData.Add("resource", _resourceKey);
 
-            if(string.IsNullOrWhiteSpace(_licenseKey) == false)
+            if (string.IsNullOrWhiteSpace(_licenseKey) == false)
             {
                 queryData.Add("license", _licenseKey);
             }
 
-            foreach (var item in evidence) {
-                var key = item.Key.Split(Core.Constants.EVIDENCE_SEPERATOR.ToCharArray());
-                queryData.Add(key[key.Length - 1], item.Value.ToString());
-            }
+            var evidence = data.GetEvidence().AsDictionary();
+
+            // Add evidence in reverse alphabetical order, excluding special keys. 
+            AddQueryData(queryData, evidence, evidence
+                .Where(e =>
+                    KeyHasPrefix(e, Core.Constants.EVIDENCE_QUERY_PREFIX) == false &&
+                    KeyHasPrefix(e, Core.Constants.EVIDENCE_HTTPHEADER_PREFIX) == false &&
+                    KeyHasPrefix(e, Core.Constants.EVIDENCE_COOKIE_PREFIX) == false)
+                .OrderByDescending(e => e.Key));
+            // Add cookie evidence.
+            AddQueryData(queryData, evidence, evidence
+                .Where(e => KeyHasPrefix(e, Core.Constants.EVIDENCE_COOKIE_PREFIX)));
+            // Add header evidence.
+            AddQueryData(queryData, evidence, evidence
+                .Where(e => KeyHasPrefix(e, Core.Constants.EVIDENCE_HTTPHEADER_PREFIX)));
+            // Add query evidence.
+            AddQueryData(queryData, evidence, evidence
+                .Where(e => KeyHasPrefix(e, Core.Constants.EVIDENCE_QUERY_PREFIX)));
 
             var content = new FormUrlEncodedContent(queryData);
             return content;
+        }
+        
+        /// <summary>
+        /// Check that the key of a KeyValuePair has the given prefix.
+        /// </summary>
+        /// <param name="item">The KeyValuePair to check.</param>
+        /// <param name="prefix">The prefix to check for.</param>
+        /// <returns>True if the key has the prefix.</returns>
+        private static bool KeyHasPrefix(KeyValuePair<string, object> item, string prefix) 
+        {
+            var key = item.Key.Split(Core.Constants.EVIDENCE_SEPERATOR.ToCharArray());
+            return key[0].Equals(prefix, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        /// <summary>
+        /// Add query data to the evidence.
+        /// </summary>
+        /// <param name="queryData">
+        /// The destination dictionary to add query data to.
+        /// </param>
+        /// <param name="allEvidence">
+        /// All evidence in the flow data. This is used to report which evidence
+        /// keys are conflicting.
+        /// </param>
+        /// <param name="evidence">
+        /// Evidence to add to the query Data.
+        /// </param>
+        private void AddQueryData(
+            Dictionary<string, string> queryData,
+            IReadOnlyDictionary<string, object> allEvidence,
+            IEnumerable<KeyValuePair<string, object>> evidence)
+        {
+            foreach (var item in evidence)
+            {
+                // Get the key parts
+                var key = item.Key.Split(Core.Constants.EVIDENCE_SEPERATOR.ToCharArray());
+                var prefix = key[0];
+                var suffix = key.Last();
+
+                // Check and add the evidence to the query parameters.
+                if (queryData.ContainsKey(suffix) == false)
+                {
+                    queryData.Add(suffix, item.Value.ToString());
+                }
+                // If the queryParameter exists already...
+                else
+                {
+                    // Get the conflicting pieces of evidence and then log a 
+                    // warning, if the evidence prefix is not query. Otherwise a
+                    // warning is not needed as query evidence is expected 
+                    // to overwrite any existing evidence with the same suffix.
+                    if (prefix.Equals(Core.Constants.EVIDENCE_QUERY_PREFIX, 
+                        StringComparison.InvariantCultureIgnoreCase) == false)
+                    {
+                        var oldValue = queryData[suffix];
+                        var conflicts = allEvidence
+                            .Where(e => e.Key != item.Key)
+                            .Where(e => e.Key.EndsWith(suffix, 
+                                StringComparison.InvariantCultureIgnoreCase))
+                            .Select(e => $"{e.Key}={e.Value}");
+
+                        Logger.LogWarning($"'{item.Key}={item.Value}' evidence " +
+                            $"conflicts with '{string.Join("', '", conflicts)}'");
+                    }
+                    // Overwrite the existing queryParameter value.
+                    queryData[suffix] = item.Value.ToString();
+                }
+            }
         }
 
         /// <summary>

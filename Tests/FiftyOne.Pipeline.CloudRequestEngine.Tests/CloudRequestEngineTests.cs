@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.CloudRequestEngine.FlowElements;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
@@ -48,7 +49,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
         private string _jsonResponse = "{'device':{'value':'1'}}";
         private string _evidenceKeysResponse = "['query.User-Agent']";
-        private string _accessiblePropertiesResponse = 
+        private string _accessiblePropertiesResponse =
             "{'Products': {'device': {'DataTier': 'tier','Properties': [{'Name': 'value','Type': 'String','Category': 'Device'}]}}}";
         private HttpStatusCode _accessiblePropertiesResponseStatus = HttpStatusCode.OK;
 
@@ -62,7 +63,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         {
             string resourceKey = "resource_key";
             string userAgent = "iPhone";
-            ConfigureMockedClient(r => 
+            ConfigureMockedClient(r =>
                 r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
                 && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
             );
@@ -83,6 +84,164 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
                 dynamic obj = JValue.Parse(result);
                 Assert.AreEqual(1, (int)obj.device.value);
+            }
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Post  // we expected a POST request
+                  && req.RequestUri == expectedUri // to this uri
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+        }
+
+        /// <summary>
+        /// Test cloud request engine adds correct information to post request
+        /// following the order of precedence when processing evidence and 
+        /// returns the response in the ElementData. Evidence parameters 
+        /// should be added in descending order of precedence.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(false, "query.User-Agent=iPhone", "header.User-Agent=iPhone")]
+        [DataRow(false, "query.User-Agent=iPhone", "cookie.User-Agent=iPhone")]
+        [DataRow(true, "header.User-Agent=iPhone", "cookie.User-Agent=iPhone")]
+        [DataRow(false, "query.value=1", "a.value=1")]
+        [DataRow(true, "a.value=1", "b.value=1")]
+        [DataRow(true, "e.value=1", "f.value=1")]
+        public void EvidencePrecedence(bool warn, string evidence1, string evidence2)
+        {
+            var evidence1Parts = evidence1.Split("=");
+            var evidence2Parts = evidence2.Split("=");
+
+            string resourceKey = "resource_key";
+            ConfigureMockedClient(r =>
+                  r.Content.ReadAsStringAsync().Result.Contains(evidence1.Split('.').Last())
+            );
+
+            var loggerFactory = new TestLoggerFactory();
+
+            var engine = new CloudRequestEngineBuilder(loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data = pipeline.CreateFlowData();
+
+                data.AddEvidence(evidence1Parts[0], evidence1Parts[1]);
+                data.AddEvidence(evidence2Parts[0], evidence2Parts[1]);
+
+                data.Process();
+            }
+
+            // Get loggers.
+            var loggers = loggerFactory.Loggers
+                .Where(l => l.GetType().IsAssignableFrom(typeof(TestLogger<FlowElements.CloudRequestEngine>)));
+            var logger = loggers.FirstOrDefault();
+
+            // If warn is expected then check for warnings from cloud request 
+            // engine.
+            if (warn) 
+            {
+                logger.AssertMaxWarnings(1);
+                logger.AssertMaxErrors(0);
+                Assert.AreEqual(1, logger.WarningsLogged.Count);
+                var warning = logger.WarningsLogged.Single();
+                Assert.IsTrue(warning.Contains($"'{evidence1}' evidence conflicts with '{evidence2}'"));
+            } 
+            else
+            {
+                logger.AssertMaxWarnings(0);
+                logger.AssertMaxErrors(0);
+            }
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Post  // we expected a POST request
+                  && req.RequestUri == expectedUri // to this uri
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+        }
+
+        /// <summary>
+        /// Test cloud request engine adds correct information to post request
+        /// following the order of precedence when processing multiple pieces of
+        /// conflicting evidence and returns the response in the ElementData. 
+        /// Evidence parameters should be added in descending order of precedence.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("header.User-Agent=iPhone", "cookie.User-Agent=iPhone")]
+        [DataRow("header.User-Agent=iPhone", "cookie.User-Agent=iPhone", "a.User-Agent=Samsung")]
+        [DataRow("header.User-Agent=iPhone", "cookie.User-Agent=iPhone", "a.User-Agent=Samsung", "b.User-Agent=Samsung")]
+        [DataRow("a.value=1", "b.value=1")]
+        [DataRow("a.value=1", "b.value=2")]
+        [DataRow("a.value=1", "b.value=2", "c.value=3")]
+        [DataRow("a.value=1", "b.value=1", "c.value=1")]
+        [DataRow("e.value=1", "f.value=1", "g.value=1", "h.value=1")]
+        public void EvidencePrecedenceMultipleConflicts(params string[] evidence)
+        {
+            string resourceKey = "resource_key";
+
+            // Get a list of evidence that should not be in the result.
+            var excludedEvidence = evidence
+                .Select(e => e.Split('.').Last())
+                .Distinct()
+                .Where(e => e != evidence[0].Split('.').Last());
+
+            ConfigureMockedClient(r =>
+            {
+                var valid = true || excludedEvidence.Count() > 0;
+                // Check that excluded evidence is not in the result.
+                foreach(var item in excludedEvidence)
+                {
+                    valid = r.Content.ReadAsStringAsync().Result.Contains(item) == false;
+                    if (valid == false)
+                    {
+                        break;
+                    }
+                }
+
+                // Check that the expected evidence is in the result.
+                return r.Content.ReadAsStringAsync().Result.Contains(evidence[0].Split('.').Last()) && valid;
+            });
+
+            var loggerFactory = new TestLoggerFactory();
+
+            var engine = new CloudRequestEngineBuilder(loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data = pipeline.CreateFlowData();
+
+                foreach (var item in evidence)
+                {
+                    var evidenceParts = item.Split("=");
+                    data.AddEvidence(evidenceParts[0], evidenceParts[1]);
+                }
+
+                data.Process();
+            }
+
+            // Get loggers.
+            var loggers = loggerFactory.Loggers
+                .Where(l => l.GetType().IsAssignableFrom(typeof(TestLogger<FlowElements.CloudRequestEngine>)));
+            var logger = loggers.FirstOrDefault();
+
+            // Check that the expected number of warnings has been logged.
+            logger.AssertMaxWarnings(evidence.Length - 1);
+            logger.AssertMaxErrors(0);
+            Assert.AreEqual(evidence.Length - 1, logger.WarningsLogged.Count);
+            // Check that only conflict warnings have been logged.
+            foreach (var warning in logger.WarningsLogged)
+            {
+                Assert.IsTrue(warning.Contains("evidence conflicts"));
             }
 
             _handlerMock.Protected().Verify(
