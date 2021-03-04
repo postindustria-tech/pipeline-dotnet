@@ -33,8 +33,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
     {
         private string _objName;
         private string _jsonObject;
+        private string _sessionId;
+        private int _sequence;
         private bool _supportsPromises;
+        private bool _supportsFetch;
         private Uri _url;
+        private string _parameters;
         private bool _enableCookies;
         private bool _updateEnabled;
         private bool _hasDelayedProperties;
@@ -56,14 +60,28 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
         /// <param name="jsonObject">
         /// The JSON data payload to be inserted into the template.
         /// </param>
+        /// <param name="sessionId">
+        /// The session Id to use in the JavaScript response.
+        /// </param>
+        /// <param name="sequence">
+        /// The sequence value to use in the JavaScript response.
+        /// </param>
         /// <param name="supportsPromises">
         /// If true, the template will produce JavaScript that makes 
         /// use of promises.
         /// If false, promises will not be used.
         /// </param>
+        /// <param name="supportsFetch">
+        /// If true, the template will produce JavaScript that makes use of the
+        /// fetch API. Otherwise, the template will fall back to using 
+        /// XMLHttpRequest.
+        /// </param>
         /// <param name="url">
         /// The complete URL to use for the callback mechanism described 
         /// in remarks for this constructor.
+        /// </param>
+        /// <param name="parameters">
+        /// The parameters to append to the call-back URL.
         /// </param>
         /// <param name="enableCookies">
         /// If false, any cookies created by JavaScript properties that
@@ -84,8 +102,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
         public JavaScriptResource(
             string objName,
             string jsonObject,
+            string sessionId,
+            int sequence,
             bool supportsPromises,
+            bool supportsFetch,
             string url,
+            string parameters,
             bool enableCookies,
             bool updateEnabled,
             bool hasDelayedProperties)
@@ -93,8 +115,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
             _objName = objName;
             _jsonObject = string.IsNullOrWhiteSpace(jsonObject) == false
                 ? jsonObject : "{\"errors\":[\"Json data missing.\"]}";
+            _sessionId = sessionId;
+            _sequence = sequence;
             _supportsPromises = supportsPromises;
+            _supportsFetch = supportsFetch;
             _url = new Uri(url);
+            _parameters = parameters;
             _enableCookies = enableCookies;
             _updateEnabled = updateEnabled;
             _hasDelayedProperties = hasDelayedProperties;
@@ -117,14 +143,28 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
         /// <param name="jsonObject">
         /// The JSON data payload to be inserted into the template.
         /// </param>
+        /// <param name="sessionId">
+        /// The session Id to use in the JavaScript response.
+        /// </param>
+        /// <param name="sequence">
+        /// The sequence value to use in the JavaScript response.
+        /// </param>
         /// <param name="supportsPromises">
         /// If true, the template will produce JavaScript that makes 
         /// use of promises.
         /// If false, promises will not be used.
         /// </param>
+        /// <param name="supportsFetch">
+        /// If true, the template will produce JavaScript that makes use of the
+        /// fetch API. Otherwise, the template will fall back to using 
+        /// XMLHttpRequest.
+        /// </param>
         /// <param name="url">
         /// The complete URL to use for the callback mechanism described 
         /// in remarks for this constructor.
+        /// </param>
+        /// <param name="parameters">
+        /// The parameters to append to the call-back URL.
         /// </param>
         /// <param name="enableCookies">
         /// If false, any cookies created by JavaScript properties that
@@ -145,8 +185,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
         public JavaScriptResource(
             string objName,
             string jsonObject,
+            string sessionId,
+            int sequence,
             bool supportsPromises,
+            bool supportsFetch,
             Uri url,
+            string parameters,
             bool enableCookies,
             bool updateEnabled,
             bool hasDelayedProperties)
@@ -154,8 +198,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
             _objName = objName;
             _jsonObject = string.IsNullOrWhiteSpace(jsonObject) == false
                 ? jsonObject : "{\"errors\":[\"Json data missing.\"]}";
+            _sessionId = sessionId;
+            _sequence = sequence;
             _supportsPromises = supportsPromises;
+            _supportsFetch = supportsFetch;
             _url = url;
+            _parameters = parameters;
             _enableCookies = enableCookies;
             _updateEnabled = updateEnabled;
             _hasDelayedProperties = hasDelayedProperties;
@@ -175,8 +223,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
 
             hash.Add("_objName", _objName);
             hash.Add("_jsonObject", _jsonObject);
+            hash.Add("_sessionId", _sessionId);
+            hash.Add("_sequence", _sequence);
             hash.Add("_supportsPromises", _supportsPromises);
+            hash.Add("_supportsFetch", _supportsFetch);
             hash.Add("_url", _url?.AbsoluteUri);
+            hash.Add("_parameters", _parameters);
             hash.Add("_enableCookies", _enableCookies);
             hash.Add("_updateEnabled", _updateEnabled);
             hash.Add("_hasDelayedProperties", _hasDelayedProperties);

@@ -26,7 +26,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Collections.Generic;
-using NiL.JS.Core;
 using Newtonsoft.Json.Linq;
 using FiftyOne.Pipeline.JsonBuilder.Data;
 using FiftyOne.Pipeline.JavaScriptBuilder.Data;
@@ -37,18 +36,33 @@ using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines;
 using FiftyOne.Pipeline.Core.Exceptions;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium;
+using System.Net.Http;
+using FiftyOne.Pipeline.Engines.TestHelpers;
+using System.Threading;
+using System.Net;
 
 namespace FiftyOne.Pipeline.JavaScript.Tests
 {
+    /// <summary>
+    /// These tests check the various functions of the generated JavaScript 
+    /// include using WebDrivers to simulate a browser environment.
+    /// </summary>
     [TestClass]
     public class JavaScriptBuilderElementTests
     {
-        private Context context;
         private Mock<IJsonBuilderElement> _mockjsonBuilderElement;
         private Mock<IElementData> _elementDataMock;
         private ILoggerFactory _loggerFactory;
         private JavaScriptBuilderElement _javaScriptBuilderElement;
         private IList<IElementPropertyMetaData> _elementPropertyMetaDatas;
+
+        private ChromeDriver _driver;
+        private HttpClient httpClient;
+        private string ClientServerUrl;
+        private CancellationTokenSource clientServerTokenSource;
+        private HttpListener clientServer;
 
         /// <summary>
         /// Initialise the test.
@@ -56,7 +70,33 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         [TestInitialize]
         public void Init()
         {
-            context = new Context();
+            httpClient = new HttpClient();
+
+            // Start the client server
+            ClientServerUrl = $"http://localhost:{TestHttpListener.GetRandomUnusedPort()}/";
+            clientServerTokenSource = new CancellationTokenSource();
+            var token = clientServerTokenSource.Token;
+            // We need the context of a page to be able to test the JavaScript 
+            // correctly so create a simple HttpListener which serves some 
+            // static HTML.
+            clientServer = TestHttpListener.SimpleListener(ClientServerUrl, token);
+
+            var chromeOptions = new ChromeOptions();
+            chromeOptions.AcceptInsecureCertificates = true;
+            // run in headless mode.
+            chromeOptions.AddArgument("--headless");
+            try
+            {
+                _driver = new ChromeDriver(chromeOptions);
+            }
+            catch (WebDriverException)
+            {
+                Assert.Inconclusive("Could not create a ChromeDriver, check " +
+                    "that the Chromium driver is installed");
+            }
+
+            // Navigate to the client site.
+            _driver.Navigate().GoToUrl(ClientServerUrl);
 
             _mockjsonBuilderElement = new Mock<IJsonBuilderElement>();
 
@@ -72,7 +112,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         }
 
         /// <summary>
-        /// This method tests the accessor functionality of the JavaScript 
+        /// This method tests the accessors functionality of the JavaScript 
         /// include.
         /// 
         /// For the supplied properties values, check that these properties can 
@@ -82,14 +122,20 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         /// <param name="property"></param>
         /// <param name="value"></param>
         [DataTestMethod]
-        [DataRow("device", "ismobile", true)]
-        [DataRow("device", "ismobile", false)]
-        [DataRow("device", "browsername", "Chrome")]
-        [DataRow("device", "browsername", null)]
-        public void JavaScriptBuilderElement_JavaScript(string key, string property, object value)
+        [DataRow(false, "device", "ismobile", true)]
+        [DataRow(false, "device", "ismobile", false)]
+        [DataRow(false, "device", "browsername", "Chrome")]
+        [DataRow(false, "device", "browsername", null)]
+        [DataRow(true, "device", "ismobile", true)]
+        [DataRow(true, "device", "ismobile", false)]
+        [DataRow(true, "device", "browsername", "Chrome")]
+        [DataRow(true, "device", "browsername", null)]
+        public void JavaScriptBuilderElement_JavaScript(bool minify, string key, string property, object value)
         {
             _javaScriptBuilderElement =
-                new JavaScriptBuilderElementBuilder(_loggerFactory).Build();
+                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                .SetMinify(minify)
+                .Build();
 
             dynamic json = new JObject();
 
@@ -121,11 +167,39 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         }
 
         /// <summary>
+        /// Verify that the JavaScript contains the Session ID and Sequence
+        /// values.
+        /// </summary>
+        [TestMethod]
+        public void JavaScriptBuilder_VerifySession()
+        {
+            _javaScriptBuilderElement =
+                new JavaScriptBuilderElementBuilder(_loggerFactory).SetMinify(false).Build();
+            var flowData = new Mock<IFlowData>();
+            Configure(flowData);
+
+            IJavaScriptBuilderElementData result = null;
+            flowData.Setup(d => d.GetOrAdd(
+                It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
+                It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
+                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
+                {
+                    result = f(flowData.Object.Pipeline);
+                    return result;
+                });
+
+            _javaScriptBuilderElement.Process(flowData.Object);
+
+            Assert.IsTrue(result.JavaScript.Contains("abcdefg-hijklmn-opqrst-uvwxyz"),
+                $"JavaScript does not contain expected session id 'abcdefg-hijklmn-opqrst-uvwxyz'.");
+            Assert.IsTrue(result.JavaScript.Contains("var sequence = 1;"),
+                $"JavaScript does not contain expected sequence '1'.");
+        }
+
+        /// <summary>
         /// Check that the callback URL is generated correctly.
         /// </summary>
         /// <remarks>
-        /// TODO: Add more tests verifying URL if other parameters are set 
-        /// and if query parameters are in the evidence.
         /// </remarks>
         [TestMethod]
         public void JavaScriptBuilder_VerifyUrl()
@@ -153,6 +227,44 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             string expectedUrl = "https://localhost/json";
             Assert.IsTrue(result.JavaScript.Contains(expectedUrl),
                 $"JavaScript does not contain expected URL '{expectedUrl}'.");
+        }
+
+        /// <summary>
+        /// Verify that parameters are set in the JavaScript payload and if the
+        /// query parameters are in the evidence
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("iPhone", "51.12345", "-1.92173272")]
+        [DataRow("Samsung", "1.09199", "2.1121121")]
+        [DataRow("Sony", "3.123455", "44.1123111")]
+        public void JavaScriptBuilder_VerifyParameters(string userAgent, string lat, string lon)
+        {
+            _javaScriptBuilderElement =
+                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                .SetEndpoint("/json")
+                .Build();
+
+            var flowData = new Mock<IFlowData>();
+            Configure(flowData, null, "localhost", "https", userAgent, lat, lon);
+
+            IJavaScriptBuilderElementData result = null;
+            flowData.Setup(d => d.GetOrAdd(
+                It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
+                It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
+                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
+                {
+                    result = f(flowData.Object.Pipeline);
+                    return result;
+                });
+
+            _javaScriptBuilderElement.Process(flowData.Object);
+
+            Assert.IsTrue(result.JavaScript.Contains(userAgent),
+                $"JavaScript does not contain expected user agent query parameter '{userAgent}'.");
+            Assert.IsTrue(result.JavaScript.Contains(lat),
+                $"JavaScript does not contain expected user agent query parameter '{lat}'.");
+            Assert.IsTrue(result.JavaScript.Contains(lon),
+                $"JavaScript does not contain expected user agent query parameter '{lon}'.");
         }
 
 
@@ -298,8 +410,11 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                     "Expected the generated JavaScript to contain the " +
                     "'getEvidencePropertiesFromObject' function but it does not.");
             }
+            IJavaScriptExecutor js = _driver;
             // Attempt to evaluate the JavaScript.
-            context.Eval(result.JavaScript);
+            js.ExecuteScript($"{result.JavaScript}; window.fod = fod;");
+            var jsObject = js.ExecuteScript("return fod.sessionId;");
+            Assert.IsNotNull(jsObject);
         }
 
         /// <summary>
@@ -312,18 +427,21 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         /// <returns></returns>
         private bool IsValidFodObject(string javaScript, string key, string property, object value)
         {
-            // Evaluate the JavaScript include.
-            context.Eval(javaScript);
+            IJavaScriptExecutor js = _driver;
 
-            var result = context.Eval($"fod.{key}.{property};");
+            // Run the JavaScript content from the cloud service and bind to 
+            // window so we can check it later.
+            js.ExecuteScript($"{javaScript}; window.fod = fod;");
 
-            if (result.Value.ToString() == value.ToString())
+            var result = js.ExecuteScript($"return fod.{key}.{property};");
+
+            if (result.ToString() == value.ToString())
                 return true;
             else
                 return false;
         }
 
-        delegate void GetValueCallback(string key, out string result);
+        delegate void GetValueCallback(string key, out object result);
 
         /// <summary>
         /// Configure the flow data to respond in the way we want for 
@@ -346,7 +464,23 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         /// The JavaScriptBuilder should use this to generate the 
         /// callback URL.
         /// </param>
-        private void Configure(Mock<IFlowData> flowData, JObject jsonData = null, string hostName = "localhost", string protocol = "https")
+        /// <param name="userAgent">
+        /// The User-Agent to add to the evidence.
+        /// </param>
+        /// <param name="latitude">
+        /// The latitude to add to the evidence.
+        /// </param>
+        /// <param name="longitude">
+        /// The longitude to add to the evidence.
+        /// </param>
+        private void Configure(
+            Mock<IFlowData> flowData,
+            JObject jsonData = null,
+            string hostName = "localhost",
+            string protocol = "https",
+            string userAgent = "iPhone",
+            string latitude = "51",
+            string longitude = "-1")
         {
             if (jsonData == null)
             {
@@ -361,19 +495,48 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                 return d;
             });
 
+            string session = "abcdefg-hijklmn-opqrst-uvwxyz";
+            int sequence = 1;
             // Setup the TryGetEvidence methods that are used to get 
             // host and protocol for the callback URL
             flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, out It.Ref<string>.IsAny))
-                .Callback(new GetValueCallback((string key, out string result) => { result = "localhost"; }));
+                .Callback(new GetValueCallback((string key, out object result) => { result = "localhost"; }));
             flowData.Setup(d => d.TryGetEvidence(Pipeline.Core.Constants.EVIDENCE_PROTOCOL, out It.Ref<string>.IsAny))
-                .Callback(new GetValueCallback((string key, out string result) => { result = "https"; }));
+                .Callback(new GetValueCallback((string key, out object result) => { result = "https"; }));
+            flowData.Setup(d => d.TryGetEvidence(Pipeline.Engines.FiftyOne.Constants.EVIDENCE_SESSIONID, out session)).Returns(true);
+            flowData.Setup(d => d.TryGetEvidence(Pipeline.Engines.FiftyOne.Constants.EVIDENCE_SEQUENCE, out sequence)).Returns(true);
 
             flowData.Setup(d => d.GetAsString(It.IsAny<string>())).Returns("None");
             flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(new Dictionary<string, object>() {
                 { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, hostName },
                 { Pipeline.Core.Constants.EVIDENCE_PROTOCOL, protocol },
+                { Pipeline.Core.Constants.EVIDENCE_QUERY_USERAGENT_KEY, userAgent },
+                { "query.latitude", latitude },
+                { "query.longitude", longitude },
             });
             flowData.Setup(d => d.Get(It.IsAny<string>())).Returns(_elementDataMock.Object);
+        }
+
+        /// <summary>
+        /// Cleanup the RemoteWebDriver and http listener.
+        /// </summary>
+        [TestCleanup]
+        public void Cleanup()
+        {
+            if (_driver != null)
+            {
+                _driver.Quit();
+            }
+
+            // Stop the client server.
+            clientServerTokenSource.Cancel();
+            while (clientServer.IsListening)
+            {
+                clientServer.Stop();
+                Thread.Sleep(1000);
+            }
+            // Close the listener
+            clientServer.Close();
         }
     }
 }

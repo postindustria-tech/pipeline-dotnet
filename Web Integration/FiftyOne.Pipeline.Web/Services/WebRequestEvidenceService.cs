@@ -125,6 +125,16 @@ namespace FiftyOne.Pipeline.Web.Services
                     Core.Constants.EVIDENCE_SEPERATOR + queryValue.Key;
                 CheckAndAdd(flowData, evidenceKey, queryValue.Value.ToString());
             }
+            // Add form parameters to the evidence.
+            if (httpRequest.Method == "POST")
+            {
+                foreach (var formValue in httpRequest.Form)
+                {
+                    string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
+                        Core.Constants.EVIDENCE_SEPERATOR + formValue.Key;
+                    CheckAndAdd(flowData, evidenceKey, formValue.Value.ToString());
+                }
+            }
             if (GetSessionEnabled(httpRequest))
             {
                 foreach (var sessionKey in httpRequest.HttpContext.Session.Keys)
