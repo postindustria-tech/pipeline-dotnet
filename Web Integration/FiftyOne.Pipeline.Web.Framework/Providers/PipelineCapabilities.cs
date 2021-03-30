@@ -22,6 +22,7 @@
 
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -181,9 +182,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             get
             {
                 if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("ismobile"))
+                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("ismobile") &&
+                    FlowData.GetAs<AspectPropertyValue<bool>>("ismobile").HasValue)
                 {
-                    return FlowData.GetAsBool("ismobile");
+                    return FlowData.GetAs<AspectPropertyValue<bool>>("ismobile").Value;
                 }
                 else
                 {
@@ -201,9 +203,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             get
             {
                 if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("supportsphonecalls"))
+                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("supportsphonecalls") &&
+                    FlowData.GetAs<AspectPropertyValue<bool>>("supportsphonecalls").HasValue)
                 {
-                    return FlowData.GetAsBool("supportsphonecalls");
+                    return FlowData.GetAs<AspectPropertyValue<bool>>("supportsphonecalls").Value;
                 }
                 else
                 {
@@ -220,9 +223,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             get
             {
                 if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("oem"))
+                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("oem") &&
+                    FlowData.GetAs<AspectPropertyValue<string>>("oem").HasValue)
                 {
-                    return FlowData.GetAsString("oem");
+                    return FlowData.GetAs<AspectPropertyValue<string>>("oem").Value;
                 }
                 else
                 {
@@ -239,9 +243,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             get
             {
                 if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("hardwaremodel"))
+                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("hardwaremodel") &&
+                    FlowData.GetAs<AspectPropertyValue<string>>("hardwaremodel").HasValue)
                 {
-                    return FlowData.GetAsString("hardwaremodel");
+                    return FlowData.GetAs<AspectPropertyValue<string>>("hardwaremodel").Value;
                 }
                 else
                 {
@@ -258,9 +263,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             get
             {
                 if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("screenpixelsheight"))
+                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("screenpixelsheight") &&
+                    FlowData.GetAs<AspectPropertyValue<int>>("screenpixelsheight").HasValue)
                 {
-                    return FlowData.GetAsInt("screenpixelsheight");
+                    return FlowData.GetAs<AspectPropertyValue<int>>("screenpixelsheight").Value;
                 }
                 else
                 {
@@ -278,9 +284,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             get
             {
                 if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("screenpixelswidth"))
+                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("screenpixelswidth") &&
+                    FlowData.GetAs<AspectPropertyValue<int>>("screenpixelswidth").HasValue)
                 {
-                    return FlowData.GetAsInt("screenpixelswidth");
+                    return FlowData.GetAs<AspectPropertyValue<int>>("screenpixelswidth").Value;
                 }
                 else
                 {

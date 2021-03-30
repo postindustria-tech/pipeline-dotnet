@@ -94,6 +94,10 @@
       <Project>{8087BE8A-67B7-4ECC-8EA6-109B3B741D5E}</Project>
       <Name>FiftyOne.Pipeline.Engines.FiftyOne</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj">
+      <Project>{6df6de7e-fba8-4d16-bf22-4472f8f3c1cd}</Project>
+      <Name>FiftyOne.Pipeline.Engines</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Web.Shared\FiftyOne.Pipeline.Web.Shared.csproj">
       <Project>{47f07272-7639-44ba-96c2-dcff7a8d702a}</Project>
       <Name>FiftyOne.Pipeline.Web.Shared</Name>
