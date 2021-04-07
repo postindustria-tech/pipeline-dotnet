@@ -114,7 +114,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
                 100,
 				interval,
 				true,
-                "http://www.51Degrees.com/test",
+                "http://51Degrees.com/test",
                 blockedHeaders,
                 includedQueryStringParams,
                 ignoreDataEvidenceFiler,
