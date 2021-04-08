@@ -216,36 +216,19 @@ namespace FiftyOne.Pipeline.Core.Data
         /// requested type.</returns>
         public bool TryGetEvidence<T>(string key, out T value)
         {
-            object tempValue = null;
-            bool gotValue = false;
-            value = default(T);
-
-            // Try to get the value from evidence.
-            try
+            var dict = _evidence.AsDictionary();
+            bool gotValue = dict.TryGetValue(key, out object objValue);
+            if (gotValue &&
+                objValue is T tempValue)
             {
-                tempValue = _evidence[key];
-                if (tempValue != null)
-                {
-                    gotValue = true;
-                }
-            }
-            catch (KeyNotFoundException)
+                value = tempValue;
+            } 
+            else
             {
                 gotValue = false;
+                value = default;
             }
-            
-            // Try to cast the value to the requested type.
-            if (gotValue == true)
-            {
-                try
-                {
-                    value = (T)tempValue;
-                }
-                catch (InvalidCastException)
-                {
-                    gotValue = false;
-                }
-            }
+
             return gotValue;
         }
 

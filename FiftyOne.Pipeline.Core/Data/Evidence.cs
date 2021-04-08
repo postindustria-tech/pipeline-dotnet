@@ -21,6 +21,9 @@
  * ********************************************************************* */
 
 using Microsoft.Extensions.Logging;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FiftyOne.Pipeline.Core.Data
 {
@@ -39,6 +42,38 @@ namespace FiftyOne.Pipeline.Core.Data
         public Evidence(ILogger<Evidence> logger)
             : base(logger)
         {
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<string> GetStringValues(string key)
+        {
+            IEnumerable<string> result;
+            var objValue = this[key];
+
+            if(objValue is IEnumerable<string> strCollection)
+            {
+                result = strCollection;
+            }
+            else if (objValue is string strValue)
+            {
+                result = new List<string>() { strValue };
+            } 
+            else if (objValue is IEnumerable collection)
+            {
+                var list = new List<string>();
+                var enumerator = collection.GetEnumerator();
+                while(enumerator.MoveNext())
+                {
+                    list.Add(enumerator.Current.ToString());
+                }
+                result = list;
+            }
+            else
+            {
+                result = new List<string>() { objValue.ToString() };
+            }
+
+            return result;
         }
     }
 }
