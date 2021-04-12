@@ -541,7 +541,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             string objectName = ObjName;
             // Try and get the requested object name from evidence.
             if (data.TryGetEvidence(Constants.EVIDENCE_OBJECT_NAME, 
-                out object objObjectName) == false)
+                out object objObjectName))
             {
                 objectName = objObjectName?.ToString() ?? ObjName;
             }

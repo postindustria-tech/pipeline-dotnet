@@ -416,6 +416,41 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             var jsObject = js.ExecuteScript("return fod.sessionId;");
             Assert.IsNotNull(jsObject);
         }
+        
+        /// <summary>
+        /// Check that the JavaScript object name can be 
+        /// overridden successfully.
+        /// </summary>
+        [TestMethod]
+        public void JavaScriptBuilder_VerifyObjName()
+        {
+            _javaScriptBuilderElement =
+                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                .SetEndpoint("/json")
+                .Build();
+
+            var flowData = new Mock<IFlowData>();
+            Configure(flowData, jsObjName: "testObj");
+
+            IJavaScriptBuilderElementData result = null;
+            flowData.Setup(d => d.GetOrAdd(
+                It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
+                It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
+                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
+                {
+                    result = f(flowData.Object.Pipeline);
+                    return result;
+                });
+
+            _javaScriptBuilderElement.Process(flowData.Object);
+
+            IJavaScriptExecutor js = _driver;
+
+            // Run the JavaScript content from the cloud service and bind to 
+            // window so we can check it later.
+            js.ExecuteScript($"{result.JavaScript}; window.testObj = testObj;");
+        }
+
 
         /// <summary>
         /// Test the JavaScript include by accessing the given property.
@@ -480,7 +515,8 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             string protocol = "https",
             string userAgent = "iPhone",
             string latitude = "51",
-            string longitude = "-1")
+            string longitude = "-1",
+            string jsObjName = null)
         {
             if (jsonData == null)
             {
@@ -509,16 +545,26 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                 .Callback(new GetValueCallback((string key, out object result) => { result = sequence; })).Returns(true);
 
             flowData.Setup(d => d.GetAsString(It.IsAny<string>())).Returns("None");
-            flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(new Dictionary<string, object>() {
+            var evidenceDict = new Dictionary<string, object>() {
                 { JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, hostName },
                 { Core.Constants.EVIDENCE_PROTOCOL, protocol },
                 { Core.Constants.EVIDENCE_QUERY_USERAGENT_KEY, userAgent },
                 { "query.latitude", latitude },
                 { "query.longitude", longitude },
                 { Engines.FiftyOne.Constants.EVIDENCE_SEQUENCE, sequence },
-                { Engines.FiftyOne.Constants.EVIDENCE_SESSIONID, session },
-            });
+                { Engines.FiftyOne.Constants.EVIDENCE_SESSIONID, session }
+            };
+            if (jsObjName != null)
+            {
+                flowData.Setup(d => d.TryGetEvidence(JavaScriptBuilder.Constants.EVIDENCE_OBJECT_NAME, out It.Ref<object>.IsAny))
+                    .Callback(new GetValueCallback((string key, out object result) => { result = jsObjName; })).Returns(true);
+                evidenceDict.Add(JavaScriptBuilder.Constants.EVIDENCE_OBJECT_NAME, jsObjName);
+            }
+
+            flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(evidenceDict);
             flowData.Setup(d => d.Get(It.IsAny<string>())).Returns(_elementDataMock.Object);
+
+
         }
 
         /// <summary>
