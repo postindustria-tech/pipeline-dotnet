@@ -246,17 +246,19 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             bool supportsPromises = false;
             bool supportsFetch = false;
 
-            if (string.IsNullOrEmpty(host))
-            {
+            if (string.IsNullOrEmpty(host) &&
                 // Try and get the request host name so it can be used to request
                 // the Json refresh in the JavaScript code.
-                data.TryGetEvidence(Constants.EVIDENCE_HOST_KEY, out host);
-            }
-            if (string.IsNullOrEmpty(protocol))
+                data.TryGetEvidence(Constants.EVIDENCE_HOST_KEY, out object hostObj))
             {
+                host = hostObj?.ToString() ?? String.Empty;
+            }
+            if (string.IsNullOrEmpty(protocol) &&
                 // Try and get the request protocol so it can be used to request
                 // the JSON refresh in the JavaScript code.
-                data.TryGetEvidence(Core.Constants.EVIDENCE_PROTOCOL, out protocol);
+                data.TryGetEvidence(Core.Constants.EVIDENCE_PROTOCOL, out object protocolObj))
+            {
+                protocol = protocolObj?.ToString() ?? String.Empty;
             }
             // Couldn't get protocol from anywhere 
             if (string.IsNullOrEmpty(protocol))
@@ -428,11 +430,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 throw new ArgumentException(Messages.ExceptionFlowDataIsNull);
             }
 
+            string sessionId = string.Empty;
             // Get the session-id evidence if it exists.
             if (data.TryGetEvidence(Engines.FiftyOne.Constants.EVIDENCE_SESSIONID,
-                out string sessionId) == false)
+                out object objSessionId))
             {
-                sessionId = string.Empty;
+                sessionId = objSessionId?.ToString() ?? string.Empty;
             }
             return sessionId;
         }
@@ -535,11 +538,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 ElementDataKeyTyped,
                 CreateElementData);
 
+            string objectName = ObjName;
             // Try and get the requested object name from evidence.
-            if (data.TryGetEvidence(Constants.EVIDENCE_OBJECT_NAME, out string objectName) == false ||
-                string.IsNullOrWhiteSpace(objectName))
+            if (data.TryGetEvidence(Constants.EVIDENCE_OBJECT_NAME, 
+                out object objObjectName) == false)
             {
-                objectName = ObjName;
+                objectName = objObjectName?.ToString() ?? ObjName;
             }
 
             var ubdateEnabled = url != null &&

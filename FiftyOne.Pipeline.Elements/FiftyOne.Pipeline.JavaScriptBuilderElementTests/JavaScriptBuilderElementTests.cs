@@ -499,20 +499,24 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             int sequence = 1;
             // Setup the TryGetEvidence methods that are used to get 
             // host and protocol for the callback URL
-            flowData.Setup(d => d.TryGetEvidence(Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, out It.Ref<string>.IsAny))
-                .Callback(new GetValueCallback((string key, out object result) => { result = "localhost"; }));
-            flowData.Setup(d => d.TryGetEvidence(Pipeline.Core.Constants.EVIDENCE_PROTOCOL, out It.Ref<string>.IsAny))
-                .Callback(new GetValueCallback((string key, out object result) => { result = "https"; }));
-            flowData.Setup(d => d.TryGetEvidence(Pipeline.Engines.FiftyOne.Constants.EVIDENCE_SESSIONID, out session)).Returns(true);
-            flowData.Setup(d => d.TryGetEvidence(Pipeline.Engines.FiftyOne.Constants.EVIDENCE_SEQUENCE, out sequence)).Returns(true);
+            flowData.Setup(d => d.TryGetEvidence(JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, out It.Ref<object>.IsAny))
+                .Callback(new GetValueCallback((string key, out object result) => { result = hostName; })).Returns(true);
+            flowData.Setup(d => d.TryGetEvidence(Core.Constants.EVIDENCE_PROTOCOL, out It.Ref<object>.IsAny))
+                .Callback(new GetValueCallback((string key, out object result) => { result = protocol; })).Returns(true);
+            flowData.Setup(d => d.TryGetEvidence(Engines.FiftyOne.Constants.EVIDENCE_SESSIONID, out It.Ref<object>.IsAny))
+                .Callback(new GetValueCallback((string key, out object result) => { result = session; })).Returns(true);
+            flowData.Setup(d => d.TryGetEvidence(Engines.FiftyOne.Constants.EVIDENCE_SEQUENCE, out It.Ref<object>.IsAny))
+                .Callback(new GetValueCallback((string key, out object result) => { result = sequence; })).Returns(true);
 
             flowData.Setup(d => d.GetAsString(It.IsAny<string>())).Returns("None");
             flowData.Setup(d => d.GetEvidence().AsDictionary()).Returns(new Dictionary<string, object>() {
-                { Pipeline.JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, hostName },
-                { Pipeline.Core.Constants.EVIDENCE_PROTOCOL, protocol },
-                { Pipeline.Core.Constants.EVIDENCE_QUERY_USERAGENT_KEY, userAgent },
+                { JavaScriptBuilder.Constants.EVIDENCE_HOST_KEY, hostName },
+                { Core.Constants.EVIDENCE_PROTOCOL, protocol },
+                { Core.Constants.EVIDENCE_QUERY_USERAGENT_KEY, userAgent },
                 { "query.latitude", latitude },
                 { "query.longitude", longitude },
+                { Engines.FiftyOne.Constants.EVIDENCE_SEQUENCE, sequence },
+                { Engines.FiftyOne.Constants.EVIDENCE_SESSIONID, session },
             });
             flowData.Setup(d => d.Get(It.IsAny<string>())).Returns(_elementDataMock.Object);
         }
