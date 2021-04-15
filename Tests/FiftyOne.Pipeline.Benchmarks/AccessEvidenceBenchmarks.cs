@@ -50,13 +50,6 @@ namespace FiftyOne.Pipeline.Benchmarks
         }
 
         [Benchmark]
-        [BenchmarkCategory("Accessor-StringValues")]
-        public void AccessEvidence_StringValues()
-        {
-            var value = _flowData.GetEvidence().GetStringValues("test");
-        }
-
-        [Benchmark]
         [BenchmarkCategory("Accessor-FlowData")]
         public void AccessEvidence_FlowData_TryGetEvidence_NoEntry()
         {
@@ -75,13 +68,6 @@ namespace FiftyOne.Pipeline.Benchmarks
         public void AccessEvidenceLargeDict_AsDictionary_ToString()
         {
             var value = _flowDataLargeDict.GetEvidence().AsDictionary()["test50"].ToString();
-        }
-
-        [Benchmark]
-        [BenchmarkCategory("Accessor-StringValues")]
-        public void AccessEvidenceLargeDict_StringValues()
-        {
-            var value = _flowDataLargeDict.GetEvidence().GetStringValues("test50");
         }
 
         [Benchmark]
@@ -104,14 +90,5 @@ namespace FiftyOne.Pipeline.Benchmarks
         {
             var value = _flowDataStringValues.GetEvidence().AsDictionary()["test"].ToString();
         }
-
-        [Benchmark]
-        [BenchmarkCategory("Accessor-StringValues")]
-        public void AccessEvidenceStringValues_StringValues()
-        {
-            var value = _flowDataStringValues.GetEvidence().GetStringValues("test");
-        }
-
-
     }
 }

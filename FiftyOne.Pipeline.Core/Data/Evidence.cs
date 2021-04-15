@@ -43,46 +43,5 @@ namespace FiftyOne.Pipeline.Core.Data
             : base(logger)
         {
         }
-
-        /// <inheritdoc/>
-        public IEnumerable<string> GetStringValues(string key)
-        {
-            var objValue = this[key];
-
-            if(objValue is IEnumerable<string> strCollection)
-            {
-                return strCollection;
-            }
-            else if (objValue is string strValue)
-            {
-                return GetAsEnumerable(strValue);
-            } 
-            else if (objValue is IEnumerable collection)
-            {
-                return GetAsEnumerable(collection.GetEnumerator());
-            }
-            else
-            {
-                return GetAsEnumerable(objValue);
-            }
-        }
-
-        private IEnumerable<string> GetAsEnumerable(string stringValue)
-        {
-            yield return stringValue;
-        }
-        private IEnumerable<string> GetAsEnumerable(IEnumerator enumerator)
-        {
-            enumerator.Reset();
-            while (enumerator.MoveNext())
-            {
-                yield return enumerator.Current?.ToString();
-            }
-        }
-        private IEnumerable<string> GetAsEnumerable(object objValue)
-        {
-            yield return objValue?.ToString();
-        }
-
     }
 }

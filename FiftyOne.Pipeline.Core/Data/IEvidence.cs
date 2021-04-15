@@ -40,25 +40,5 @@ namespace FiftyOne.Pipeline.Core.Data
         /// The property value
         /// </returns>
         new object this[string key] { get; set; }
-
-        /// <summary>
-        /// Get the value of the specified key as a collection of strings.
-        /// Non-string values will be converted using 
-        /// <see cref="object.ToString"/>.
-        /// </summary>
-        /// <remarks>
-        /// In many cases, keys will have a single value.
-        /// In this scenario, this method is inefficient due to the 
-        /// creation of a new collection containing the single value.
-        /// This method is therefore not recommended for very high 
-        /// throughput scenarios where the evidence type is known.
-        /// </remarks>
-        /// <param name="key">
-        /// The key of the evidence value to return
-        /// </param>
-        /// <returns>
-        /// The evidence value as a string collection
-        /// </returns>
-        IEnumerable<string> GetStringValues(string key);
     }
 }
