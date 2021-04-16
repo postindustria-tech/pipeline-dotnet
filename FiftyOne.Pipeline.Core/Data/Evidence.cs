@@ -21,6 +21,9 @@
  * ********************************************************************* */
 
 using Microsoft.Extensions.Logging;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FiftyOne.Pipeline.Core.Data
 {

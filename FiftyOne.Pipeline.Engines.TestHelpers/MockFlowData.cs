@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Generic;
 
@@ -43,10 +44,12 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
             Dictionary<string, object> evidenceData,
             bool dataKeyFromAllEvidence)
         {
-            Mock<IEvidence> evidence = new Mock<IEvidence>();
-            evidence.Setup(e => e.AsDictionary()).Returns(evidenceData);
+            LoggerFactory factory = new LoggerFactory();
+            Evidence evidence = new Evidence(factory.CreateLogger<Evidence>());
+            evidence.PopulateFromDictionary(evidenceData);
+
             Mock<IFlowData> data = new Mock<IFlowData>();
-            data.Setup(d => d.GetEvidence()).Returns(evidence.Object);
+            data.Setup(d => d.GetEvidence()).Returns(evidence);
 
             if (dataKeyFromAllEvidence)
             {

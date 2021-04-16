@@ -99,6 +99,7 @@ steps:
     testRunTitle: 'dotnetcore-$(BuildConfiguration)'
 
 - task: PowerShell@2
+  displayName: 'Build cloud perf tests'
   inputs:
     targetType: 'inline'
     script: |
@@ -110,9 +111,17 @@ steps:
       cd ..
 
 - task: PowerShell@2
+  displayName: 'Run cloud perf tests'
   inputs:
     filePath: '$(System.DefaultWorkingDirectory)/performance-tests/build/runPerf.ps1'
     workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Micro benchmarks'
+  inputs:
+    command: run
+    projects: '**/FiftyOne.Pipeline.Benchmarks.csproj'
+    nobuild: true      
 
 - task: PublishBuildArtifacts@1
   inputs:
