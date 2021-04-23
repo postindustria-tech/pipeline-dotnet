@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
@@ -46,12 +47,6 @@ namespace FiftyOne.Pipeline.Web.Services
         /// </summary>
         private IFlowDataProvider _flowDataProvider;
 
-        /// <summary>
-        /// The active property flow element that generates the dictionary
-        /// of response header values.
-        /// </summary>
-        private ISetHeadersElement _setHeadersElement;
-
         private IOptions<PipelineWebIntegrationOptions> _options;
 
         /// <summary>
@@ -73,50 +68,39 @@ namespace FiftyOne.Pipeline.Web.Services
 
             _logger = logger;
             _flowDataProvider = flowDataProvider;
-            _setHeadersElement = pipeline.GetElement<ISetHeadersElement>();
             _options = options;
         }
 
         /// <inheritdoc/>
         public void SetHeaders(HttpContext context)
         {
-            if (_setHeadersElement != null &&
-                _options.Value.UseSetHeaderProperties)
+            if (_options.Value.UseSetHeaderProperties)
             {
-                var headersToSet = _flowDataProvider.GetFlowData()
-                    .GetFromElement(_setHeadersElement).ResponseHeaderDictionary;
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    foreach (var header in headersToSet)
-                    {
-                        _logger.LogDebug($"Adding response header " +
-                            $"'{header.Key}' with value '{header.Value}'");
-                    }
-                }
-                SetHeaders(context, headersToSet);
+                SetHeaders(context, _flowDataProvider.GetFlowData());
             }
         }
 
         /// <summary>
-        /// Set the HTTP headers in the response using the supplied
-        /// dictionary.
+        /// Set the HTTP headers in the response using values from 
+        /// the supplied flow data.
         /// If the supplied headers already have values in the response
         /// then they will be amended rather than replaced.
         /// </summary>
         /// <param name="context">
         /// The <see cref="HttpContext"/> to set the response headers in
         /// </param>
-        /// <param name="headersToSet">
-        /// A dictionary containing the names and values of the headers 
-        /// to set.
+        /// <param name="flowData">
+        /// The flow data containing the headers to set.
         /// </param>
         public static void SetHeaders(HttpContext context, 
-            IReadOnlyDictionary<string, string> headersToSet)
+            IFlowData flowData)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
-            if (headersToSet == null) throw new ArgumentNullException(nameof(headersToSet));
+            if (flowData == null) throw new ArgumentNullException(nameof(flowData));
 
-            foreach (var header in headersToSet)
+            var element = flowData.Pipeline.GetElement<ISetHeadersElement>();
+            foreach (var header in flowData.GetFromElement(element)
+                .ResponseHeaderDictionary)
             {
                 if (context.Response.Headers.ContainsKey(header.Key))
                 {
