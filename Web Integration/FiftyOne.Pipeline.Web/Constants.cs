@@ -57,5 +57,31 @@ namespace FiftyOne.Pipeline.Web
         internal const string ClientSidePropertyCopyright = 
             "// Copyright 51Degrees Mobile Experts Limited";
 
+       /// <summary>
+       /// Element datakey to get response set header properties.
+       /// </summary>
+        public const string ELEMENT_DATAKEY = "device";
+        
+        /// <summary>
+        /// UACH response header name.
+        /// </summary>
+        public const string ACCEPTCH_HEADER = "Accept-CH";
+        
+        /// <summary>
+        /// UACH SetHeaderBrowserAccept-CH property key value.
+        /// </summary>
+ 
+        public const string ACCEPTCH_BROWSER = "setheaderbrowseraccept-ch";
+        
+        /// <summary>
+        /// UACH SetHeaderPlatformAccept-CH property key value.
+        /// </summary>
+        public const string ACCEPTCH_PLATFORM = "setheaderplatformaccept-ch";
+        
+        /// <summary>
+        /// UACH SetHeaderHardwareAccept-CH property key value.
+        /// </summary>
+        public const string ACCEPTCH_HARDWARE = "setheaderhardwareaccept-ch";
+
     }
 }

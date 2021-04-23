@@ -61,6 +61,24 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Property name &apos;{0}&apos; does not start with &apos;SetHeader&apos;.
+        /// </summary>
+        internal static string ExceptionSetHeadersNotSetHeader {
+            get {
+                return ResourceManager.GetString("ExceptionSetHeadersNotSetHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Property name &apos;{0}&apos; is not in the expected format (SetHeader[Component][HeaderName]).
+        /// </summary>
+        internal static string ExceptionSetHeadersWrongFormat {
+            get {
+                return ResourceManager.GetString("ExceptionSetHeadersWrongFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The minimum entries per message cannot be larger than the maximum size of the queue.
         /// </summary>
         internal static string ExceptionShareUsageMinimumEntriesTooLarge {

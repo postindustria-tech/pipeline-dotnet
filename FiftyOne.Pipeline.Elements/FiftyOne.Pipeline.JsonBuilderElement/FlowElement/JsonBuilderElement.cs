@@ -308,7 +308,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             if (data.Errors != null && data.Errors.Count > 0)
             {
                 var errors = data.Errors
-                .Select(e => e.ExceptionData.Message);
+                    .Select(e => e.ExceptionData.Message)
+                    .ToArray();
 
                 allProperties.Add("errors", errors);
             }

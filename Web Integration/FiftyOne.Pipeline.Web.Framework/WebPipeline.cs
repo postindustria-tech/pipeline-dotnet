@@ -28,6 +28,7 @@ using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.Web.Framework.Configuration;
+using FiftyOne.Pipeline.Web.Framework.Providers;
 using FiftyOne.Pipeline.Web.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -54,6 +55,11 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// then a 51Degrees.core.js will be served by the server.
         /// </summary>
         public bool ClientSideEvidenceEnabled => _options.ClientSideEvidenceEnabled;
+
+        /// <summary>
+        /// Whether or not set header properties are enabled.
+        /// </summary>
+        public bool SetHeaderPropertiesEnabled => _options.UseSetHeaderProperties;
 
         /// <summary>
         /// Extra pipeline options which only apply to an implementation in a
@@ -237,6 +243,14 @@ namespace FiftyOne.Pipeline.Web.Framework
 
             // Process the evidence and return the result
             flowData.Process();
+
+            if (GetInstance().SetHeaderPropertiesEnabled)
+            {
+                // Set HTTP headers in the response.
+                SetHeadersProvider.GetInstance().SetHeaders(
+                    request.RequestContext.HttpContext.ApplicationInstance.Context);
+            }
+
             return flowData;
         }
 

@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ExceptionSetHeadersNotSetHeader" xml:space="preserve">
+    <value>Property name '{0}' does not start with 'SetHeader'</value>
+  </data>
+  <data name="ExceptionSetHeadersWrongFormat" xml:space="preserve">
+    <value>Property name '{0}' is not in the expected format (SetHeader[Component][HeaderName])</value>
+  </data>
   <data name="ExceptionShareUsageMinimumEntriesTooLarge" xml:space="preserve">
     <value>The minimum entries per message cannot be larger than the maximum size of the queue</value>
   </data>
