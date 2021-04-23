@@ -118,13 +118,15 @@ steps:
     SymbolServerType: 'TeamServices'
     SymbolsVersion: '$(GitVersion.NuGetVersion)'
 
+# The nuget package version uses the BUILD_BUILDNUMER environment variable.
+# This has been set by the GitVersion task above.
 - task: DotNetCoreCLI@2
   displayName: 'Build NuGet Package'
   inputs:
     command: 'pack'
     packagesToPack: '$(PublishProjects)'
     versioningScheme: 'byEnvVar'
-    versionEnvVar: GitVersion.NuGetVersion 
+    versionEnvVar: 'BUILD_BUILDNUMBER'
     
 # The Web and Web.Framework projects are combined into a single NuGet package.
 # This requires the use of a nuspec file and the NuGet task.    
@@ -134,7 +136,7 @@ steps:
     command: 'pack'
     packagesToPack: '**/FiftyOne.Pipeline.Web.nuspec'
     versioningScheme: 'byEnvVar'
-    versionEnvVar: GitVersion.NuGetVersion
+    versionEnvVar: 'BUILD_BUILDNUMBER'
     buildProperties: 'config=$(BuildConfiguration)'
     
 # The secure file to download will be stored in the 
