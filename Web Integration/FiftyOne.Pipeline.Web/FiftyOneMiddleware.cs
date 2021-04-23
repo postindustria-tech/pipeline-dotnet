@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using FiftyOne.Pipeline.Web.Services;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 
 namespace FiftyOne.Pipeline.Web
 {
@@ -51,6 +52,17 @@ namespace FiftyOne.Pipeline.Web
         /// accessible through the <see cref="HttpContext"/>.
         /// </summary>
         protected IPipelineResultService PipelineResultService { get; private set; }
+        /// <summary>
+        /// A service to get FlowData Object from response
+        /// </summary>
+        protected IFlowDataProvider FlowDataProvider { get; private set; }     
+        
+        /// <summary>
+        /// The SetHeaderService sets the values of headers in the 
+        /// response in order to request relevant information from
+        /// the client.
+        /// </summary>
+        protected ISetHeadersService HeaderService { get; private set; }
 
         /// <summary>
         /// Create a new FiftyOneMiddleware object.
@@ -66,13 +78,24 @@ namespace FiftyOne.Pipeline.Web
         /// <param name="jsService">
         /// A service that can serve the 51Degrees JavaScript if needed
         /// </param>
+        /// <param name="flowDataProvider">
+        /// A service to get FlowData Object from response
+        /// </param>
+        /// <param name="headerService">
+        /// A service that can set headers in the response based on 
+        /// data from an <see cref="ISetHeadersElement"/>.
+        /// </param>
         public FiftyOneMiddleware(RequestDelegate next,
             IPipelineResultService pipelineResultService, 
-            IFiftyOneJSService jsService)
+            IFiftyOneJSService jsService, 
+            IFlowDataProvider flowDataProvider, 
+            ISetHeadersService headerService)
         {
             Next = next;
             PipelineResultService = pipelineResultService;
             JsService = jsService;
+            FlowDataProvider = flowDataProvider;
+            HeaderService = headerService;
         }
 
         /// <summary>
@@ -95,7 +118,9 @@ namespace FiftyOne.Pipeline.Web
             // Populate the request properties and store against the 
             // HttpContext.
             PipelineResultService.Process(context);
-
+            // Set HTTP headers in the response based on the results
+            // from the engines in the pipeline.
+            HeaderService.SetHeaders(context);
             // If 51Degrees JavaScript or JSON is being requested then serve it.
             // Otherwise continue down the middleware Pipeline.
             if (JsService.ServeJS(context) == false && 

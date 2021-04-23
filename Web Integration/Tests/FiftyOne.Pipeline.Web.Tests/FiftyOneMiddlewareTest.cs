@@ -38,6 +38,10 @@ namespace FiftyOne.Pipeline.Web.Tests
 
         private Mock<IFiftyOneJSService> _jsService;
 
+        private Mock<IFlowDataProvider> _flowDataProvider;
+
+        private Mock<ISetHeadersService> _setHeadersService;
+
         private bool _movedNext;
 
         /// <summary>
@@ -50,7 +54,9 @@ namespace FiftyOne.Pipeline.Web.Tests
         {
             _movedNext = false;
             _resultsService = new Mock<IPipelineResultService>();
-            _jsService = new Mock<IFiftyOneJSService>();            
+            _jsService = new Mock<IFiftyOneJSService>();
+            _flowDataProvider = new Mock<IFlowDataProvider>();
+            _setHeadersService = new Mock<ISetHeadersService>();              
             _middleware = new FiftyOneMiddleware(
                 delegate (HttpContext context)
                 {
@@ -58,7 +64,9 @@ namespace FiftyOne.Pipeline.Web.Tests
                     return Task.FromResult<Object>(null);
                 },
                 _resultsService.Object,
-                _jsService.Object);
+                _jsService.Object,
+                _flowDataProvider.Object,
+                _setHeadersService.Object);
         }
 
         /// <summary>
@@ -78,6 +86,12 @@ namespace FiftyOne.Pipeline.Web.Tests
                 s => s.Process(context),
                 Times.Once,
                 "The results were not processed.");
+
+            _setHeadersService.Verify(
+                s => s.SetHeaders(context),
+                Times.Once,
+                "The response headers were not set as expected");
+
             Assert.IsTrue(_movedNext, "The next middleware was not called.");
         }
 
@@ -99,6 +113,12 @@ namespace FiftyOne.Pipeline.Web.Tests
                 s => s.Process(It.IsAny<HttpContext>()), 
                 Times.Once,
                 "The results were not processed.");
+
+            _setHeadersService.Verify(
+                s => s.SetHeaders(context),
+                Times.Once,
+                "The response headers were not set as expected");
+
             Assert.IsFalse(
                 _movedNext,
                 "The next middleware should not have been called.");

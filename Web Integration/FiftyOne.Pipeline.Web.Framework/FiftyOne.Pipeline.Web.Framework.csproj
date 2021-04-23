@@ -63,13 +63,13 @@
     <Compile Include="Adapters\ResponseAdapter.cs" />
     <Compile Include="AspFrameworkSession.cs" />
     <Compile Include="Configuration\Extensions.cs" />
-    <Compile Include="Configuration\PipelineWebIntegrationOptions.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="PipelineModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Providers\CapabilitiesProvider.cs" />
     <Compile Include="Providers\FiftyOneJsProvider.cs" />
     <Compile Include="Providers\PipelineCapabilities.cs" />
+    <Compile Include="Providers\SetHeadersProvider.cs" />
     <Compile Include="WebPipeline.cs" />
   </ItemGroup>
   <ItemGroup>

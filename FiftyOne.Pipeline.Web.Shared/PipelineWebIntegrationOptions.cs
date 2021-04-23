@@ -20,32 +20,35 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-namespace FiftyOne.Pipeline.Web
+using FiftyOne.Pipeline.Core.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace FiftyOne.Pipeline.Web.Shared
 {
     /// <summary>
-    /// Configuration options for MVC Pipeline operation.
+    /// Extends the PipelineOptions class to add web specific options.
     /// </summary>
-    public class PipelineWebIntegrationOptions
-    {
+    public class PipelineWebIntegrationOptions : PipelineOptions
+    {       
         /// <summary>
-        /// Constructor.
+        /// Constructor
         /// </summary>
         public PipelineWebIntegrationOptions()
         {
             ClientSideEvidenceEnabled = true;
             UseAsyncScript = true;
+            UseSetHeaderProperties = true;
         }
 
         /// <summary>
-        /// Flag to enable/disable client side evidence functionality.
-        /// Client-side evidence comes into effect when there is not enough 
-        /// information in the request to determine certain properties.
-        /// For example the exact model of iPhone cannot be determined
-        /// from the User-Agent.
-        /// If enabled, this option allows the Pipeline to inject JavaScript 
-        /// into the page and use this to determine a value for a property 
-        /// using more information.
-        /// Defaults to true.
+        /// True if client-side properties should be enabled. If enabled
+        /// (and the JavaScriptBundlerElement added to the Pipeline), a
+        /// client-side JavaScript file will be served at the URL
+        /// */51Degrees.core.js.
         /// </summary>
         public bool ClientSideEvidenceEnabled { get; set; }
 
@@ -55,5 +58,13 @@ namespace FiftyOne.Pipeline.Web
         /// Defaults to true.
         /// </summary>
         public bool UseAsyncScript { get; set; }
+
+        /// <summary>
+        /// Flag to enable/disable a feature that will automatically set
+        /// the values of HTTP headers in the response in order to request
+        /// additional information.
+        /// Defaults to true.
+        /// </summary>
+        public bool UseSetHeaderProperties { get; set; }
     }
 }

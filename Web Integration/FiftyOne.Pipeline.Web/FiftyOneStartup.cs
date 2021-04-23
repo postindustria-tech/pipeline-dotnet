@@ -63,7 +63,7 @@ namespace FiftyOne.Pipeline.Web
         /// The function used to create the pipeline. If null is passed 
         /// then this will default to the CreatePipelineFromConfig method
         /// </param>
-        internal static void ConfigureServices<TBuilder>(IServiceCollection services, 
+        internal static void ConfigureServices<TBuilder>(IServiceCollection services,
             IConfiguration configuration,
             Func<IConfiguration, IPipelineBuilderFromConfiguration, IPipeline> pipelineFactory)
             where TBuilder : class, IPipelineBuilderFromConfiguration
@@ -99,7 +99,8 @@ namespace FiftyOne.Pipeline.Web
             services.AddSingleton<IFlowDataProvider, FlowDataProvider>();
             services.AddSingleton<IClientsidePropertyService,
                 ClientsidePropertyService>();
-            services.AddSingleton<IFiftyOneJSService, FiftyOneJSService>();
+            services.AddSingleton<IFiftyOneJSService, FiftyOneJSService>(); 
+            services.AddSingleton<ISetHeadersService, SetHeaderService>();
             services.AddSingleton<IPipelineResultService,
                 PipelineResultService>();
             services.AddSingleton<IWebRequestEvidenceService,
@@ -108,13 +109,14 @@ namespace FiftyOne.Pipeline.Web
             services.AddSingleton<SequenceElementBuilder>();
             services.AddSingleton<JsonBuilderElementBuilder>();
             services.AddSingleton<JavaScriptBuilderElementBuilder>();
+            services.AddSingleton<SetHeadersElementBuilder>();
 
             // Add the pipeline to the DI container
             services.AddSingleton(serviceProvider =>
             {
                 IPipeline pipeline = null;
                 // Create the pipeline builder
-                var pipelineBuilder = 
+                var pipelineBuilder =
                     serviceProvider.GetRequiredService<IPipelineBuilderFromConfiguration>();
 
                 if (pipelineFactory == null)
@@ -135,7 +137,7 @@ namespace FiftyOne.Pipeline.Web
                 return pipeline;
             });
         }
-        
+
         /// <summary>
         /// The default <see cref="IPipeline"/> factory function.
         /// This looks for a 'PipelineOptions' configuration item and uses
@@ -171,6 +173,86 @@ namespace FiftyOne.Pipeline.Web
             config.Bind("PipelineWebIntegrationOptions", webOptions);
 
             // Add the sequence element.
+            AddSequenceElement(options);
+
+            if (webOptions.ClientSideEvidenceEnabled)
+            {
+                // Client-side evidence is enabled so make sure the 
+                // JsonBuilderElement and JavaScriptBundlerElement has been 
+                // included.
+                AddJsElements(options);
+            }
+
+            // Add the SetHeaders element
+            AddSetHeadersElement(options);
+
+            return pipelineBuilder.BuildFromConfiguration(options);
+        }
+
+        /// <summary>
+        /// Ensure the json and javascript elements are added to the configuration
+        /// </summary>
+        /// <param name="options"></param>
+        private static void AddJsElements(PipelineOptions options)
+        {
+            var jsonConfig = options.Elements.Where(e =>
+                e.BuilderName.Contains(nameof(JsonBuilderElement),
+                    StringComparison.OrdinalIgnoreCase));
+            var javascriptConfig = options.Elements.Where(e =>
+                e.BuilderName.Contains(nameof(JavaScriptBuilderElement),
+                    StringComparison.OrdinalIgnoreCase));
+
+            var jsIndex = javascriptConfig.Any() ?
+                options.Elements.IndexOf(javascriptConfig.First()) : -1;
+
+            if (jsonConfig.Any() == false)
+            {
+                // The json builder is not included so add it.
+                var newElementOptions = new ElementOptions()
+                {
+                    BuilderName = nameof(JsonBuilderElement)
+                };
+                if (jsIndex > -1)
+                {
+                    // There is already a javascript builder element
+                    // so insert the json builder before it.
+                    options.Elements.Insert(jsIndex, newElementOptions);
+                }
+                else
+                {
+                    options.Elements.Add(newElementOptions);
+                }
+            }
+
+            if (jsIndex == -1)
+            {
+                // The builder is not included so add it.
+                options.Elements.Add(new ElementOptions()
+                {
+                    BuilderName = nameof(JavaScriptBuilderElement),
+                    BuildParameters = new Dictionary<string, object>()
+                    {
+                        { "EndPoint", "/51dpipeline/json" }
+                    }
+                });
+            }
+            else
+            {
+                // There is already a JavaScript builder config so check if 
+                // the endpoint is specified. If not, add it.
+                if (jsonConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
+                {
+                    jsonConfig.Single().BuildParameters.Add("EndPoint", "/51dpipeline/json");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ensure the sequence element is added to the configuration
+        /// </summary>
+        /// <param name="options"></param>
+        private static void AddSequenceElement(PipelineOptions options)
+        {
             var sequenceConfig = options.Elements.Where(e =>
                 e.BuilderName.Contains(nameof(SequenceElement),
                     StringComparison.OrdinalIgnoreCase));
@@ -183,65 +265,27 @@ namespace FiftyOne.Pipeline.Web
                     BuilderName = nameof(SequenceElement)
                 });
             }
+        }
 
-            if (webOptions.ClientSideEvidenceEnabled)
+        /// <summary>
+        /// Ensure the set headers element is added to the configuration
+        /// </summary>
+        /// <param name="options"></param>
+        private static void AddSetHeadersElement(PipelineOptions options)
+        {
+            var setHeadersConfig = options.Elements.Where(e =>
+                e.BuilderName.Contains(nameof(SetHeadersElement),
+                    StringComparison.OrdinalIgnoreCase));
+            if (setHeadersConfig.Any() == false)
             {
-                // Client-side evidence is enabled so make sure the 
-                // JsonBuilderElement and JavaScriptBundlerElement has been 
-                // included.
-                var jsonConfig = options.Elements.Where(e =>
-                    e.BuilderName.Contains(nameof(JsonBuilderElement),
-                        StringComparison.OrdinalIgnoreCase));
-                var javascriptConfig = options.Elements.Where(e =>
-                    e.BuilderName.Contains(nameof(JavaScriptBuilderElement),
-                        StringComparison.OrdinalIgnoreCase));
-
-                var jsIndex = javascriptConfig.Any() ? 
-                    options.Elements.IndexOf(javascriptConfig.First()) : -1;
-
-                if (jsonConfig.Any() == false)
+                // The set headers element is not included, so add it.
+                // Make sure it's added as the last element.
+                options.Elements.Add(new ElementOptions()
                 {
-                    // The json builder is not included so add it.
-                    var newElementOptions = new ElementOptions()
-                    {
-                        BuilderName = nameof(JsonBuilderElement)
-                    };
-                    if (jsIndex > -1)
-                    {
-                        // There is already a javascript builder element
-                        // so insert the json builder before it.
-                        options.Elements.Insert(jsIndex, newElementOptions);
-                    }
-                    else
-                    {
-                        options.Elements.Add(newElementOptions);
-                    }
-                }
-
-                if (jsIndex == -1)
-                {
-                    // The builder is not included so add it.
-                    options.Elements.Add(new ElementOptions()
-                    {
-                        BuilderName = nameof(JavaScriptBuilderElement),
-                        BuildParameters = new Dictionary<string, object>()
-                        {
-                            { "EndPoint", "/51dpipeline/json" }
-                        }
-                    });
-                }
-                else
-                {
-                    // There is already a JavaScript builder config so check if 
-                    // the endpoint is specified. If not, add it.
-                    if (javascriptConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
-                    {
-                        javascriptConfig.Single().BuildParameters.Add("EndPoint", "/51dpipeline/json");
-                    }
-                }
+                    BuilderName = nameof(SetHeadersElement)
+                });
             }
-
-            return pipelineBuilder.BuildFromConfiguration(options);
         }
     }
 }
+
