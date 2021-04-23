@@ -48,9 +48,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private ILoggerFactory _loggerFactory;
         private HttpClient _httpClient;
 
-        private string _dataEndpoint = "https://cloud.51degrees.com/api/v4/json";
-        private string _propertiesEndpoint = "https://cloud.51degrees.com/api/v4/accessibleproperties";
-        private string _evidenceKeysEndpoint = "https://cloud.51degrees.com/api/v4/evidencekeys";
+        private string _dataEndpoint = "";
+        private string _propertiesEndpoint = "";
+        private string _evidenceKeysEndpoint = "";
         private string _resourceKey = null;
         private string _licenseKey = null;
         private int _timeout = 100;
@@ -95,9 +95,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 uri += '/';
             }
-            return SetDataEndpoint(uri + "json")
-                .SetPropertiesEndpoint(uri + "accessibleproperties")
-                .SetEvidenceKeysEndpoint(uri + "evidencekeys");
+            return SetDataEndpoint(uri + Constants.DATA_FILENAME)
+                .SetPropertiesEndpoint(uri + Constants.PROPERTIES_FILENAME)
+                .SetEvidenceKeysEndpoint(uri + Constants.EVIDENCE_KEYS_FILENAME);
         }
 
         /// <summary>
@@ -186,6 +186,25 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 throw new PipelineConfigurationException(
                     Messages.ExceptionResourceKeyNeeded);
+            }
+
+            // If any of the endpoints are not set, then check the environment 
+            // variable for an endpoint.
+            if (string.IsNullOrWhiteSpace(_dataEndpoint) ||
+                string.IsNullOrWhiteSpace(_propertiesEndpoint) ||
+                string.IsNullOrWhiteSpace(_evidenceKeysEndpoint))
+            {
+                var endpoint = System.Environment.GetEnvironmentVariable(Constants.FOD_CLOUD_API_URL);
+                // If the environment variable is not set then set the default
+                // endpoints.
+                if (string.IsNullOrWhiteSpace(endpoint))
+                {
+                    SetEndPoint(Constants.CLOUD_URI_DEFAULT);
+                } 
+                else
+                {
+                    SetEndPoint(endpoint);
+                }
             }
 
             return BuildEngine();

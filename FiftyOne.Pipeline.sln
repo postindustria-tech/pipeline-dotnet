@@ -46,6 +46,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3. Client-side Evidence", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examples.ClientSideEvidence.Shared", "Examples\CustomFlowElement\3. Client-side evidence\ClientSideEvidence.Shared\Examples.ClientSideEvidence.Shared.csproj", "{4DD8C2AF-3C86-4B6E-8EE3-BF9400C4E05B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiftyOne.Pipeline.Benchmarks", "Tests\FiftyOne.Pipeline.Benchmarks\FiftyOne.Pipeline.Benchmarks.csproj", "{2FE642A4-A475-43CB-9B25-3986FE15CBD0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -104,6 +106,10 @@ Global
 		{4DD8C2AF-3C86-4B6E-8EE3-BF9400C4E05B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DD8C2AF-3C86-4B6E-8EE3-BF9400C4E05B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4DD8C2AF-3C86-4B6E-8EE3-BF9400C4E05B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FE642A4-A475-43CB-9B25-3986FE15CBD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FE642A4-A475-43CB-9B25-3986FE15CBD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FE642A4-A475-43CB-9B25-3986FE15CBD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FE642A4-A475-43CB-9B25-3986FE15CBD0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -124,6 +130,7 @@ Global
 		{194A4093-B146-410E-9F99-423FEE0C218B} = {6CCEFD1B-2C07-439B-980F-541F8F92FEA0}
 		{42BCA093-E11F-4371-B348-651379F73C1E} = {531CC9F6-C5C2-420B-877C-AACC83DB749B}
 		{4DD8C2AF-3C86-4B6E-8EE3-BF9400C4E05B} = {42BCA093-E11F-4371-B348-651379F73C1E}
+		{2FE642A4-A475-43CB-9B25-3986FE15CBD0} = {A0095379-E196-4179-B093-CD0B09721BE4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DDB32B21-0D34-4C92-894C-BB39BE1BC4F7}

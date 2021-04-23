@@ -23,7 +23,7 @@
     <RepositoryType>git</RepositoryType>
     <NeutralLanguage>en</NeutralLanguage>
     <Description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains an element that serializes all values in flowdata into a JSON formatted string.</Description>
-    <PackageProjectUrl>www.51degrees.com</PackageProjectUrl>
+    <PackageProjectUrl>https://51degrees.com</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">

@@ -17,6 +17,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Core\FiftyOne.Pipeline.Core.csproj" />
+    <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines.TestHelpers\FiftyOne.Pipeline.Engines.TestHelpers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Benchmarks\" />
   </ItemGroup>
 
 </Project>

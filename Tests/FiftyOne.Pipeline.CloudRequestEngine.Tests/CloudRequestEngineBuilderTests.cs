@@ -24,13 +24,77 @@ using FiftyOne.Pipeline.CloudRequestEngine.FlowElements;
 using FiftyOne.Pipeline.Core.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using Moq.Protected;
+using System;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 {
+    /// <summary>
+    /// Tests for the cloud request engine builder.
+    /// </summary>
     [TestClass]
     public class CloudRequestEngineBuilderTests
     {
+        private Mock<HttpMessageHandler> _handlerMock;
+
+        [TestInitialize]
+        public void Init()
+        {
+            _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            // Mock accessible properties endpoint.
+            _handlerMock
+               .Protected()
+               // Setup the PROTECTED method to mock
+               .Setup<Task<HttpResponseMessage>>(
+                  "SendAsync",
+                  ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get  // we expected a GET request
+                    && req.RequestUri.Segments.Last() == Constants.PROPERTIES_FILENAME),
+                  ItExpr.IsAny<CancellationToken>()
+               )
+               // prepare the expected response of the mocked http call
+               .ReturnsAsync(new HttpResponseMessage()
+               {
+                   StatusCode = HttpStatusCode.OK,
+                   Content = new StringContent(@"{""Products"":{""device"":{""DataTier"":""CloudV4Free"",""Properties"":[{""Name"":""IsMobile"",""Type"":""Boolean"",""Category"":""Device"",""DelayExecution"":false},{""Name"":""JavascriptHardwareProfile"",""Type"":""JavaScript"",""Category"":""Javascript"",""DelayExecution"":false}]}}}"),
+               })
+               .Verifiable();
+
+            // Mock evidence keys endpoint, this is not checked but we must 
+            // return a response for the call from cloud request engine.
+            _handlerMock
+               .Protected()
+               // Setup the PROTECTED method to mock
+               .Setup<Task<HttpResponseMessage>>(
+                  "SendAsync",
+                  ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get  // we expected a GET request
+                    && req.RequestUri.Segments.Last() == Constants.EVIDENCE_KEYS_FILENAME),
+                  ItExpr.IsAny<CancellationToken>()
+               )
+               // prepare the expected response of the mocked http call
+               .ReturnsAsync(new HttpResponseMessage()
+               {
+                   StatusCode = HttpStatusCode.OK,
+                   Content = new StringContent(@"[
+  ""fiftyone.resource-key""
+]"),
+               })
+               .Verifiable();
+
+            // Un-set cloud URL environment variable.
+            Environment.SetEnvironmentVariable(Constants.FOD_CLOUD_API_URL, "");
+        }
+
+        /// <summary>
+        /// Test exception is thrown if no resource key is specified.
+        /// </summary>
         [TestMethod]
         [ExpectedException(typeof(PipelineConfigurationException))]
         public void BuildEngine_ResourceKey_NotSet()
@@ -38,6 +102,121 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             var cloudRequestsEngine =
                 new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient())
                 .Build();
+        }
+
+        /// <summary>
+        /// Test that the configured URL takes precedence over the environment
+        /// variable.
+        /// </summary>
+        [TestMethod]
+        public void Endpoint_Config_Precedence_Config()
+        {
+            var expectedUrl = "http://localhost/test_conf/";
+
+            Environment.SetEnvironmentVariable(Constants.FOD_CLOUD_API_URL, "http://localhost/test_env/");
+
+            var cloudRequestsEngine =
+                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
+                .SetEndPoint(expectedUrl)
+                .SetResourceKey("abcdefgh")
+                .Build();
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Get  // we expected a GET request
+                  && req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUrl + Constants.PROPERTIES_FILENAME // to this uri
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Get  // we expected a GET request
+                  && req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUrl + Constants.EVIDENCE_KEYS_FILENAME // to this uri
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+        }
+
+        /// <summary>
+        /// Test that the cloud URL is retrieved from the environment variable 
+        /// if specified.
+        /// </summary>
+        [TestMethod]
+        public void Endpoint_Config_Precedence_EnvironmentVariable()
+        {
+            var expectedUrl = "http://localhost/test_env/";
+
+            Environment.SetEnvironmentVariable(Constants.FOD_CLOUD_API_URL, expectedUrl);
+
+            var cloudRequestsEngine =
+                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
+                .SetResourceKey("abcdefgh")
+                .Build();
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Get  // we expected a GET request
+                  && req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUrl + Constants.PROPERTIES_FILENAME // to this uri
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Get  // we expected a GET request
+                  && req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUrl + Constants.EVIDENCE_KEYS_FILENAME // to this uri
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+        }
+
+        /// <summary>
+        /// Test that the default cloud endpoint is used when no other is 
+        /// specified.
+        /// </summary>
+        [TestMethod]
+        public void Endpoint_Config_Precedence_Default()
+        {
+            var cloudRequestsEngine =
+                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
+                .SetResourceKey("abcdefgh")
+                .Build();
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Get  // we expected a GET request
+                  && req.RequestUri.GetLeftPart(UriPartial.Path) == Constants.PROPERTIES_ENDPOINT_DEFAULT // to this uri
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Get  // we expected a GET request
+                  && req.RequestUri.GetLeftPart(UriPartial.Path) == Constants.EVIDENCE_KEYS_ENDPOINT_DEFAULT // to this uri
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+        }
+
+        [TestCleanup]
+        public void Cleanup()
+        {
+            // Un-set cloud URL environment variable.
+            Environment.SetEnvironmentVariable(Constants.FOD_CLOUD_API_URL, "");
         }
     }
 }

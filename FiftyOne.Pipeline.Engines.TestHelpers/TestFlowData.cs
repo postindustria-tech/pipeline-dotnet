@@ -36,21 +36,27 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
     /// </summary>
     public class TestFlowData : FlowData
     {
+        private static readonly LoggerFactory LOGGER_FACTORY = new LoggerFactory();
+
         public TestFlowData() :
-            this(null, null, new Evidence(null))
+            this(LOGGER_FACTORY.CreateLogger<TestFlowData>(), 
+                null, 
+                new Evidence(LOGGER_FACTORY.CreateLogger<Evidence>()))
         {
         }
 
         public TestFlowData(
             ILogger<TestFlowData> logger) :
-            this(logger, null, new Evidence(null))
+            this(logger, null, 
+                new Evidence(LOGGER_FACTORY.CreateLogger<Evidence>()))
         {
         }
 
         public TestFlowData(
             ILogger<TestFlowData> logger,
             TestPipeline pipeline) :
-            this(logger, pipeline, new Evidence(null))
+            this(logger, pipeline, 
+                new Evidence(LOGGER_FACTORY.CreateLogger<Evidence>()))
         {
         }
 
