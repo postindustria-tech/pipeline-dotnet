@@ -84,14 +84,14 @@ steps:
     restoreSolution: '$(RestoreBuildProjects)'
     feedsToUse: 'select'
     vstsFeed: 'd2431f86-c1e6-4d8b-8d27-311cf3614847'
-
-- task: UseGitVersion@5
-  displayName: 'Determine Version Number'
-  # Give this task a name so we can use the variables it sets later. 
-  name: GitVersion
+   
+- task: gitversion/setup@0
+  displayName: Install GitVersion
   inputs:
     versionSpec: '5.x'
-    updateAssemblyInfo: true
+    
+- task: gitversion/execute@0
+  displayName: Determine Version
 
 - task: DownloadBuildArtifacts@0
   displayName: 'Download Build Artifacts'
@@ -118,15 +118,13 @@ steps:
     SymbolServerType: 'TeamServices'
     SymbolsVersion: '$(GitVersion.NuGetVersion)'
 
-# The nuget package version uses the BUILD_BUILDNUMER environment variable.
-# This has been set by the GitVersion task above.
 - task: DotNetCoreCLI@2
   displayName: 'Build NuGet Package'
   inputs:
     command: 'pack'
     packagesToPack: '$(PublishProjects)'
     versioningScheme: 'byEnvVar'
-    versionEnvVar: 'BUILD_BUILDNUMBER'
+    versionEnvVar: GitVersion.NuGetVersion 
     
 # The Web and Web.Framework projects are combined into a single NuGet package.
 # This requires the use of a nuspec file and the NuGet task.    
@@ -136,7 +134,7 @@ steps:
     command: 'pack'
     packagesToPack: '**/FiftyOne.Pipeline.Web.nuspec'
     versioningScheme: 'byEnvVar'
-    versionEnvVar: 'BUILD_BUILDNUMBER'
+    versionEnvVar: GitVersion.NuGetVersion
     buildProperties: 'config=$(BuildConfiguration)'
     
 # The secure file to download will be stored in the 
