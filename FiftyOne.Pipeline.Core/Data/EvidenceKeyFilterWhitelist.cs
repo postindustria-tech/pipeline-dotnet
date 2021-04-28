@@ -29,7 +29,7 @@ using System.Text;
 namespace FiftyOne.Pipeline.Core.Data
 {
     /// <summary>
-    /// This evidence filter will only include keys that are on a whitelist
+    /// This evidence filter will only include keys that are in a list
     /// that is specified at construction time.
     /// </summary>
     public class EvidenceKeyFilterWhitelist : IEvidenceKeyFilter
@@ -38,13 +38,13 @@ namespace FiftyOne.Pipeline.Core.Data
         // Extending classes can make direct use of these fields.
 
         /// <summary>
-        /// The dictionary containing all keys in the whitelist and the
-        /// order of precedence.
+        /// The dictionary containing all keys to be included by the filter
+        /// and the order of precedence.
         /// </summary>
-        protected Dictionary<string, int> _whitelist;
+        protected Dictionary<string, int> _inclusionList;
         /// <summary>
         /// The equality comparer that is used to determine if a supplied
-        /// string key is in the whitelist or not.
+        /// string key is in the inclusion list or not.
         /// By default, a case insensitive comparison is used.
         /// </summary>
         protected IEqualityComparer<string> _comparer = 
@@ -52,19 +52,19 @@ namespace FiftyOne.Pipeline.Core.Data
 #pragma warning restore CA1051 // Do not declare visible instance fields
 
         /// <summary>
-        /// Get the keys in the white list as a read only dictionary.
+        /// Get the keys in the inclusion list as a read only dictionary.
         /// </summary>
         public IReadOnlyDictionary<string, int> Whitelist
         {
             get
             {
-                return new ReadOnlyDictionary<string, int>(_whitelist);
+                return new ReadOnlyDictionary<string, int>(_inclusionList);
             }
         }
 
         /// <summary>
         /// Get the equality comparer that is used to determine if a supplied
-        /// string key is in the whitelist or not.
+        /// string key is in the inclusion list or not.
         /// </summary>
         public IEqualityComparer<string> Comparer => _comparer;
 
@@ -73,19 +73,19 @@ namespace FiftyOne.Pipeline.Core.Data
         /// The filter will be case-insensitive. For a case-sensitive filter
         /// use the overload that takes an <see cref="IEqualityComparer{T}"/>.
         /// </summary>
-        /// <param name="whitelist">
+        /// <param name="inclusionList">
         /// The list of evidence keys that is filter will include.
         /// By default, all keys will have the same order of precedence.
         /// </param>
-        public EvidenceKeyFilterWhitelist(List<string> whitelist)
+        public EvidenceKeyFilterWhitelist(List<string> inclusionList)
         {
-            PopulateFromList(whitelist);
+            PopulateFromList(inclusionList);
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="whitelist">
+        /// <param name="inclusionList">
         /// The list of evidence keys that is filter will include.
         /// By default, all keys will have the same order of precedence.
         /// </param>
@@ -93,11 +93,11 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Comparator to use when comparing the keys.
         /// </param>
         public EvidenceKeyFilterWhitelist(
-            List<string> whitelist,
+            List<string> inclusionList,
             IEqualityComparer<string> comparer)
         {
             _comparer = comparer;
-            PopulateFromList(whitelist);
+            PopulateFromList(inclusionList);
         }
 
         /// <summary>
@@ -105,20 +105,20 @@ namespace FiftyOne.Pipeline.Core.Data
         /// The filter will be case-insensitive. For a case-sensitive filter
         /// use the overload that takes an <see cref="IEqualityComparer{T}"/>.
         /// </summary>
-        /// <param name="whitelist">
+        /// <param name="inclusionList">
         /// The dictionary of evidence keys that is filter will include.
         /// The order of precedence of each key is given by the value of
         /// the key/value pair.
         /// </param>
-        public EvidenceKeyFilterWhitelist(Dictionary<string, int> whitelist)
+        public EvidenceKeyFilterWhitelist(Dictionary<string, int> inclusionList)
         {
-            PopulateFromDictionary(whitelist);
+            PopulateFromDictionary(inclusionList);
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="whitelist">
+        /// <param name="inclusionList">
         /// The dictionary of evidence keys that is filter will include.
         /// The order of precedence of each key is given by the value of
         /// the key/value pair.
@@ -127,22 +127,22 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Comparator to use when comparing the keys.
         /// </param>
         public EvidenceKeyFilterWhitelist(
-            Dictionary<string, int> whitelist,
+            Dictionary<string, int> inclusionList,
             IEqualityComparer<string> comparer)
         {
             _comparer = comparer;
-            PopulateFromDictionary(whitelist);
+            PopulateFromDictionary(inclusionList);
         }
 
 
-        private void PopulateFromList(List<string> whitelist)
+        private void PopulateFromList(List<string> inclusionList)
         {
-            _whitelist = whitelist.ToDictionary(w => w, w => 0, _comparer);
+            _inclusionList = inclusionList.ToDictionary(w => w, w => 0, _comparer);
         }
 
-        private void PopulateFromDictionary(Dictionary<string, int> whitelist)
+        private void PopulateFromDictionary(Dictionary<string, int> inclusionList)
         {
-            _whitelist = whitelist.ToDictionary(w => w.Key, w => w.Value, _comparer);
+            _inclusionList = inclusionList.ToDictionary(w => w.Key, w => w.Value, _comparer);
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </returns>
         public virtual bool Include(string key)
         {
-            return _whitelist.ContainsKey(key);
+            return _inclusionList.ContainsKey(key);
         }
 
         /// <summary>
@@ -168,13 +168,13 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// The order, where lower values indicate a higher order of 
         /// precedence. 
-        /// Null if the key is not in the white list.
+        /// Null if the key is not in the inclusion list.
         /// </returns>
         public virtual int? Order(string key)
         {
             int? result = 0;
             int temp;
-            if(_whitelist.TryGetValue(key, out temp) == false)
+            if(_inclusionList.TryGetValue(key, out temp) == false)
             {
                 result = null;
             }

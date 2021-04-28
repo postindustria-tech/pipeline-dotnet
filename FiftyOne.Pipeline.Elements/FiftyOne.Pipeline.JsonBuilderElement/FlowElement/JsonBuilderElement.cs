@@ -39,6 +39,7 @@ using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Engines.FiftyOne;
 using System.Collections.Concurrent;
 using Newtonsoft.Json.Serialization;
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
@@ -55,6 +56,13 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         FlowElementBase<IJsonBuilderElementData, IElementPropertyMetaData>, 
         IJsonBuilderElement
     {
+        /// <summary>
+        /// The element data key used by default for this element.
+        /// </summary>
+#pragma warning disable CA1707 // Identifiers should not contain underscores
+        public const string DEFAULT_ELEMENT_DATA_KEY = "json-builder";
+#pragma warning restore CA1707 // Identifiers should not contain underscores
+
         /// <summary>
         /// This contract resolver ensurers that property names 
         /// are always converted to lowercase.
@@ -73,8 +81,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
         private EvidenceKeyFilterWhitelist _evidenceKeyFilter;
         private List<IElementPropertyMetaData> _properties;
-        private List<string> _blacklist;
-        private HashSet<string> _elementBlacklist;
+        private List<string> _propertyExclusionlist;
+        private HashSet<string> _elementExclusionList;
 
         /// <summary>
         /// Contains configuration information relating to a particular 
@@ -156,12 +164,16 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                         this, "json", typeof(string), true)
                 };
 
-            // Blacklist of properties which should not be added to the Json.
-            _blacklist = new List<string>() { "products", "properties" };
-            // Blacklist of the element data keys of elements that should 
+            // List of properties which should not be added to the Json.
+            _propertyExclusionlist = new List<string>() { "products", "properties" };
+            // List of the element data keys of elements that should 
             // not be added to the Json.
-            _elementBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase) 
-                { "cloud-response", "json-builder" };
+            _elementExclusionList = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "cloud-response",
+                    DEFAULT_ELEMENT_DATA_KEY,
+                    SetHeadersElement.DEFAULT_ELEMENT_DATA_KEY
+                };
 
             _pipelineConfigs = new ConcurrentDictionary<IPipeline, PipelineConfig>();
 
@@ -172,7 +184,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// The key to identify this engine's element data instance
         /// within <see cref="IFlowData"/>.
         /// </summary>
-        public override string ElementDataKey => "json-builder";
+        public override string ElementDataKey => DEFAULT_ELEMENT_DATA_KEY;
 
         /// <summary>
         /// A filter that identifies the evidence items that this 
@@ -363,7 +375,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             Dictionary<string, object> allProperties = new Dictionary<string, object>();
 
             foreach (var element in data.ElementDataAsDictionary().Where(elementData => 
-                _elementBlacklist.Contains(elementData.Key) == false))
+                _elementExclusionList.Contains(elementData.Key) == false))
             {
                 if (allProperties.ContainsKey(element.Key.ToLowerInvariant()) == false)
                 {

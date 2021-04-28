@@ -161,7 +161,7 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// /// </summary>
         AUTO_UPDATE_ERR_429_TOO_MANY_ATTEMPTS,
         /// <summary>
-        /// 51Degrees server responded with 403 meaning key is blacklisted. 
+        /// 51Degrees server responded with 403, meaning key is revoked. 
         /// </summary>
         AUTO_UPDATE_ERR_403_FORBIDDEN,
         /// <summary>

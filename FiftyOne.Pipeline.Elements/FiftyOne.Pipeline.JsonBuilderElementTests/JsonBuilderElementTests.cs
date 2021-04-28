@@ -120,16 +120,16 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
 
         /// <summary>
         /// Check that entries will not appear in the output 
-        /// for blacklisted elements.
+        /// for elements in the exclusion list.
         /// </summary>
         [TestMethod]
-        public void JsonBuilder_ElementBlacklist()
+        public void JsonBuilder_ElementExclusionlist()
         {
             var json = TestIteration(1,
                new Dictionary<string, object>() {
                     { "test", _elementDataMock.Object },
                     { "cloud-response", _elementDataMock.Object },
-                    { "json-builder", _elementDataMock.Object }
+                    { JsonBuilderElement.DEFAULT_ELEMENT_DATA_KEY, _elementDataMock.Object }
                });
 
             Assert.IsTrue(IsExpectedJson(json));
@@ -386,7 +386,7 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             [JsonProperty("empty-aspect")]
             public EmptyAspect EmptyAspect { get; set; }
 
-            [JsonProperty("json-builder")]
+            [JsonProperty(JsonBuilderElement.DEFAULT_ELEMENT_DATA_KEY)]
             public JsonBuilder JsonBuilder { get; set; }
         }
 

@@ -54,7 +54,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <returns>
         /// The order, where lower values indicate a higher order of 
         /// precedence. 
-        /// Null if the key is not in the white list.
+        /// Null if the key is not recognized.
         /// </returns>
         int? Order(string key);
     }

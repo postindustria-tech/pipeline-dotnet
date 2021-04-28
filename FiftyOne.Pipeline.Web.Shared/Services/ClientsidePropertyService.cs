@@ -98,10 +98,10 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                 // get all HTTP header evidence keys from white list
                 // and add them to the headers that could affect the 
                 // generated JavaScript.
-                var whitelist = filter as EvidenceKeyFilterWhitelist;
-                if (whitelist != null)
+                var inclusionList = filter as EvidenceKeyFilterWhitelist;
+                if (inclusionList != null)
                 {
-                    headersAffectingJavaScript.AddRange(whitelist.Whitelist
+                    headersAffectingJavaScript.AddRange(inclusionList.Whitelist
                         .Where(entry => entry.Key.StartsWith(
                             Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR, 
                             StringComparison.OrdinalIgnoreCase))

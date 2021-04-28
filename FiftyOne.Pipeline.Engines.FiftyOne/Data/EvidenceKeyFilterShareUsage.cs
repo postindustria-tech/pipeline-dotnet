@@ -41,7 +41,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
     /// <remarks>
     /// As this filter is generally inclusive, it will often cause far more
     /// evidence to be passed into a pipeline than the engine-specific 
-    /// filters, which tend to be based on a white list such as
+    /// filters, which tend to be based on a list of values to include such as
     /// <see cref="EvidenceKeyFilterWhitelist"/>.
     /// </remarks>
     public class EvidenceKeyFilterShareUsage : IEvidenceKeyFilter
