@@ -48,6 +48,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </summary>
 #pragma warning disable CA1707 // Identifiers should not contain underscores
         public const string DEFAULT_ELEMENT_DATA_KEY = "set-headers";
+
+        private const string SET_HEADER_PROPERTY_PREFIX = "SetHeader";
 #pragma warning restore CA1707 // Identifiers should not contain underscores
 
         /// <summary>
@@ -208,7 +210,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             foreach (var element in pipeline.ElementAvailableProperties)
             {
                 foreach (var property in element.Value.Where(p => 
-                    p.Key.StartsWith("SetHeader", StringComparison.OrdinalIgnoreCase)))
+                    p.Key.StartsWith(SET_HEADER_PROPERTY_PREFIX, StringComparison.OrdinalIgnoreCase)))
                 {
                     PropertyDetails details = new PropertyDetails()
                     {
@@ -224,7 +226,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
         private static string GetResponseHeaderName(string propertyName)
         {
-            if(propertyName.StartsWith("SetHeader", 
+            if(propertyName.StartsWith(SET_HEADER_PROPERTY_PREFIX, 
                 StringComparison.Ordinal) == false)
             {
                 throw new ArgumentException(string.Format(
@@ -233,7 +235,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                         propertyName), 
                     nameof(propertyName));
             }
-            if(propertyName.Length < 11)
+            if(propertyName.Length < SET_HEADER_PROPERTY_PREFIX.Length + 2)
             {
                 throw new ArgumentException(string.Format(
                         CultureInfo.InvariantCulture,
@@ -243,7 +245,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             }
 
             int nextUpper = -1;
-            for(int i = 10; i < propertyName.Length; i++)
+            for(int i = SET_HEADER_PROPERTY_PREFIX.Length + 1; i < propertyName.Length; i++)
             {
                 if (char.IsUpper(propertyName[i]))
                 {
