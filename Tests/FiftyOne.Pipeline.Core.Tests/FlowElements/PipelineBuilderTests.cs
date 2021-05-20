@@ -23,11 +23,15 @@
 using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Core.Services;
 using FiftyOne.Pipeline.Core.Tests.HelperClasses;
+using FiftyOne.Pipeline.Engines.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 
 namespace FiftyOne.Pipeline.Core.Tests.FlowElements
 {
@@ -715,6 +719,116 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             };
 
             VerifyListSplitterElementPipeline(opts, SplitOption.Pipe);
+        }
+
+        /// <summary>
+        /// Test that if the services declared in a builders constructor are not
+        /// provided, but there are other constructors available, that the correct
+        /// constructor is called.
+        /// This is specifically testing the logic used when a ServiceCollection
+        /// is not available e.g. in ASP.NET Framework.
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_AssemblyServices_NotAvailable()
+        {
+            var element = new ElementOptions()
+            {
+                BuilderName = "RequiredService"
+            };
+
+            // Create configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                element
+            };
+
+            // Pass the configuration to the builder to create the pipeline.
+            var pipeline = new PipelineBuilder(_loggerFactory, new FiftyOneServiceProvider())
+                .BuildFromConfiguration(opts);
+
+            Assert.IsNotNull(pipeline.GetElement<RequiredServiceElement>().LoggerFactory);
+            Assert.IsNull(pipeline.GetElement<RequiredServiceElement>().Service);
+            Assert.IsNull(pipeline.GetElement<RequiredServiceElement>().UpdateService);
+        }
+
+        /// <summary>
+        /// Test that if the services declared in a builders constructor are provided,
+        /// but there are other constructors available, that the correct constructor
+        /// is called.
+        /// This is specifically testing the logic used when a ServiceCollection
+        /// is not available e.g. in ASP.NET Framework.
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_AssemblyServices_Available()
+        {
+            var element = new ElementOptions()
+            {
+                BuilderName = "RequiredService"
+            };
+
+            // Create configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                element
+            };
+
+            var service = new RequiredServiceElementBuilder.EmptyService();
+            var services = new FiftyOneServiceProvider();
+            services.AddService(service);
+
+            // Pass the configuration to the builder to create the pipeline.
+            var pipeline = new PipelineBuilder(_loggerFactory, services)
+                .BuildFromConfiguration(opts);
+
+            Assert.IsNotNull(pipeline.GetElement<RequiredServiceElement>().LoggerFactory);
+            Assert.IsNotNull(pipeline.GetElement<RequiredServiceElement>().Service);
+            Assert.AreEqual(service, pipeline.GetElement<RequiredServiceElement>().Service);
+            Assert.IsNull(pipeline.GetElement<RequiredServiceElement>().UpdateService);
+        }
+
+        /// <summary>
+        /// Test that if the services declared in a builders constructor are provided,
+        /// but there are other constructors available, that the correct constructor
+        /// is called. This include the DataUpdateService to test the specific
+        /// scenario in addition to the general one.
+        /// This is specifically testing the logic used when a ServiceCollection
+        /// is not available e.g. in ASP.NET Framework.
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_AssemblyServices_MultiAvailable()
+        {
+            var element = new ElementOptions()
+            {
+                BuilderName = "RequiredService"
+            };
+
+            // Create configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                element
+            };
+
+            var service = new RequiredServiceElementBuilder.EmptyService();
+            var httpClient = new Mock<HttpClient>();
+            var updateService = new DataUpdateService(
+                new Mock<ILogger<DataUpdateService>>().Object,
+                httpClient.Object);
+            var services = new FiftyOneServiceProvider();
+            services.AddService(service);
+            services.AddService(updateService);
+
+            // Pass the configuration to the builder to create the pipeline.
+            var pipeline = new PipelineBuilder(_loggerFactory, services)
+                .BuildFromConfiguration(opts);
+
+            Assert.IsNotNull(pipeline.GetElement<RequiredServiceElement>().LoggerFactory);
+            Assert.IsNotNull(pipeline.GetElement<RequiredServiceElement>().Service);
+            Assert.AreEqual(service, pipeline.GetElement<RequiredServiceElement>().Service);
+            Assert.IsNotNull(pipeline.GetElement<RequiredServiceElement>().UpdateService);
+            Assert.AreEqual(updateService, pipeline.GetElement<RequiredServiceElement>().UpdateService);
         }
 
         private enum SplitOption { Comma, Pipe, CommaMaxLengthThree, CommaAndPipe, PipeAndQuote }

@@ -24,7 +24,9 @@ using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Core.Services;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
+using FiftyOne.Pipeline.Engines.Services;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.Web.Framework.Configuration;
@@ -110,7 +112,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                 .Build();
             _options = new PipelineWebIntegrationOptions();
             config.Bind("PipelineOptions", _options);
-
+            
             if (_options == null ||
                 _options.Elements == null)
             {
@@ -189,7 +191,33 @@ namespace FiftyOne.Pipeline.Web.Framework
                 }
             }
 
-            Pipeline = new PipelineBuilder(new LoggerFactory())
+            // Add the set headers
+            var setHeadersConfig = _options.Elements.Where(e =>
+                e.BuilderName.IndexOf(nameof(SetHeadersElement),
+                    StringComparison.OrdinalIgnoreCase) >= 0);
+            if (setHeadersConfig.Any() == false)
+            {
+                // The set headers element is not included, so add it.
+                // Make sure it's added as the last element.
+                _options.Elements.Add(new ElementOptions()
+                {
+                    BuilderName = nameof(SetHeadersElement)
+                });
+            }
+
+            // Set up common services.
+            var loggerFactory = new LoggerFactory();
+            var updateService = new DataUpdateService(
+                loggerFactory.CreateLogger<DataUpdateService>(),
+                new System.Net.Http.HttpClient());
+            var services = new FiftyOneServiceProvider();
+            // Add data update and missing property services.
+            services.AddService(updateService);
+            services.AddService(MissingPropertyService.Instance);
+
+            Pipeline = new PipelineBuilder(
+                loggerFactory,
+                services)
                 .BuildFromConfiguration(_options);
         }
 

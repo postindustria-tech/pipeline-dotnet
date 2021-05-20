@@ -23,6 +23,7 @@
 using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.Exceptions;
+using FiftyOne.Pipeline.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -246,7 +247,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             }
 
             object builderInstance = null;
-            if (_services != null)
+            if (_services != null &&
+                _services.GetType().Equals(typeof(FiftyOneServiceProvider)) == false)
             {
                 // Try to get a a builder instance from the service collection.
                 builderInstance = _services.GetRequiredService(builderType);
@@ -435,6 +437,75 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         }
 
         /// <summary>
+        /// Get the services required for the constructor, and call it with them.
+        /// </summary>
+        /// <param name="constructor">
+        /// The constructor to call.
+        /// </param>
+        /// <returns>
+        /// Instance returned by the constructor.
+        /// </returns>
+        private object CallConstructorWithServicesForAssemblies(
+            ConstructorInfo constructor)
+        {
+            ParameterInfo[] parameters = constructor.GetParameters();
+            object[] services = new object[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].ParameterType.Equals(typeof(ILoggerFactory)))
+                {
+                    services[i] = LoggerFactory;
+                }
+                else
+                {
+                    services[i] = _services.GetService(parameters[i].ParameterType);
+                }
+            }
+            return Activator.CreateInstance(constructor.DeclaringType, services);
+        }
+
+
+        /// <summary>
+        /// Get the best constructor for the list of constructors. Best meaning
+        /// the constructor with the most parameters which can be fulfilled.
+        /// </summary>
+        /// <param name="constructors">
+        /// Constructors to get the best of.
+        /// </param>
+        /// <returns>
+        /// Best constructor or null if none have parameters that can be
+        /// fulfilled.
+        /// </returns>
+        private ConstructorInfo GetBestConstructorForAssemblies(
+            IEnumerable<ConstructorInfo> constructors)
+        {
+            ConstructorInfo bestConstructor = null;
+            foreach (var constructor in constructors)
+            {
+                if (bestConstructor == null ||
+                    constructor.GetParameters().Length >
+                    bestConstructor.GetParameters().Length)
+                {
+                    var hasServices = true;
+                    foreach (var param in constructor.GetParameters())
+                    {
+                        if (param.ParameterType.Equals(typeof(ILoggerFactory)) == false &&
+                            _services.GetService(param.ParameterType) == null)
+                        {
+                            hasServices = false;
+                            break;
+                        }
+                    }
+                    if (hasServices == true)
+                    {
+                        bestConstructor = constructor;
+                    }
+                }
+            }
+            return bestConstructor;
+        }
+
+        /// <summary>
         /// Instantiate a new builder instance from the assemblies which are
         /// currently loaded.
         /// </summary>
@@ -450,9 +521,15 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             var loggerConstructors = builderType.GetConstructors()
                 .Where(c => c.GetParameters().Length == 1 &&
                 c.GetParameters()[0].ParameterType == typeof(ILoggerFactory));
-
+            var serviceConstructors = builderType.GetConstructors()
+                .Where(c => c.GetParameters().Length > 1 &&
+                c.GetParameters().All(p => p.ParameterType.Equals(typeof(ILoggerFactory)) ||
+                (_services != null &&
+                _services.GetService(p.ParameterType) != null)));
+            
             if (defaultConstructors.Any() == false &&
-                loggerConstructors.Any() == false)
+                loggerConstructors.Any() == false &&
+                serviceConstructors.Any() == false)
             {
                 return null;
             }
@@ -460,7 +537,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // Create the builder instance using the constructor with a logger
             // factory, or the default constructor if one taking a logger
             // factory is not available.
-            if (loggerConstructors.Any())
+            if (serviceConstructors.Any() &&
+                GetBestConstructorForAssemblies(serviceConstructors) != null)
+            {
+                return CallConstructorWithServicesForAssemblies(
+                    GetBestConstructorForAssemblies(serviceConstructors));
+            }
+            else if (loggerConstructors.Any())
             {
                 return Activator.CreateInstance(builderType, LoggerFactory);
             }
