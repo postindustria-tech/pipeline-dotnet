@@ -40,6 +40,7 @@ using FiftyOne.Pipeline.Engines.FiftyOne;
 using System.Collections.Concurrent;
 using Newtonsoft.Json.Serialization;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
+using FiftyOne.Pipeline.Engines;
 
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
@@ -635,9 +636,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             var javascriptPropertiesEnumerable =
                 data.GetWhere(
                     p => p.Type != null &&
-                    (p.Type.Equals(typeof(JavaScript)) ||
-                    p.Type.Equals(typeof(IAspectPropertyValue<JavaScript>))))
-                    .Where(p => availableProperties.Contains(p.Key));
+                        Utils.IsTypeOrAspectPropertyValue<JavaScript>(p.Type))
+                    .Where(p => availableProperties.Contains(p.Key));            
 
             List<string> javascriptPropeties = new List<string>();
             foreach (var property in javascriptPropertiesEnumerable)
@@ -702,7 +702,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             // Return the names of any delayed execution properties.
             foreach(var property in properties.Where(p =>
                 p.DelayExecution &&
-                p.Type == typeof(JavaScript)))
+                Utils.IsTypeOrAspectPropertyValue<JavaScript>(p.Type)))
             {
                 yield return $"{dataPath}{Core.Constants.EVIDENCE_SEPERATOR}" +
                     $"{property.Name.ToLowerInvariant()}";

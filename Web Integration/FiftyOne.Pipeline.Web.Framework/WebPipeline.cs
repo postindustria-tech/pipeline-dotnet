@@ -264,6 +264,18 @@ namespace FiftyOne.Pipeline.Web.Framework
                     CheckAndAdd(flowData, (string)sessionValueName, request.RequestContext.HttpContext.Session[(string)sessionValueName]);
                 }
             }
+            // Add form parameters to the evidence.
+            if (request.HttpMethod == Shared.Constants.METHOD_POST &&
+                Shared.Constants.CONTENT_TYPE_FORM.Contains(request.ContentType))
+            {
+                foreach (var formKey in request.Form.AllKeys)
+                {
+                    string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
+                        Core.Constants.EVIDENCE_SEPERATOR + formKey;
+                    CheckAndAdd(flowData, evidenceKey, request.Form[formKey]);
+                }
+            }
+
             // Add the client IP
             CheckAndAdd(flowData, "server.client-ip", request.UserHostAddress);
 

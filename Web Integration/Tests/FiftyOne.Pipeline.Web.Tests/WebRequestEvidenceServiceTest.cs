@@ -73,16 +73,18 @@ namespace FiftyOne.Pipeline.Web.Tests
         }
 
 
-        private static string expectedValue = "expected";
+        private static string EXPECTED_VALUE = "expected";
 
-        private static string requiredKey = "requiredkey";
-        private static string notRequiredKey = "notrequiredkey";
+        private static string REQUIRED_KEY = "requiredkey";
+        private static string NOT_REQUIRED_KEY = "notrequiredkey";
+        private static string FORM_KEY = "formValueKey";
+        private static string FORM_VALUE = "formValueValue";
 
-        private static IPAddress ip = new IPAddress(123321);
+        private static IPAddress IP = new IPAddress(123321);
 
-        private Mock<IFlowData> flowData;
-        private WebRequestEvidenceService service;
-        private Mock<HttpRequest> request;
+        private Mock<IFlowData> _flowData;
+        private WebRequestEvidenceService _service;
+        private Mock<HttpRequest> _request;
 
         /// <summary>
         /// Set up the test by creating a new service and initialising any
@@ -92,26 +94,36 @@ namespace FiftyOne.Pipeline.Web.Tests
         public void StartUp()
         {
             var values = new Dictionary<string, string>() {
-                { requiredKey, expectedValue },
+                { REQUIRED_KEY, EXPECTED_VALUE },
                 { "null", null } };
             var valuesV = new Dictionary<string, StringValues>() {
-                { requiredKey, new StringValues(expectedValue) },
+                { REQUIRED_KEY, new StringValues(EXPECTED_VALUE) },
                 { "null", new StringValues((string)null) } };
 
             var headers = new HeaderDictionary(valuesV);
             var query = new QueryCollection(valuesV);
             var cookies = new MockCookieCollection(values);
+            var formValues = new FormCollection(
+                new Dictionary<string, StringValues>() {
+                    { FORM_KEY, new StringValues(FORM_VALUE) }
+                });
 
-            request = new Mock<HttpRequest>();
-            flowData = new Mock<IFlowData>();
-            service = new WebRequestEvidenceService();
+            _request = new Mock<HttpRequest>();
+            _flowData = new Mock<IFlowData>();
+            _service = new WebRequestEvidenceService();
 
-            request.SetupGet(r => r.Headers).Returns(headers);
-            request.SetupGet(r => r.Cookies).Returns(cookies);
-            request.SetupGet(r => r.Query).Returns(query);
-            request.SetupGet(r => r.HttpContext.Connection.LocalIpAddress)
-                .Returns(ip);
-            request.SetupGet(r => r.IsHttps).Returns(true);
+            _request.SetupGet(r => r.Headers).Returns(headers);
+            _request.SetupGet(r => r.Cookies).Returns(cookies);
+            _request.SetupGet(r => r.Query).Returns(query);
+            _request.SetupGet(r => r.Form).Returns(formValues);
+
+            _request.SetupGet(r => r.HttpContext.Connection.LocalIpAddress)
+                .Returns(IP);
+            _request.SetupGet(r => r.IsHttps).Returns(true);
+            _request.SetupGet(r => r.ContentType)
+                .Returns(Shared.Constants.CONTENT_TYPE_FORM[0]);
+            _request.SetupGet(r => r.Method)
+                .Returns(Shared.Constants.METHOD_POST);
         }
 
         /// <summary>
@@ -120,7 +132,7 @@ namespace FiftyOne.Pipeline.Web.Tests
         /// <param name="key">required key to set</param>
         private void SetRequiredKey(string key)
         {
-            flowData.SetupGet(f => f.EvidenceKeyFilter)
+            _flowData.SetupGet(f => f.EvidenceKeyFilter)
                 .Returns(new EvidenceKeyFilterWhitelist(
                     new List<string>() { key }));
         }
@@ -134,11 +146,11 @@ namespace FiftyOne.Pipeline.Web.Tests
         public void WebRequestEvidenceService_ContainsProtocol()
         {
             SetRequiredKey(Core.Constants.EVIDENCE_PROTOCOL);
-            service.AddEvidenceFromRequest(flowData.Object, request.Object);
-            flowData.Verify(f => f.AddEvidence(
+            _service.AddEvidenceFromRequest(_flowData.Object, _request.Object);
+            _flowData.Verify(f => f.AddEvidence(
                 It.IsAny<string>(), It.IsAny<string>()),
                 Times.Once);
-            flowData.Verify(f => f.AddEvidence(
+            _flowData.Verify(f => f.AddEvidence(
                 Core.Constants.EVIDENCE_PROTOCOL, "https"),
                 Times.Once);
         }
@@ -152,15 +164,15 @@ namespace FiftyOne.Pipeline.Web.Tests
         /// required key) is added to the flow data evidence collection.
         /// </summary>
         /// <param name="prefix">prefix to test</param>
-        private void CheckRequired(string prefix)
+        private void CheckRequired(string prefix, string key, string expectedValue)
         {
-            SetRequiredKey(prefix + "." + requiredKey);
-            service.AddEvidenceFromRequest(flowData.Object, request.Object);
-            flowData.Verify(f => f.AddEvidence(
+            SetRequiredKey(prefix + "." + key);
+            _service.AddEvidenceFromRequest(_flowData.Object, _request.Object);
+            _flowData.Verify(f => f.AddEvidence(
                 It.IsAny<string>(), It.IsAny<string>()),
                 Times.Once);
-            flowData.Verify(f => f.AddEvidence(
-                prefix + "." + requiredKey, expectedValue),
+            _flowData.Verify(f => f.AddEvidence(
+                prefix + "." + key, expectedValue),
                 Times.Once);
         }
 
@@ -175,9 +187,9 @@ namespace FiftyOne.Pipeline.Web.Tests
         /// <param name="prefix"></param>
         private void CheckNotRequired(string prefix)
         {
-            SetRequiredKey(prefix + "." + notRequiredKey);
-            service.AddEvidenceFromRequest(flowData.Object, request.Object);
-            flowData.Verify(f => f.AddEvidence(
+            SetRequiredKey(prefix + "." + NOT_REQUIRED_KEY);
+            _service.AddEvidenceFromRequest(_flowData.Object, _request.Object);
+            _flowData.Verify(f => f.AddEvidence(
                 It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
         }
@@ -191,11 +203,11 @@ namespace FiftyOne.Pipeline.Web.Tests
         {
             var key = "server.client-ip";
             SetRequiredKey(key);
-            service.AddEvidenceFromRequest(flowData.Object, request.Object);
-            flowData.Verify(f => f.AddEvidence(
+            _service.AddEvidenceFromRequest(_flowData.Object, _request.Object);
+            _flowData.Verify(f => f.AddEvidence(
                 It.IsAny<string>(), It.IsAny<string>()),
                 Times.Once);
-            flowData.Verify(f => f.AddEvidence(key, ip.ToString()), Times.Once);
+            _flowData.Verify(f => f.AddEvidence(key, IP.ToString()), Times.Once);
         }
 
         /// <summary>
@@ -205,7 +217,7 @@ namespace FiftyOne.Pipeline.Web.Tests
         [TestMethod]
         public void WebRequestEvidenceService_AddRequiredHeader()
         {
-            CheckRequired("header");
+            CheckRequired("header", REQUIRED_KEY, EXPECTED_VALUE);
         }
 
         /// <summary>
@@ -225,7 +237,7 @@ namespace FiftyOne.Pipeline.Web.Tests
         [TestMethod]
         public void WebRequestEvidenceService_AddRequiredCookie()
         {
-            CheckRequired("cookie");
+            CheckRequired("cookie", REQUIRED_KEY, EXPECTED_VALUE);
         }
 
         /// <summary>
@@ -245,7 +257,7 @@ namespace FiftyOne.Pipeline.Web.Tests
         [TestMethod]
         public void WebRequestEvidenceService_AddRequiredParam()
         {
-            CheckRequired("query");
+            CheckRequired("query", REQUIRED_KEY, EXPECTED_VALUE);
         }
 
         /// <summary>
@@ -256,6 +268,53 @@ namespace FiftyOne.Pipeline.Web.Tests
         [TestMethod]
         public void WebRequestEvidenceService_AddNotRequiredParam()
         {
+            CheckNotRequired("query");
+        }
+
+        public static IEnumerable<object[]> GetContentTypes
+        {
+            get
+            {
+                foreach (var entry in Shared.Constants.CONTENT_TYPE_FORM)
+                {
+                    yield return new object[] { entry };
+                }
+            }
+        }
+        /// <summary>
+        /// Test that evidence is added from form parameters for each 
+        /// valid content type.
+        /// </summary>
+        [DataTestMethod]
+        [DynamicData(nameof(GetContentTypes))]
+        public void WebRequestEvidenceService_AddFormParam(string contentType)
+        {
+            _request.SetupGet(r => r.ContentType).Returns(contentType);
+            CheckRequired("query", FORM_KEY, FORM_VALUE);
+        }
+
+        /// <summary>
+        /// Test that form parameters will not be read if type is not post
+        /// </summary>
+        [TestMethod]
+        public void WebRequestEvidenceService_AddFormParam_NotPost()
+        {
+            _request.SetupGet(r => r.Method).Returns("TEST");
+            _request.SetupGet(r => r.Form).Throws(new System.Exception(
+                "This test should not be trying to access form values"));
+            CheckNotRequired("query");
+        }
+
+        /// <summary>
+        /// Test that form parameters will not be read if content type
+        /// is not url encoded form
+        /// </summary>
+        [TestMethod]
+        public void WebRequestEvidenceService_AddFormParam_NotForm()
+        {
+            _request.SetupGet(r => r.ContentType).Returns("TEST");
+            _request.SetupGet(r => r.Form).Throws(new System.Exception(
+                "This test should not be trying to access form values"));
             CheckNotRequired("query");
         }
 
@@ -272,11 +331,11 @@ namespace FiftyOne.Pipeline.Web.Tests
         private void CheckNullValue(string prefix)
         {
             SetRequiredKey(prefix + ".null");
-            service.AddEvidenceFromRequest(flowData.Object, request.Object);
-            flowData.Verify(f => f.AddEvidence(
+            _service.AddEvidenceFromRequest(_flowData.Object, _request.Object);
+            _flowData.Verify(f => f.AddEvidence(
                 It.IsAny<string>(), It.IsAny<string>()),
                 Times.Once);
-            flowData.Verify(f => f.AddEvidence(
+            _flowData.Verify(f => f.AddEvidence(
                 prefix + ".null", ""),
                 Times.Once);
         }

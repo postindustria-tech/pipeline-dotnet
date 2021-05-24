@@ -48,12 +48,20 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
     [TestClass]
     public class JsonBuilderElementTests
     {
+        public enum JsPropertyType
+        {
+            JavaScript,
+            IAspectPropertyValue,
+            AspectPropertyValue
+        }
+
         private IJsonBuilderElement _jsonBuilderElement;
         private Mock<IElementData> _elementDataMock;
         private ILoggerFactory _loggerFactory;
         private Mock<IPipeline> _pipeline;
 
         private Mock<IAspectEngine> _testEngine;
+        private Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>> _propertyMetaData;
 
         [TestInitialize]
         public void Init()
@@ -75,8 +83,8 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
 
             _pipeline = new Mock<IPipeline>();
             _pipeline.Setup(p => p.GetHashCode()).Returns(1);
-            var propertyMetaData = new Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>();
-            _pipeline.Setup(p => p.ElementAvailableProperties).Returns(propertyMetaData);
+            _propertyMetaData = new Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>();
+            _pipeline.Setup(p => p.ElementAvailableProperties).Returns(_propertyMetaData);
         }
 
         /// <summary>
@@ -89,7 +97,33 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
 
             Assert.IsTrue(IsExpectedJson(json));
         }
-        
+
+        /// <summary>
+        /// Check that the JSON element removes JavaScript properties from the 
+        /// response after max number of iterations has been reached.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(JsPropertyType.JavaScript)]
+        [DataRow(JsPropertyType.AspectPropertyValue)]
+        [DataRow(JsPropertyType.IAspectPropertyValue)]
+        public void JsonBuilder_JsProperty(JsPropertyType propertyType)
+        {
+            _elementDataMock.Setup(ed => ed.AsDictionary()).
+                Returns(new Dictionary<string, object>() {
+                    { "jsproperty", "var = 'some js code';" }
+                });
+
+            var testElementMetaData = new Dictionary<string, IElementPropertyMetaData>();
+            var p1 = new ElementPropertyMetaData(_testEngine.Object, "jsproperty", GetTypeFromEnum(propertyType), true, "");
+            testElementMetaData.Add("jsproperty", p1);
+            _propertyMetaData.Add("test", testElementMetaData);
+
+            var json = TestIteration(1);
+            Assert.IsTrue(ContainsJavaScriptProperties(json),
+                "The 'javascriptProperties' element is missing from the JSON. " +
+                "Complete JSON: " + Environment.NewLine + json);
+        }
+
         /// <summary>
         /// Check that the JSON element removes JavaScript properties from the 
         /// response after max number of iterations has been reached.
@@ -97,23 +131,29 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
         [TestMethod]
         public void JsonBuilder_MaxIterations()
         {
+            _elementDataMock.Setup(ed => ed.AsDictionary()).
+                Returns(new Dictionary<string, object>() {
+                    { "jsproperty", "var = 'some js code';" }
+                });
+
+            var testElementMetaData = new Dictionary<string, IElementPropertyMetaData>();
+            var p1 = new ElementPropertyMetaData(_testEngine.Object, "jsproperty", typeof(AspectPropertyValue<JavaScript>), true, "");
+            testElementMetaData.Add("jsproperty", p1);
+            _propertyMetaData.Add("test", testElementMetaData);
+
             for (var i = 0; true; i++)
             {
-                var jsProperties = new Dictionary<string, object>() 
-                {
-                    { "test.jsproperty", new AspectPropertyValue<JavaScript>(new JavaScript("var = 'some js code';")) }
-                };
-                var json = TestIteration(i, null, jsProperties);
+                var json = TestIteration(i);
                 var result = ContainsJavaScriptProperties(json);
 
                 if (i >= Constants.MAX_JAVASCRIPT_ITERATIONS)
                 {
-                    Assert.IsFalse(result);
+                    Assert.IsFalse(result, $"Failed on iteration {i}");
                     break;
                 }
                 else
                 {
-                    Assert.IsTrue(result);
+                    Assert.IsTrue(result, $"Failed on iteration {i}");
                 }
             }
         }
@@ -177,7 +217,6 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
 
             // Configure the property meta-data as needed for
             // this test.
-            var propertyMetaData = new Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>();
             var testElementMetaData = new Dictionary<string, IElementPropertyMetaData>();
             var nestedMetaData = new List<IElementPropertyMetaData>() {
                 new ElementPropertyMetaData(_testEngine.Object, "value1", typeof(string), true),
@@ -185,8 +224,7 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             };
             var p1 = new ElementPropertyMetaData(_testEngine.Object, "property", typeof(List<NestedData>), true, "", nestedMetaData);
             testElementMetaData.Add("property", p1);
-            propertyMetaData.Add("test", testElementMetaData);
-            _pipeline.Setup(p => p.ElementAvailableProperties).Returns(propertyMetaData);
+            _propertyMetaData.Add("test", testElementMetaData);
 
             var json = TestIteration(1);
 
@@ -222,18 +260,30 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
                 $"Complete JSON: " + Environment.NewLine + json);
         }
 
+        public static IEnumerable<object[]> GetDelayedExecutionTestParameters
+        {
+            get
+            {
+                foreach (var entry in Enum.GetValues(typeof(JsPropertyType)))
+                {
+                    yield return new object[] { true, true, entry };
+                    yield return new object[] { false, true, entry };
+                    yield return new object[] { true, false, entry };
+                    yield return new object[] { false, false, entry };
+                }
+            }
+        }
+
         /// <summary>
         /// Check that delayed execution and evidence properties values
         /// are populated correctly.
         /// </summary>
         [DataTestMethod]
-        [DataRow(true, true)]
-        [DataRow(false, true)]
-        [DataRow(true, false)]
-        [DataRow(false, false)]
+        [DynamicData(nameof(GetDelayedExecutionTestParameters))]
         public void JsonBuilder_DelayedExecution(
             bool delayExecution, 
-            bool propertyValueNull)
+            bool propertyValueNull,
+            JsPropertyType jsPropertyType)
         {
             // If the flag is set then initialise the 'property' value to null.
             if (propertyValueNull)
@@ -244,17 +294,15 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
                     { "jsproperty", "var = 'some js code';" }
                     });
             }
-
+                       
             // Configure the property meta-data as needed for
             // this test.
-            var propertyMetaData = new Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>();
             var testElementMetaData = new Dictionary<string, IElementPropertyMetaData>();
             var p1 = new ElementPropertyMetaData(_testEngine.Object, "property", typeof(string), true, "", null, false, new List<string>() { "jsproperty" });
             testElementMetaData.Add("property", p1);
-            var p2 = new ElementPropertyMetaData(_testEngine.Object, "jsproperty", typeof(JavaScript), true, "", null, delayExecution);
+            var p2 = new ElementPropertyMetaData(_testEngine.Object, "jsproperty", GetTypeFromEnum(jsPropertyType), true, "", null, delayExecution);
             testElementMetaData.Add("jsproperty", p2);
-            propertyMetaData.Add("test", testElementMetaData);
-            _pipeline.Setup(p => p.ElementAvailableProperties).Returns(propertyMetaData);
+            _propertyMetaData.Add("test", testElementMetaData);
 
             // Run the test
             var json = TestIteration(1);
@@ -297,7 +345,6 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             // jsproperty and jsproperty2.
             // jsproperty has delayed execution true and
             // jsproperty2 does not.
-            var propertyMetaData = new Dictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>();
             var testElementMetaData = new Dictionary<string, IElementPropertyMetaData>();
             var p1 = new ElementPropertyMetaData(_testEngine.Object, "property", typeof(string), true, "", null, false, new List<string>() { "jsproperty", "jsproperty2" });
             testElementMetaData.Add("property", p1);
@@ -305,8 +352,7 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             testElementMetaData.Add("jsproperty", p2);
             var p3 = new ElementPropertyMetaData(_testEngine.Object, "jsproperty2", typeof(JavaScript), true, "", null, false);
             testElementMetaData.Add("jsproperty2", p2);
-            propertyMetaData.Add("test", testElementMetaData);
-            _pipeline.Setup(p => p.ElementAvailableProperties).Returns(propertyMetaData);
+            _propertyMetaData.Add("test", testElementMetaData);
 
             _elementDataMock.Setup(ed => ed.AsDictionary()).
                 Returns(new Dictionary<string, object>() {
@@ -369,7 +415,6 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
                 flowData.Process();
                 Trace.WriteLine("Process complete");
 
-
                 var jsonResult = flowData.Get<IJsonBuilderElementData>();
                 Assert.IsNotNull(jsonResult);
                 Assert.IsNotNull(jsonResult.Json);
@@ -404,16 +449,11 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
         }
 
         private string TestIteration(int iteration,
-            Dictionary<string, object> data = null, 
-            Dictionary<string, object> jsProperties = null)
+            Dictionary<string, object> data = null)
         {
             if(data == null)
             {
                 data = new Dictionary<string, object>() { { "test", _elementDataMock.Object } };
-            }
-            if(jsProperties == null)
-            {
-                jsProperties = new Dictionary<string, object>();
             }
 
             var flowData = new Mock<IFlowData>();
@@ -423,7 +463,13 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             string session = "somesessionid";
             flowData.Setup(d => d.TryGetEvidence("query.session-id", out session)).Returns(true);
             flowData.Setup(d => d.TryGetEvidence("query.sequence", out iteration)).Returns(true);
-            flowData.Setup(d => d.GetWhere(It.IsAny<Func<IElementPropertyMetaData, bool>>())).Returns(jsProperties);
+            flowData.Setup(d => d.GetWhere(It.IsAny<Func<IElementPropertyMetaData, bool>>())).Returns(
+                (Func<IElementPropertyMetaData, bool> filter) => {
+                    return _propertyMetaData
+                        .SelectMany(e => e.Value)
+                        .Where(p => filter(p.Value))
+                        .Select(p => new KeyValuePair<string, object>(p.Value.Element.ElementDataKey + "." + p.Key, p.Value));
+                });
 
             IJsonBuilderElementData result = null;
             flowData.Setup(d => d.GetOrAdd(
@@ -474,6 +520,26 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
                 }
             }
             return false;
+        }
+
+        private Type GetTypeFromEnum(JsPropertyType type)
+        {
+            Type result = typeof(JavaScript);
+            switch (type)
+            {
+                case JsPropertyType.JavaScript:
+                    result = typeof(JavaScript);
+                    break;
+                case JsPropertyType.IAspectPropertyValue:
+                    result = typeof(IAspectPropertyValue<JavaScript>);
+                    break;
+                case JsPropertyType.AspectPropertyValue:
+                    result = typeof(AspectPropertyValue<JavaScript>);
+                    break;
+                default:
+                    break;
+            }
+            return result;
         }
     }
 }
