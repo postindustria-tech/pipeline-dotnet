@@ -143,11 +143,11 @@ namespace Example
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            app.UseFiftyOne();
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
+            app.UseFiftyOne();
             app.UseMvc(routes =>
             routes.MapRoute(
                 name: "default",
