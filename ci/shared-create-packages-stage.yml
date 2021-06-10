@@ -1,0 +1,162 @@
+parameters:
+- name: targetPublishConfig # Target build configuration to publish
+  type: string
+  default: 'Release'
+- name: nugetVersion # NuGet version to use
+  type: string
+  default: 5.8.0
+- name: imageName # Name of the agent to work on
+- name: dependency # Name of the stage that this stage depends on
+
+stages:
+- stage: CreatePackages
+  dependsOn: ${{ parameters.dependency }}
+
+  variables:
+    - group: CertificateVariables
+    # Because we are pulling in a group, we need to define local variables 
+    # using the name/value syntax.
+    - name: RestoreBuildProjects
+      value: '**/*.sln'
+      # Projects to be published as NuGet packages.
+      # Note the the Web and Web.Framework projects are published as a single package
+      # using a nuspec file rather than directly from the project files. Hence they 
+      # are excluded here.
+    - name: PublishProjects
+      value: '**/*.csproj;!**/*[Tt]ests/**/*.csproj;!**/*[Ee]xamples/**/*.csproj;!**/FiftyOne.Pipeline.Web.csproj;!**/FiftyOne.Pipeline.Web.Framework.csproj'
+      # Access token for the git repository. Used by the git tag task.
+    - name: system_accesstoken
+      value: $(System.AccessToken)
+
+  jobs:
+  - job: CreatePackages
+    displayName: Create Packages
+
+    pool:
+      vmImage: ${{ parameters.imageName }}
+    
+    steps:
+    - bash: |
+       git lfs install
+       if [ $? != 0 ]; then
+         echo "ERROR: Failed to install lfs."
+       fi
+       ls
+
+       git config --global --add filter.lfs.required true
+       git config --global --add filter.lfs.smudge "git-lfs smudge -- %f"
+       git config --global --add filter.lfs.process "git-lfs filter-process"
+       git config --global --add filter.lfs.clean "git-lfs clean -- %f"
+      displayName: 'Configure git lfs'
+      failOnStderr: true
+      
+    # The lines below are needed to allow the pipeline access to the
+    # OAuth access token that controls write access to the git repository. 
+    # (Required for GitTag task)
+    - checkout: self
+      lfs: true
+      submodules: recursive
+      persistCredentials: true
+    # Useful snippets for debugging.
+    # List all contents of a directory:
+    #- script: |
+    #    ls -d $(System.ArtifactsDirectory)/*
+        
+    - task: NuGetToolInstaller@1
+      displayName: 'Use NuGet ${{ parameters.nugetVersion }}'
+      inputs:
+        versionSpec: ${{ parameters.nugetVersion }}
+
+    - task: UseDotNet@2
+      displayName: 'Use .NET Core 3.1'
+      inputs:
+        packageType: sdk
+        version: 3.1.x
+        performMultiLevelLookup: true
+
+    - task: NuGetCommand@2
+      displayName: 'NuGet restore'
+      inputs:
+        command: 'restore'
+        restoreSolution: '$(RestoreBuildProjects)'
+        feedsToUse: 'select'
+        vstsFeed: 'd2431f86-c1e6-4d8b-8d27-311cf3614847'
+       
+    - task: gittools.gitversion.gitversion-task.GitVersion@5
+      displayName: 'Determine Version Number'
+      # Give this task a name so we can use the variables it sets later. 
+      name: GitVersion
+      inputs:
+        preferBundledVersion: false
+    
+    - task: VSBuild@1
+      displayName: 'Build solutions Any CPU'
+      inputs:
+        solution: '$(RestoreBuildProjects)'
+        vsVersion: '15.0'
+        platform: 'Any CPU'
+        configuration: '${{ parameters.targetPublishConfig }}'
+        clean: true
+        msbuildArchitecture: 'x86'
+    
+    # Index and publish symbol file to allow debugging.
+    - task: PublishSymbols@2
+      displayName: 'Publish Symbols'
+      inputs: 
+        SearchPattern: '**/bin/**/*.pdb'
+        SymbolServerType: 'TeamServices'
+        SymbolsVersion: '$(GitVersion.NuGetVersion)'
+      condition: and(succeeded(), eq('${{ parameters.targetPublishConfig }}', 'Debug'))
+    
+    # The nuget package version uses the BUILD_BUILDNUMER environment variable.
+    # This has been set by the GitVersion task above.
+    - task: DotNetCoreCLI@2
+      displayName: 'Build NuGet Package'
+      inputs:
+        command: 'pack'
+        packagesToPack: '$(PublishProjects)'
+        versioningScheme: 'byEnvVar'
+        versionEnvVar: 'BUILD_BUILDNUMBER'
+        
+    # The Web and Web.Framework projects are combined into a single NuGet package.
+    # This requires the use of a nuspec file and the NuGet task.    
+    - task: NuGetCommand@2
+      displayName: 'NuGet pack Pipeline.Web'
+      inputs:
+        command: 'pack'
+        packagesToPack: '**/FiftyOne.Pipeline.Web.nuspec'
+        versioningScheme: 'byEnvVar'
+        versionEnvVar: 'BUILD_BUILDNUMBER'
+        buildProperties: 'config=${{ parameters.targetPublishConfig }}'
+        
+    # The secure file to download will be stored in the 
+    # Pipelines/Library/SecureFiles section in Azure DevOps.
+    - task: DownloadSecureFile@1
+      displayName: 'Download Code Signing Certificate'
+      name: CodeSigningCert
+      inputs:
+        secureFile: '51Degrees.mobi Code Signing Certificate.pfx'
+    
+    # Sign the Nuget package with the file downloaded previously.
+    # The password is stored in the Pipelines/Library/VariableGroups
+    # section in Azure DevOps.
+    - task: NuGetCommand@2
+      displayName: 'Sign NuGet Package'
+      inputs:
+        command: custom
+        arguments: 'sign $(System.ArtifactsDirectory)\*.nupkg -CertificatePath "$(CodeSigningCert.secureFilePath)" -CertificatePassword $(CodeSigningCertPassword) -Timestamper http://timestamp.digicert.com'
+    
+    # Add a tag to the git repository with the version number of
+    # the package that has just been published
+    - task: ATP.ATP-GitTag.GitTag.GitTag@5
+      displayName: 'Tag Repo With Version Number'
+      inputs:
+        tagUser: 'Azure DevOps'
+        tagEmail: 'CIUser@51Degrees.com'
+      condition: and(succeeded(), eq('${{ parameters.targetPublishConfig }}', 'Release'))
+      
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)'
+      condition: succeededOrFailed()

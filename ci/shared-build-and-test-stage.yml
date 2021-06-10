@@ -1,0 +1,160 @@
+parameters:
+- name: imageName # Name of the agent to work on.
+- name: nugetVersion
+  type: string
+  default: 5.8.0
+
+stages:
+- stage: Build_and_Test
+
+  jobs:
+  - job: Build_and_Test
+    displayName: Build and Test
+
+    pool:
+      vmImage: ${{ parameters.imageName }}
+  
+    # Configure this to run for both Debug and Release configurations
+    strategy:
+      maxParallel: 4
+      matrix:
+        debug:
+          BuildConfiguration: Debug
+        release:
+          BuildConfiguration: Release 
+    
+    variables: 
+      RestoreBuildProjects: '**/*.sln'
+      DOTNET_NOLOGO: true
+    
+    steps:
+    # Get the data files that are required for device detection automated system tests.
+    - powershell: |
+        git lfs install
+        if (-Not $?) {
+          "ERROR: Failed to install git lft."
+          exit 1
+        }
+        ls
+
+        git config --global --add filter.lfs.required true
+        git config --global --add filter.lfs.smudge "git-lfs smudge -- %f"
+        git config --global --add filter.lfs.process "git-lfs filter-process"
+        git config --global --add filter.lfs.clean "git-lfs clean -- %f"
+      displayName: 'Configure git lfs'
+      failOnStderr: true
+    
+    - checkout: self
+      lfs: true
+      submodules: recursive
+    
+    - task: NuGetToolInstaller@1
+      displayName: 'Use NuGet ${{ parameters.nugetVersion }}'
+      inputs:
+        versionSpec: ${{ parameters.nugetVersion }}
+    
+    - task: UseDotNet@2
+      displayName: 'Use .NET Core 3.1'
+      inputs:
+        packageType: sdk
+        version: 3.1.x
+        performMultiLevelLookup: true
+    
+    - task: NuGetCommand@2
+      displayName: 'NuGet restore'
+      inputs:
+        command: 'restore'
+        restoreSolution: '$(RestoreBuildProjects)'
+        feedsToUse: 'select'
+        vstsFeed: 'd2431f86-c1e6-4d8b-8d27-311cf3614847'
+    
+    - task: VSBuild@1
+      displayName: 'Build solutions'
+      inputs:
+        solution: '$(RestoreBuildProjects)'
+        vsVersion: '15.0'
+        platform: 'Any CPU'
+        configuration: '$(BuildConfiguration)'
+        clean: true
+        
+    - task: VisualStudioTestPlatformInstaller@1
+      displayName: 'Visual Studio Test Platform Installer'
+      inputs:
+        versionSelector: latestStable
+        
+    - task: VSTest@2
+      displayName: 'VsTest - testAssemblies - dotnet framework'
+      inputs:
+        testSelector: 'testAssemblies'
+        testAssemblyVer2: |
+          **\net4*\*Tests*.dll
+          !**\*TestAdapter*.dll
+          !**\*TestFramework*.dll
+          !**\obj\**
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+        codeCoverageEnabled: true
+        otherConsoleOptions: '/Framework:Framework45 /logger:console;verbosity="normal"'
+        configuration: '$(BuildConfiguration)'
+        diagnosticsEnabled: true
+        testRunTitle: 'framework-$(BuildConfiguration)'
+        
+    - task: VSTest@2
+      displayName: 'VsTest - testAssemblies - dotnet core'
+      inputs:
+        testSelector: 'testAssemblies'
+        testAssemblyVer2: |
+          **\netcoreapp*\*Tests*.dll
+          !**\*TestAdapter*.dll
+          !**\*TestFramework*.dll
+          !**\obj\**
+          !**\performance_tests.dll
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+        codeCoverageEnabled: true
+        otherConsoleOptions: '/Framework:.NETCoreApp,Version=v3.1 /logger:console;verbosity="normal"'
+        configuration: '$(BuildConfiguration)'
+        diagnosticsEnabled: true
+        testRunTitle: 'dotnetcore-$(BuildConfiguration)'
+    
+    - task: PowerShell@2
+      displayName: 'Build cloud perf tests'
+      inputs:
+        targetType: 'inline'
+        script: |
+          cd performance-tests/
+          mkdir build          
+          if (-Not (Test-Path -Path ../performance-tests/build)) {
+            "ERROR: Failed to create build folder!"
+            exit 1
+          }
+
+          cd build
+          cmake ..
+          cmake --build .
+          if (-Not $?) {
+            "ERROR: Failed to build the performance test!"
+            exit 1
+          }
+          cd ..
+        failOnStderr: true
+    
+    - task: PowerShell@2
+      displayName: 'Run cloud perf tests'
+      inputs:
+        filePath: '$(System.DefaultWorkingDirectory)/performance-tests/build/runPerf.ps1'
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Micro benchmarks'
+      inputs:
+        command: run
+        projects: '**/FiftyOne.Pipeline.Benchmarks.csproj'
+        nobuild: true      
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'performance-tests/build'
+        ArtifactName: 'perfout'
+        publishLocation: 'Container'
+      displayName: 'Publish Performance Artifacts'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact' 
