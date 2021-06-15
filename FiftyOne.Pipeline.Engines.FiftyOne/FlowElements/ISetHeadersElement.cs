@@ -1,4 +1,4 @@
-/* *********************************************************************
+﻿/* *********************************************************************
  * This Original Work is copyright of 51 Degrees Mobile Experts Limited.
  * Copyright 2020 51 Degrees Mobile Experts Limited, 5 Charlotte Close,
  * Caversham, Reading, Berkshire, United Kingdom RG4 7BY.
@@ -20,42 +20,22 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines.FiftyOne.Data;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace FiftyOne.Pipeline.Core.Data
+namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
-    /// Represents an object that filters evidence key names based on some
-    /// criteria.
-    /// For example, a filter that only included evidence items relating to
-    /// HTTP headers might use key.StartsWith("header.")
+    /// An <see cref="IFlowElement"/> that collates responses from all
+    /// engines that want to set headers in the HTTP response in order
+    /// to gather additional data.
     /// </summary>
-    public interface IEvidenceKeyFilter
+    public interface ISetHeadersElement :
+        IFlowElement<ISetHeadersData, IElementPropertyMetaData>
     {
-        /// <summary>
-        /// Check if the specified evidence key is included by this filter.
-        /// </summary>
-        /// <param name="key">
-        /// The key to check
-        /// </param>
-        /// <returns>
-        /// True if the key is included and false if not.
-        /// </returns>
-        bool Include(string key);
-
-        /// <summary>
-        /// Get the order of precedence of the specified key
-        /// </summary>
-        /// <param name="key">
-        /// The key to check
-        /// </param>
-        /// <returns>
-        /// The order, where lower values indicate a higher order of 
-        /// precedence. 
-        /// Null if the key is not recognized.
-        /// </returns>
-        int? Order(string key);
     }
 }

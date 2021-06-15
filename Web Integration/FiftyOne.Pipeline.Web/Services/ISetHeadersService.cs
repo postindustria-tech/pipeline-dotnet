@@ -1,4 +1,4 @@
-/* *********************************************************************
+﻿/* *********************************************************************
  * This Original Work is copyright of 51 Degrees Mobile Experts Limited.
  * Copyright 2020 51 Degrees Mobile Experts Limited, 5 Charlotte Close,
  * Caversham, Reading, Berkshire, United Kingdom RG4 7BY.
@@ -19,27 +19,31 @@
  * in the end user terms of the application under an appropriate heading, 
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
-
-using FiftyOne.Pipeline.Core.Configuration;
+ 
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace FiftyOne.Pipeline.Web.Framework.Configuration
+namespace FiftyOne.Pipeline.Web.Services
 {
     /// <summary>
-    /// Extends the PipelineOptions class to add web specific options.
+    /// This service handles setting HTTP headers in the response for
+    /// properties in the results from the pipeline that start with
+    /// 'SetHeader'
     /// </summary>
-    public class PipelineWebIntegrationOptions : PipelineOptions
+    public interface ISetHeadersService
     {
         /// <summary>
-        /// True if client-side properties should be enabled. If enabled
-        /// (and the JavaScriptBundlerElement added to the Pipeline), a
-        /// client-side JavaScript file will be served at the URL
-        /// */51Degrees.core.js.
+        /// Check if there are any populated SetHeader* properties.
+        /// if there are then use the data they contain to populate
+        /// the specified headers in the response.
         /// </summary>
-        public bool ClientSideEvidenceEnabled { get; set; } = true;
+        /// <param name="context">
+        /// The HttpContext
+        /// </param>
+        /// <returns>
+        /// </returns>
+        void SetHeaders(HttpContext context);
     }
 }

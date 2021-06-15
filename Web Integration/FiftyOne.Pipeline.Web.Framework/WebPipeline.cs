@@ -24,10 +24,13 @@ using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Core.Services;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
+using FiftyOne.Pipeline.Engines.Services;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.Web.Framework.Configuration;
+using FiftyOne.Pipeline.Web.Framework.Providers;
 using FiftyOne.Pipeline.Web.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -54,6 +57,11 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// then a 51Degrees.core.js will be served by the server.
         /// </summary>
         public bool ClientSideEvidenceEnabled => _options.ClientSideEvidenceEnabled;
+
+        /// <summary>
+        /// Whether or not set header properties are enabled.
+        /// </summary>
+        public bool SetHeaderPropertiesEnabled => _options.UseSetHeaderProperties;
 
         /// <summary>
         /// Extra pipeline options which only apply to an implementation in a
@@ -104,7 +112,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                 .Build();
             _options = new PipelineWebIntegrationOptions();
             config.Bind("PipelineOptions", _options);
-
+            
             if (_options == null ||
                 _options.Elements == null)
             {
@@ -183,7 +191,33 @@ namespace FiftyOne.Pipeline.Web.Framework
                 }
             }
 
-            Pipeline = new PipelineBuilder(new LoggerFactory())
+            // Add the set headers
+            var setHeadersConfig = _options.Elements.Where(e =>
+                e.BuilderName.IndexOf(nameof(SetHeadersElement),
+                    StringComparison.OrdinalIgnoreCase) >= 0);
+            if (setHeadersConfig.Any() == false)
+            {
+                // The set headers element is not included, so add it.
+                // Make sure it's added as the last element.
+                _options.Elements.Add(new ElementOptions()
+                {
+                    BuilderName = nameof(SetHeadersElement)
+                });
+            }
+
+            // Set up common services.
+            var loggerFactory = new LoggerFactory();
+            var updateService = new DataUpdateService(
+                loggerFactory.CreateLogger<DataUpdateService>(),
+                new System.Net.Http.HttpClient());
+            var services = new FiftyOneServiceProvider();
+            // Add data update and missing property services.
+            services.AddService(updateService);
+            services.AddService(MissingPropertyService.Instance);
+
+            Pipeline = new PipelineBuilder(
+                loggerFactory,
+                services)
                 .BuildFromConfiguration(_options);
         }
 
@@ -230,6 +264,18 @@ namespace FiftyOne.Pipeline.Web.Framework
                     CheckAndAdd(flowData, (string)sessionValueName, request.RequestContext.HttpContext.Session[(string)sessionValueName]);
                 }
             }
+            // Add form parameters to the evidence.
+            if (request.HttpMethod == Shared.Constants.METHOD_POST &&
+                Shared.Constants.CONTENT_TYPE_FORM.Contains(request.ContentType))
+            {
+                foreach (var formKey in request.Form.AllKeys)
+                {
+                    string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
+                        Core.Constants.EVIDENCE_SEPERATOR + formKey;
+                    CheckAndAdd(flowData, evidenceKey, request.Form[formKey]);
+                }
+            }
+
             // Add the client IP
             CheckAndAdd(flowData, "server.client-ip", request.UserHostAddress);
 
@@ -237,6 +283,14 @@ namespace FiftyOne.Pipeline.Web.Framework
 
             // Process the evidence and return the result
             flowData.Process();
+
+            if (GetInstance().SetHeaderPropertiesEnabled)
+            {
+                // Set HTTP headers in the response.
+                SetHeadersProvider.GetInstance().SetHeaders(
+                    request.RequestContext.HttpContext.ApplicationInstance.Context);
+            }
+
             return flowData;
         }
 

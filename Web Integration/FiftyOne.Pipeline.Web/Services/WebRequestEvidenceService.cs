@@ -22,6 +22,7 @@
 
 using System;
 using System.Globalization;
+using System.Linq;
 using FiftyOne.Pipeline.Core.Data;
 using Microsoft.AspNetCore.Http;
 
@@ -126,7 +127,8 @@ namespace FiftyOne.Pipeline.Web.Services
                 CheckAndAdd(flowData, evidenceKey, queryValue.Value.ToString());
             }
             // Add form parameters to the evidence.
-            if (httpRequest.Method == "POST")
+            if (httpRequest.Method == Shared.Constants.METHOD_POST &&
+                Shared.Constants.CONTENT_TYPE_FORM.Contains(httpRequest.ContentType))
             {
                 foreach (var formValue in httpRequest.Form)
                 {

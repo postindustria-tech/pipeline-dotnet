@@ -39,6 +39,11 @@ public static class FiftyOneExtensions
     /// Directs the MVC ApplicationBuilder to use the 51Degrees middleware
     /// component to provide Pipeline functionality.
     /// </summary>
+    /// <remarks>
+    /// Note: if any of the ExceptionHandlerExtensions.UseExceptionHandler
+    /// methods are used, they MUST be called before this method in order
+    /// to correctly handle exception.
+    /// </remarks>
     /// <param name="builder">The <see cref="IApplicationBuilder"/></param>
     /// <returns>The <see cref="IApplicationBuilder"/></returns>
     public static IApplicationBuilder UseFiftyOne(

@@ -54,22 +54,22 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </param>
         public void AddFilter(IEvidenceKeyFilter filter)
         {
-            var whiteListFilter = filter as EvidenceKeyFilterWhitelist;
+            var inclusionListFilter = filter as EvidenceKeyFilterWhitelist;
             bool addFilter = true;
 
-            if (whiteListFilter != null)
+            if (inclusionListFilter != null)
             {
-                // If the filter is a white list filter using the OrdinalIgnoreCase 
-                // comparer then add it's list to this instance's white list to 
-                // give better performance.
-                if (whiteListFilter.Comparer == StringComparer.OrdinalIgnoreCase)
+                // If the filter is an inclusion list filter using the 
+                // OrdinalIgnoreCase comparer then add it's list to this 
+                // instance's inclusion list to give better performance.
+                if (inclusionListFilter.Comparer == StringComparer.OrdinalIgnoreCase)
                 { 
                     addFilter = false;
-                    foreach (var entry in whiteListFilter.Whitelist)
+                    foreach (var entry in inclusionListFilter.Whitelist)
                     {
-                        if (_whitelist.ContainsKey(entry.Key) == false)
+                        if (_inclusionList.ContainsKey(entry.Key) == false)
                         {
-                            _whitelist.Add(entry.Key, entry.Value);
+                            _inclusionList.Add(entry.Key, entry.Value);
                         }
                     }
 
@@ -100,7 +100,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </returns>
         public override bool Include(string key)
         {
-            // First check the white list as this will be faster than
+            // First check the inclusionList as this will be faster than
             // almost anything else (check against a hash table)
             bool include = base.Include(key);
 

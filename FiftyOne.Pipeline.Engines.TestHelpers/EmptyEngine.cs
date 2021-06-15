@@ -69,12 +69,12 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
 
         public override string ElementDataKey => "empty-aspect";
 
-        private EvidenceKeyFilterWhitelist _evidnceWhitelist = 
+        private EvidenceKeyFilterWhitelist _evidenceInclusionList = 
             new EvidenceKeyFilterWhitelist(new List<string>()
         {
             "test.value"
         });
-        public override IEvidenceKeyFilter EvidenceKeyFilter => _evidnceWhitelist;
+        public override IEvidenceKeyFilter EvidenceKeyFilter => _evidenceInclusionList;
 
         public override string DataSourceTier => throw new NotImplementedException();
 

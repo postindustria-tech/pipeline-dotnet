@@ -22,6 +22,7 @@
 
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Web.Adapters;
+using FiftyOne.Pipeline.Web.Shared;
 using FiftyOne.Pipeline.Web.Shared.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;

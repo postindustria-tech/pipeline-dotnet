@@ -63,10 +63,6 @@ namespace AspNetCore3_1_Example
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            // Call UseFiftyOne to add the Middleware component that will send any
-            // requests through the 51Degrees pipeline. 
-            app.UseFiftyOne();
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -77,6 +73,11 @@ namespace AspNetCore3_1_Example
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            // Call UseFiftyOne to add the Middleware component that will send any
+            // requests through the 51Degrees pipeline. 
+            app.UseFiftyOne();
+
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
