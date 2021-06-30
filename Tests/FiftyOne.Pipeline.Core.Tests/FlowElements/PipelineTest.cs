@@ -29,6 +29,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.Core.Tests.FlowElements
 {
@@ -355,6 +356,54 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
 
             // Get the requested property meta data
             var metadata = pipeline.GetMetaDataForProperty("testproperty");
+        }
+
+        /// <summary>
+        /// Check that the GetPropertyMetaData method is thread-safe.
+        /// </summary>
+        [TestMethod]
+        public void Pipeline_GetPropertyMetaData_Concurrent()
+        {
+            if (Environment.ProcessorCount < 2)
+            {
+                Assert.Inconclusive("This test cannot be run on a machine with less that 2 processing cores");
+            }
+
+            var element1 = GetMockFlowElement();
+            element1.Setup(e => e.Properties).Returns(new List<IElementPropertyMetaData>()
+            {
+                new ElementPropertyMetaData(element1.Object, "testproperty", typeof(string), true)
+            });
+            var data = new Mock<IFlowData>();
+
+            int repeatLimit = 100;
+            // This test can just happen to work correctly by chance so
+            // we repeat it 100 times in order to try and make sure
+            // we eliminate the element of chance.
+            // Testing has indicated a failure rate of around 50%, so
+            // this should be sufficient to catch problems the vast
+            // majority of the time.
+            for (int repeatCount = 0; repeatCount < repeatLimit; repeatCount++)
+            {
+                // Create the pipeline
+                var pipeline = CreatePipeline(
+                    false,
+                    true,
+                    element1.Object);
+
+                // Get the requested property meta data on two
+                // threads simultaneously.
+                var threads = 2;
+                Task[] tasks = new Task[threads];
+                for (int i = 0; i < threads; i++)
+                {
+                    tasks[i] = Task.Run(() =>
+                    {
+                        var metadata = pipeline.GetMetaDataForProperty("testproperty");
+                    });
+                }
+                Task.WaitAll(tasks);
+            }
         }
 
         /// <summary>

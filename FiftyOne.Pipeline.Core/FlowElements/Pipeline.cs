@@ -24,6 +24,7 @@ using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Exceptions;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -54,8 +55,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// indexed by property name. This is used by the
         /// GetElementDataKeyForProperty method.
         /// </summary>
-        private Dictionary<string, IElementPropertyMetaData> _metaDataByPropertyName = 
-            new Dictionary<string, IElementPropertyMetaData>();
+        private ConcurrentDictionary<string, IElementPropertyMetaData> _metaDataByPropertyName = 
+            new ConcurrentDictionary<string, IElementPropertyMetaData>();
 
         /// <summary>
         /// A factory method that is used to create new 
@@ -476,7 +477,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 }
 
                 result = properties.Single();
-                _metaDataByPropertyName.Add(propertyName, result);
+                result = _metaDataByPropertyName.GetOrAdd(propertyName, result);
             }
 
             return result;
