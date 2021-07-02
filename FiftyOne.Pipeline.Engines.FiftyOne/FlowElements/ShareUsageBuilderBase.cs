@@ -65,8 +65,28 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <summary>
         /// Set the maximum number of entries to be stored in the queue to be
         /// sent. This must be more than the minimum entries per message.
+        /// By default, the value is calculated automatically based on the 
+        /// MinimumEntriesPerMessage setting.
         /// </summary>
-        protected int MaximumQueueSize { get; private set; } = Constants.SHARE_USAGE_DEFAULT_MAX_QUEUE_SIZE;
+        protected int MaximumQueueSize
+        {
+            get
+            {
+                int result = _maximumQueueSize;
+                if(result == 0)
+                {
+                    result = Constants.SHARE_USAGE_DEFAULT_MAX_QUEUE_SIZE;
+                    var calc = MinimumEntriesPerMessage * 10;
+                    if(calc > result) { result = calc; }
+                }
+                return result;
+            }
+            private set
+            {
+                _maximumQueueSize = value;
+            }
+        }
+        private int _maximumQueueSize = 0;
         /// <summary>
         /// The timeout in milliseconds to allow when attempting to add an
         /// item to the queue. If this timeout is exceeded then usage sharing
@@ -147,11 +167,13 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         }
 
         /// <summary>
-        /// Add parameter names to the (case insensitive) list of names 
-        /// of query string parameters that will be sent to 51Degrees.
+        /// By default query string and HTTP form parameters are not shared 
+        /// unless prefixed with '51D_'.
+        /// This setting allows you to share these parameters with 51Degrees
+        /// if needed.
         /// </summary>
         /// <param name="queryStringParameterNames">
-        /// The names of the query string parameter to include.
+        /// The (case insensitive) names of the query string parameters to include.
         /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if the parameter is null
@@ -171,12 +193,14 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         }
 
         /// <summary>
-        /// Add parameter names to the (case insensitive) list of names 
-        /// of query string parameters that will be sent to 51Degrees.
+        /// By default query string and HTTP form parameters are not shared 
+        /// unless prefixed with '51D_'.
+        /// This setting allows you to share these parameters with 51Degrees
+        /// if needed.
         /// </summary>
         /// <param name="queryStringParameterNames">
-        /// A comma separated list of names of the query string parameter to
-        /// include.
+        /// A comma separated list of the (case insensitive) names of 
+        /// the query string parameters to include.
         /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if the parameter is null
@@ -193,11 +217,14 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         }
 
         /// <summary>
-        /// Add a parameter name to the (case insensitive) list of names 
-        /// of query string parameters that will be sent to 51Degrees.
+        /// By default query string and HTTP form parameters are not shared 
+        /// unless prefixed with '51D_'.
+        /// This setting allows you to share these parameters with 51Degrees
+        /// if needed.
         /// </summary>
         /// <param name="queryStringParameterName">
-        /// The name of the query string parameter to include.
+        /// The (case insensitive) name of the query string parameter to 
+        /// include.
         /// </param>
         public ShareUsageBuilderBase<T> SetIncludedQueryStringParameter(string queryStringParameterName)
         {
@@ -207,7 +234,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
         /// <summary>
         /// Configure the usage sharing element to share all query string
-        /// parameters.
+        /// and HTTP form parameters.
         /// </summary>
         /// <param name="shareAll">
         /// If set to true then all query string parameters will be shared
@@ -230,6 +257,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
         /// <summary>
         /// Configure the usage sharing element to share all evidence.
+        /// This will override all the other evidence filtering settings.
         /// </summary>
         /// <param name="shareAll">
         /// If set to true then all evidence will be shared
@@ -244,13 +272,12 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         }
 
         /// <summary>
-        /// Set the (case insensitive) names of HTTP headers that will 
-        /// not be sent to 51 degrees.
-        /// Some headers, such as 'cookies' are hard-coded to be blocked
-        /// regardless of this setting. 
+        /// By default, all HTTP headers (excluding a few such as 'cookies')
+        /// are shared. Individual headers can be excluded from sharing by 
+        /// adding them to this list.
         /// </summary>
         /// <param name="blockedHeaders">
-        /// The names of the headers to block.
+        /// The (case insensitive) names of the headers to block.
         /// </param>
         public ShareUsageBuilderBase<T> SetBlockedHttpHeaders(List<string> blockedHeaders)
         {
@@ -259,13 +286,12 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         }
 
         /// <summary>
-        /// Add a header to the (case insensitive) list of names of HTTP 
-        /// headers that will not be sent to 51 degrees.
-        /// Some headers, such as 'cookies' are hard-coded to be blocked
-        /// regardless of this setting.  
+        /// By default, all HTTP headers (excluding a few such as 'cookies')
+        /// are shared. Individual headers can be excluded from sharing by 
+        /// adding them to this list.
         /// </summary>
         /// <param name="blockedHeader">
-        /// The name of the header to block.
+        /// The (case insensitive) name of the header to block.
         /// </param>
         public ShareUsageBuilderBase<T> SetBlockedHttpHeader(string blockedHeader)
         {
@@ -274,11 +300,18 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         }
 
         /// <summary>
-        /// Adds evidence key:values to the filter such that requests which 
-        /// contain this evidence are ignored.
+        /// This setting can be used to stop the usage sharing element 
+        /// from sharing anything about specific requests.
+        /// For example, if you wanted to stop sharing any details from 
+        /// requests where the user-agent header was 'ABC', you would 
+        /// set this to "header.user-agent:ABC"
         /// </summary>
-        /// <param name="evidenceFilter">Comma separated string containing 
-        /// evidence keys and evidence to ignore.</param>
+        /// <param name="evidenceFilter">
+        /// Comma separated string containing entries in the format 
+        /// <code>[evidenceKey]:[evidenceValue]</code>.
+        /// Any requests with evidence matching these entries will
+        /// not be shared.
+        /// </param>
         /// <returns></returns>
         public ShareUsageBuilderBase<T> SetIgnoreFlowDataEvidenceFilter(string evidenceFilter)
         {
@@ -329,9 +362,15 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
 
         /// <summary>
-        /// Set the minimum number of entries to be aggregated by the
-        /// <see cref="ShareUsageElement"/> before they are sent to the
-        /// remote service.
+        /// The usage element will group data into single requests before
+        /// sending it.
+        /// This setting controls the minimum number of entries before
+        /// data is sent.
+        /// If you are sharing large amounts of data, increasing this 
+        /// value is recommended in order to reduce the overhead of
+        /// sending HTTP messages.
+        /// For example, the 51Degrees cloud service uses a value of 
+        /// 2500.
         /// </summary>
         /// <param name="minimumEntriesPerMessage">
         /// The minimum number of entries to be aggregated by the
@@ -346,7 +385,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
         /// <summary>
         /// Set the maximum number of entries to be stored in the queue to be
-        /// sent. This must be more than the minimum entries per message.
+        /// sent. This must be more than MinimumEntriesPerMessage.      
+        /// By default, the value is calculated automatically based on the
+        /// MinimumEntriesPerMessage setting.
         /// </summary>
         /// <param name="size">Size to set</param>
         public ShareUsageBuilderBase<T> SetMaximumQueueSize(int size)
@@ -404,7 +445,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
         /// <summary>
         /// Set the name of the cookie that contains the asp.net session id.
+        /// This setting has no effect if TrackSession is false.
         /// </summary>
+        /// <seealso cref="SetTrackSession(bool)"/>
         /// <param name="cookieName">
         /// The name of the cookie that contains the asp.net session id.
         /// </param>
@@ -415,8 +458,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         }
 
         /// <summary>
-        /// Set the interval which determines if a non-unique piece of evidence 
-        /// is repeat evidence or new.
+        /// If exactly the same evidence values are seen multiple times 
+        /// within this time limit then they will only be shared once.
         /// </summary>
         /// <param name="interval">
         /// The interval in minutes.
@@ -428,10 +471,16 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         }
 
         /// <summary>
-        /// Enable or disable session tracking.
+        /// If set to true, the configured session cookie will be used to
+        /// identify user sessions.
+        /// This will help to differentiate duplicate values that should
+        /// not be shared.
         /// </summary>
-        /// <param name="track">Boolean value set's whether the usage 
-        /// element should track sessions.</param>
+        /// <seealso cref="SetAspSessionCookieName(string)"/>
+        /// <param name="track">
+        /// Boolean value sets whether the usage element should 
+        /// track sessions.
+        /// </param>
         /// <returns></returns>
         public ShareUsageBuilderBase<T> SetTrackSession(bool track)
         {
