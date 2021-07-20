@@ -35,6 +35,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
@@ -58,6 +59,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private string _licenseKey;
         private string _propertiesEndpoint;
         private string _evidenceKeysEndpoint;
+        private string _cloudRequestOrigin;
+
         private List<string> _requestedProperties;
         private IEvidenceKeyFilter _evidenceKeyFilter;
 
@@ -105,6 +108,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="requestedProperties">
         /// Not currently used.
         /// </param>
+        /// <param name="cloudRequestOrigin">
+        /// The value to use for the Origin header when making requests 
+        /// to cloud.
+        /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
@@ -119,7 +126,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             string propertiesEndpoint,
             string evidenceKeysEndpoint,
             int timeout,
-            List<string> requestedProperties) 
+            List<string> requestedProperties,
+            string cloudRequestOrigin = null) 
             : base(logger, aspectDataFactory)
         {
             if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
@@ -132,6 +140,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 _propertiesEndpoint = propertiesEndpoint;
                 _evidenceKeysEndpoint = evidenceKeysEndpoint;
                 _requestedProperties = requestedProperties;
+                _cloudRequestOrigin = cloudRequestOrigin;
 
                 _httpClient = httpClient;
                 if (timeout > 0)
@@ -210,6 +219,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             string jsonResult = string.Empty;
 
             using (var content = GetContent(data))
+            using (var requestMessage =
+                new HttpRequestMessage(HttpMethod.Post, _dataEndpoint))
             {
                 if (Logger != null && Logger.IsEnabled(LogLevel.Debug))
                 {
@@ -217,7 +228,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                         $"'{_dataEndpoint}'. Content: {content}");
                 }
 
-                var request = _httpClient.PostAsync(_dataEndpoint, content);
+                requestMessage.Content = content;
+                var request = AddCommonHeadersAndSend(requestMessage);
                 jsonResult = request.Result.Content.ReadAsStringAsync().Result;
             }
 
@@ -420,9 +432,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
             try
             {
-                var request = _httpClient.GetAsync($"{_propertiesEndpoint}?resource={_resourceKey}");
-                result = request.Result;
-                jsonResult = result.Content.ReadAsStringAsync().Result;
+                var url = $"{_propertiesEndpoint}?resource={_resourceKey}";
+                using (var requestMessage =
+                    new HttpRequestMessage(HttpMethod.Get, url))
+                {
+                    var request = AddCommonHeadersAndSend(requestMessage);
+                    result = request.Result;
+                    jsonResult = result.Content.ReadAsStringAsync().Result;
+                }
             }
             catch (Exception ex)
             {
@@ -467,8 +484,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
             try
             {
-                var request = _httpClient.GetAsync(_evidenceKeysEndpoint);
-                jsonResult = request.Result.Content.ReadAsStringAsync().Result;
+                using (var requestMessage =
+                    new HttpRequestMessage(HttpMethod.Get, _evidenceKeysEndpoint))
+                {
+                    var request = AddCommonHeadersAndSend(requestMessage);
+                    jsonResult = request.Result.Content.ReadAsStringAsync().Result;
+                }
             }
             catch (Exception ex)
             {
@@ -488,6 +509,28 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 throw new Exception($"Failed to retrieve evidence keys " +
                     $"from cloud service at {_evidenceKeysEndpoint}.");
             }
+        }
+
+        /// <summary>
+        /// Add the common headers to the specified message and send it.
+        /// </summary>
+        /// <param name="request">
+        /// The request to send
+        /// </param>
+        /// <returns>
+        /// The response
+        /// </returns>
+        private Task<HttpResponseMessage> AddCommonHeadersAndSend(
+            HttpRequestMessage request)
+        {
+            if (string.IsNullOrEmpty(_cloudRequestOrigin) == false &&
+                (request.Headers.Contains(Constants.ORIGIN_HEADER_NAME) == false ||
+                request.Headers.GetValues(Constants.ORIGIN_HEADER_NAME).Contains(_cloudRequestOrigin) == false))
+            {
+                request.Headers.Add(Constants.ORIGIN_HEADER_NAME, _cloudRequestOrigin);
+            }
+
+            return _httpClient.SendAsync(request);
         }
     }
 }

@@ -778,6 +778,46 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         }
 
         /// <summary>
+        /// Verify that the request to the cloud service will contain 
+        /// the configured origin header value.
+        /// </summary>
+        [TestMethod]
+        public void OriginHeader()
+        {
+            string resourceKey = "resource_key";
+            string origin = "51degrees.com";
+            string userAgent = "test";
+
+            ConfigureMockedClient(r => true);
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .SetCloudRequestOrigin(origin)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data = pipeline.CreateFlowData();
+                data.AddEvidence("query.User-Agent", userAgent);
+
+                data.Process();
+            }
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Post  // we expected a POST request
+                  // The origin header must contain the expected value
+                  && ((req.Content.Headers.Contains(Constants.ORIGIN_HEADER_NAME)
+                      && req.Content.Headers.GetValues(Constants.ORIGIN_HEADER_NAME).Contains(origin)) ||
+                      (req.Headers.Contains(Constants.ORIGIN_HEADER_NAME)
+                      && req.Headers.GetValues(Constants.ORIGIN_HEADER_NAME).Contains(origin)))
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+        }
+
+        /// <summary>
         /// Setup _httpClient to respond with the configured messages.
         /// </summary>
         private void ConfigureMockedClient(
