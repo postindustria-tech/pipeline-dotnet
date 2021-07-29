@@ -118,6 +118,6 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ExceptionSequenceNumberNotPresent" xml:space="preserve">
-    <value>Sequence number not present in evidence. this is mandatory.</value>
+    <value>The value for the ‘sequence’ parameter could not found. See http://51degrees.com/documentation/_info__error_messages.html#Sequence_value_not_found for more information.</value>
   </data>
 </root>

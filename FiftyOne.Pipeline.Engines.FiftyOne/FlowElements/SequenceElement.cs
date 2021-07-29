@@ -101,6 +101,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                 }
                 else
                 {
+                    data.AddError(new Exception(Messages.MessageFailSequenceNumberParse), this);
                     Logger.LogError(Messages.MessageFailSequenceNumberIncrement);
                 }
             }
