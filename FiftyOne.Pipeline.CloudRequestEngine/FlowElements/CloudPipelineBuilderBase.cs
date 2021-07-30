@@ -68,6 +68,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         protected string LicenceKey { get; set; } = string.Empty;
 
         /// <summary>
+        /// The value to set for the Origin header when making requests
+        /// to the cloud service.
+        /// </summary>
+        protected string CloudRequestOrigin { get; set; } = string.Empty;
+
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="loggerFactory">
@@ -192,6 +198,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         }
 
         /// <summary>
+        /// The value to set for the Origin header when making requests
+        /// to the cloud service.
+        /// This is used by the cloud service to check that the request
+        /// is being made from a origin matching those allowed by the 
+        /// resource key.
+        /// For more detail, see the 'Request Headers' section in the 
+        /// <a href="https://cloud.51degrees.com/api-docs/index.html">cloud documentation</a>.
+        /// </summary>
+        /// <param name="cloudRequestOrigin">
+        /// The value to use for the Origin header.
+        /// </param>
+        /// <returns>
+        /// This builder
+        /// </returns>
+        public TBuilder SetCloudRequestOrigin(string cloudRequestOrigin)
+        {
+            CloudRequestOrigin = cloudRequestOrigin;
+            return this as TBuilder;
+        }
+
+        /// <summary>
         /// Create and return a new pipeline based on the configuration
         /// so far.
         /// </summary>
@@ -240,6 +267,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 // Retained for backward compatibility
                 cloudRequestEngineBuilder.SetLicenseKey(LicenceKey);
 #pragma warning restore CS0618 // Type or member is obsolete
+            }
+            if (string.IsNullOrEmpty(CloudRequestOrigin) == false)
+            {
+                cloudRequestEngineBuilder.SetCloudRequestOrigin(CloudRequestOrigin);
             }
             var cloudRequestEngine = cloudRequestEngineBuilder.Build();
 

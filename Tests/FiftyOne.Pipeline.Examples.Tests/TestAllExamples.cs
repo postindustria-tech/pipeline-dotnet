@@ -70,5 +70,15 @@ namespace FiftyOne.Pipeline.Examples.Tests
             var example = new Ex.OnPremiseEngine.Program();
             example.RunExample();
         }
+
+        /// <summary>
+        /// Test that the usage sharing example runs successfully.
+        /// </summary>
+        [TestMethod]
+        public void TestUsageSharingExample()
+        {
+            var example = new Ex.UsageSharing.Program();
+            example.RunExample();
+        }
     }
 }

@@ -41,7 +41,7 @@ namespace Examples.CloudEngine
             // the example engine to use.
             var cloudRequestEngine =
                 new CloudRequestEngineBuilder(_loggerFactory, new HttpClient())
-                .SetEndPoint("http://starsigncloudexample.51degrees.com/api/")
+                .SetEndPoint("http://51degrees.com/starsign/api/")
                 .SetResourceKey("cloudexample")
                 .Build();
             // Construct the example engine.

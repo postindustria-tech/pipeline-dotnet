@@ -72,6 +72,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// </summary>
         public const string EVIDENCE_KEYS_ENDPOINT_DEFAULT = CLOUD_URI_DEFAULT + EVIDENCE_KEYS_FILENAME;
 
-        
+        /// <summary>
+        /// The name of the origin HTTP header
+        /// </summary>
+        public const string ORIGIN_HEADER_NAME = "Origin";
     }
 }
