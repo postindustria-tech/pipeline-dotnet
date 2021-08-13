@@ -260,7 +260,68 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
             AddErrors(data, allProperties);
 
-            return BuildJson(allProperties);
+            try
+            {
+                return BuildJson(allProperties);
+            }
+            catch (JsonWriterException jsonEx)
+            {
+                StringBuilder msg = new StringBuilder();
+                msg.AppendLine("Error converting data to json string");
+                msg.AppendLine("[");
+                foreach(var entry in allProperties)
+                {
+                    msg.AppendLine($"  '{entry.Key}' = {GetObjectAsString(entry.Value, 2)}");
+                }
+                msg.AppendLine("]");
+                var exception = new PipelineDataException(msg.ToString(), jsonEx);
+                data.AddError(exception, this);
+            }
+            return "{ \"error\": \"see flow data errors for more detail\" }";
+        }
+
+        /// <summary>
+        /// Get a string representation of the specified object.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="indent"></param>
+        /// <returns></returns>
+        private string GetObjectAsString(object obj, int indent)
+        {
+            StringBuilder valueAsString = new StringBuilder();
+            
+            if (obj.GetType() != typeof(string) &&
+                typeof(IEnumerable).IsAssignableFrom(obj.GetType()))
+            {
+                valueAsString.AppendLine("[");
+                foreach (var item in obj as IEnumerable)
+                {
+                    valueAsString.Append(new String(' ', indent * 2));
+                    valueAsString.AppendLine($"{GetObjectAsString(item, indent + 1)}, ");
+                }
+                valueAsString.Append(new String(' ', (indent - 1) * 2));
+                valueAsString.Append("]");
+            }
+            else if (typeof(KeyValuePair<string, object>).IsAssignableFrom(obj.GetType()))
+            {
+                var kvp = (KeyValuePair<string, object>)obj;
+                valueAsString.Append($"'{kvp.Key}' = {GetObjectAsString(kvp.Value, indent + 1)}");
+            }
+            else
+            {
+                try
+                {
+                    valueAsString.Append($"'{obj}'");
+                }
+#pragma warning disable CA1031 // Do not catch general exception types
+                catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+                {
+                    valueAsString.Append($"'Error converting to string: {ex.Message}'");
+                }
+            }
+
+            return valueAsString.ToString();
         }
 
         /// <summary>
@@ -273,7 +334,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// containing the property names and values for that element.
         /// </param>
         /// <returns></returns>
-        protected static string BuildJson(Dictionary<string, object> allProperties)
+        protected virtual string BuildJson(Dictionary<string, object> allProperties)
         {
             // Build the JSON object from the property list containing property 
             // values and errors.

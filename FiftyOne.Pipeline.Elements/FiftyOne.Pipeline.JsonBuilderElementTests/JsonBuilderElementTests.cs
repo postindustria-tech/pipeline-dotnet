@@ -426,6 +426,285 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             }
         }
 
+        /// <summary>
+        /// Inner class used to test serialization of values in 
+        /// isolation
+        /// </summary>
+        private class TestJsonBuilderElement : JsonBuilderElement
+        {
+            private bool _throwExceptionOnSerialize;
+            private static ILoggerFactory _loggerFactory;
+
+            public TestJsonBuilderElement(
+                ILoggerFactory loggerFactory,
+                bool throwExceptionOnSerialize = false) 
+                : base(loggerFactory.CreateLogger<TestJsonBuilderElement>(), 
+                      new List<JsonConverter>(), CreateData)
+            {
+                _throwExceptionOnSerialize = throwExceptionOnSerialize;
+                _loggerFactory = loggerFactory;
+            }
+
+
+            public string Serialize(Dictionary<string, object> data)
+            {
+                return BuildJson(data);
+            }
+
+            // Configure the BuildJson method to throw an exception.
+            protected override string BuildJson(Dictionary<string, object> allProperties)
+            {
+                if (_throwExceptionOnSerialize)
+                {
+                    throw new JsonWriterException("Error");
+                }
+                else
+                {
+                    return base.BuildJson(allProperties);
+                }
+            }
+
+            private static IJsonBuilderElementData CreateData(
+                IPipeline pipeline,
+                FlowElementBase<IJsonBuilderElementData, IElementPropertyMetaData> jsonBuilderElement)
+            {
+                return new JsonBuilderElementData(
+                    _loggerFactory.CreateLogger<JsonBuilderElementData>(), 
+                    pipeline);
+            }
+        }
+
+        /// <summary>
+        /// Used by the serialization tests below
+        /// </summary>
+        public enum TypeToBeTested
+        {
+            String,
+            JavaScript,
+            List,
+            APV_String,
+            APV_JavaScript,
+            APV_List
+        }
+        public static IEnumerable<object[]> SerializationTestGenerator()
+        {
+            List<string> propertyValues = new List<string>() {
+                null,
+                "abc",
+                "{ curly braces }",
+                "[ square braces ]",
+                "@ at signs @",
+                "% percent sign %",
+                "$ dollar sign $",
+                "\" double quotes \"",
+                "' single quotes '",
+                "& ampersand &",
+                "\\ backslash \\",
+                "   tabs  ",
+                @"
+carriage return and new line  
+",
+                "{ \"json\": [ \"text\", \"abc\" ] }"
+            };
+
+            foreach (var type in Enum.GetValues(typeof(TypeToBeTested)))
+            {
+                foreach (var value in propertyValues)
+                {
+                    yield return new object[] { value, (TypeToBeTested)type };
+                }
+            }
+        }
+
+        /// <summary>
+        /// Verify that various types and values are serialized correctly.
+        /// </summary>
+        /// <param name="valueOfProperty">
+        /// The string representation of the value to serialize
+        /// </param>
+        /// <param name="typeToBeTested">
+        /// The type of the value to be serialized
+        /// </param>
+        [DataTestMethod]
+        [DynamicData(nameof(SerializationTestGenerator), DynamicDataSourceType.Method)]
+        public void JsonBuilder_Serialization_Text(string valueOfProperty, TypeToBeTested typeToBeTested)
+        {
+            var jsonBuilder = new TestJsonBuilderElement(_loggerFactory);
+
+            // valueInDict holds the object that will be added
+            // to the dictionary to be serialized.
+            object valueInDict = null;
+
+            // ExpectedValue holds the value that we expect
+            // the property to have in the generated json
+            // including any surrounding tokens such as quotes,
+            // square brackets, etc.
+            string expectedValue = (valueOfProperty ?? "null").Replace(@"\", @"\\");
+            expectedValue = expectedValue.Replace(@"""", @"\""");
+            expectedValue = expectedValue.Replace(@"    ", @"\  ");
+            expectedValue = expectedValue.Replace(@"
+", @"\r\n");
+            expectedValue = valueOfProperty == null ? expectedValue : $"\"{expectedValue}\"";
+
+            // Create the object to be serialized
+            switch (typeToBeTested)
+            {
+                case TypeToBeTested.String:
+                    valueInDict = valueOfProperty;
+                    break;
+                case TypeToBeTested.JavaScript:
+                    valueInDict = new JavaScript(valueOfProperty);
+                    break;
+                case TypeToBeTested.List:
+                    valueInDict = new List<string>() { valueOfProperty };
+                    expectedValue = $@"[
+      {expectedValue}
+    ]";
+                    break;
+                case TypeToBeTested.APV_String:
+                    valueInDict = new AspectPropertyValue<string>(valueOfProperty);
+                    break;
+                case TypeToBeTested.APV_JavaScript:
+                    valueInDict = new AspectPropertyValue<JavaScript>(new JavaScript(valueOfProperty));
+                    break;
+                case TypeToBeTested.APV_List:
+                    valueInDict = new AspectPropertyValue<IReadOnlyList<string>>(new List<string>() { valueOfProperty });
+                    expectedValue = $@"[
+      {expectedValue}
+    ]";
+                    break;
+                default:
+                    break;
+            }
+
+            // Create the dictionary to be serialized
+            var data = new Dictionary<string, object>()
+            {
+                {
+                    "element",
+                    new Dictionary<string, object>()
+                    {
+                        { "property", valueInDict },
+                    }
+                }
+            };
+
+            var result = jsonBuilder.Serialize(data);
+            Assert.AreEqual($@"{{
+  ""element"": {{
+    ""property"": {expectedValue}
+  }}
+}}", 
+                result);
+        }
+
+        /// <summary>
+        /// Test that various values are serialized properly.
+        /// For tests on string-based values, see the 
+        /// <seealso cref="Serialization_Text"/> tests.
+        /// </summary>
+        [TestMethod]
+        public void JsonBuilder_Serialization_PropertyValues()
+        {
+            var jsonBuilder = new TestJsonBuilderElement(_loggerFactory);
+
+            var data = new Dictionary<string, object>()
+            {
+                {
+                    "element",
+                    new Dictionary<string, object>()
+                    {
+                        { "property1", 10 },
+                        { "property2", new AspectPropertyValue<int>(10) },
+                        { "property3", 10.1 },
+                        { "property4", new AspectPropertyValue<double>(10.1) },
+                        { "property5", true },
+                        { "property6", new AspectPropertyValue<bool>(true) },
+                        { "property7", new List<string>() { "itema", "itemb" } },
+                        { "property8", new AspectPropertyValue<IReadOnlyList<string>>(new List<string>() { "itema", "itemb" }) },
+                        { "property9", new List<string>() },
+                        { "property10", new AspectPropertyValue<IReadOnlyList<string>>(new List<string>()) },
+                    }
+                }
+            };
+
+            var result = jsonBuilder.Serialize(data);
+            Assert.AreEqual(@"{
+  ""element"": {
+    ""property1"": 10,
+    ""property2"": 10,
+    ""property3"": 10.1,
+    ""property4"": 10.1,
+    ""property5"": true,
+    ""property6"": true,
+    ""property7"": [
+      ""itema"",
+      ""itemb""
+    ],
+    ""property8"": [
+      ""itema"",
+      ""itemb""
+    ],
+    ""property9"": [],
+    ""property10"": []
+  }
+}", result);
+        }
+
+        [TestMethod]
+        /// <summary>
+        /// Check that error handling works as expected when a serialization
+        /// error occurs.
+        /// </summary>
+        public void JsonBuilder_VerifyErrorHandling()
+        {
+            _jsonBuilderElement = new TestJsonBuilderElement(_loggerFactory, true);
+
+            // Create a moderately complex set of values so that we can
+            // validate the complex value handling.
+            _elementDataMock.Setup(ed => ed.AsDictionary()).
+                Returns(new Dictionary<string, object>() {
+                    { "property", new List<NestedData>() {
+                        new NestedData(_loggerFactory.CreateLogger<NestedData>(), _pipeline.Object) { Value1 = "abc", Value2 = 123 },
+                        new NestedData(_loggerFactory.CreateLogger<NestedData>(), _pipeline.Object) { Value1 = "xyz", Value2 = 789 }
+                    } },
+                });
+
+            // Configure the property meta-data as needed for
+            // this test.
+            var testElementMetaData = new Dictionary<string, IElementPropertyMetaData>();
+            var nestedMetaData = new List<IElementPropertyMetaData>() {
+                new ElementPropertyMetaData(_testEngine.Object, "value1", typeof(string), true),
+                new ElementPropertyMetaData(_testEngine.Object, "value2", typeof(int), true),
+            };
+            var p1 = new ElementPropertyMetaData(_testEngine.Object, "property", typeof(List<NestedData>), true, "", nestedMetaData);
+            testElementMetaData.Add("property", p1);
+            _propertyMetaData.Add("test", testElementMetaData);
+
+            // Configure the flow data to record error that are added.
+            Mock<IFlowData> flowData = new Mock<IFlowData>();
+            Exception lastException = null;
+            flowData.Setup(d => d.AddError(It.IsAny<Exception>(), _jsonBuilderElement)).Callback(
+                (Exception ex, IFlowElement element) =>
+                {
+                    lastException = ex;
+                });
+            var json = TestIteration(1, null, flowData);
+
+            // Check that the error message was logged and contains 
+            // some of the expected content.
+            // Checking for an exact match would be too brittle
+            Assert.IsNotNull(lastException, "Expected an error to be logged but it was not");
+            Assert.IsTrue(lastException.Message.Contains("abc"), 
+                $"Logged message did not contain expected text 'abc'. {lastException.Message}");
+            Assert.IsTrue(lastException.Message.Contains("xyz"),
+                $"Logged message did not contain expected text 'xyz'. {lastException.Message}");
+            Assert.IsTrue(lastException.Message.Contains("123"), 
+                $"Logged message did not contain expected text '123'. {lastException.Message}");
+            Assert.IsTrue(lastException.Message.Contains("789"), 
+                $"Logged message did not contain expected text '789'. {lastException.Message}");
+        }
+
         public class JsonData
         {
             [JsonProperty("empty-aspect")]
@@ -449,14 +728,15 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
         }
 
         private string TestIteration(int iteration,
-            Dictionary<string, object> data = null)
+            Dictionary<string, object> data = null,
+            Mock<IFlowData> flowData = null)
         {
             if(data == null)
             {
                 data = new Dictionary<string, object>() { { "test", _elementDataMock.Object } };
             }
 
-            var flowData = new Mock<IFlowData>();
+            if (flowData == null) { flowData = new Mock<IFlowData>(); }
             var _missingPropertyService = new Mock<IMissingPropertyService>();
 
             flowData.Setup(d => d.ElementDataAsDictionary()).Returns(data);

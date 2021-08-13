@@ -34,7 +34,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Templates\JavaScriptResource.mustache" />
     <None Include="..\..\Images\51d-logo.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
@@ -42,7 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Templates\javascript\JavaScriptResource.mustache" />
+    <EmbeddedResource Include="Templates\JavaScriptResource.mustache" />
   </ItemGroup>
 
   <ItemGroup>
