@@ -124,7 +124,7 @@
     <value>Multiple errors returned from 51Degrees cloud service. See inner exceptions for details.</value>
   </data>
   <data name="ExceptionFailedToLoadProperties" xml:space="preserve">
-    <value>Failed to load aspect properties for element '{0}'. This is because your resource key does not include access to any properties under '{0}'. For more details on resource keys, see our explainer: https://51degrees.com/documentation/4.2/_info__resourcekeys.html</value>
+    <value>Failed to load aspect properties for element '{0}'. This is because your resource key does not include access to any properties under '{0}'. For more details on resource keys, see our explainer: https://51degrees.com/documentation/_info__resource_keys.html</value>
   </data>
   <data name="ExceptionResourceKeyNeeded" xml:space="preserve">
     <value>A resource key is required to access the 51Degrees cloud service. Please use the 'SetResourceKey' method to supply your resource key. You can obtain one for free from https://configure.51degrees.com</value>
