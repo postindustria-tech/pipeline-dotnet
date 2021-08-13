@@ -119,6 +119,7 @@ stages:
         packagesToPack: '$(PublishProjects)'
         versioningScheme: 'byEnvVar'
         versionEnvVar: 'BUILD_BUILDNUMBER'
+        buildProperties: 'config=${{ parameters.targetPublishConfig }}'
       env:
         BUILD_BUILDNUMBER: $(GitVersionNuGetVer)
         
@@ -132,6 +133,8 @@ stages:
         versioningScheme: 'byEnvVar'
         versionEnvVar: 'BUILD_BUILDNUMBER'
         buildProperties: 'config=${{ parameters.targetPublishConfig }}'
+      env:
+        BUILD_BUILDNUMBER: $(GitVersionNuGetVer)
         
     - template: dotnet/shared-code-signing-steps.yml@${{ parameters.templates }}
       parameters:
