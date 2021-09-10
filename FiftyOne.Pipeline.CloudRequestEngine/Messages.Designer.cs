@@ -97,6 +97,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cloud service at &apos;{0}&apos; returned status code &apos;{1}&apos; with content {2}..
+        /// </summary>
+        internal static string MessageErrorCodeReturned {
+            get {
+                return ResourceManager.GetString("MessageErrorCodeReturned", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No data in response from cloud service at &apos;{0}&apos;.
         /// </summary>
         internal static string MessageNoDataInResponse {

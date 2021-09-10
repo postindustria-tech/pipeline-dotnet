@@ -129,6 +129,9 @@
   <data name="ExceptionResourceKeyNeeded" xml:space="preserve">
     <value>A resource key is required to access the 51Degrees cloud service. Please use the 'SetResourceKey' method to supply your resource key. You can obtain one for free from https://configure.51degrees.com</value>
   </data>
+  <data name="MessageErrorCodeReturned" xml:space="preserve">
+    <value>Cloud service at '{0}' returned status code '{1}' with content {2}.</value>
+  </data>
   <data name="MessageNoDataInResponse" xml:space="preserve">
     <value>No data in response from cloud service at '{0}'</value>
   </data>

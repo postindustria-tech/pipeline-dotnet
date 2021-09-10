@@ -230,34 +230,41 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
                 requestMessage.Content = content;
                 var request = AddCommonHeadersAndSend(requestMessage);
-                jsonResult = request.Result.Content.ReadAsStringAsync().Result;
+                jsonResult = ProcessResponse(request.Result);
             }
 
             aspectData.JsonResponse = jsonResult;
-
-            ValidateResponse(jsonResult);
         }
 
         /// <summary>
         /// Validate the JSON response from the cloud service.
+        /// An exception will be throw if any type of error has 
+        /// occurred.
         /// </summary>
-        /// <param name="jsonResult">
+        /// <param name="response">
         /// The JSON content that is returned from the cloud service.
+        /// </param>
+        /// <param name="checkForErrorMessages">
+        /// Set to false if the response will never contain error message
+        /// text.
         /// </param>
         /// <exception cref="AggregateException">
         /// Thrown if there are multiple errors returned from the 
         /// cloud service.
         /// </exception>
-        /// <exception cref="PipelineException">
+        /// <exception cref="CloudRequestException">
         /// Thrown if there is an error from the cloud service or
         /// there is no data in the response.
         /// </exception>
-        private void ValidateResponse(string jsonResult)
+        private string ProcessResponse(
+            HttpResponseMessage response, 
+            bool checkForErrorMessages = true)
         {
+            var jsonResult = response.Content.ReadAsStringAsync().Result;
             var hasData = string.IsNullOrEmpty(jsonResult) == false;
             List<string> messages = new List<string>();
 
-            if (hasData)
+            if (hasData && checkForErrorMessages)
             {
                 var jObj = JObject.Parse(jsonResult);
                 var hasErrors = jObj.ContainsKey("errors");
@@ -283,6 +290,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     _dataEndpoint);
                 messages.Add(msg);
             }
+            // If there is no detailed error message, but we got a
+            // non-success status code, then add a message to the list
+            else if (messages.Count == 0 && 
+                response.IsSuccessStatusCode == false)
+            {
+                var msg = string.Format(CultureInfo.InvariantCulture,
+                    Messages.MessageErrorCodeReturned,
+                    _dataEndpoint,
+                    response.StatusCode,
+                    jsonResult);
+                messages.Add(msg);
+            }
+
+            Dictionary<string, string> headers = null;
+            if (messages.Count > 0)
+            {
+                // Get the response headers. 
+                headers = response.Headers.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => string.Join(", ", kvp.Value));
+            }
 
             // If there are any errors returned from the cloud service 
             // then throw an exception
@@ -290,15 +318,19 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 throw new AggregateException(
                     Messages.ExceptionCloudErrorsMultiple,
-                    messages.Select(m => new PipelineException(m)));
+                    messages.Select(m => new CloudRequestException(m, 
+                        (int)response.StatusCode, headers)));
             }
             else if (messages.Count == 1)
             {
                 var msg = string.Format(CultureInfo.InvariantCulture,
                     Messages.ExceptionCloudError,
                     messages[0]);
-                throw new PipelineException(msg);
+                throw new CloudRequestException(msg, 
+                    (int)response.StatusCode, headers);
             }
+
+            return jsonResult;
         }
 
         /// <summary>
@@ -427,38 +459,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         private void GetCloudProperties()
         {
-            HttpResponseMessage result = null;
             string jsonResult = string.Empty;
 
-            try
+            var url = $"{_propertiesEndpoint}?resource={_resourceKey}";
+            using (var requestMessage =
+                new HttpRequestMessage(HttpMethod.Get, url))
             {
-                var url = $"{_propertiesEndpoint}?resource={_resourceKey}";
-                using (var requestMessage =
-                    new HttpRequestMessage(HttpMethod.Get, url))
-                {
-                    var request = AddCommonHeadersAndSend(requestMessage);
-                    result = request.Result;
-                    jsonResult = result.Content.ReadAsStringAsync().Result;
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception ($"Failed to retrieve available properties " +
-                    $"from cloud service at {_propertiesEndpoint}.", ex);
-            }
-            
-            if (result.IsSuccessStatusCode == false)
-            {
-                List<Exception> exceptions = new List<Exception>();
-                if (string.IsNullOrEmpty(jsonResult) == false)
-                {
-                    var res = JsonConvert.DeserializeObject<LicencedProducts>(jsonResult);
-                    foreach (var e in res.Errors)
-                    {
-                        exceptions.Add(new PipelineException(e));
-                    }
-                }
-                throw new AggregateException(exceptions);
+                var request = AddCommonHeadersAndSend(requestMessage);
+                jsonResult = ProcessResponse(request.Result);
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)
@@ -482,19 +490,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         {
             string jsonResult = string.Empty;
 
-            try
+            using (var requestMessage =
+                new HttpRequestMessage(HttpMethod.Get, _evidenceKeysEndpoint))
             {
-                using (var requestMessage =
-                    new HttpRequestMessage(HttpMethod.Get, _evidenceKeysEndpoint))
-                {
-                    var request = AddCommonHeadersAndSend(requestMessage);
-                    jsonResult = request.Result.Content.ReadAsStringAsync().Result;
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to retrieve evidence keys " +
-                    $"from cloud service at {_evidenceKeysEndpoint}.", ex);
+                var request = AddCommonHeadersAndSend(requestMessage);
+                // Note - Don't check for error messages in the response
+                // as it is a flat JSON array.
+                jsonResult = ProcessResponse(request.Result, false);
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)
