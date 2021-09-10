@@ -464,12 +464,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             }
 
             Assert.IsNotNull(exception, "Expected exception to occur");
-            Assert.IsInstanceOfType(exception, typeof(AggregateException));
-            var aggEx = exception as AggregateException;
-            Assert.AreEqual(1, aggEx.InnerExceptions.Count);
-            var realEx = aggEx.InnerExceptions[0];
-            Assert.IsInstanceOfType(realEx, typeof(PipelineException));
-            Assert.IsTrue(realEx.Message.Contains(
+            Assert.IsInstanceOfType(exception, typeof(CloudRequestException));
+            var cloudEx = exception as CloudRequestException;
+            Assert.IsTrue(cloudEx.Message.Contains(
                 "resource_key not a valid resource key"),
                 "Exception message did not contain the expected text.");
         }
@@ -815,6 +812,31 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ),
                ItExpr.IsAny<CancellationToken>()
             );
+        }
+
+        /// <summary>
+        /// Check that errors from the cloud service will cause the 
+        /// appropriate data to be set in the CloudRequestException.
+        /// </summary>
+        [TestMethod]
+        public void ValidateErrorHandling_HttpDataSetInException()
+        {
+            string resourceKey = "resource_key";
+
+            try
+            {
+                var engine = new CloudRequestEngineBuilder(_loggerFactory, new HttpClient())
+                    .SetResourceKey(resourceKey)
+                    .Build();
+                Assert.Fail("Expected exception did not occur");
+            }
+            catch (CloudRequestException ex)
+            {
+                Assert.IsTrue(ex.HttpStatusCode > 0, "Status code should not be 0");
+                Assert.IsNotNull(ex.ResponseHeaders, "Response headers not populated");
+                Assert.IsTrue(ex.ResponseHeaders.Count > 0, "Response headers not populated");
+            }
+
         }
 
         /// <summary>
