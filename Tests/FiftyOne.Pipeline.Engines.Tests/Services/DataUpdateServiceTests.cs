@@ -369,8 +369,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 List<DataUpdateCompleteArgs> completeEventArgs = new List<DataUpdateCompleteArgs>();
                 _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
                 {
-                    completeFlag.Set();
                     completeEventArgs.Add(e);
+                    completeFlag.Set();
                 };
 
                 // Act
@@ -482,8 +482,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
-                completeFlag.Set();
                 completeEventArgs = e;
+                completeFlag.Set();
             };
 
             // Act
@@ -533,8 +533,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
-                completeFlag.Set();
                 completeEventArgs = e;
+                completeFlag.Set();
             };
 
             // Act
@@ -592,8 +592,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
-                completeFlag.Set();
                 completeEventArgs = e;
+                completeFlag.Set();
             };
 
             // Act
@@ -644,7 +644,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
                     var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
                     {
-                        Content = new StreamContent(File.OpenRead(@"Resources\file.gz")),
+                        Content = new StreamContent(File.OpenRead(@"Resources/file.gz")),
                     };
 
                     response.Content.Headers.Add("Content-MD5", md5);
@@ -656,8 +656,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
-                completeFlag.Set();
                 completeEventArgs = e;
+                completeFlag.Set();
             };
 
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
@@ -740,7 +740,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
                     var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
                     {
-                        Content = new StreamContent(File.OpenRead(@"Resources\file.gz")),
+                        Content = new StreamContent(File.OpenRead(@"Resources/file.gz")),
                     };
 
                     response.Content.Headers.Add("Content-MD5", md5);
@@ -752,8 +752,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
-                completeFlag.Set();
                 completeEventArgs = e;
+                completeFlag.Set();
             };
 
             // The invalid MD5 will cause an error to be logged so we want
@@ -840,8 +840,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
-                completeFlag.Set();
                 completeEventArgs = e;
+                completeFlag.Set();
             };
 
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
@@ -940,8 +940,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 DataUpdateCompleteArgs completeEventArgs = null;
                 _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
                 {
-                    completeFlag.Set();
                     completeEventArgs = e;
+                    completeFlag.Set();
                 };
 
                 // Act
@@ -1113,7 +1113,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
                     var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
                     {
-                        Content = new StreamContent(File.OpenRead(@"Resources\file.gz")),
+                        Content = new StreamContent(File.OpenRead(@"Resources/file.gz")),
                     };
 
                     response.Content.Headers.Add("Content-MD5", md5);
@@ -1125,8 +1125,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
-                completeFlag.Set();
                 completeEventArgs = e;
+                completeFlag.Set();
             };
 
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
@@ -1229,7 +1229,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
                     var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
                     {
-                        Content = new StreamContent(File.OpenRead(@"Resources\file.gz")),
+                        Content = new StreamContent(File.OpenRead(@"Resources/file.gz")),
                     };
 
                     response.Content.Headers.Add("Content-MD5", md5);
@@ -1241,8 +1241,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
-                completeFlag.Set();
                 completeEventArgs = e;
+                completeFlag.Set();
             };            
 
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
@@ -1306,7 +1306,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 engine.Verify(e => e.RefreshData(config.Identifier, It.IsAny<Stream>()), Times.Once());
             }
             // Check that the stream contained the expected data.
-            Assert.AreEqual($"TESTING{Environment.NewLine}", dataPassedToEngine);
+            Assert.AreEqual($"TESTING{Environment.NewLine}".Trim(), dataPassedToEngine.Trim());
             // The timer factory should have been called once.
             _timerFactory.Verify(f => f(It.IsAny<TimerCallback>(),
                 It.IsAny<object>(), It.IsAny<TimeSpan>()), Times.Once());
@@ -1344,8 +1344,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             DataUpdateCompleteArgs completeEventArgs = null;
             _dataUpdate.CheckForUpdateComplete += (object sender, DataUpdateCompleteArgs e) =>
             {
-                completeFlag.Set();
                 completeEventArgs = e;
+                completeFlag.Set();
             };
 
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();

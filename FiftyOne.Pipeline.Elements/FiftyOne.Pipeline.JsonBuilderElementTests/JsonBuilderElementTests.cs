@@ -544,6 +544,9 @@ carriage return and new line
             expectedValue = expectedValue.Replace(@"    ", @"\  ");
             expectedValue = expectedValue.Replace(@"
 ", @"\r\n");
+
+            // Replacing as there is no carriage returnon Linux format.
+            expectedValue = expectedValue.Replace(@"\r", @"");
             expectedValue = valueOfProperty == null ? expectedValue : $"\"{expectedValue}\"";
 
             // Create the object to be serialized
@@ -595,7 +598,7 @@ carriage return and new line
     ""property"": {expectedValue}
   }}
 }}", 
-                result);
+                result.Replace(@"\r", @""));
         }
 
         /// <summary>
