@@ -122,5 +122,11 @@
       <Version>1.0.0</Version>
     </PackageReference>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" Condition="'$(OS)' == 'Windows_NT'"/>
+  <Target Condition="'$(OS)' != 'Windows_NT'" Name="build">
+	<Message Text="Skip = Skipping Fiftyone.Pipeline.WEB.Framework on Linux." />
+  </Target> 
+  <Target Condition="'$(OS)' != 'Windows_NT'" Name="VSTest">
+	<Message Text="Skip = Skipping Fiftyone.Pipeline.WEB.Framework Tests on Linux." />
+  </Target>
 </Project>
