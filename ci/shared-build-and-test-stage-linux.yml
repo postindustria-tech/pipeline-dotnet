@@ -22,15 +22,15 @@ stages:
   
     # Configure this to run for both Debug and Release configurations
     strategy:
-      maxParallel: 1
+      maxParallel: 2
       matrix:
         debug:
-          BuildConfiguration: Debug
+          BuildConfiguration: LinuxDebug
         release:
-          BuildConfiguration: Release 
+          BuildConfiguration: LinuxRelease 
     
     variables: 
-      RestoreBuildProjects: '**/*.csproj'
+      RestoreBuildProjects: '**/*.sln'
 
     steps:
     # Get the data files that are required for device detection automated system tests.

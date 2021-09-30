@@ -22,7 +22,7 @@ stages:
   
     # Configure this to run for both Debug and Release configurations
     strategy:
-      maxParallel: 4
+      maxParallel: 2
       matrix:
         debug:
           BuildConfiguration: Debug
