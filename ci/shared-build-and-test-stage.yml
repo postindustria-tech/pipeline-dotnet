@@ -154,7 +154,17 @@ stages:
       inputs:
         command: run
         projects: '**/FiftyOne.Pipeline.Benchmarks.csproj'
-        nobuild: true      
+        nobuild: true
+
+    # The Web and Web.Framework projects are combined into a single NuGet package.
+    # We build it here to make sure we'll be able to build it as part of the 
+    # 'create-packages' pipeline later.   
+    - task: NuGetCommand@2
+      displayName: 'NuGet pack Pipeline.Web'
+      inputs:
+        command: 'pack'
+        packagesToPack: '**/FiftyOne.Pipeline.Web.nuspec'
+        buildProperties: 'config=$(BuildConfiguration)'    
     
     - task: PublishBuildArtifacts@1
       inputs:
