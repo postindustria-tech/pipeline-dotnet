@@ -164,7 +164,12 @@ stages:
       inputs:
         command: 'pack'
         packagesToPack: '**/FiftyOne.Pipeline.Web.nuspec'
-        buildProperties: 'config=$(BuildConfiguration)'    
+        buildProperties: 'config=$(BuildConfiguration)' 
+        versioningScheme: 'byPrereleaseNumber'
+        majorVersion: '1'
+        minorVersion: '0'
+        patchVersion: '0'
+        packTimezone: 'utc'
     
     - task: PublishBuildArtifacts@1
       inputs:
