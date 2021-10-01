@@ -39,6 +39,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Data
     public class CloudRequestData : AspectDataBase
     {
         private const string JSON_RESPONSE_KEY = "json-response";
+        private const string PROCESS_STARTED_KEY = "process-started";
 
         /// <summary>
         /// The raw JSON response returned by the 51Degrees cloud service. 
@@ -47,6 +48,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Data
         {
             get { return base[JSON_RESPONSE_KEY]?.ToString(); }
             set { base[JSON_RESPONSE_KEY] = value; }
+        }
+
+        /// <summary>
+        /// Flag to confirm that the CloudRequestEngine has started processing.
+        /// </summary>
+        public bool? ProcessStarted
+        {
+            get { return base[PROCESS_STARTED_KEY] as bool?; }
+            set { base[PROCESS_STARTED_KEY] = value; }
         }
 
         /// <summary>

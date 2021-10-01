@@ -30,6 +30,9 @@ using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using Moq.Protected;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -44,7 +47,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
     {
 
         /// <summary>
-        /// Expercted propeties error, duplicated here as error Messages has 
+        /// Expected properties error, duplicated here as error Messages has 
         /// internal access modifier.
         /// </summary>
         private static readonly string PropertiesError = 
@@ -55,7 +58,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
         #region Test Classes
 
-        private class ItemData : AspectDataBase
+        public class ItemData : AspectDataBase
         {
             public ItemData(ILogger<AspectDataBase> logger,
                 IPipeline pipeline,
@@ -69,7 +72,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             public IReadOnlyList<string> HardwareVariants { get; set; }
         }
 
-        private class TestData : AspectDataBase
+        public class TestData : AspectDataBase
         {
             public TestData(ILogger<AspectDataBase> logger,
                 IPipeline pipeline,
@@ -85,7 +88,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             public IReadOnlyList<ItemData> Devices { get; set; }
         }
 
-        private class TestInstance : CloudAspectEngineBase<TestData>
+        public class TestInstance : CloudAspectEngineBase<TestData>
         {
             public TestInstance() :
                 base(new Logger<TestInstance>(new LoggerFactory()), CreateData)
@@ -104,12 +107,17 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             public override IEvidenceKeyFilter EvidenceKeyFilter =>
                 new EvidenceKeyFilterWhitelist(new List<string>());
 
-            protected override void ProcessEngine(IFlowData data, TestData aspectData)
+            protected override void ProcessCloudEngine(IFlowData data, TestData aspectData, string json)
             {
+                if (string.IsNullOrEmpty(json)) 
+                {
+                    Assert.Fail("'json' value should not be null or empty if " +
+                        "this method is called");
+                }
             }
         }
 
-        private class TestRequestEngine : AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>, ICloudRequestEngine
+        public class TestRequestEngine : AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>, ICloudRequestEngine
         {
             public TestRequestEngine() : base(new Logger<TestRequestEngine>(new LoggerFactory()), CreateData)
             {
@@ -289,6 +297,203 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             Assert.AreEqual(1, _engine.Properties.Single(p => p.Name == "hardwarevariants").EvidenceProperties.Count);
         }
 
+        /// <summary>
+        /// Test that when processing the cloud aspect engine, the 
+        /// ProcessCloudMethod is called when the JSON response is 
+        /// populated.
+        /// </summary>
+        [TestMethod]
+        public void Process_CloudResponse()
+        {
+            // Setup properties.
+            List<PropertyMetaData> properties = new List<PropertyMetaData>();
+            properties.Add(new PropertyMetaData() { Name = "ismobile", Type = "Boolean" });
+            ProductMetaData devicePropertyData = new ProductMetaData();
+            devicePropertyData.Properties = properties;
+            _propertiesReturnedByRequestEngine.Add("test", devicePropertyData);
+
+            // Create mock TestInstance so we can see if the ProcessCloudEngine
+            // method is called.
+            var mockTestInstance = new Mock<TestInstance>() { CallBase = true };
+            mockTestInstance.Protected().Setup(
+                "ProcessCloudEngine",
+                ItExpr.IsAny<IFlowData>(),
+                ItExpr.IsAny<TestData>(),
+                ItExpr.IsAny<string>()).Verifiable();
+
+            // Create mock TestRequestEngine so we can mock the ProcessEngine 
+            // method and get it to set it's aspect data.
+            var mockRequestEngine = new Mock<TestRequestEngine>() { CallBase = true };
+            mockRequestEngine.Object.PublicProperties = _propertiesReturnedByRequestEngine;
+            mockRequestEngine.Protected()
+                .Setup(
+                    "ProcessEngine",
+                    ItExpr.IsAny<IFlowData>(),
+                    ItExpr.IsAny<CloudRequestData>())
+                .Callback((IFlowData data, CloudRequestData aspectData) => {
+                    aspectData.JsonResponse = "{ \"response\": true }";
+                });
+
+            // Construct the pipeline.
+            var pipeline = new PipelineBuilder(new LoggerFactory())
+                .AddFlowElement(mockRequestEngine.Object)
+                .AddFlowElement(mockTestInstance.Object)
+                .Build();
+
+            // Process the pipeline.
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData
+                    .AddEvidence("query.user-agent", "iPhone")
+                    .Process();
+            }
+
+            // Verify the ProcessCloudEngine method was called
+            mockTestInstance.Protected().Verify(
+                "ProcessCloudEngine", 
+                Times.AtLeastOnce(),
+                ItExpr.IsAny<IFlowData>(),
+                ItExpr.IsAny<TestData>(),
+                ItExpr.IsAny<string>());
+            mockTestInstance.Verify();
+        }
+
+        /// <summary>
+        /// Test that when processing the cloud aspect engine, the 
+        /// ProcessCloudMethod is not called when the JSON response is not
+        /// populated.
+        /// </summary>
+        [TestMethod]
+        public void Process_NoCloudResponse() 
+        {
+            // Setup properties.
+            List<PropertyMetaData> properties = new List<PropertyMetaData>();
+            properties.Add(new PropertyMetaData() { Name = "ismobile", Type = "Boolean" });
+            ProductMetaData devicePropertyData = new ProductMetaData();
+            devicePropertyData.Properties = properties;
+            _propertiesReturnedByRequestEngine.Add("test", devicePropertyData);
+
+            // Create mock TestInstance so we can see if the ProcessCloudEngine
+            // method is called.
+            var mockTestInstance = new Mock<TestInstance>() { CallBase = true };
+            mockTestInstance.Protected().Setup(
+                "ProcessCloudEngine",
+                ItExpr.IsAny<IFlowData>(),
+                ItExpr.IsAny<TestData>(),
+                ItExpr.IsAny<string>()).Verifiable();
+
+            // Create mock TestRequestEngine
+            var mockRequestEngine = new Mock<TestRequestEngine>() { CallBase = true };
+            mockRequestEngine.Object.PublicProperties = _propertiesReturnedByRequestEngine;
+
+            // Construct the pipeline.
+            var pipeline = new PipelineBuilder(new LoggerFactory())
+                .AddFlowElement(mockRequestEngine.Object)
+                .AddFlowElement(mockTestInstance.Object)
+                .Build();
+
+            // Process the pipeline.
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData
+                    .AddEvidence("query.user-agent", "iPhone")
+                    .Process();
+            }
+
+            // Verify the ProcessCloudEngine method was called
+            mockTestInstance.Protected().Verify(
+                "ProcessCloudEngine",
+                Times.Never(),
+                ItExpr.IsAny<IFlowData>(),
+                ItExpr.IsAny<TestData>(), 
+                ItExpr.IsAny<string>());
+        }
+
+        /// <summary>
+        /// Test that the expected exception is thrown when the 
+        /// CloudRequestEngine and a CloudAspectEngine have been added to the 
+        /// Pipeline in the wrong order.
+        /// </summary>
+        [TestMethod]
+        public void CloudEngines_WrongOrder()
+        {
+            // Setup properties.
+            List<PropertyMetaData> properties = new List<PropertyMetaData>();
+            properties.Add(new PropertyMetaData() { Name = "ismobile", Type = "Boolean" });
+            ProductMetaData devicePropertyData = new ProductMetaData();
+            devicePropertyData.Properties = properties;
+            _propertiesReturnedByRequestEngine.Add("test", devicePropertyData);
+
+            // Create mock TestInstance so we can see if the ProcessCloudEngine
+            // method is called.
+            var mockTestInstance = new Mock<TestInstance>() { CallBase = true };
+            mockTestInstance.Protected().Setup(
+                "ProcessCloudEngine",
+                ItExpr.IsAny<IFlowData>(),
+                ItExpr.IsAny<TestData>(),
+                ItExpr.IsAny<string>()).Verifiable();
+
+            // Create mock TestRequestEngine so we can mock the ProcessEngine 
+            // method and get it to set it's aspect data.
+            var mockRequestEngine = new Mock<TestRequestEngine>() { CallBase = true };
+            mockRequestEngine.Object.PublicProperties = _propertiesReturnedByRequestEngine;
+            mockRequestEngine.Protected()
+                .Setup(
+                    "ProcessEngine",
+                    ItExpr.IsAny<IFlowData>(),
+                    ItExpr.IsAny<CloudRequestData>())
+                .Callback((IFlowData data, CloudRequestData aspectData) => {
+                    aspectData.JsonResponse = "{ \"response\": true }";
+                    aspectData.ProcessStarted = true;
+                });
+
+            // Construct the pipeline.
+            var pipeline = new PipelineBuilder(new LoggerFactory())
+                .AddFlowElement(mockTestInstance.Object)
+                .AddFlowElement(mockRequestEngine.Object)
+                .Build();
+
+            // Process the pipeline.
+            try
+            {
+                using (var flowData = pipeline.CreateFlowData())
+                {
+                    flowData
+                        .AddEvidence("query.user-agent", "iPhone")
+                        .Process();
+                }
+            } 
+            catch (AggregateException ex)
+            {
+                var expectedExceptions = ex.InnerExceptions
+                    .Where(e => e.GetType() == typeof(PipelineConfigurationException));
+
+                Assert.IsTrue(
+                    expectedExceptions.Count() > 0,
+                    "Aggregate exception did not contain expected PipelineConfigurationException.");
+                Assert.AreEqual(
+                    "The 'TestInstanceProxy' requires a 'CloudRequestEngine' " +
+                    "before it in the Pipeline. This engine will be unable to " +
+                    "produce results until this is corrected.",
+                    expectedExceptions.FirstOrDefault()?.Message, 
+                    "PipelineConfigurationException message was incorrect.");
+            }
+        }
+
+        /// <summary>
+        /// Test that the expected exception is thrown when the 
+        /// CloudRequestEngine has not been added to the Pipeline but a 
+        /// CloudAspectEngine has
+        /// </summary>
+        [TestMethod]
+        [ExpectedException(typeof(PipelineConfigurationException))]
+        public void CloudEngines_NoRequestEngine()
+        {
+            var engine = new TestInstance();
+            var pipeline = new PipelineBuilder(new LoggerFactory())
+                .AddFlowElement(engine)
+                .Build();
+        }
 
         #endregion
 
