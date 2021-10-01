@@ -52,7 +52,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
         private int _ignoreWranings = 0;
         private int _ignoreErrors = 0;
-        private const int TEST_TIMEOUT_MS = 2000;
+        private const int TEST_TIMEOUT_MS = 3000;
 
         private DataUpdateService _dataUpdate;
 
@@ -1442,7 +1442,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             var config = new DataFileConfiguration()
             {
                 AutomaticUpdatesEnabled = true,
-                PollingIntervalSeconds = 10,
+                PollingIntervalSeconds = 47,
                 MaxRandomisationSeconds = 0,
                 DataUpdateUrl = "https://test.com",
                 FileSystemWatcherEnabled = false
@@ -1504,7 +1504,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             fieldValue = field.GetValue(fieldValue);
             var dueTime = TimeSpan.FromMilliseconds((uint)fieldValue);
             // Check that the timer has been set to expire in 10 seconds.
-            Assert.AreEqual(10, dueTime.TotalSeconds);
+            Assert.AreEqual(47, dueTime.Seconds);
         }
 
 #region Private methods
