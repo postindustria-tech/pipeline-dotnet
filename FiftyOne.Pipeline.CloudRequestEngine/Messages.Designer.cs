@@ -113,5 +113,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
                 return ResourceManager.GetString("MessageNoDataInResponse", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This method should be overridden in the class derived from CloudAspectEngineBase class. The implementation should use the &apos;json&apos; parameter to populate the &apos;aspectData&apos; accordingly. This method will be called by the CloudAspectEngine.ProcessEngine() method after it has successfully retrieved the JsonResponse from the CloudRequestEngine..
+        /// </summary>
+        internal static string ProcessCloudEngineNotImplemented {
+            get {
+                return ResourceManager.GetString("ProcessCloudEngineNotImplemented", resourceCulture);
+            }
+        }
     }
 }

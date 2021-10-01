@@ -50,7 +50,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         "CA1724:Type names should not match namespaces",
         Justification = "This would be a breaking change so will be " +
         "addressed in a future version.")]
-    public class CloudRequestEngine : AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>, ICloudRequestEngine
+    public class CloudRequestEngine : 
+        AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>,
+        ICloudRequestEngine
     {
         private HttpClient _httpClient;
 
@@ -157,7 +159,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
                 _propertyMetaData = new List<IAspectPropertyMetaData>()
                 {
-                     new AspectPropertyMetaData(this, "json-response", typeof(string), "", new List<string>(), true)
+                     new AspectPropertyMetaData(this, "json-response", typeof(string), "", new List<string>(), true),
+                     new AspectPropertyMetaData(this, "process-started", typeof(bool), "", new List<string>(), true)
                 };
             }
             catch (Exception ex)
@@ -215,6 +218,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             if (aspectData == null) throw new ArgumentNullException(nameof(aspectData));
+
+            aspectData.ProcessStarted = true;
 
             string jsonResult = string.Empty;
 
