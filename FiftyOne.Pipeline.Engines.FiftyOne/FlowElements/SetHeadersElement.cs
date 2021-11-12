@@ -226,6 +226,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
         private static string GetResponseHeaderName(string propertyName)
         {
+            // This comparison is case-sensitive because this process relies
+            // on the property name having very particular casing.
+            // This cannot function if e.g. the whole name is lowercase.
+            // Consequently, we want to throw an exception here if the 
+            // property name does not match the expected case.
             if(propertyName.StartsWith(SET_HEADER_PROPERTY_PREFIX, 
                 StringComparison.Ordinal) == false)
             {

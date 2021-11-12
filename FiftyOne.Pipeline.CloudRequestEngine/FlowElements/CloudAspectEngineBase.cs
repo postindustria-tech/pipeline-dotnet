@@ -294,12 +294,20 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 BindingFlags.Instance | 
                 BindingFlags.IgnoreCase);
 
-            if (propertyInfo != null) 
+            // Load any sub properties.
+            List<AspectPropertyMetaData> subProperties = null;
+            if (property.ItemProperties != null &&
+                property.ItemProperties.Count > 0)
             {
-                // Load any sub properties.
-                List<AspectPropertyMetaData> subProperties = null;
-                if (property.ItemProperties != null &&
-                    property.ItemProperties.Count > 0)
+                if (propertyInfo == null)
+                {
+                    throw new PipelineException(string.Format(
+                        CultureInfo.InvariantCulture,
+                        Messages.ExceptionCloudComplexPropertyType,
+                        parentObjectType.Name,
+                        property.Name));
+                }
+                else
                 {
                     subProperties = new List<AspectPropertyMetaData>();
                     var thisType = propertyInfo.PropertyType;
@@ -319,34 +327,26 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             }
                         }
                     }
-                    else 
+                    else
                     {
                         Logger.LogWarning($"Problem parsing sub-items. " +
                             $"Property '{parentObjectType.Name}.{property.Name}' " +
                             $"does not implement IEnumerable<>.");
                     }
                 }
+            }
 
-                // Create the AspectPropertyMetaData instance.
-                return new AspectPropertyMetaData(this,
-                    property.Name,
-                    propertyInfo.PropertyType,
-                    property.Category,
-                    new List<string>(),
-                    true,
-                    "",
-                    subProperties,
-                    property.DelayExecution,
-                    property.EvidenceProperties);
-            }
-            else
-            {
-                // Could not find a matching property on the parent object
-                // so log a warning.
-                Logger.LogWarning($"Failed to find property '{property.Name}' " +
-                    $"on data object '{parentObjectType.Name}'. ");
-                return null;
-            }
+            // Create the AspectPropertyMetaData instance.
+            return new AspectPropertyMetaData(this,
+                property.Name,
+                GetPropertyType(parentObjectType, propertyInfo, property),
+                property.Category,
+                new List<string>(),
+                true,
+                "",
+                subProperties,
+                property.DelayExecution,
+                property.EvidenceProperties);
         }
 
         /// <summary>
@@ -544,6 +544,49 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 result.Add(property.Key, outputValue);
             }
             return result;
+        }
+
+        private static Type GetPropertyType(
+            Type parentObjectType,
+            PropertyInfo propertyInfo,
+            PropertyMetaData property)
+        {
+            Type propertyType;
+            if (propertyInfo != null)
+            {
+                propertyType = propertyInfo.PropertyType;
+            }
+            else
+            {
+                switch (property.Type)
+                {
+                    case "String":
+                        propertyType = typeof(string);
+                        break;
+                    case "Int32":
+                        propertyType = typeof(int);
+                        break;
+                    case "Boolean":
+                        propertyType = typeof(bool);
+                        break;
+                    case "JavaScript":
+                        propertyType = typeof(JavaScript);
+                        break;
+                    case "Double":
+                        propertyType = typeof(double);
+                        break;
+                    case "Array":
+                    default:
+                        throw new PipelineException(string.Format(
+                            CultureInfo.InvariantCulture,
+                            Messages.ExceptionCloudPropertyType,
+                            parentObjectType.Name,
+                            property.Name,
+                            property.Type));
+                }
+            }
+
+            return propertyType;
         }
     }
 }

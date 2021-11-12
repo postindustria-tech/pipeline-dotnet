@@ -61,6 +61,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unable to determine the complex type associated with this property. No c# property found matching definition {0}.{1}..
+        /// </summary>
+        internal static string ExceptionCloudComplexPropertyType {
+            get {
+                return ResourceManager.GetString("ExceptionCloudComplexPropertyType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error returned from 51Degrees cloud service: {0}.
         /// </summary>
         internal static string ExceptionCloudError {
@@ -75,6 +84,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         internal static string ExceptionCloudErrorsMultiple {
             get {
                 return ResourceManager.GetString("ExceptionCloudErrorsMultiple", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to determine the type associated with this property. No c# property found matching definition {0}.{1} and json type &apos;{2}&apos; is not mapped.   .
+        /// </summary>
+        internal static string ExceptionCloudPropertyType {
+            get {
+                return ResourceManager.GetString("ExceptionCloudPropertyType", resourceCulture);
             }
         }
         

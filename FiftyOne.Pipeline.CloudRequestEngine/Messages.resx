@@ -117,11 +117,17 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ExceptionCloudComplexPropertyType" xml:space="preserve">
+    <value>Unable to determine the complex type associated with this property. No c# property found matching definition {0}.{1}.</value>
+  </data>
   <data name="ExceptionCloudError" xml:space="preserve">
     <value>Error returned from 51Degrees cloud service: {0}</value>
   </data>
   <data name="ExceptionCloudErrorsMultiple" xml:space="preserve">
     <value>Multiple errors returned from 51Degrees cloud service. See inner exceptions for details.</value>
+  </data>
+  <data name="ExceptionCloudPropertyType" xml:space="preserve">
+    <value>Unable to determine the type associated with this property. No c# property found matching definition {0}.{1} and json type '{2}' is not mapped.   </value>
   </data>
   <data name="ExceptionFailedToLoadProperties" xml:space="preserve">
     <value>Failed to load aspect properties for element '{0}'. This is because your resource key does not include access to any properties under '{0}'. For more details on resource keys, see our explainer: https://51degrees.com/documentation/_info__resource_keys.html</value>

@@ -117,7 +117,7 @@ namespace FiftyOne.Pipeline.Web.Tests
             _request.SetupGet(r => r.Query).Returns(query);
             _request.SetupGet(r => r.Form).Returns(formValues);
 
-            _request.SetupGet(r => r.HttpContext.Connection.LocalIpAddress)
+            _request.SetupGet(r => r.HttpContext.Connection.RemoteIpAddress)
                 .Returns(IP);
             _request.SetupGet(r => r.IsHttps).Returns(true);
             _request.SetupGet(r => r.ContentType)
@@ -135,6 +135,36 @@ namespace FiftyOne.Pipeline.Web.Tests
             _flowData.SetupGet(f => f.EvidenceKeyFilter)
                 .Returns(new EvidenceKeyFilterWhitelist(
                     new List<string>() { key }));
+        }
+
+        /// <summary>
+        /// Check that a null client IP will not cause any failures 
+        /// </summary>
+        [TestMethod]
+        public void WebRequestEvidenceService_IpNull()
+        {
+            SetRequiredKey(Core.Constants.EVIDENCE_CLIENTIP_KEY);
+            _request.SetupGet(r => r.HttpContext.Connection.RemoteIpAddress)
+                .Returns((IPAddress)null);
+
+            _service.AddEvidenceFromRequest(_flowData.Object, _request.Object);
+            _flowData.Verify(f => f.AddEvidence(
+                Core.Constants.EVIDENCE_CLIENTIP_KEY, It.IsAny<object>()),
+                Times.Never);
+        }
+
+        /// <summary>
+        /// Check that the client IP value is set in the evidence as expected. 
+        /// </summary>
+        [TestMethod]
+        public void WebRequestEvidenceService_IpVerify()
+        {
+            SetRequiredKey(Core.Constants.EVIDENCE_CLIENTIP_KEY);
+
+            _service.AddEvidenceFromRequest(_flowData.Object, _request.Object);
+            _flowData.Verify(f => f.AddEvidence(
+                Core.Constants.EVIDENCE_CLIENTIP_KEY, IP.ToString()),
+                Times.Once);
         }
 
         /// <summary>

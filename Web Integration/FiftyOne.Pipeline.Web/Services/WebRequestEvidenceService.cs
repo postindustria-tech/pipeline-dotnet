@@ -149,8 +149,11 @@ namespace FiftyOne.Pipeline.Web.Services
                     new AspCoreSession(httpRequest.HttpContext.Session));
             }
 
-            CheckAndAdd(flowData, Core.Constants.EVIDENCE_CLIENTIP_KEY,
-                httpRequest.HttpContext.Connection.LocalIpAddress.ToString());
+            if (httpRequest.HttpContext.Connection?.RemoteIpAddress != null)
+            {
+                CheckAndAdd(flowData, Core.Constants.EVIDENCE_CLIENTIP_KEY,
+                    httpRequest.HttpContext.Connection.RemoteIpAddress.ToString());
+            }
 
             AddRequestProtocolToEvidence(flowData, httpRequest);
 
