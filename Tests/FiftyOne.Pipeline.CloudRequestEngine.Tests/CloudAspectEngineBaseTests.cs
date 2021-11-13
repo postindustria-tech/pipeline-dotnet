@@ -298,6 +298,78 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         }
 
         /// <summary>
+        /// Test that the LoadProperties method of the CloudAspectEngine will
+        /// handle a situation where a property from cloud does not exist as a c# property
+        /// and has a simple type.
+        /// </summary>
+        [TestMethod]
+        public void LoadProperties_NoMatch()
+        {
+            List<PropertyMetaData> properties = new List<PropertyMetaData>();
+            properties.Add(new PropertyMetaData() { Name = "cloudStringProperty", Type = "String" });
+            properties.Add(new PropertyMetaData() { Name = "cloudBoolProperty", Type = "Boolean" });
+            properties.Add(new PropertyMetaData() { Name = "cloudJavaScriptProperty", Type = "JavaScript" });
+            ProductMetaData devicePropertyData = new ProductMetaData();
+            devicePropertyData.Properties = properties;
+            _propertiesReturnedByRequestEngine.Add("test", devicePropertyData);
+
+            CreatePipeline();
+
+            Assert.AreEqual(3, _engine.Properties.Count);
+            var query1 = _engine.Properties.Where(p => p.Name == "cloudStringProperty");
+            Assert.IsTrue(query1.Any());
+            Assert.IsTrue(query1.First().Type.Equals(typeof(string)));
+            var query2 = _engine.Properties.Where(p => p.Name == "cloudBoolProperty");
+            Assert.IsTrue(query2.Any());
+            Assert.IsTrue(query2.First().Type.Equals(typeof(bool)));
+            var query3 = _engine.Properties.Where(p => p.Name == "cloudJavaScriptProperty");
+            Assert.IsTrue(query3.Any());
+            Assert.IsTrue(query3.First().Type.Equals(typeof(JavaScript)));
+        }
+
+        /// <summary>
+        /// Test that the LoadProperties method of the CloudAspectEngine will
+        /// throw an exception when a property from cloud does not exist as a c# property
+        /// and has an array type.
+        /// </summary>
+        [TestMethod]
+        [ExpectedException(typeof(PipelineException))]
+        public void LoadProperties_NoMatchArray()
+        {
+            List<PropertyMetaData> properties = new List<PropertyMetaData>();
+            properties.Add(new PropertyMetaData() { Name = "cloudArrayProperty", Type = "Array" });
+            ProductMetaData devicePropertyData = new ProductMetaData();
+            devicePropertyData.Properties = properties;
+            _propertiesReturnedByRequestEngine.Add("test", devicePropertyData);
+
+            CreatePipeline();
+        }
+
+        /// <summary>
+        /// Test that the LoadProperties method of the CloudAspectEngine will
+        /// throw an exception when a property from cloud does not exist as a c# property
+        /// and has sub-properties.
+        /// </summary>
+        [TestMethod]
+        [ExpectedException(typeof(PipelineException))]
+        public void LoadProperties_NoMatchSubProperties()
+        {
+            List<PropertyMetaData> subproperties = new List<PropertyMetaData>();
+            subproperties.Add(new PropertyMetaData() { Name = "ismobile", Type = "Boolean" });
+            subproperties.Add(new PropertyMetaData() { Name = "hardwarevendor", Type = "String" });
+            subproperties.Add(new PropertyMetaData() { Name = "hardwarevariants", Type = "Array" });
+
+            List<PropertyMetaData> properties = new List<PropertyMetaData>();
+            properties.Add(new PropertyMetaData() { Name = "cloudComplexProperty", Type = "Array", ItemProperties = subproperties });
+
+            ProductMetaData devicePropertyData = new ProductMetaData();
+            devicePropertyData.Properties = properties;
+            _propertiesReturnedByRequestEngine.Add("test", devicePropertyData);
+
+            CreatePipeline();
+        }
+
+        /// <summary>
         /// Test that when processing the cloud aspect engine, the 
         /// ProcessCloudMethod is called when the JSON response is 
         /// populated.
