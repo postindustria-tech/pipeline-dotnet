@@ -189,6 +189,50 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
+        /// Enable or disable the <see cref="IDataUpdateUrlFormatter"/>
+        /// to be used when creating the complete URL to request updates
+        /// from.
+        /// </summary>
+        /// <remarks>
+        /// Setting this to false is equivalent to calling 
+        /// <see cref="SetDataUpdateUrlFormatter(IDataUpdateUrlFormatter)"/>
+        /// with a null parameter.
+        /// It is available as a separate method in order to support 
+        /// disabling the formatter from a configuration file.
+        /// </remarks>
+        /// <param name="useFormatter">
+        /// True to use the specified formatter (default). False to
+        /// prevent the specified formatter from being used.
+        /// </param>
+        /// <returns>
+        /// This builder instance.
+        /// </returns>
+        public TBuilder SetDataUpdateUseUrlFormatter(bool useFormatter)
+        {
+            _dataFileBuilder.SetDataUpdateUseUrlFormatter(useFormatter);
+            return this as TBuilder;
+        }
+
+        /// <summary>
+        /// Enable/Disable the UrlFormatter to be used when this engine's
+        /// data file is updated.
+        /// Default is true.
+        /// If set to false, the UrlFormatter will be ignored.
+        /// </summary>
+        /// <param name="formatter">
+        /// The formatter to use.
+        /// </param>
+        /// <returns>
+        /// This builder instance.
+        /// </returns>
+        public TBuilder SetDataUpdateUseUrlFormatter(
+            IDataUpdateUrlFormatter formatter)
+        {
+            _dataFileBuilder.SetDataUpdateUrlFormatter(formatter);
+            return this as TBuilder;
+        }
+
+        /// <summary>
         /// Set a value indicating if the <see cref="DataUpdateService"/>
         /// should expect the response from the data update URL to contain a
         /// 'content-md5' HTTP header that can be used to verify the integrity

@@ -141,6 +141,34 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         }
 
         /// <summary>
+        /// Enable or disable the <see cref="IDataUpdateUrlFormatter"/>
+        /// to be used when creating the complete URL to request updates
+        /// from.
+        /// </summary>
+        /// <remarks>
+        /// Setting this to false is equivalent to calling 
+        /// <see cref="SetDataUpdateUrlFormatter(IDataUpdateUrlFormatter)"/>
+        /// with a null parameter.
+        /// It is available as a separate method in order to support 
+        /// disabling the formatter from a configuration file.
+        /// </remarks>
+        /// <param name="useFormatter">
+        /// True to use the specified formatter (default). False to
+        /// prevent the specified formatter from being used.
+        /// </param>
+        /// <returns>
+        /// This builder instance.
+        /// </returns>
+        public TBuilder SetDataUpdateUseUrlFormatter(bool useFormatter)
+        {
+            if (useFormatter == false)
+            {
+                _dataUpdateUrlFormatter = null;
+            }
+            return this as TBuilder;
+        }
+
+        /// <summary>
         /// Set a value indicating if the <see cref="DataUpdateService"/>
         /// should expect the response from the data update URL to contain a
         /// 'content-md5' HTTP header that can be used to verify the integrity
