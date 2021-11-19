@@ -23,6 +23,7 @@
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Web.Framework.Adapters;
 using FiftyOne.Pipeline.Web.Shared.Services;
+using Microsoft.Extensions.Logging;
 using System.Web;
 
 namespace FiftyOne.Pipeline.Web.Framework.Providers
@@ -75,8 +76,12 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         /// </summary>
         public FiftyOneJsProvider()
         {
-            _clientsidePropertyService = new ClientsidePropertyService(
-                WebPipeline.GetInstance().Pipeline);
+            using (var loggerFactory = new LoggerFactory())
+            {
+                var logger = loggerFactory.CreateLogger<ClientsidePropertyService>();
+                _clientsidePropertyService = new ClientsidePropertyService(
+                    WebPipeline.GetInstance().Pipeline, logger);
+            }
         }
 
         /// <summary>
