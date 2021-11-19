@@ -1,3 +1,4 @@
+using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.JavaScriptBuilder.Data;
@@ -17,6 +18,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
     public class ClientsidePropertyServiceTests
     {
         private ClientsidePropertyService _service;
+        private TestLogger<ClientsidePropertyService> _logger;
 
         private Mock<IContextAdapter> _context;
         private Mock<IRequestAdapter> _request;
@@ -108,6 +110,27 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
         }
 
         /// <summary>
+        /// Verify that the Vary header is set as expected for a variety of scenarios
+        /// </summary>
+        [DataTestMethod]
+        [DynamicData("VaryHeader_DATA", DynamicDataSourceType.Method)]
+        public void JavaScript_VaryHeader(List<string> evidenceHeaders1, 
+            List<string> evidenceHeaders2, string expectedVary)
+        {
+            Configure(ConfigureElements(
+                evidenceHeaders1,
+                evidenceHeaders2));
+
+            _service.ServeJavascript(_context.Object, _flowData.Object);
+
+            ValidateResponse(JS_CONTENT,
+                JS_CONTENT.Length.ToString(),
+                JS_CONTENT_TYPE, 200,
+                _defaultDataKey.GetHashCode().ToString(),
+                expectedVary);
+        }
+
+        /// <summary>
         /// Verify the response is as expected for a Json request
         /// </summary>
         [TestMethod]
@@ -142,6 +165,77 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
 
             ValidateResponse(null, null, null, 304, null, null);
         }
+
+        /// <summary>
+        /// Verify that the Vary header is set as expected for a 
+        /// variety of scenarios
+        /// </summary>
+        [DataTestMethod]
+        [DynamicData("VaryHeader_DATA", DynamicDataSourceType.Method)]
+        public void Json_VaryHeader(List<string> evidenceHeaders1, 
+            List<string> evidenceHeaders2, string expectedVary)
+        {
+            Configure(ConfigureElements(
+                evidenceHeaders1,
+                evidenceHeaders2));
+
+            _service.ServeJson(_context.Object, _flowData.Object);
+
+            ValidateResponse(JSON_CONTENT,
+                JSON_CONTENT.Length.ToString(),
+                JSON_CONTENT_TYPE, 200,
+                _defaultDataKey.GetHashCode().ToString(),
+                expectedVary);
+        }
+
+        /// <summary>
+        /// Generate the test input data for the Vary header tests
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object[]> VaryHeader_DATA()
+        {
+            var EVIDENCE_NONE = new List<string>() { };
+            var EVIDENCE_UA = new List<string>() { "Header.User-Agent" };
+            var EVIDENCE_CHUA = new List<string>() { "Header.Sec-ch-ua" };
+            var EVIDENCE_UA_AND_CHUA = new List<string>() { "Header.User-Agent", "Header.Sec-ch-ua" };
+            var EVIDENCE_PSEUDO = new List<string>() { "Header.sec-ch-uasec-ch-ua-full-version" };
+            var EVIDENCE_UA_AND_PSEUDO = new List<string>() { "Header.User-Agent", "Header.sec-ch-uasec-ch-ua-full-version" };
+
+            // Tests with a single flow element
+            yield return new object[] { EVIDENCE_NONE, null, null };
+            yield return new object[] { EVIDENCE_UA, null, "User-Agent" };
+            yield return new object[] { EVIDENCE_UA_AND_CHUA, null, "User-Agent,Sec-ch-ua" };
+            yield return new object[] { EVIDENCE_PSEUDO, null, null };
+            yield return new object[] { EVIDENCE_UA_AND_PSEUDO, null, "User-Agent" };
+
+            // Tests with multiple flow elements
+            yield return new object[] { EVIDENCE_NONE, EVIDENCE_UA, "User-Agent" };
+            yield return new object[] { EVIDENCE_UA, EVIDENCE_UA, "User-Agent" };
+            yield return new object[] { EVIDENCE_UA, EVIDENCE_CHUA, "User-Agent,Sec-ch-ua" };
+            yield return new object[] { EVIDENCE_UA_AND_CHUA, EVIDENCE_UA, "User-Agent,Sec-ch-ua" };
+            yield return new object[] { EVIDENCE_PSEUDO, EVIDENCE_UA, "User-Agent" };
+        }
+
+
+        private List<IFlowElement> ConfigureElements(params List<string>[] evidenceHeaders)
+        {
+            var flowElements = new List<IFlowElement>();
+
+            foreach(var entry in evidenceHeaders)
+            {
+                if (entry != null)
+                {
+                    Mock<IFlowElement> mockElement = new Mock<IFlowElement>();
+                    IEvidenceKeyFilter filter = new EvidenceKeyFilterWhitelist(entry);
+                    mockElement.Setup(e => e.EvidenceKeyFilter).Returns(filter);
+
+                    flowElements.Add(mockElement.Object);
+                }
+            }
+
+            return flowElements;
+        }
+
 
         /// <summary>
         /// Verify that the response is as expected
@@ -215,13 +309,18 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
             }
         }
 
-        private void Configure()
+        private void Configure(List<IFlowElement> flowElements = null)
         {
-            // Configure pipeline to return an empty list of flow elements.
+            // Configure pipeline to return an empty list of flow elements
+            // by default.
             // This is used to determine which evidence values can impact 
             // json or javascript results and is not relevant for most tests.
+            if (flowElements == null)
+            {
+                flowElements = new List<IFlowElement>();
+            }
             _pipeline.Setup(p => p.FlowElements)
-                .Returns(new List<IFlowElement>());
+                .Returns(flowElements);
             // Configure the key for this flow data to contain a fake value
             // that we can use to test the cached response handling.
             _defaultDataKey = new DataKeyBuilder().Add(1, "test", "value").Build();
@@ -238,7 +337,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
 
         private void CreateService()
         {
-            _service = new ClientsidePropertyService(_pipeline.Object);
+            _logger = new TestLogger<ClientsidePropertyService>();
+            _service = new ClientsidePropertyService(_pipeline.Object, _logger);
         }
     }
 }
