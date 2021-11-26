@@ -27,6 +27,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 
 namespace FiftyOne.Pipeline.Core.FlowElements
@@ -458,21 +459,25 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     .SelectMany(e => e.Properties)
                     .Where(p => p.Name.ToUpperInvariant() == propertyName.ToUpperInvariant());
 
-
-                // If there is more than one matching property then log an error.
+                // If there is more than one matching property then
+                // throw an exception.
                 if (properties.Count() > 1)
                 {
-                    string message = $"Multiple matches for property '{propertyName}'. " +
-                        $"Flow elements that populate this property are: " +
-                        $"'{string.Join(",", properties.Select(p => p.Element.GetType().Name))}'";
-                    _logger.LogError(message);
+                    string message = string.Format(
+                        CultureInfo.InvariantCulture,
+                        Messages.ExceptionMultipleProperties,
+                        propertyName,
+                        string.Join(",", properties.Select(p => p.Element.GetType().Name)));
                     throw new PipelineDataException(message);
                 }
-                // If there are no matching properties then log an error.
+                // If there are no matching properties then 
+                // throw an exception.
                 if (properties.Any() == false)
                 {
-                    string message = $"Could not find property '{propertyName}'.";
-                    _logger.LogError(message);
+                    string message = string.Format(
+                        CultureInfo.InvariantCulture,
+                        Messages.ExceptionCannotFindProperty, 
+                        propertyName);
                     throw new PipelineDataException(message);
                 }
 
