@@ -271,22 +271,24 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             // This can be used to customize the JavaScript response. 
             if (_promisePropertyAvailable)
             {
+                // Execute this action if one of our expected
+                // exceptions occurs.
+                Action promisesNotAvailable = () => {
+                    // Short-circuit future calls, so we don't keep checking
+                    // for this property.
+                    _promisePropertyAvailable = false;
+                    supportsPromises = false;
+                };
+
                 try
                 {
                     var promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
                     supportsPromises = promise != null && promise.HasValue && promise.Value == "Full";
-
                 }
-                catch (PropertyMissingException)
-                {
-                    // This exception will be thrown on every call to get 
-                    // the property so short-circuit future calls.
-                    _promisePropertyAvailable = false;
-                    supportsPromises = false;
-                }
-                catch (PipelineDataException) { supportsPromises = false; }
-                catch (InvalidCastException) { supportsPromises = false; }
-                catch (KeyNotFoundException) { supportsPromises = false; }
+                catch (PropertyMissingException) { promisesNotAvailable(); }
+                catch (PipelineDataException) { promisesNotAvailable(); }
+                catch (InvalidCastException) { promisesNotAvailable(); }
+                catch (KeyNotFoundException) { promisesNotAvailable(); }
             }
 
             // If device detection is in the Pipeline then we can check
@@ -294,22 +296,24 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             // This can be used to customize the JavaScript response. 
             if (_fetchPropertyAvailable)
             {
+                // Execute this action if one of our expected
+                // exceptions occurs.
+                Action fetchNotAvailable = () => {
+                    // Short-circuit future calls, so we don't keep checking
+                    // for this property.
+                    _fetchPropertyAvailable = false;
+                    supportsFetch = false;
+                };
+
                 try
                 {
                     var fetch = data.GetAs<IAspectPropertyValue<bool>>("Fetch");
                     supportsFetch = fetch != null && fetch.HasValue && fetch.Value;
-
                 }
-                catch (PropertyMissingException)
-                {
-                    // This exception will be thrown on every call to get 
-                    // the property so short-circuit future calls.
-                    _fetchPropertyAvailable = false;
-                    supportsFetch = false;
-                }
-                catch (PipelineDataException) { supportsFetch = false; }
-                catch (InvalidCastException) { supportsFetch = false; }
-                catch (KeyNotFoundException) { supportsFetch = false; }
+                catch (PropertyMissingException) { fetchNotAvailable(); }
+                catch (PipelineDataException) { fetchNotAvailable(); }
+                catch (InvalidCastException) { fetchNotAvailable(); }
+                catch (KeyNotFoundException) { fetchNotAvailable(); }
             }
 
             // Get the JSON include to embed into the JavaScript include.
