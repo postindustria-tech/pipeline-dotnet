@@ -289,57 +289,43 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             // Get the property info for this property based on the 
             // supplied name.
-            var propertyInfo = parentObjectType.GetProperty(property.Name, 
-                BindingFlags.Public | 
-                BindingFlags.Instance | 
-                BindingFlags.IgnoreCase);
+            var propertyType = GetPropertyType(property, parentObjectType);
+
 
             // Load any sub properties.
             List<AspectPropertyMetaData> subProperties = null;
             if (property.ItemProperties != null &&
                 property.ItemProperties.Count > 0)
             {
-                if (propertyInfo == null)
+                subProperties = new List<AspectPropertyMetaData>();
+                if (typeof(IEnumerable).IsAssignableFrom(propertyType) &&
+                    propertyType.IsGenericType)
                 {
-                    throw new PipelineException(string.Format(
-                        CultureInfo.InvariantCulture,
-                        Messages.ExceptionCloudComplexPropertyType,
-                        parentObjectType.Name,
-                        property.Name));
+                    // Get the type of the items in this list so
+                    // LoadProperty can use reflection to get its
+                    // properties.
+                    var itemType = propertyType.GetGenericArguments()[0];
+                    foreach (var subproperty in property.ItemProperties)
+                    {
+                        var newProperty = LoadProperty(subproperty, itemType);
+                        if (newProperty != null)
+                        {
+                            subProperties.Add(newProperty);
+                        }
+                    }
                 }
                 else
                 {
-                    subProperties = new List<AspectPropertyMetaData>();
-                    var thisType = propertyInfo.PropertyType;
-                    if (typeof(IEnumerable).IsAssignableFrom(thisType) &&
-                        thisType.IsGenericType)
-                    {
-                        // Get the type of the items in this list so
-                        // LoadProperty can use reflection to get its
-                        // properties.
-                        var itemType = thisType.GetGenericArguments()[0];
-                        foreach (var subproperty in property.ItemProperties)
-                        {
-                            var newProperty = LoadProperty(subproperty, itemType);
-                            if (newProperty != null)
-                            {
-                                subProperties.Add(newProperty);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Logger.LogWarning($"Problem parsing sub-items. " +
-                            $"Property '{parentObjectType.Name}.{property.Name}' " +
-                            $"does not implement IEnumerable<>.");
-                    }
+                    Logger.LogWarning($"Problem parsing sub-items. " +
+                        $"Property '{parentObjectType.Name}.{property.Name}' " +
+                        $"does not implement IEnumerable<>.");
                 }
             }
 
             // Create the AspectPropertyMetaData instance.
             return new AspectPropertyMetaData(this,
                 property.Name,
-                GetPropertyType(parentObjectType, propertyInfo, property),
+                propertyType,
                 property.Category,
                 new List<string>(),
                 true,
@@ -546,47 +532,50 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             return result;
         }
 
-        private static Type GetPropertyType(
-            Type parentObjectType,
-            PropertyInfo propertyInfo,
-            PropertyMetaData property)
+        /// <summary>
+        /// Try to get the type of a property from the information
+        /// returned by the cloud service. This should be overridden
+        /// if anything other than simple types are required.
+        /// </summary>
+        /// <param name="propertyMetaData">
+        /// The <see cref="PropertyMetaData"/> instance to translate.
+        /// </param>
+        /// <param name="parentObjectType">
+        /// The type of the object on which this property exists.
+        /// </param>
+        /// <returns>
+        /// The type of the property determined from the Type field
+        /// of propertyMetaData.
+        /// </returns>
+        protected virtual Type GetPropertyType(
+            PropertyMetaData propertyMetaData,
+            Type parentObjectType)
         {
-            Type propertyType;
-            if (propertyInfo != null)
+            if (propertyMetaData == null)
             {
-                propertyType = propertyInfo.PropertyType;
+                throw new ArgumentNullException(nameof(propertyMetaData));
             }
-            else
+            switch (propertyMetaData.Type)
             {
-                switch (property.Type)
-                {
-                    case "String":
-                        propertyType = typeof(string);
-                        break;
-                    case "Int32":
-                        propertyType = typeof(int);
-                        break;
-                    case "Boolean":
-                        propertyType = typeof(bool);
-                        break;
-                    case "JavaScript":
-                        propertyType = typeof(JavaScript);
-                        break;
-                    case "Double":
-                        propertyType = typeof(double);
-                        break;
-                    case "Array":
-                    default:
-                        throw new PipelineException(string.Format(
-                            CultureInfo.InvariantCulture,
-                            Messages.ExceptionCloudPropertyType,
-                            parentObjectType.Name,
-                            property.Name,
-                            property.Type));
-                }
+                case "String":
+                    return typeof(string);
+                case "Int32":
+                    return typeof(int);
+                case "Boolean":
+                    return typeof(bool);
+                case "JavaScript":
+                    return typeof(JavaScript);
+                case "Double":
+                    return typeof(double);
+                case "Array":
+                default:
+                    throw new PipelineException(string.Format(
+                        CultureInfo.InvariantCulture,
+                        Messages.ExceptionCloudPropertyType,
+                        parentObjectType,
+                        propertyMetaData.Name,
+                        propertyMetaData.Type));
             }
-
-            return propertyType;
         }
     }
 }

@@ -90,9 +90,18 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
         public class TestInstance : CloudAspectEngineBase<TestData>
         {
-            public TestInstance() :
+            private Dictionary<string, Type> _complexPropertyTypes;
+
+            public TestInstance()
+                : this(new Dictionary<string, Type>())
+            {
+
+            }
+
+            public TestInstance(Dictionary <string, Type> propertyTypes) :
                 base(new Logger<TestInstance>(new LoggerFactory()), CreateData)
             {
+                _complexPropertyTypes = propertyTypes;
             }
 
             private static TestData CreateData(IPipeline pipeline,
@@ -114,6 +123,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                     Assert.Fail("'json' value should not be null or empty if " +
                         "this method is called");
                 }
+            }
+
+            protected override Type GetPropertyType(PropertyMetaData propertyMetaData, Type parentObjectType)
+            {
+                if (_complexPropertyTypes.ContainsKey(propertyMetaData.Name))
+                {
+                    return _complexPropertyTypes[propertyMetaData.Name];
+                }
+                return base.GetPropertyType(propertyMetaData, parentObjectType);
             }
         }
 
@@ -158,12 +176,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         private IPipeline _pipeline;
 
         private Dictionary<string, ProductMetaData> _propertiesReturnedByRequestEngine;
+        private Dictionary<string, Type> _complexPropertyTypes;
 
         [TestInitialize]
         public void Init()
         {
             _propertiesReturnedByRequestEngine = new Dictionary<string, ProductMetaData>();
-
+            _complexPropertyTypes = new Dictionary<string, Type>();
         }
 
         /// <summary>
@@ -180,6 +199,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             ProductMetaData devicePropertyData = new ProductMetaData();
             devicePropertyData.Properties = properties;
             _propertiesReturnedByRequestEngine.Add("test", devicePropertyData);
+            _complexPropertyTypes.Add("hardwarevariants", typeof(IReadOnlyList<string>));
 
             CreatePipeline();
 
@@ -258,6 +278,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             ProductMetaData devicePropertyData = new ProductMetaData();
             devicePropertyData.Properties = properties;
             _propertiesReturnedByRequestEngine.Add("test", devicePropertyData);
+            _complexPropertyTypes.Add("hardwarevariants", typeof(IReadOnlyList<string>));
+            _complexPropertyTypes.Add("devices", typeof(IReadOnlyList<object>));
 
             CreatePipeline();
 
@@ -285,6 +307,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             ProductMetaData devicePropertyData = new ProductMetaData();
             devicePropertyData.Properties = properties;
             _propertiesReturnedByRequestEngine.Add("test", devicePropertyData);
+            _complexPropertyTypes.Add("hardwarevariants", typeof(IReadOnlyList<string>));
 
             CreatePipeline();
 
@@ -573,7 +596,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
         private void CreatePipeline()
         {
-            _engine = new TestInstance();
+            _engine = new TestInstance(_complexPropertyTypes);
             _requestEngine = new TestRequestEngine();
             _requestEngine.PublicProperties = _propertiesReturnedByRequestEngine;
             _pipeline = new PipelineBuilder(new LoggerFactory())
