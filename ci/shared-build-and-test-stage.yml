@@ -68,6 +68,7 @@ stages:
     
     - task: NuGetCommand@2
       displayName: 'NuGet restore'
+      retryCountOnTaskFailure: 3
       inputs:
         command: 'restore'
         restoreSolution: '$(RestoreBuildProjects)'
