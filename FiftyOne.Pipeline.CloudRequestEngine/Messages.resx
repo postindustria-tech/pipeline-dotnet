@@ -129,11 +129,17 @@
   <data name="ExceptionCloudPropertyType" xml:space="preserve">
     <value>Unable to determine the type associated with this property. No c# property found matching definition {0}.{1} and json type '{2}' is not mapped.   </value>
   </data>
+  <data name="ExceptionCloudResponseFailure" xml:space="preserve">
+    <value>Error waiting for response from the cloud service.</value>
+  </data>
   <data name="ExceptionFailedToLoadProperties" xml:space="preserve">
     <value>Failed to load aspect properties for element '{0}'. This is because your resource key does not include access to any properties under '{0}'. For more details on resource keys, see our explainer: https://51degrees.com/documentation/_info__resource_keys.html</value>
   </data>
   <data name="ExceptionResourceKeyNeeded" xml:space="preserve">
     <value>A resource key is required to access the 51Degrees cloud service. Please use the 'SetResourceKey' method to supply your resource key. You can obtain one for free from https://configure.51degrees.com</value>
+  </data>
+  <data name="ExceptionTaskCanceledRequest" xml:space="preserve">
+    <value>Failed to send request. A TaskCanceledException was thrown. The likely cause of this would be a connection timeout.</value>
   </data>
   <data name="MessageErrorCodeReturned" xml:space="preserve">
     <value>Cloud service at '{0}' returned status code '{1}' with content {2}.</value>
