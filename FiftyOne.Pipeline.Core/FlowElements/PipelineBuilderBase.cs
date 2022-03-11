@@ -60,7 +60,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// If true then Pipeline will call Dispose on its child elements
         /// when it is disposed.
         /// </summary>
-        private bool _autoDisposeElements = false;
+        private bool _autoDisposeElements = true;
 
         /// <summary>
         /// If true then Pipeline will suppress exceptions added to

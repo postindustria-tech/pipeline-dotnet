@@ -97,6 +97,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error waiting for response from the cloud service..
+        /// </summary>
+        internal static string ExceptionCloudResponseFailure {
+            get {
+                return ResourceManager.GetString("ExceptionCloudResponseFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to load aspect properties for element &apos;{0}&apos;. This is because your resource key does not include access to any properties under &apos;{0}&apos;. For more details on resource keys, see our explainer: https://51degrees.com/documentation/_info__resource_keys.html.
         /// </summary>
         internal static string ExceptionFailedToLoadProperties {
@@ -111,6 +120,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         internal static string ExceptionResourceKeyNeeded {
             get {
                 return ResourceManager.GetString("ExceptionResourceKeyNeeded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to send request. A TaskCanceledException was thrown. The likely cause of this would be a connection timeout..
+        /// </summary>
+        internal static string ExceptionTaskCanceledRequest {
+            get {
+                return ResourceManager.GetString("ExceptionTaskCanceledRequest", resourceCulture);
             }
         }
         

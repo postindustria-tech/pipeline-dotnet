@@ -234,8 +234,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 }
 
                 requestMessage.Content = content;
-                var request = AddCommonHeadersAndSend(requestMessage);
-                jsonResult = ProcessResponse(request.Result);
+                jsonResult = ProcessResponse(AddCommonHeadersAndSend(requestMessage));
             }
 
             aspectData.JsonResponse = jsonResult;
@@ -470,8 +469,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             using (var requestMessage =
                 new HttpRequestMessage(HttpMethod.Get, url))
             {
-                var request = AddCommonHeadersAndSend(requestMessage);
-                jsonResult = ProcessResponse(request.Result);
+                jsonResult = ProcessResponse(AddCommonHeadersAndSend(requestMessage));
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)
@@ -498,10 +496,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             using (var requestMessage =
                 new HttpRequestMessage(HttpMethod.Get, _evidenceKeysEndpoint))
             {
-                var request = AddCommonHeadersAndSend(requestMessage);
                 // Note - Don't check for error messages in the response
                 // as it is a flat JSON array.
-                jsonResult = ProcessResponse(request.Result, false);
+                jsonResult = ProcessResponse(
+                    AddCommonHeadersAndSend(requestMessage), false);
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)
@@ -527,7 +525,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <returns>
         /// The response
         /// </returns>
-        private Task<HttpResponseMessage> AddCommonHeadersAndSend(
+        private HttpResponseMessage AddCommonHeadersAndSend(
             HttpRequestMessage request)
         {
             if (string.IsNullOrEmpty(_cloudRequestOrigin) == false &&
@@ -537,7 +535,32 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 request.Headers.Add(Constants.ORIGIN_HEADER_NAME, _cloudRequestOrigin);
             }
 
-            return _httpClient.SendAsync(request);
+            return SendRequestAsync(request);
         }
+
+        /// <summary>
+        /// Send a request and handle any exception if one is thrown.
+        /// </summary>
+        /// <param name="request">
+        /// The request to send
+        /// </param>
+        /// <returns>
+        /// The response
+        /// </returns>
+        private HttpResponseMessage SendRequestAsync(
+            HttpRequestMessage request)
+        {
+            var task = _httpClient.SendAsync(request);
+
+            try
+            {
+                return task.Result;
+            }
+            catch (Exception ex)
+            {
+                throw new CloudRequestException(
+                    Messages.ExceptionCloudResponseFailure, ex);
+            }
+        } 
     }
 }

@@ -33,6 +33,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -836,19 +837,57 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 Assert.IsNotNull(ex.ResponseHeaders, "Response headers not populated");
                 Assert.IsTrue(ex.ResponseHeaders.Count > 0, "Response headers not populated");
             }
+        }
 
+        /// <summary>
+        /// Verify that an exception throw by the task that is returned by HttpClient.SendAsync
+        /// will be handled and wrapped in nice informative CloudRequestException. 
+        /// </summary>
+        [TestMethod]
+        public void ValidateErrorHandling_ExceptionInRequestTask()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            Exception exception = null;
+
+            ConfigureMockedClient(r => true, true);
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            try
+            {
+                using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+                {
+                    var data = pipeline.CreateFlowData();
+                    data.AddEvidence("query.User-Agent", userAgent);
+                    data.Process();
+                }
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception, "Expected exception to occur");
+            Assert.IsInstanceOfType(exception, typeof(AggregateException));
+            var aggEx = exception as AggregateException;
+            Assert.AreEqual(aggEx.InnerExceptions.Count, 1);
+            var realEx = aggEx.InnerExceptions[0];
+            Assert.IsInstanceOfType(realEx, typeof(CloudRequestException));
         }
 
         /// <summary>
         /// Setup _httpClient to respond with the configured messages.
         /// </summary>
         private void ConfigureMockedClient(
-            Func<HttpRequestMessage, bool> expectedJsonParameters)
+            Func<HttpRequestMessage, bool> expectedJsonParameters,
+            bool throwExceptionOnJsonRequest = false)
         {
             // ARRANGE
             _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
             // Set up the JSON response.
-            _handlerMock
+            var setup = _handlerMock
                .Protected()
                // Setup the PROTECTED method to mock
                .Setup<Task<HttpResponseMessage>>(
@@ -856,14 +895,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                   ItExpr.Is<HttpRequestMessage>(r => expectedJsonParameters(r)
                       && r.RequestUri.AbsolutePath.ToLower().EndsWith("json")),
                   ItExpr.IsAny<CancellationToken>()
-               )
-               // prepare the expected response of the mocked http call
-               .ReturnsAsync(new HttpResponseMessage()
-               {
-                   StatusCode = HttpStatusCode.OK,
-                   Content = new StringContent(_jsonResponse),
-               })
+               );
+                        
+            if (throwExceptionOnJsonRequest)
+            {
+                // Configure the call to the json endpoint to throw an exception.
+                var task = new Task<HttpResponseMessage>(() => throw new Exception("TEST"));
+                // We have to start the task or it will never actually run!
+                task.Start();
+                setup.Returns(task);
+            } 
+            else 
+            { 
+               // Prepare the expected response of the mocked http call
+               setup.ReturnsAsync(new HttpResponseMessage()
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent(_jsonResponse),
+                })
                .Verifiable();
+            }
+
             // Set up the evidencekeys response.
             _handlerMock
                .Protected()
