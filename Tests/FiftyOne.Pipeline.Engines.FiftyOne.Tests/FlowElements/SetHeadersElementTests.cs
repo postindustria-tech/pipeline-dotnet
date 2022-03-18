@@ -164,7 +164,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
         }
 
         /// <summary>
-        /// The 'SetHeaderAcceptCH' property is set to various invalid values
+        /// The 'SetHeader*' property is set to various invalid values
         /// that are wrapped in an AspectPropertyValue.
         /// Output from SetHeadersElement should be an empty dictionary.
         /// </summary>
@@ -258,6 +258,31 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             Assert.AreEqual(1, typedOutput.ResponseHeaderDictionary.Count);
             Assert.IsTrue(typedOutput.ResponseHeaderDictionary.ContainsKey("Accept-CH"));
             Assert.AreEqual("Sec-CH-UA,Sec-CH-UA-Model,Sec-CH-UA-Mobile", 
+                typedOutput.ResponseHeaderDictionary["Accept-CH"]);
+        }
+
+        /// <summary>
+        /// Test that the SetHeadersElement will remove duplicate values from multiple properties 
+        /// that are associated with the same header.
+        /// I.e. there is only one 'Sec-CH-UA-Model' in the output, despite it appearing in both
+        /// property values below.
+        /// </summary>
+        [TestMethod]
+        public void SetHeadersElement_MultipleProperties_DuplicateValues()
+        {
+            var propertyNameValues = new Dictionary<string, object>()
+            {
+                { "SetHeaderBrowserAccept-CH", "Sec-CH-UA,Sec-CH-UA-Model" },
+                { "SetHeaderHardwareAccept-CH", "Sec-CH-UA-Model,Sec-CH-UA-Mobile" }
+            };
+            CreatePipeline(propertyNameValues);
+            var data = _pipeline.CreateFlowData();
+            data.Process();
+
+            var typedOutput = GetFromFlowData(data);
+            Assert.AreEqual(1, typedOutput.ResponseHeaderDictionary.Count);
+            Assert.IsTrue(typedOutput.ResponseHeaderDictionary.ContainsKey("Accept-CH"));
+            Assert.AreEqual("Sec-CH-UA,Sec-CH-UA-Model,Sec-CH-UA-Mobile",
                 typedOutput.ResponseHeaderDictionary["Accept-CH"]);
         }
 
