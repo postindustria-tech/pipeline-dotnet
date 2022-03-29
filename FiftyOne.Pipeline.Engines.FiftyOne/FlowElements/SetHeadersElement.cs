@@ -146,7 +146,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         private Dictionary<string, string> BuildResponseHeaderDictionary(
             IFlowData data, PipelineConfig config)
         {
-            Dictionary<string, string> result = new Dictionary<string, string>();
+            Dictionary<string, HashSet<string>> result = new Dictionary<string, HashSet<string>>();
 
             // Iterate through 'SetHeader*' properties
             foreach(var property in config.SetHeaderProperties)
@@ -163,23 +163,29 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                 if(string.IsNullOrEmpty(headerValue) == false &&
                     headerValue.Equals("Unknown", StringComparison.OrdinalIgnoreCase) == false)
                 {
-                    if(result.TryGetValue(property.Value.ResponseHeaderName, 
-                        out string currentValue))
-                    {
-                        // There is already an entry for this header name 
-                        // so concatenate the value.
-                        result[property.Value.ResponseHeaderName] = 
-                            $"{currentValue},{headerValue}";
-                    }
-                    else
+                    HashSet<string> values;
+                    if(result.TryGetValue(property.Value.ResponseHeaderName, out values) == false)
                     {
                         // No entry for this header name so create it.
-                        result.Add(property.Value.ResponseHeaderName, headerValue);
+                        values = new HashSet<string>();
+                        result.Add(property.Value.ResponseHeaderName, values);
+                    }
+                    // Get the individual entries from the comma-separated value for this
+                    // property. If each entry is not already in the list of values for this 
+                    // header then add it.
+                    foreach (var value in headerValue.Split(',')
+                        .Select(v => v.Trim()))
+                    {
+                        if(values.Contains(value) == false)
+                        {
+                            values.Add(value);
+                        }
                     }
                 }
             }
 
-            return result;
+            return result.ToDictionary(entry => entry.Key, 
+                entry => string.Join(",", entry.Value));
         }
 
         private static string GetHeaderValue(object propertyValue)

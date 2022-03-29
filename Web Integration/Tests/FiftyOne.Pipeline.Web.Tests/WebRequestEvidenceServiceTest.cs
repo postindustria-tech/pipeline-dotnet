@@ -23,6 +23,7 @@
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Web.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -110,7 +111,8 @@ namespace FiftyOne.Pipeline.Web.Tests
 
             _request = new Mock<HttpRequest>();
             _flowData = new Mock<IFlowData>();
-            _service = new WebRequestEvidenceService();
+            LoggerFactory factory = new LoggerFactory();
+            _service = new WebRequestEvidenceService(factory.CreateLogger<WebRequestEvidenceService>());
 
             _request.SetupGet(r => r.Headers).Returns(headers);
             _request.SetupGet(r => r.Cookies).Returns(cookies);

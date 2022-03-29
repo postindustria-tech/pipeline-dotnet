@@ -120,12 +120,16 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         };
 
         /// <summary>
+        /// The default element data key that will be used for this element. 
+        /// </summary>
+#pragma warning disable CA1707 // Identifiers should not contain underscores
+        public const string DEFAULT_ELEMENT_DATA_KEY = "javascriptbuilderelement";
+#pragma warning restore CA1707 // Identifiers should not contain underscores
+
+        /// <summary>
         /// Key to identify engine.
         /// </summary>
-        public override string ElementDataKey
-		{
-			get { return "javascriptbuilderelement"; }
-		}
+        public override string ElementDataKey => DEFAULT_ELEMENT_DATA_KEY;
 
         /// <summary>
         /// Publicly accessible EvidenceKeyFilter
