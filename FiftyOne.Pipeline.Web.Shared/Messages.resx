@@ -126,6 +126,9 @@
   <data name="ExceptionNoJsonBuilder" xml:space="preserve">
     <value>JSON data has been requested from the Pipeline. However, the JsonBuilderElement is not present. To resolve this error, either disable client-side evidence or ensure the JsonBuilderElement is added to your Pipeline.</value>
   </data>
+  <data name="MessageEvidenceError" xml:space="preserve">
+    <value>Problem retrieving evidence from request</value>
+  </data>
   <data name="MessageJavaScriptCachingError" xml:space="preserve">
     <value>Problem setting response headers for 51Degrees.core.js</value>
   </data>

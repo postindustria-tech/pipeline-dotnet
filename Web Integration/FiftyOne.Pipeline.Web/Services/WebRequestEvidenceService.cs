@@ -24,7 +24,9 @@ using System;
 using System.Globalization;
 using System.Linq;
 using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Web.Shared;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace FiftyOne.Pipeline.Web.Services
 {
@@ -34,6 +36,10 @@ namespace FiftyOne.Pipeline.Web.Services
     /// </summary>
     public class WebRequestEvidenceService : IWebRequestEvidenceService
     {
+        /// <summary>
+        /// Logger
+        /// </summary>
+        private ILogger<WebRequestEvidenceService> _logger;
 
         /// <summary>
         /// True if session is enabled.
@@ -45,6 +51,16 @@ namespace FiftyOne.Pipeline.Web.Services
         /// will not change.
         /// </summary>
         private bool _checkedForSession = false;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="logger">A logger</param>
+        public WebRequestEvidenceService(
+            ILogger<WebRequestEvidenceService> logger)
+        {
+            _logger = logger;
+        }
 
         /// <summary>
         /// Check whether or not session is enabled. If it is not, then don't
@@ -104,59 +120,67 @@ namespace FiftyOne.Pipeline.Web.Services
             if (httpRequest == null) throw new ArgumentNullException(nameof(httpRequest));
             if (flowData == null) throw new ArgumentNullException(nameof(flowData));
 
-            foreach (var header in httpRequest.Headers)
+            try
             {
-                string evidenceKey = Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + 
-                    Core.Constants.EVIDENCE_SEPERATOR + header.Key;
-                CheckAndAdd(flowData, evidenceKey, header.Value.ToString());
-            }
-            foreach (var cookie in httpRequest.Cookies)
-            {
-                string evidenceKey = Core.Constants.EVIDENCE_COOKIE_PREFIX +
-                    Core.Constants.EVIDENCE_SEPERATOR + cookie.Key;
-                CheckAndAdd(
-                    flowData, 
-                    evidenceKey, 
-                    cookie.Value == null ? "" : 
-                        cookie.Value.ToString(CultureInfo.InvariantCulture));
-            }
-            foreach (var queryValue in httpRequest.Query)
-            {
-                string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
-                    Core.Constants.EVIDENCE_SEPERATOR + queryValue.Key;
-                CheckAndAdd(flowData, evidenceKey, queryValue.Value.ToString());
-            }
-            // Add form parameters to the evidence.
-            if (httpRequest.Method == Shared.Constants.METHOD_POST &&
-                Shared.Constants.CONTENT_TYPE_FORM.Contains(httpRequest.ContentType))
-            {
-                foreach (var formValue in httpRequest.Form)
+                foreach (var header in httpRequest.Headers)
+                {
+                    string evidenceKey = Core.Constants.EVIDENCE_HTTPHEADER_PREFIX +
+                        Core.Constants.EVIDENCE_SEPERATOR + header.Key;
+                    CheckAndAdd(flowData, evidenceKey, header.Value.ToString());
+                }
+                foreach (var cookie in httpRequest.Cookies)
+                {
+                    string evidenceKey = Core.Constants.EVIDENCE_COOKIE_PREFIX +
+                        Core.Constants.EVIDENCE_SEPERATOR + cookie.Key;
+                    CheckAndAdd(
+                        flowData, 
+                        evidenceKey, 
+                        cookie.Value == null ? "" : 
+                            cookie.Value.ToString(CultureInfo.InvariantCulture));
+                }
+                foreach (var queryValue in httpRequest.Query)
                 {
                     string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
-                        Core.Constants.EVIDENCE_SEPERATOR + formValue.Key;
-                    CheckAndAdd(flowData, evidenceKey, formValue.Value.ToString());
+                        Core.Constants.EVIDENCE_SEPERATOR + queryValue.Key;
+                    CheckAndAdd(flowData, evidenceKey, queryValue.Value.ToString());
                 }
-            }
-            if (GetSessionEnabled(httpRequest))
-            {
-                foreach (var sessionKey in httpRequest.HttpContext.Session.Keys)
+                // Add form parameters to the evidence.
+                if (httpRequest.Method == Shared.Constants.METHOD_POST &&
+                    Shared.Constants.CONTENT_TYPE_FORM.Contains(httpRequest.ContentType))
                 {
-                    string evidenceKey = Core.Constants.EVIDENCE_SESSION_PREFIX +
-                        Core.Constants.EVIDENCE_SEPERATOR + sessionKey;
-                    CheckAndAdd(flowData, evidenceKey, httpRequest.HttpContext.Session.GetString(sessionKey));
+                    foreach (var formValue in httpRequest.Form)
+                    {
+                        string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
+                            Core.Constants.EVIDENCE_SEPERATOR + formValue.Key;
+                        CheckAndAdd(flowData, evidenceKey, formValue.Value.ToString());
+                    }
                 }
-                CheckAndAdd(flowData, Core.Constants.EVIDENCE_SESSION_KEY,
-                    new AspCoreSession(httpRequest.HttpContext.Session));
-            }
+                if (GetSessionEnabled(httpRequest))
+                {
+                    foreach (var sessionKey in httpRequest.HttpContext.Session.Keys)
+                    {
+                        string evidenceKey = Core.Constants.EVIDENCE_SESSION_PREFIX +
+                            Core.Constants.EVIDENCE_SEPERATOR + sessionKey;
+                        CheckAndAdd(flowData, evidenceKey, httpRequest.HttpContext.Session.GetString(sessionKey));
+                    }
+                    CheckAndAdd(flowData, Core.Constants.EVIDENCE_SESSION_KEY,
+                        new AspCoreSession(httpRequest.HttpContext.Session));
+                }
 
-            if (httpRequest.HttpContext.Connection?.RemoteIpAddress != null)
+                if (httpRequest.HttpContext.Connection?.RemoteIpAddress != null)
+                {
+                    CheckAndAdd(flowData, Core.Constants.EVIDENCE_CLIENTIP_KEY,
+                        httpRequest.HttpContext.Connection.RemoteIpAddress.ToString());
+                }
+
+                AddRequestProtocolToEvidence(flowData, httpRequest);
+            }
+#pragma warning disable CA1031 // Do not catch general exception types
+            catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
             {
-                CheckAndAdd(flowData, Core.Constants.EVIDENCE_CLIENTIP_KEY,
-                    httpRequest.HttpContext.Connection.RemoteIpAddress.ToString());
+                _logger.LogWarning(ex, Messages.MessageEvidenceError);
             }
-
-            AddRequestProtocolToEvidence(flowData, httpRequest);
-
         }
 
         /// <summary>

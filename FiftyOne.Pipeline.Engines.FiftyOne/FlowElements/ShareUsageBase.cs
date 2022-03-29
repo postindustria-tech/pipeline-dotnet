@@ -237,12 +237,16 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         };
 
         /// <summary>
+        /// The default element data key that will be used for this element. 
+        /// </summary>
+#pragma warning disable CA1707 // Identifiers should not contain underscores
+        public const string DEFAULT_ELEMENT_DATA_KEY = "shareusage";
+#pragma warning restore CA1707 // Identifiers should not contain underscores
+
+        /// <summary>
         /// The data key for this element
         /// </summary>
-        public override string ElementDataKey
-        {
-            get { return "shareusage"; }
-        }
+        public override string ElementDataKey => DEFAULT_ELEMENT_DATA_KEY;
 
         private IEvidenceKeyFilter _evidenceKeyFilter;
 

@@ -65,7 +65,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// If set to false, the JavaScript will automatically delete
         /// any cookies prefixed with 51D_
         /// </summary>
-        protected bool EnableCookies { get; private set; }
+        protected bool EnableCookies { get; private set; } = true;
 
         /// <summary>
         /// If set to true, the JavaScript output will be minified
