@@ -53,6 +53,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private string _evidenceKeysEndpoint = "";
         private string _resourceKey = null;
         private string _licenseKey = null;
+        private string _cloudRequestOrigin = null;
         private int _timeout = 100;
 
         #endregion
@@ -176,6 +177,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         }
 
         /// <summary>
+        /// The value to set for the Origin header when making requests
+        /// to the cloud service.
+        /// This is used by the cloud service to check that the request
+        /// is being made from a origin matching those allowed by the 
+        /// resource key.
+        /// For more detail, see the 'Request Headers' section in the 
+        /// <a href="https://cloud.51degrees.com/api-docs/index.html">cloud documentation</a>.
+        /// </summary>
+        /// <param name="cloudRequestOrigin">
+        /// The value to use for the Origin header.
+        /// </param>
+        /// <returns>
+        /// This builder
+        /// </returns>
+        public CloudRequestEngineBuilder SetCloudRequestOrigin(string cloudRequestOrigin)
+        {
+            _cloudRequestOrigin = cloudRequestOrigin;
+            return this;
+        }
+
+        /// <summary>
         /// Build and return a new <see cref="CloudRequestEngine"/>
         /// instance using the current configuration.
         /// </summary>
@@ -246,7 +268,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 _propertiesEndpoint,
                 _evidenceKeysEndpoint,
                 _timeout,
-                properties);
+                properties,
+                _cloudRequestOrigin);
         }
     }
 }

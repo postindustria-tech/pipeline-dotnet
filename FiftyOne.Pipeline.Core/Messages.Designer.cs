@@ -61,6 +61,15 @@ namespace FiftyOne.Pipeline.Core {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not find property &apos;{0}&apos;..
+        /// </summary>
+        internal static string ExceptionCannotFindProperty {
+            get {
+                return ResourceManager.GetString("ExceptionCannotFindProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to FlowData has already been processed.
         /// </summary>
         internal static string ExceptionFlowDataAlreadyProcessed {
@@ -84,6 +93,15 @@ namespace FiftyOne.Pipeline.Core {
         internal static string ExceptionKeyNameNull {
             get {
                 return ResourceManager.GetString("ExceptionKeyNameNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Multiple matches for property &apos;{0}&apos;. Flow elements that populate this property are: {1}.
+        /// </summary>
+        internal static string ExceptionMultipleProperties {
+            get {
+                return ResourceManager.GetString("ExceptionMultipleProperties", resourceCulture);
             }
         }
         

@@ -35,6 +35,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
@@ -49,7 +50,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         "CA1724:Type names should not match namespaces",
         Justification = "This would be a breaking change so will be " +
         "addressed in a future version.")]
-    public class CloudRequestEngine : AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>, ICloudRequestEngine
+    public class CloudRequestEngine : 
+        AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>,
+        ICloudRequestEngine
     {
         private HttpClient _httpClient;
 
@@ -58,6 +61,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private string _licenseKey;
         private string _propertiesEndpoint;
         private string _evidenceKeysEndpoint;
+        private string _cloudRequestOrigin;
+
         private List<string> _requestedProperties;
         private IEvidenceKeyFilter _evidenceKeyFilter;
 
@@ -105,6 +110,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="requestedProperties">
         /// Not currently used.
         /// </param>
+        /// <param name="cloudRequestOrigin">
+        /// The value to use for the Origin header when making requests 
+        /// to cloud.
+        /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
@@ -119,7 +128,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             string propertiesEndpoint,
             string evidenceKeysEndpoint,
             int timeout,
-            List<string> requestedProperties) 
+            List<string> requestedProperties,
+            string cloudRequestOrigin = null) 
             : base(logger, aspectDataFactory)
         {
             if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
@@ -132,6 +142,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 _propertiesEndpoint = propertiesEndpoint;
                 _evidenceKeysEndpoint = evidenceKeysEndpoint;
                 _requestedProperties = requestedProperties;
+                _cloudRequestOrigin = cloudRequestOrigin;
 
                 _httpClient = httpClient;
                 if (timeout > 0)
@@ -148,7 +159,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
                 _propertyMetaData = new List<IAspectPropertyMetaData>()
                 {
-                     new AspectPropertyMetaData(this, "json-response", typeof(string), "", new List<string>(), true)
+                     new AspectPropertyMetaData(this, "json-response", typeof(string), "", new List<string>(), true),
+                     new AspectPropertyMetaData(this, "process-started", typeof(bool), "", new List<string>(), true)
                 };
             }
             catch (Exception ex)
@@ -207,9 +219,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             if (data == null) throw new ArgumentNullException(nameof(data));
             if (aspectData == null) throw new ArgumentNullException(nameof(aspectData));
 
+            aspectData.ProcessStarted = true;
+
             string jsonResult = string.Empty;
 
             using (var content = GetContent(data))
+            using (var requestMessage =
+                new HttpRequestMessage(HttpMethod.Post, _dataEndpoint))
             {
                 if (Logger != null && Logger.IsEnabled(LogLevel.Debug))
                 {
@@ -217,35 +233,42 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                         $"'{_dataEndpoint}'. Content: {content}");
                 }
 
-                var request = _httpClient.PostAsync(_dataEndpoint, content);
-                jsonResult = request.Result.Content.ReadAsStringAsync().Result;
+                requestMessage.Content = content;
+                jsonResult = ProcessResponse(AddCommonHeadersAndSend(requestMessage));
             }
 
             aspectData.JsonResponse = jsonResult;
-
-            ValidateResponse(jsonResult);
         }
 
         /// <summary>
         /// Validate the JSON response from the cloud service.
+        /// An exception will be throw if any type of error has 
+        /// occurred.
         /// </summary>
-        /// <param name="jsonResult">
+        /// <param name="response">
         /// The JSON content that is returned from the cloud service.
+        /// </param>
+        /// <param name="checkForErrorMessages">
+        /// Set to false if the response will never contain error message
+        /// text.
         /// </param>
         /// <exception cref="AggregateException">
         /// Thrown if there are multiple errors returned from the 
         /// cloud service.
         /// </exception>
-        /// <exception cref="PipelineException">
+        /// <exception cref="CloudRequestException">
         /// Thrown if there is an error from the cloud service or
         /// there is no data in the response.
         /// </exception>
-        private void ValidateResponse(string jsonResult)
+        private string ProcessResponse(
+            HttpResponseMessage response, 
+            bool checkForErrorMessages = true)
         {
+            var jsonResult = response.Content.ReadAsStringAsync().Result;
             var hasData = string.IsNullOrEmpty(jsonResult) == false;
             List<string> messages = new List<string>();
 
-            if (hasData)
+            if (hasData && checkForErrorMessages)
             {
                 var jObj = JObject.Parse(jsonResult);
                 var hasErrors = jObj.ContainsKey("errors");
@@ -271,6 +294,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     _dataEndpoint);
                 messages.Add(msg);
             }
+            // If there is no detailed error message, but we got a
+            // non-success status code, then add a message to the list
+            else if (messages.Count == 0 && 
+                response.IsSuccessStatusCode == false)
+            {
+                var msg = string.Format(CultureInfo.InvariantCulture,
+                    Messages.MessageErrorCodeReturned,
+                    _dataEndpoint,
+                    response.StatusCode,
+                    jsonResult);
+                messages.Add(msg);
+            }
+
+            Dictionary<string, string> headers = null;
+            if (messages.Count > 0)
+            {
+                // Get the response headers. 
+                headers = response.Headers.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => string.Join(", ", kvp.Value));
+            }
 
             // If there are any errors returned from the cloud service 
             // then throw an exception
@@ -278,15 +322,19 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 throw new AggregateException(
                     Messages.ExceptionCloudErrorsMultiple,
-                    messages.Select(m => new PipelineException(m)));
+                    messages.Select(m => new CloudRequestException(m, 
+                        (int)response.StatusCode, headers)));
             }
             else if (messages.Count == 1)
             {
                 var msg = string.Format(CultureInfo.InvariantCulture,
                     Messages.ExceptionCloudError,
                     messages[0]);
-                throw new PipelineException(msg);
+                throw new CloudRequestException(msg, 
+                    (int)response.StatusCode, headers);
             }
+
+            return jsonResult;
         }
 
         /// <summary>
@@ -415,33 +463,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         private void GetCloudProperties()
         {
-            HttpResponseMessage result = null;
             string jsonResult = string.Empty;
 
-            try
+            var url = $"{_propertiesEndpoint}?resource={_resourceKey}";
+            using (var requestMessage =
+                new HttpRequestMessage(HttpMethod.Get, url))
             {
-                var request = _httpClient.GetAsync($"{_propertiesEndpoint}?resource={_resourceKey}");
-                result = request.Result;
-                jsonResult = result.Content.ReadAsStringAsync().Result;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception ($"Failed to retrieve available properties " +
-                    $"from cloud service at {_propertiesEndpoint}.", ex);
-            }
-            
-            if (result.IsSuccessStatusCode == false)
-            {
-                List<Exception> exceptions = new List<Exception>();
-                if (string.IsNullOrEmpty(jsonResult) == false)
-                {
-                    var res = JsonConvert.DeserializeObject<LicencedProducts>(jsonResult);
-                    foreach (var e in res.Errors)
-                    {
-                        exceptions.Add(new PipelineException(e));
-                    }
-                }
-                throw new AggregateException(exceptions);
+                jsonResult = ProcessResponse(AddCommonHeadersAndSend(requestMessage));
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)
@@ -465,15 +493,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         {
             string jsonResult = string.Empty;
 
-            try
+            using (var requestMessage =
+                new HttpRequestMessage(HttpMethod.Get, _evidenceKeysEndpoint))
             {
-                var request = _httpClient.GetAsync(_evidenceKeysEndpoint);
-                jsonResult = request.Result.Content.ReadAsStringAsync().Result;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to retrieve evidence keys " +
-                    $"from cloud service at {_evidenceKeysEndpoint}.", ex);
+                // Note - Don't check for error messages in the response
+                // as it is a flat JSON array.
+                jsonResult = ProcessResponse(
+                    AddCommonHeadersAndSend(requestMessage), false);
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)
@@ -489,5 +515,52 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     $"from cloud service at {_evidenceKeysEndpoint}.");
             }
         }
+
+        /// <summary>
+        /// Add the common headers to the specified message and send it.
+        /// </summary>
+        /// <param name="request">
+        /// The request to send
+        /// </param>
+        /// <returns>
+        /// The response
+        /// </returns>
+        private HttpResponseMessage AddCommonHeadersAndSend(
+            HttpRequestMessage request)
+        {
+            if (string.IsNullOrEmpty(_cloudRequestOrigin) == false &&
+                (request.Headers.Contains(Constants.ORIGIN_HEADER_NAME) == false ||
+                request.Headers.GetValues(Constants.ORIGIN_HEADER_NAME).Contains(_cloudRequestOrigin) == false))
+            {
+                request.Headers.Add(Constants.ORIGIN_HEADER_NAME, _cloudRequestOrigin);
+            }
+
+            return SendRequestAsync(request);
+        }
+
+        /// <summary>
+        /// Send a request and handle any exception if one is thrown.
+        /// </summary>
+        /// <param name="request">
+        /// The request to send
+        /// </param>
+        /// <returns>
+        /// The response
+        /// </returns>
+        private HttpResponseMessage SendRequestAsync(
+            HttpRequestMessage request)
+        {
+            var task = _httpClient.SendAsync(request);
+
+            try
+            {
+                return task.Result;
+            }
+            catch (Exception ex)
+            {
+                throw new CloudRequestException(
+                    Messages.ExceptionCloudResponseFailure, ex);
+            }
+        } 
     }
 }

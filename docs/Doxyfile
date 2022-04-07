@@ -823,6 +823,7 @@ INPUT                  = ../FiftyOne.Pipeline.Core \
                          ../FiftyOne.Pipeline.Engines \
                          ../FiftyOne.Pipeline.Engines.FiftyOne \
                          ../README.md \
+                         ../Examples \
                          "../Web Integration/Examples"
 
 # This tag can be used to specify the character encoding of the source files
@@ -900,7 +901,8 @@ EXCLUDE_SYMBOLS        =
 # command).
 
 EXAMPLE_PATH           = ../Examples \
-                         "../Web Integration/Examples"
+                         "../Web Integration/Examples" \
+                         ../../../src/snippets
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and

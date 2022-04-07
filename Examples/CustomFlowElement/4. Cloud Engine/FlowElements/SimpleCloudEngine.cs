@@ -67,16 +67,11 @@ namespace Examples.CloudEngine.FlowElements
             // It works from the cloud request data.
             new EvidenceKeyFilterWhitelist(new List<string>());
 
-        protected override void ProcessEngine(IFlowData data, IStarSignData aspectData)
+        protected override void ProcessCloudEngine(IFlowData data, IStarSignData aspectData, string json)
         {
             // Cast aspectData to StarSignData so the 'setter' is available.
             StarSignData starSignData = (StarSignData)aspectData;
             
-            // Get the JSON response which the cloud request engine has
-            // fetched from the cloud service.
-            var requestData = data.Get<CloudRequestData>();
-            var json = requestData.JsonResponse;
-
             // Extract data from json to the aspectData instance.
             var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
             // Get the results for the star sign component.

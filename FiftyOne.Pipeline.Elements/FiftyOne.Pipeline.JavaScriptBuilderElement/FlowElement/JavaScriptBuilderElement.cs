@@ -120,12 +120,16 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         };
 
         /// <summary>
+        /// The default element data key that will be used for this element. 
+        /// </summary>
+#pragma warning disable CA1707 // Identifiers should not contain underscores
+        public const string DEFAULT_ELEMENT_DATA_KEY = "javascriptbuilderelement";
+#pragma warning restore CA1707 // Identifiers should not contain underscores
+
+        /// <summary>
         /// Key to identify engine.
         /// </summary>
-        public override string ElementDataKey
-		{
-			get { return "javascriptbuilderelement"; }
-		}
+        public override string ElementDataKey => DEFAULT_ELEMENT_DATA_KEY;
 
         /// <summary>
         /// Publicly accessible EvidenceKeyFilter
@@ -271,22 +275,24 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             // This can be used to customize the JavaScript response. 
             if (_promisePropertyAvailable)
             {
+                // Execute this action if one of our expected
+                // exceptions occurs.
+                Action promisesNotAvailable = () => {
+                    // Short-circuit future calls, so we don't keep checking
+                    // for this property.
+                    _promisePropertyAvailable = false;
+                    supportsPromises = false;
+                };
+
                 try
                 {
                     var promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
                     supportsPromises = promise != null && promise.HasValue && promise.Value == "Full";
-
                 }
-                catch (PropertyMissingException)
-                {
-                    // This exception will be thrown on every call to get 
-                    // the property so short-circuit future calls.
-                    _promisePropertyAvailable = false;
-                    supportsPromises = false;
-                }
-                catch (PipelineDataException) { supportsPromises = false; }
-                catch (InvalidCastException) { supportsPromises = false; }
-                catch (KeyNotFoundException) { supportsPromises = false; }
+                catch (PropertyMissingException) { promisesNotAvailable(); }
+                catch (PipelineDataException) { promisesNotAvailable(); }
+                catch (InvalidCastException) { promisesNotAvailable(); }
+                catch (KeyNotFoundException) { promisesNotAvailable(); }
             }
 
             // If device detection is in the Pipeline then we can check
@@ -294,22 +300,24 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             // This can be used to customize the JavaScript response. 
             if (_fetchPropertyAvailable)
             {
+                // Execute this action if one of our expected
+                // exceptions occurs.
+                Action fetchNotAvailable = () => {
+                    // Short-circuit future calls, so we don't keep checking
+                    // for this property.
+                    _fetchPropertyAvailable = false;
+                    supportsFetch = false;
+                };
+
                 try
                 {
                     var fetch = data.GetAs<IAspectPropertyValue<bool>>("Fetch");
                     supportsFetch = fetch != null && fetch.HasValue && fetch.Value;
-
                 }
-                catch (PropertyMissingException)
-                {
-                    // This exception will be thrown on every call to get 
-                    // the property so short-circuit future calls.
-                    _fetchPropertyAvailable = false;
-                    supportsFetch = false;
-                }
-                catch (PipelineDataException) { supportsFetch = false; }
-                catch (InvalidCastException) { supportsFetch = false; }
-                catch (KeyNotFoundException) { supportsFetch = false; }
+                catch (PropertyMissingException) { fetchNotAvailable(); }
+                catch (PipelineDataException) { fetchNotAvailable(); }
+                catch (InvalidCastException) { fetchNotAvailable(); }
+                catch (KeyNotFoundException) { fetchNotAvailable(); }
             }
 
             // Get the JSON include to embed into the JavaScript include.

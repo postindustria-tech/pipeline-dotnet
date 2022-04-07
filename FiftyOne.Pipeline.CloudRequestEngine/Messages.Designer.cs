@@ -61,6 +61,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unable to determine the complex type associated with this property. No c# property found matching definition {0}.{1}..
+        /// </summary>
+        internal static string ExceptionCloudComplexPropertyType {
+            get {
+                return ResourceManager.GetString("ExceptionCloudComplexPropertyType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error returned from 51Degrees cloud service: {0}.
         /// </summary>
         internal static string ExceptionCloudError {
@@ -79,7 +88,25 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to load aspect properties for element &apos;{0}&apos;. This is because your resource key does not include access to any properties under &apos;{0}&apos;. For more details on resource keys, see our explainer: https://51degrees.com/documentation/4.2/_info__resourcekeys.html.
+        ///   Looks up a localized string similar to Unable to determine the type associated with this property. No c# property found matching definition {0}.{1} and json type &apos;{2}&apos; is not mapped.   .
+        /// </summary>
+        internal static string ExceptionCloudPropertyType {
+            get {
+                return ResourceManager.GetString("ExceptionCloudPropertyType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error waiting for response from the cloud service..
+        /// </summary>
+        internal static string ExceptionCloudResponseFailure {
+            get {
+                return ResourceManager.GetString("ExceptionCloudResponseFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to load aspect properties for element &apos;{0}&apos;. This is because your resource key does not include access to any properties under &apos;{0}&apos;. For more details on resource keys, see our explainer: https://51degrees.com/documentation/_info__resource_keys.html.
         /// </summary>
         internal static string ExceptionFailedToLoadProperties {
             get {
@@ -97,11 +124,38 @@ namespace FiftyOne.Pipeline.CloudRequestEngine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to send request. A TaskCanceledException was thrown. The likely cause of this would be a connection timeout..
+        /// </summary>
+        internal static string ExceptionTaskCanceledRequest {
+            get {
+                return ResourceManager.GetString("ExceptionTaskCanceledRequest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cloud service at &apos;{0}&apos; returned status code &apos;{1}&apos; with content {2}..
+        /// </summary>
+        internal static string MessageErrorCodeReturned {
+            get {
+                return ResourceManager.GetString("MessageErrorCodeReturned", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No data in response from cloud service at &apos;{0}&apos;.
         /// </summary>
         internal static string MessageNoDataInResponse {
             get {
                 return ResourceManager.GetString("MessageNoDataInResponse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This method should be overridden in the class derived from CloudAspectEngineBase class. The implementation should use the &apos;json&apos; parameter to populate the &apos;aspectData&apos; accordingly. This method will be called by the CloudAspectEngine.ProcessEngine() method after it has successfully retrieved the JsonResponse from the CloudRequestEngine..
+        /// </summary>
+        internal static string ProcessCloudEngineNotImplemented {
+            get {
+                return ResourceManager.GetString("ProcessCloudEngineNotImplemented", resourceCulture);
             }
         }
     }

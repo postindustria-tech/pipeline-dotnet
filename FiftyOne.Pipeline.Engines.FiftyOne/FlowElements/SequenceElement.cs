@@ -33,12 +33,16 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         }
 
         /// <summary>
+        /// The default element data key that will be used for this element. 
+        /// </summary>
+#pragma warning disable CA1707 // Identifiers should not contain underscores
+        public const string DEFAULT_ELEMENT_DATA_KEY = "sequence";
+#pragma warning restore CA1707 // Identifiers should not contain underscores
+
+        /// <summary>
         /// The element data key.
         /// </summary>
-        public override string ElementDataKey
-        {
-            get { return "sequence"; }
-        }
+        public override string ElementDataKey => DEFAULT_ELEMENT_DATA_KEY;
 
         /// <summary>
         /// The evidence key filter.
@@ -101,6 +105,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                 }
                 else
                 {
+                    data.AddError(new Exception(Messages.MessageFailSequenceNumberParse), this);
                     Logger.LogError(Messages.MessageFailSequenceNumberIncrement);
                 }
             }

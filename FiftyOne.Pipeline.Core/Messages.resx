@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ExceptionCannotFindProperty" xml:space="preserve">
+    <value>Could not find property '{0}'.</value>
+  </data>
   <data name="ExceptionFlowDataAlreadyProcessed" xml:space="preserve">
     <value>FlowData has already been processed</value>
   </data>
@@ -125,6 +128,9 @@
   </data>
   <data name="ExceptionKeyNameNull" xml:space="preserve">
     <value>Key name cannot be null</value>
+  </data>
+  <data name="ExceptionMultipleProperties" xml:space="preserve">
+    <value>Multiple matches for property '{0}'. Flow elements that populate this property are: {1}</value>
   </data>
   <data name="ExceptionParallelElementsNoDataKey" xml:space="preserve">
     <value>ParallelElements instances do not have an element data key</value>

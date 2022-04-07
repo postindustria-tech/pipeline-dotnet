@@ -117,19 +117,37 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ExceptionCloudComplexPropertyType" xml:space="preserve">
+    <value>Unable to determine the complex type associated with this property. No c# property found matching definition {0}.{1}.</value>
+  </data>
   <data name="ExceptionCloudError" xml:space="preserve">
     <value>Error returned from 51Degrees cloud service: {0}</value>
   </data>
   <data name="ExceptionCloudErrorsMultiple" xml:space="preserve">
     <value>Multiple errors returned from 51Degrees cloud service. See inner exceptions for details.</value>
   </data>
+  <data name="ExceptionCloudPropertyType" xml:space="preserve">
+    <value>Unable to determine the type associated with this property. No c# property found matching definition {0}.{1} and json type '{2}' is not mapped.   </value>
+  </data>
+  <data name="ExceptionCloudResponseFailure" xml:space="preserve">
+    <value>Error waiting for response from the cloud service.</value>
+  </data>
   <data name="ExceptionFailedToLoadProperties" xml:space="preserve">
-    <value>Failed to load aspect properties for element '{0}'. This is because your resource key does not include access to any properties under '{0}'. For more details on resource keys, see our explainer: https://51degrees.com/documentation/4.2/_info__resourcekeys.html</value>
+    <value>Failed to load aspect properties for element '{0}'. This is because your resource key does not include access to any properties under '{0}'. For more details on resource keys, see our explainer: https://51degrees.com/documentation/_info__resource_keys.html</value>
   </data>
   <data name="ExceptionResourceKeyNeeded" xml:space="preserve">
     <value>A resource key is required to access the 51Degrees cloud service. Please use the 'SetResourceKey' method to supply your resource key. You can obtain one for free from https://configure.51degrees.com</value>
   </data>
+  <data name="ExceptionTaskCanceledRequest" xml:space="preserve">
+    <value>Failed to send request. A TaskCanceledException was thrown. The likely cause of this would be a connection timeout.</value>
+  </data>
+  <data name="MessageErrorCodeReturned" xml:space="preserve">
+    <value>Cloud service at '{0}' returned status code '{1}' with content {2}.</value>
+  </data>
   <data name="MessageNoDataInResponse" xml:space="preserve">
     <value>No data in response from cloud service at '{0}'</value>
+  </data>
+  <data name="ProcessCloudEngineNotImplemented" xml:space="preserve">
+    <value>This method should be overridden in the class derived from CloudAspectEngineBase class. The implementation should use the 'json' parameter to populate the 'aspectData' accordingly. This method will be called by the CloudAspectEngine.ProcessEngine() method after it has successfully retrieved the JsonResponse from the CloudRequestEngine.</value>
   </data>
 </root>

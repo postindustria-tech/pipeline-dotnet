@@ -35,6 +35,7 @@ using FiftyOne.Pipeline.Web.Shared;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using System.Text;
 using FiftyOne.Pipeline.Web.Shared.Adapters;
+using Microsoft.Extensions.Logging;
 
 namespace FiftyOne.Pipeline.Web.Shared.Services
 {
@@ -53,6 +54,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         /// Pipeline
         /// </summary>
         private IPipeline _pipeline;
+
+        private ILogger<ClientsidePropertyService> _logger;
 
         /// <summary>
         /// A list of all the HTTP headers that are requested evidence
@@ -80,15 +83,18 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         /// Create a new ClientsidePropertyService
         /// </summary>
         /// <param name="pipeline"></param>
+        /// <param name="logger"></param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
         public ClientsidePropertyService(
-            IPipeline pipeline)
+            IPipeline pipeline,
+            ILogger<ClientsidePropertyService> logger)
         {
             if (pipeline == null) throw new ArgumentNullException(nameof(pipeline));
 
             _pipeline = pipeline;
+            _logger = logger;
 
             var headersAffectingJavaScript = new List<string>();
 
@@ -103,11 +109,20 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                 {
                     headersAffectingJavaScript.AddRange(inclusionList.Whitelist
                         .Where(entry => entry.Key.StartsWith(
-                            Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + Core.Constants.EVIDENCE_SEPERATOR, 
-                            StringComparison.OrdinalIgnoreCase))
+                            Core.Constants.EVIDENCE_HTTPHEADER_PREFIX + 
+                            Core.Constants.EVIDENCE_SEPERATOR, 
+                            StringComparison.OrdinalIgnoreCase) &&
+                            // Exclude any header names that contain
+                            // control characters.
+                            entry.Key.Any(c => char.IsControl(c)) == false)
                         .Select(entry => entry.Key.Substring(entry.Key.IndexOf(
                             Core.Constants.EVIDENCE_SEPERATOR, 
-                            StringComparison.OrdinalIgnoreCase) + 1)));
+                            StringComparison.OrdinalIgnoreCase) + 1))
+                        // Only include headers that are not already in
+                        // the list.
+                        .Where(entry => headersAffectingJavaScript.Contains(
+                            entry, StringComparer.OrdinalIgnoreCase) == false)
+                        .Distinct(StringComparer.OrdinalIgnoreCase));
                 }
             }
             _headersAffectingJavaScript = new StringValues(headersAffectingJavaScript.ToArray());
@@ -224,19 +239,26 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         /// <param name="contentType"></param>
         private void SetHeaders(IContextAdapter context, string hash, int contentLength, string contentType)
         {
-            context.Response.SetHeader("Content-Type", 
-                $"application/{contentType}");
-            context.Response.SetHeader("Content-Length", 
-                contentLength.ToString(CultureInfo.InvariantCulture));
-            context.Response.SetHeader("Cache-Control", _cacheControl);
-            if (string.IsNullOrEmpty(_headersAffectingJavaScript.ToString()) == false)
+            try
             {
-                context.Response.SetHeader("Vary", _headersAffectingJavaScript);
-            }
-            context.Response.SetHeader("ETag", new StringValues(
-                new string[] {
+                context.Response.SetHeader("Content-Type",
+                    $"application/{contentType}");
+                context.Response.SetHeader("Content-Length",
+                    contentLength.ToString(CultureInfo.InvariantCulture));
+                context.Response.SetHeader("Cache-Control", _cacheControl);
+                if (string.IsNullOrEmpty(_headersAffectingJavaScript.ToString()) == false)
+                {
+                    context.Response.SetHeader("Vary", _headersAffectingJavaScript);
+                }
+                context.Response.SetHeader("ETag", new StringValues(
+                    new string[] {
                     hash,
-                }));
+                    }));
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, Messages.MessageJavaScriptCachingError);
+            }
         }
     }
 }

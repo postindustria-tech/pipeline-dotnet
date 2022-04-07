@@ -1,22 +1,28 @@
 parameters:
+- name: stageName # Name of the stage.
 - name: imageName # Name of the agent to work on.
 - name: nugetVersion
   type: string
   default: 5.8.0
+- name: runTests
+  type: string
+  default: 'On'
 
 stages:
-- stage: Build_and_Test
+- stage: ${{ parameters.stageName }}
+  dependsOn: []
 
   jobs:
   - job: Build_and_Test
     displayName: Build and Test
+    condition: ne(${{ parameters.runTests }}, 'Off')
 
     pool:
       vmImage: ${{ parameters.imageName }}
   
     # Configure this to run for both Debug and Release configurations
     strategy:
-      maxParallel: 4
+      maxParallel: 2
       matrix:
         debug:
           BuildConfiguration: Debug
@@ -62,11 +68,12 @@ stages:
     
     - task: NuGetCommand@2
       displayName: 'NuGet restore'
+      retryCountOnTaskFailure: 3
       inputs:
         command: 'restore'
         restoreSolution: '$(RestoreBuildProjects)'
         feedsToUse: 'select'
-        vstsFeed: 'd2431f86-c1e6-4d8b-8d27-311cf3614847'
+        vstsFeed: '$(InternalFeedId)'
     
     - task: VSBuild@1
       displayName: 'Build solutions'
@@ -148,7 +155,22 @@ stages:
       inputs:
         command: run
         projects: '**/FiftyOne.Pipeline.Benchmarks.csproj'
-        nobuild: true      
+        nobuild: true
+
+    # The Web and Web.Framework projects are combined into a single NuGet package.
+    # We build it here to make sure we'll be able to build it as part of the 
+    # 'create-packages' pipeline later.   
+    - task: NuGetCommand@2
+      displayName: 'NuGet pack Pipeline.Web'
+      inputs:
+        command: 'pack'
+        packagesToPack: '**/FiftyOne.Pipeline.Web.nuspec'
+        buildProperties: 'config=$(BuildConfiguration)' 
+        versioningScheme: 'byPrereleaseNumber'
+        majorVersion: '1'
+        minorVersion: '0'
+        patchVersion: '0'
+        packTimezone: 'utc'
     
     - task: PublishBuildArtifacts@1
       inputs:

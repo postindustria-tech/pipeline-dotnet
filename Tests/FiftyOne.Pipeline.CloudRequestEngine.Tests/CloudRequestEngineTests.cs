@@ -33,6 +33,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -464,12 +465,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             }
 
             Assert.IsNotNull(exception, "Expected exception to occur");
-            Assert.IsInstanceOfType(exception, typeof(AggregateException));
-            var aggEx = exception as AggregateException;
-            Assert.AreEqual(1, aggEx.InnerExceptions.Count);
-            var realEx = aggEx.InnerExceptions[0];
-            Assert.IsInstanceOfType(realEx, typeof(PipelineException));
-            Assert.IsTrue(realEx.Message.Contains(
+            Assert.IsInstanceOfType(exception, typeof(CloudRequestException));
+            var cloudEx = exception as CloudRequestException;
+            Assert.IsTrue(cloudEx.Message.Contains(
                 "resource_key not a valid resource key"),
                 "Exception message did not contain the expected text.");
         }
@@ -778,15 +776,118 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         }
 
         /// <summary>
+        /// Verify that the request to the cloud service will contain 
+        /// the configured origin header value.
+        /// </summary>
+        [TestMethod]
+        public void OriginHeader()
+        {
+            string resourceKey = "resource_key";
+            string origin = "51degrees.com";
+            string userAgent = "test";
+
+            ConfigureMockedClient(r => true);
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .SetCloudRequestOrigin(origin)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data = pipeline.CreateFlowData();
+                data.AddEvidence("query.User-Agent", userAgent);
+
+                data.Process();
+            }
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Post  // we expected a POST request
+                  // The origin header must contain the expected value
+                  && ((req.Content.Headers.Contains(Constants.ORIGIN_HEADER_NAME)
+                      && req.Content.Headers.GetValues(Constants.ORIGIN_HEADER_NAME).Contains(origin)) ||
+                      (req.Headers.Contains(Constants.ORIGIN_HEADER_NAME)
+                      && req.Headers.GetValues(Constants.ORIGIN_HEADER_NAME).Contains(origin)))
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+        }
+
+        /// <summary>
+        /// Check that errors from the cloud service will cause the 
+        /// appropriate data to be set in the CloudRequestException.
+        /// </summary>
+        [TestMethod]
+        public void ValidateErrorHandling_HttpDataSetInException()
+        {
+            string resourceKey = "resource_key";
+
+            try
+            {
+                var engine = new CloudRequestEngineBuilder(_loggerFactory, new HttpClient())
+                    .SetResourceKey(resourceKey)
+                    .Build();
+                Assert.Fail("Expected exception did not occur");
+            }
+            catch (CloudRequestException ex)
+            {
+                Assert.IsTrue(ex.HttpStatusCode > 0, "Status code should not be 0");
+                Assert.IsNotNull(ex.ResponseHeaders, "Response headers not populated");
+                Assert.IsTrue(ex.ResponseHeaders.Count > 0, "Response headers not populated");
+            }
+        }
+
+        /// <summary>
+        /// Verify that an exception throw by the task that is returned by HttpClient.SendAsync
+        /// will be handled and wrapped in nice informative CloudRequestException. 
+        /// </summary>
+        [TestMethod]
+        public void ValidateErrorHandling_ExceptionInRequestTask()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            Exception exception = null;
+
+            ConfigureMockedClient(r => true, true);
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            try
+            {
+                using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+                {
+                    var data = pipeline.CreateFlowData();
+                    data.AddEvidence("query.User-Agent", userAgent);
+                    data.Process();
+                }
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            Assert.IsNotNull(exception, "Expected exception to occur");
+            Assert.IsInstanceOfType(exception, typeof(AggregateException));
+            var aggEx = exception as AggregateException;
+            Assert.AreEqual(aggEx.InnerExceptions.Count, 1);
+            var realEx = aggEx.InnerExceptions[0];
+            Assert.IsInstanceOfType(realEx, typeof(CloudRequestException));
+        }
+
+        /// <summary>
         /// Setup _httpClient to respond with the configured messages.
         /// </summary>
         private void ConfigureMockedClient(
-            Func<HttpRequestMessage, bool> expectedJsonParameters)
+            Func<HttpRequestMessage, bool> expectedJsonParameters,
+            bool throwExceptionOnJsonRequest = false)
         {
             // ARRANGE
             _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
             // Set up the JSON response.
-            _handlerMock
+            var setup = _handlerMock
                .Protected()
                // Setup the PROTECTED method to mock
                .Setup<Task<HttpResponseMessage>>(
@@ -794,14 +895,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                   ItExpr.Is<HttpRequestMessage>(r => expectedJsonParameters(r)
                       && r.RequestUri.AbsolutePath.ToLower().EndsWith("json")),
                   ItExpr.IsAny<CancellationToken>()
-               )
-               // prepare the expected response of the mocked http call
-               .ReturnsAsync(new HttpResponseMessage()
-               {
-                   StatusCode = HttpStatusCode.OK,
-                   Content = new StringContent(_jsonResponse),
-               })
+               );
+                        
+            if (throwExceptionOnJsonRequest)
+            {
+                // Configure the call to the json endpoint to throw an exception.
+                var task = new Task<HttpResponseMessage>(() => throw new Exception("TEST"));
+                // We have to start the task or it will never actually run!
+                task.Start();
+                setup.Returns(task);
+            } 
+            else 
+            { 
+               // Prepare the expected response of the mocked http call
+               setup.ReturnsAsync(new HttpResponseMessage()
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent(_jsonResponse),
+                })
                .Verifiable();
+            }
+
             // Set up the evidencekeys response.
             _handlerMock
                .Protected()

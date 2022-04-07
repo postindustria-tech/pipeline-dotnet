@@ -106,6 +106,15 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The value for the ‘sequence’ parameter is not valid. See http://51degrees.com/documentation/_info__error_messages.html#Sequence_value_invalid for more information..
+        /// </summary>
+        internal static string MessageFailSequenceNumberParse {
+            get {
+                return ResourceManager.GetString("MessageFailSequenceNumberParse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to retrieve sequence number.
         /// </summary>
         internal static string MessageFailSequenceNumberRetreive {

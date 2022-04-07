@@ -94,54 +94,37 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="aspectData">
         /// The <code>TData</code> instance to populate with values.
         /// </param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown if a required parameter is null.
-        /// </exception>
-        protected override void ProcessEngine(IFlowData data, TData aspectData)
+        /// <param name="json">
+        /// The JsonResponse populated by the CloudRequestEngine.
+        /// </param>
+        protected override void ProcessCloudEngine(IFlowData data, TData aspectData, string json)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
-
-            var requestData = data.GetFromElement(RequestEngine.GetInstance());
-            var json = requestData?.JsonResponse;
-
-            if (string.IsNullOrEmpty(json))
+            // Extract data from json to the aspectData instance.
+            var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+            // Access the data relating to this engine.
+            var propertyKeyed = dictionary[ElementDataKey] as JObject;
+            // Access the 'Profiles' property
+            foreach(var entry in propertyKeyed["profiles"])
             {
-                throw new PipelineConfigurationException(
-                    $"Json response from cloud request engine is null. " +
-                    $"This is probably because there is not a " +
-                    $"'CloudRequestEngine' before the '{GetType().Name}' " +
-                    $"in the Pipeline. This engine will be unable " +
-                    $"to produce results until this is corrected.");
-            }
-            else
-            {
-                // Extract data from json to the aspectData instance.
-                var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
-                // Access the data relating to this engine.
-                var propertyKeyed = dictionary[ElementDataKey] as JObject;
-                // Access the 'Profiles' property
-                foreach(var entry in propertyKeyed["profiles"])
-                {
-                    // Iterate through the devices, parsing each one and
-                    // adding it to the result.
-                    var propertyValues = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.ToString(),
-                        new JsonSerializerSettings()
-                        {
-                            Converters = JSON_CONVERTERS,
-                        });
-                    var device = CreateProfileData();
-                    // Get the meta-data for properties on device instances.
-                    var propertyMetaData = Properties
-                        .Single(p => p.Name == "Profiles").ItemProperties;
+                // Iterate through the devices, parsing each one and
+                // adding it to the result.
+                var propertyValues = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.ToString(),
+                    new JsonSerializerSettings()
+                    {
+                        Converters = JSON_CONVERTERS,
+                    });
+                var device = CreateProfileData();
+                // Get the meta-data for properties on device instances.
+                var propertyMetaData = Properties
+                    .Single(p => p.Name == "Profiles").ItemProperties;
 
-                    var deviceData = CreateAPVDictionary(
-                        propertyValues, 
-                        propertyMetaData);
+                var deviceData = CreateAPVDictionary(
+                    propertyValues, 
+                    propertyMetaData);
 
-                    device.PopulateFromDictionary(deviceData);
-                    //device.SetNoValueReasons(nullReasons);
-                    aspectData.AddProfile(device);
-                }
+                device.PopulateFromDictionary(deviceData);
+                //device.SetNoValueReasons(nullReasons);
+                aspectData.AddProfile(device);
             }
         }
 

@@ -86,5 +86,23 @@ namespace FiftyOne.Pipeline.Web.Shared {
                 return ResourceManager.GetString("ExceptionNoJsonBuilder", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Problem retrieving evidence from request.
+        /// </summary>
+        public static string MessageEvidenceError {
+            get {
+                return ResourceManager.GetString("MessageEvidenceError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Problem setting response headers for 51Degrees.core.js.
+        /// </summary>
+        public static string MessageJavaScriptCachingError {
+            get {
+                return ResourceManager.GetString("MessageJavaScriptCachingError", resourceCulture);
+            }
+        }
     }
 }

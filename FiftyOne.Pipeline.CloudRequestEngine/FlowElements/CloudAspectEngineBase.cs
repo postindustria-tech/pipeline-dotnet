@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.CloudRequestEngine.Data;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.Exceptions;
@@ -58,6 +59,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         {
             private ICloudRequestEngine _cloudRequestEngine = null;
             private object _cloudRequestEngineLock = new object();
+            private IFlowElement _currentElement;
             private Func<IReadOnlyList<IPipeline>> _pipelinesAccessor;
 
             /// <summary>
@@ -67,8 +69,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             /// A function that returns the list of pipelines associated 
             /// with the parent engine.
             /// </param>
-            public RequestEngineAccessor(Func<IReadOnlyList<IPipeline>> pipelinesAccessor)
+            /// <param name="currentElement">
+            /// The <see cref="IFlowElement"/> this instance of 
+            /// RequestEngineAccessor was created by.
+            /// </param>
+            public RequestEngineAccessor(
+                Func<IReadOnlyList<IPipeline>> pipelinesAccessor,
+                IFlowElement currentElement)
             {
+                _currentElement = currentElement;
                 _pipelinesAccessor = pipelinesAccessor;
             }
 
@@ -100,13 +109,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             if (_pipelinesAccessor().Count > 1)
                             {
                                 throw new PipelineConfigurationException(
-                                    $"'{GetType().Name}' does not support being " +
+                                    $"'{_currentElement.GetType().Name}' does not support being " +
                                     $"added to multiple Pipelines.");
                             }
                             if (_pipelinesAccessor().Count == 0)
                             {
                                 throw new PipelineConfigurationException(
-                                    $"'{GetType().Name}' has not yet been added " +
+                                    $"'{_currentElement.GetType().Name}' has not yet been added " +
                                     $"to a Pipeline.");
                             }
 
@@ -115,7 +124,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             if (_cloudRequestEngine == null)
                             {
                                 throw new PipelineConfigurationException(
-                                    $"The '{GetType().Name}' requires a 'CloudRequestEngine' " +
+                                    $"The '{_currentElement.GetType().Name}' requires a 'CloudRequestEngine' " +
                                     $"before it in the Pipeline. This engine will be unable " +
                                     $"to produce results until this is corrected.");
                             }
@@ -189,7 +198,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         public CloudAspectEngineBase(ILogger<AspectEngineBase<T, IAspectPropertyMetaData>> logger, 
             Func<IPipeline, FlowElementBase<T, IAspectPropertyMetaData>, T> aspectDataFactory) : base(logger, aspectDataFactory)
         {
-            RequestEngine = new RequestEngineAccessor(() => Pipelines);
+            RequestEngine = new RequestEngineAccessor(() => Pipelines, this);
         }
         
         /// <summary>
@@ -280,64 +289,134 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             // Get the property info for this property based on the 
             // supplied name.
-            var propertyInfo = parentObjectType.GetProperty(property.Name, 
-                BindingFlags.Public | 
-                BindingFlags.Instance | 
-                BindingFlags.IgnoreCase);
+            var propertyType = GetPropertyType(property, parentObjectType);
 
-            if (propertyInfo != null) 
+
+            // Load any sub properties.
+            List<AspectPropertyMetaData> subProperties = null;
+            if (property.ItemProperties != null &&
+                property.ItemProperties.Count > 0)
             {
-                // Load any sub properties.
-                List<AspectPropertyMetaData> subProperties = null;
-                if (property.ItemProperties != null &&
-                    property.ItemProperties.Count > 0)
+                subProperties = new List<AspectPropertyMetaData>();
+                if (typeof(IEnumerable).IsAssignableFrom(propertyType) &&
+                    propertyType.IsGenericType)
                 {
-                    subProperties = new List<AspectPropertyMetaData>();
-                    var thisType = propertyInfo.PropertyType;
-                    if (typeof(IEnumerable).IsAssignableFrom(thisType) &&
-                        thisType.IsGenericType)
+                    // Get the type of the items in this list so
+                    // LoadProperty can use reflection to get its
+                    // properties.
+                    var itemType = propertyType.GetGenericArguments()[0];
+                    foreach (var subproperty in property.ItemProperties)
                     {
-                        // Get the type of the items in this list so
-                        // LoadProperty can use reflection to get its
-                        // properties.
-                        var itemType = thisType.GetGenericArguments()[0];
-                        foreach (var subproperty in property.ItemProperties)
+                        var newProperty = LoadProperty(subproperty, itemType);
+                        if (newProperty != null)
                         {
-                            var newProperty = LoadProperty(subproperty, itemType);
-                            if (newProperty != null)
-                            {
-                                subProperties.Add(newProperty);
-                            }
+                            subProperties.Add(newProperty);
                         }
                     }
-                    else 
-                    {
-                        Logger.LogWarning($"Problem parsing sub-items. " +
-                            $"Property '{parentObjectType.Name}.{property.Name}' " +
-                            $"does not implement IEnumerable<>.");
-                    }
                 }
+                else
+                {
+                    Logger.LogWarning($"Problem parsing sub-items. " +
+                        $"Property '{parentObjectType.Name}.{property.Name}' " +
+                        $"does not implement IEnumerable<>.");
+                }
+            }
 
-                // Create the AspectPropertyMetaData instance.
-                return new AspectPropertyMetaData(this,
-                    property.Name,
-                    propertyInfo.PropertyType,
-                    property.Category,
-                    new List<string>(),
-                    true,
-                    "",
-                    subProperties,
-                    property.DelayExecution,
-                    property.EvidenceProperties);
+            // Create the AspectPropertyMetaData instance.
+            return new AspectPropertyMetaData(this,
+                property.Name,
+                propertyType,
+                property.Category,
+                new List<string>(),
+                true,
+                "",
+                subProperties,
+                property.DelayExecution,
+                property.EvidenceProperties);
+        }
+
+        /// <summary>
+        /// Retrieve the raw JSON response from the 
+        /// <see cref="CloudRequestEngine"/> in this pipeline, extract 
+        /// the data for this specific engine and populate the 
+        /// <code>TData</code> instance accordingly.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> to get the raw JSON data from.
+        /// </param>
+        /// <param name="aspectData">
+        /// The <code>TData</code> instance to populate with values.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
+        protected override void ProcessEngine(IFlowData data, T aspectData) {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
+            CloudRequestData requestData;
+            // Get requestData from CloudRequestEngine. If requestData does not
+            // exist in the element data TypedKeyMap then the engine either 
+            // does not exist in the Pipeline or is not run before this engine.
+            try
+            {
+                requestData = data.GetFromElement(RequestEngine.GetInstance());
+            } 
+            catch (KeyNotFoundException ex) 
+            {
+                throw new PipelineConfigurationException(
+                    $"The '{GetType().Name}' requires a 'CloudRequestEngine' " +
+                    $"before it in the Pipeline. This engine will be unable " +
+                    $"to produce results until this is corrected.", ex);
+            }
+            
+            // Check the requestData ProcessStarted flag which informs whether
+            // the cloud request engine process method was called.
+            if (requestData?.ProcessStarted == false)
+            {
+                throw new PipelineConfigurationException(
+                    $"The '{GetType().Name}' requires a 'CloudRequestEngine' " +
+                    $"before it in the Pipeline. This engine will be unable " +
+                    $"to produce results until this is corrected.");
+            }
+
+            var json = requestData?.JsonResponse;
+
+            // If the JSON is empty or null then do not Process the CloudAspectEngine.
+            // Empty or null JSON indicates that an error has occurred in the 
+            // CloudRequestEngine. The error will have been reported by the 
+            // CloudRequestEngine so just log a warning that this 
+            // CloudAspectEngine did not process.
+            if (string.IsNullOrEmpty(json) == false)
+            {
+                ProcessCloudEngine(data, aspectData, json);
             }
             else
             {
-                // Could not find a matching property on the parent object
-                // so log a warning.
-                Logger.LogWarning($"Failed to find property '{property.Name}' " +
-                    $"on data object '{parentObjectType.Name}'. ");
-                return null;
+                Logger.LogInformation($"The '{GetType().Name}' did not process " +
+                    $"as the JSON response from the CloudRequestEngine was null " +
+                    $"or empty. Please refer to errors generated by the " +
+                    $"CloudRequestEngine in the logs as this indicates an error " +
+                    $"occurred there.");
             }
+        }
+
+        /// <summary>
+        /// A virtual method to be implemented by the derived class which
+        /// uses the JsonResponse from the CloudRequestEngine to populate the 
+        /// <code>T</code> instance accordingly.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> instance.
+        /// </param>
+        /// <param name="aspectData">
+        /// The <code>TData</code> instance to populate with values.
+        /// </param>
+        /// <param name="json">
+        /// The JSON response from the <see cref="CloudRequestEngine"/>
+        /// </param>
+        protected virtual void ProcessCloudEngine(IFlowData data, T aspectData, string json)
+        {
+            throw new NotImplementedException(Messages.ProcessCloudEngineNotImplemented);
         }
 
         /// <summary>
@@ -451,6 +530,52 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 result.Add(property.Key, outputValue);
             }
             return result;
+        }
+
+        /// <summary>
+        /// Try to get the type of a property from the information
+        /// returned by the cloud service. This should be overridden
+        /// if anything other than simple types are required.
+        /// </summary>
+        /// <param name="propertyMetaData">
+        /// The <see cref="PropertyMetaData"/> instance to translate.
+        /// </param>
+        /// <param name="parentObjectType">
+        /// The type of the object on which this property exists.
+        /// </param>
+        /// <returns>
+        /// The type of the property determined from the Type field
+        /// of propertyMetaData.
+        /// </returns>
+        protected virtual Type GetPropertyType(
+            PropertyMetaData propertyMetaData,
+            Type parentObjectType)
+        {
+            if (propertyMetaData == null)
+            {
+                throw new ArgumentNullException(nameof(propertyMetaData));
+            }
+            switch (propertyMetaData.Type)
+            {
+                case "String":
+                    return typeof(string);
+                case "Int32":
+                    return typeof(int);
+                case "Boolean":
+                    return typeof(bool);
+                case "JavaScript":
+                    return typeof(JavaScript);
+                case "Double":
+                    return typeof(double);
+                case "Array":
+                default:
+                    throw new PipelineException(string.Format(
+                        CultureInfo.InvariantCulture,
+                        Messages.ExceptionCloudPropertyType,
+                        parentObjectType,
+                        propertyMetaData.Name,
+                        propertyMetaData.Type));
+            }
         }
     }
 }

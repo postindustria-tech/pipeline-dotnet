@@ -1,4 +1,26 @@
-﻿using FiftyOne.Common.TestHelpers;
+﻿/* *********************************************************************
+ * This Original Work is copyright of 51 Degrees Mobile Experts Limited.
+ * Copyright 2022 51 Degrees Mobile Experts Limited, 5 Charlotte Close,
+ * Caversham, Reading, Berkshire, United Kingdom RG4 7BY.
+ *
+ * This Original Work is licensed under the European Union Public Licence (EUPL) 
+ * v.1.2 and is subject to its terms as set out below.
+ *
+ * If a copy of the EUPL was not distributed with this file, You can obtain
+ * one at https://opensource.org/licenses/EUPL-1.2.
+ *
+ * The 'Compatible Licences' set out in the Appendix to the EUPL (as may be
+ * amended by the European Commission) shall be deemed incompatible for
+ * the purposes of the Work and the provisions of the compatibility
+ * clause in Article 5 of the EUPL shall not apply.
+ * 
+ * If using the Work as, or as part of, a network application, by 
+ * including the attribution notice(s) required under Article 5 of the EUPL
+ * in the end user terms of the application under an appropriate heading, 
+ * such notice(s) shall fulfill the requirements of that article.
+ * ********************************************************************* */
+
+using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -164,7 +186,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
         }
 
         /// <summary>
-        /// The 'SetHeaderAcceptCH' property is set to various invalid values
+        /// The 'SetHeader*' property is set to various invalid values
         /// that are wrapped in an AspectPropertyValue.
         /// Output from SetHeadersElement should be an empty dictionary.
         /// </summary>
@@ -258,6 +280,31 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             Assert.AreEqual(1, typedOutput.ResponseHeaderDictionary.Count);
             Assert.IsTrue(typedOutput.ResponseHeaderDictionary.ContainsKey("Accept-CH"));
             Assert.AreEqual("Sec-CH-UA,Sec-CH-UA-Model,Sec-CH-UA-Mobile", 
+                typedOutput.ResponseHeaderDictionary["Accept-CH"]);
+        }
+
+        /// <summary>
+        /// Test that the SetHeadersElement will remove duplicate values from multiple properties 
+        /// that are associated with the same header.
+        /// I.e. there is only one 'Sec-CH-UA-Model' in the output, despite it appearing in both
+        /// property values below.
+        /// </summary>
+        [TestMethod]
+        public void SetHeadersElement_MultipleProperties_DuplicateValues()
+        {
+            var propertyNameValues = new Dictionary<string, object>()
+            {
+                { "SetHeaderBrowserAccept-CH", "Sec-CH-UA,Sec-CH-UA-Model" },
+                { "SetHeaderHardwareAccept-CH", "Sec-CH-UA-Model,Sec-CH-UA-Mobile" }
+            };
+            CreatePipeline(propertyNameValues);
+            var data = _pipeline.CreateFlowData();
+            data.Process();
+
+            var typedOutput = GetFromFlowData(data);
+            Assert.AreEqual(1, typedOutput.ResponseHeaderDictionary.Count);
+            Assert.IsTrue(typedOutput.ResponseHeaderDictionary.ContainsKey("Accept-CH"));
+            Assert.AreEqual("Sec-CH-UA,Sec-CH-UA-Model,Sec-CH-UA-Mobile",
                 typedOutput.ResponseHeaderDictionary["Accept-CH"]);
         }
 

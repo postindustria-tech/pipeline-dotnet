@@ -78,7 +78,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder
         /// mustache template that is used by the 
         /// <see cref="JavaScriptBuilderElement"/> 
         /// </summary>
-        internal const string TEMPLATE = "FiftyOne.Pipeline.JavaScriptBuilder.Templates.javascript.JavaScriptResource.mustache";
+        internal const string TEMPLATE = "FiftyOne.Pipeline.JavaScriptBuilder.Templates.JavaScriptResource.mustache";
 
         /// <summary>
         /// The default value for the protocol used by
