@@ -2,14 +2,13 @@
 
 ![51Degrees](https://51degrees.com/img/logo.png?utm_source=github&utm_medium=repository&utm_content=readme_main&utm_campaign=dotnet-open-source "Data rewards the curious") **Pipeline API**
 
-
 [Developer Documentation](https://51degrees.com/pipeline-dotnet/index.html?utm_source=github&utm_medium=repository&utm_content=documentation&utm_campaign=dotnet-open-source "developer documentation")
 
 # Introduction
 This repository contains all the projects required to build the .NET implementation of the Pipeline API.
 Individual engines (For example, device detection) are in separate repositories.
 
-## Pre-requesites
+## Dependencies
 
 Visual Studio 2019 or later is recommended. Although Visual Studio Code can be used for working with most of the projects.
 
@@ -18,7 +17,8 @@ The Web integration multi-targets the following:
     - .NET Core 2.1
     - .NET Core 3.1
     - .NET Framework 4.6.1
-Test and example projects target .NET Core 3.1
+
+The [tested versions](https://51degrees.com/documentation/_info__tested_versions.html) page shows the .NET versions that we currently test against. The software may run fine against other versions, but additional caution should be applied.
 
 ## Solutions and projects
 
@@ -59,21 +59,16 @@ For example, Installing `FiftyOne.Pipeline.Engines.FiftyOne` will automatically 
 
 ### Pipeline Examples
 
-- **In FfityOne.Pipeline.sln**
-  - *FiftyOne.Pipeline.Examples* - Shared code library that contains base classes that are used by the examples.
-  - *FiftyOne.Pipeline.Examples.Caching* - Example that shows how the results caching feature of engines can be used.
+There are several examples available that demonstrate how to make use of the Pipeline API in isolation. These are described in the table below.
+If you want examples that demonstrate how to use 51Degrees products such as device detection, then these are available in the corresponding [repository](https://github.com/51Degrees/device-detection-dotnet) and on our [website](http://51degrees.com/documentation/_examples__device_detection__index.html).
 
-- **In DeveloperExamples.sln**
-  - *SimpleFlowElement* - Shows how to create a custom flow element that returns star sign based on a supplied date of birth.
-  - *SimpleOnPremiseEngine* - Shows how to modify SimpleFlowElement to make use of the 'engine' functionality and use a custom data file to map dates to star signs rather than relying on hard coded data.
-  - *SimpleClientSideElement* - Shows how to modify SimpleFlowElement to request the data of birth from the user using client-side JavaScript.
-  - *SimpleClientSideElementMVC* - An example project showing how to use the code from SimpleClientSideElement in an ASP.NET Core web application.
-  - *SimpleCloudEngine* - Shows how to modify SimpleFlowElement to perform the star sign lookup via a cloud service rather than locally.
-
-- **In FiftyOne.Pipeline.Web.sln**
-  - *AspNetCore 2.1 Example* - Shows how to use the Pipeline ASP.NET Core 2.1 integration.
-  - *AspNetCore 3.1 Example* - Shows how to use the Pipeline ASP.NET Core 3.1 integration.
-  - *Example Website Framework* - Shows how to use the Pipeline ASP.NET integration.
+| Example                                   | Description |
+| CustomFlowElement\1. Simple Flow Element  | Shows how to create a custom flow element that returns star sign based on a supplied date of birth. |
+| CustomFlowElement\2. On Premise Engine    | Shows how to modify SimpleFlowElement to make use of the 'engine' functionality and use a custom data file to map dates to star signs rather than relying on hard coded data. |
+| CustomFlowElement\3. Client-side evidence | Shows how to modify SimpleFlowElement to request the data of birth from the user using client-side JavaScript. |
+| CustomFlowElement\4. Cloud Engine         | Shows how to modify SimpleFlowElement to perform the star sign lookup via a cloud service rather than locally. |
+| ResultCaching                             | Shows how the result caching feature works. |
+| UsageSharing                              | Shows how to share usage with 51Degrees. This helps us to keep our products up to date and accurate. |
 
 ## Tests
 
@@ -84,7 +79,7 @@ For example, Installing `FiftyOne.Pipeline.Engines.FiftyOne` will automatically 
 - **FiftyOne.Pipeline.Examples.Tests** - Tests for developer examples. This will automatically run all the examples and ensure they do not crash.
 - **FiftyOne.Pipeline.Web.Tests** - Tests for web integration functionality.
 
-The tests can be run from within Visual Studio or (in most cases) by using the `dotnet` command line tool. 
+The tests can be run from within Visual Studio or (in most cases) by using the `dotnet test` command line tool. 
 
 ## Project documentation
 
