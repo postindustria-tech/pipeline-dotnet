@@ -60,7 +60,7 @@ For example, Installing `FiftyOne.Pipeline.Engines.FiftyOne` will automatically 
 ### Pipeline Examples
 
 There are several examples available that demonstrate how to make use of the Pipeline API in isolation. These are described in the table below.
-If you want examples that demonstrate how to use 51Degrees products such as device detection, then these are available in the corresponding [repository](https://github.com/51Degrees/device-detection-dotnet) and on our [website](http://51degrees.com/documentation/_examples__device_detection__index.html).
+If you want examples that demonstrate how to use 51Degrees products such as device detection, then these are available in the corresponding [repository](https://github.com/51Degrees/device-detection-dotnet) and on our [website](https://51degrees.com/documentation/_examples__device_detection__index.html).
 
 | Example                                   | Description |
 | CustomFlowElement\1. Simple Flow Element  | Shows how to create a custom flow element that returns star sign based on a supplied date of birth. |
