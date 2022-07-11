@@ -19,7 +19,8 @@
  * in the end user terms of the application under an appropriate heading, 
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
- 
+
+using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using System;
 using System.Collections.Generic;
@@ -85,15 +86,16 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         /// Set the HTTP headers in the response based
         /// on values from the <see cref="SetHeadersElement"/>
         /// </summary>
+        /// <param name="flowData">
+        /// The flow data containing the information about the headers to set.
+        /// </param>
         /// <param name="context">
         /// The HTTP context
         /// </param>
-        public void SetHeaders(HttpContext context)
+        public void SetHeaders(IFlowData flowData, HttpContext context)
         {
+            if (flowData == null) throw new ArgumentNullException(nameof(flowData));
             if (context == null) throw new ArgumentNullException(nameof(context));
-
-            PipelineCapabilities caps = context.Request.Browser as PipelineCapabilities;
-            var flowData = caps.FlowData;
 
             if (_setHeadersElement != null)
             {

@@ -290,7 +290,7 @@ namespace FiftyOne.Pipeline.Web.Framework
             if (GetInstance().SetHeaderPropertiesEnabled)
             {
                 // Set HTTP headers in the response.
-                SetHeadersProvider.GetInstance().SetHeaders(
+                SetHeadersProvider.GetInstance().SetHeaders(flowData,
                     request.RequestContext.HttpContext.ApplicationInstance.Context);
             }
 
