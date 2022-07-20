@@ -63,6 +63,24 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         bool IsDisposed { get; }
 
         /// <summary>
+        /// Check if the pipeline contains an instance of <typeparamref name="TExpectedElement"/>
+        /// that will be executed after <typeparamref name="TElement"/>.
+        /// </summary>
+        /// <typeparam name="TElement">
+        /// The type of the element to check.
+        /// </typeparam>
+        /// <typeparam name="TExpectedElement">
+        /// The type of the element that should come after <typeparamref name="TElement"/>.
+        /// </typeparam>
+        /// <returns>
+        /// True if <typeparamref name="TExpectedElement"/> is present in the pipeline and will be 
+        /// executed after <typeparamref name="TElement"/>
+        /// </returns>
+        bool HasExpectedElementAfter<TElement, TExpectedElement>()
+            where TElement : IFlowElement
+            where TExpectedElement : IFlowElement;
+
+        /// <summary>
         /// Get the specified element from the pipeline.
         /// </summary>
         /// <remarks>

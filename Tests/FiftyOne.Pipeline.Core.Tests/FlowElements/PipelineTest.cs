@@ -406,6 +406,30 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             }
         }
 
+        [TestMethod]
+        public void Pipeline_HasExpectedElementAfter()
+        {
+            var element1 = new TestElement();
+            var element2 = new ListSplitterElement(new List<string>(), 1);
+
+            var pipeline = CreatePipeline(false, false, element1, element2);
+
+            // Verify the 'HasExpectedElementAfter' method returns the expected results
+            Assert.IsTrue(pipeline.HasExpectedElementAfter<TestElement, ListSplitterElement>(),
+                "ListSplitterElement should be after TestElement");
+            Assert.IsFalse(pipeline.HasExpectedElementAfter<ListSplitterElement, TestElement>(),
+                "TestElement should not be after ListSplitterElement");
+            // Check that the method still works when using interfaces.
+            Assert.IsTrue(pipeline.HasExpectedElementAfter<ITestElement, ListSplitterElement>(),
+                "ListSplitterElement should be after ITestElement");
+            Assert.IsFalse(pipeline.HasExpectedElementAfter<ListSplitterElement, ITestElement>(),
+                "ITestElement should not be after ListSplitterElement");
+            // If the element is not in the pipeline, return false.
+            Assert.IsFalse(pipeline.HasExpectedElementAfter<StopElement, TestElement>());
+            // If the 'expected element' is not in the pipeline, return false.
+            Assert.IsFalse(pipeline.HasExpectedElementAfter<TestElement, StopElement>());
+        }
+
         /// <summary>
         /// Helper method to create a new pipeline instance.
         /// </summary>

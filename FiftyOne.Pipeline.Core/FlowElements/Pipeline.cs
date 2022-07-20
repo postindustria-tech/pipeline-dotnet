@@ -349,6 +349,65 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             return result;
         }
 
+
+        /// <summary>
+        /// Check if the pipeline contains an instance of <typeparamref name="TExpectedElement"/>
+        /// that will be executed after <typeparamref name="TElement"/>.
+        /// </summary>
+        /// <typeparam name="TElement">
+        /// The type of the element to check.
+        /// </typeparam>
+        /// <typeparam name="TExpectedElement">
+        /// The type of the element that should come after <typeparamref name="TElement"/>.
+        /// </typeparam>
+        /// <returns>
+        /// True if <typeparamref name="TExpectedElement"/> is present in the pipeline and will be 
+        /// executed after <typeparamref name="TElement"/>
+        /// </returns>
+        public bool HasExpectedElementAfter<TElement, TExpectedElement>()
+            where TElement : IFlowElement
+            where TExpectedElement : IFlowElement
+        {
+            // Get the indicies for these elements.
+            int elementIndex = GetElementIndex<TElement>();
+            int expectedElementIndex = GetElementIndex<TExpectedElement>();
+
+            return elementIndex >= 0 && expectedElementIndex >= 0 &&
+                expectedElementIndex > elementIndex;
+        }
+
+        /// <summary>
+        /// Get the index of the element matching the specified type.
+        /// Note that if there are multiple instances matching the given type, the index of the 
+        /// first instance will be returned.
+        /// </summary>
+        /// <typeparam name="TElement"></typeparam>
+        /// <returns></returns>
+        private int GetElementIndex<TElement>()
+        {
+            for (int i = 0; i < _flowElements.Count; i++)
+            {
+                // If the element is a ParallelElements instance then check the child elements.
+                // If there is a match then we want to take the index from the top level element.
+                if (_flowElements[i] is ParallelElements parallel)
+                {
+                    if (parallel.FlowElements.Any(e => typeof(TElement).IsAssignableFrom(e.GetType())))
+                    {
+                        return i;
+                    }
+                }
+                else
+                {
+                    if (typeof(TElement).IsAssignableFrom(_flowElements[i].GetType()))
+                    {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+
         /// <summary>
         /// Add the specified flow elements to the 
         /// <see cref="_elementsByType"/> dictionary, which contains a list

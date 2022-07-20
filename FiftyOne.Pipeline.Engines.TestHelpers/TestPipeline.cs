@@ -80,6 +80,13 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
                 }
             }
 
+            public bool HasExpectedElementAfter<TElement, TExpectedElement>()
+                where TElement : IFlowElement
+                where TExpectedElement : IFlowElement
+            {
+                return _pipeline.HasExpectedElementAfter<TElement, TExpectedElement>();
+            }
+
             public void Process(IFlowData data)
             {
                 var pipelineInternal = _pipeline as IPipelineInternal;
