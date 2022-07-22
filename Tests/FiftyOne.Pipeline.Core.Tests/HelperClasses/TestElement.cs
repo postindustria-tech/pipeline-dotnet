@@ -33,12 +33,12 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
     /// <summary>
     /// Custom test class extending FlowElementBase.
     /// </summary>
-    public class TestElement : FlowElementBase<TestElementData, IElementPropertyMetaData>
+    public class TestElement : FlowElementBase<TestElementData, IElementPropertyMetaData>, ITestElement
     {
         public override string ElementDataKey => "testkey";
 
         public override IEvidenceKeyFilter EvidenceKeyFilter => throw new NotImplementedException();
-        public override IList<IElementPropertyMetaData> Properties => throw new NotImplementedException();
+        public override IList<IElementPropertyMetaData> Properties => new List<IElementPropertyMetaData>();
 
         public TestElement() :
             base(new Mock<ILogger<TestElement>>().Object)

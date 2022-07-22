@@ -75,6 +75,7 @@ namespace FiftyOne.Pipeline.Web.Tests
 
             // Create the ServiceCollection and call the 'AddFiftyOne' extension method.
             var services = new ServiceCollection();
+            services.AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug));
             services.AddSingleton<EmptyEngineBuilder>();
             services.AddFiftyOne(host.Services.GetRequiredService<IConfiguration>());
 
