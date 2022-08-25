@@ -748,7 +748,9 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
                 .BuildFromConfiguration(opts);
 
             Assert.IsNotNull(pipeline.GetElement<RequiredServiceElement>().LoggerFactory);
-            Assert.IsNull(pipeline.GetElement<RequiredServiceElement>().Service);
+            // The service is not available in the service provider, but it can be created
+            // by the service provider.
+            Assert.IsNotNull(pipeline.GetElement<RequiredServiceElement>().Service);
             Assert.IsNull(pipeline.GetElement<RequiredServiceElement>().UpdateService);
         }
 
