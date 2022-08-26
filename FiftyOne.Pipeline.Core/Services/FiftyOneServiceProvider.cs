@@ -22,6 +22,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace FiftyOne.Pipeline.Core.Services
@@ -50,8 +52,9 @@ namespace FiftyOne.Pipeline.Core.Services
 
 
         /// <summary>
-        /// Get the service from the service collection if it exists, otherwise
-        /// return null.
+        /// Get the service from the service collection if it exists.
+        /// If it does not exist, but we can create a new instance, then do so.
+        /// If we cannot create a new instance, return null.
         /// Note that if more than one instance implementing the same service
         /// is added to the services, the first will be returned.
         /// </summary>
@@ -72,8 +75,63 @@ namespace FiftyOne.Pipeline.Core.Services
                         return service;
                     }
                 }
+                // We don't have the requested service.
+                // Do we have the services to create a new instance?
+                return CreateService(serviceType);
             }
             return null;
+        }
+
+        private object CreateService(Type serviceType)
+        {
+            object result = null;
+            var constructor = GetConstructor(serviceType);
+            if(constructor != null)
+            {
+                result = CreateInstance(constructor);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Get the services required for the constructor, and call it with them.
+        /// </summary>
+        /// <param name="constructor">
+        /// The constructor to call.
+        /// </param>
+        /// <returns>
+        /// Instance returned by the constructor.
+        /// </returns>
+        private object CreateInstance(ConstructorInfo constructor)
+        {
+            ParameterInfo[] parameters = constructor.GetParameters();
+            object[] services = new object[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                services[i] = GetService(parameters[i].ParameterType);
+            }
+            return Activator.CreateInstance(constructor.DeclaringType, services);
+        }
+
+
+        /// <summary>
+        /// Get the best constructor for the list of constructors. Best meaning
+        /// the constructor with the most parameters which can be fulfilled.
+        /// </summary>
+        /// <param name="requiredType">
+        /// The type we want a constructor for
+        /// </param>
+        /// <returns>
+        /// Best constructor or null if none have parameters that can be
+        /// fulfilled.
+        /// </returns>
+        private ConstructorInfo GetConstructor(Type requiredType)
+        {
+            var constructors = requiredType.GetConstructors()
+                .OrderByDescending(c => c.GetParameters().Length)
+                .Where(c => c.GetParameters().All(p => GetService(p.ParameterType) != null));
+
+            return constructors.FirstOrDefault();
         }
     }
 }
