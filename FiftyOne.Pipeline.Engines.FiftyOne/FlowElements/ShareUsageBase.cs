@@ -916,15 +916,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                             BuildAndSendXml();
                         }).ContinueWith(t =>
                         {
-                            // If an uncaught error has occurred then 
-                            // cancel further usage sharing and log
-                            // an error.
                             if(t.Exception != null)
                             {
-                                IsCanceled = true;
                                 Logger.LogError(
                                     t.Exception,
-                                    Messages.MessageShareUsageCancelled);
+                                    Messages.MessageShareUsageUnexpectedFailure);
                             }
                         }, TaskScheduler.Default);
                     }

@@ -36,6 +36,8 @@ using System.Text;
 using System.Xml;
 using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.Engines.TestHelpers;
+using System;
+using System.Linq;
 
 namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
 {
@@ -48,7 +50,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
         private ShareUsageElement _shareUsageElement;
 
         // Mocks and dependencies
-        private Mock<ILogger<ShareUsageElement>> _logger;
+        private TestLogger<ShareUsageElement> _logger;
         private Mock<MockHttpMessageHandler> _httpHandler;
         private Mock<IPipeline> _pipeline;
         private Mock<ITracker> _tracker;
@@ -63,7 +65,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
         [TestInitialize]
         public void Init()
         {
-            _logger = new Mock<ILogger<ShareUsageElement>>();
+            _logger = new TestLogger<ShareUsageElement>();
 
             // Create the HttpClient using the mock handler
             _httpHandler = new Mock<MockHttpMessageHandler>() { CallBase = true };
@@ -105,7 +107,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             _sequenceElement = new SequenceElement(new Mock<ILogger<SequenceElement>>().Object);
             _sequenceElement.AddPipeline(_pipeline.Object);
             _shareUsageElement = new ShareUsageElement(
-                _logger.Object,
+                _logger,
                 _httpClient,
                 sharePercentage,
                 minimumEntriesPerMessage,
@@ -360,11 +362,10 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
         }
 
         /// <summary>
-        /// Test that the ShareUsageElement stops cleanly if there is an HTTP
-        /// error when sending data to the remote service.
+        /// Test that the ShareUsageElement will log a warning if errors occur when sending
         /// </summary>
         [TestMethod]
-        public void ShareUsageElement_CancelOnServerError()
+        public void ShareUsageElement_LogErrors()
         {
             // Arrange
             _httpHandler.Setup(h => h.Send(It.IsAny<HttpRequestMessage>()))
@@ -385,9 +386,10 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
             _shareUsageElement.SendDataTask.Wait();
 
             // Assert
-            // Check that no HTTP messages were sent.
-            _httpHandler.Verify(h => h.Send(It.IsAny<HttpRequestMessage>()), Times.Once);
-            Assert.IsTrue(_shareUsageElement.IsCanceled);
+            // Check that a warning was logged.
+            Assert.AreEqual(1, _logger.WarningsLogged.Count);
+            Assert.IsTrue(_logger.WarningsLogged[0].StartsWith("Failure sending usage data"));
+            Console.WriteLine(_logger.WarningsLogged[0]);
         }
 
         /// <summary>
