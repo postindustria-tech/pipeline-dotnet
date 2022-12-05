@@ -25,11 +25,13 @@ using FiftyOne.Pipeline.Engines.Trackers;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Xml;
 
 [assembly: InternalsVisibleTo("FiftyOne.Pipeline.Engines.FiftyOne.Tests")]
@@ -44,6 +46,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     /// </summary>
     public class ShareUsageElement : ShareUsageBase
     {
+        private long _successCount = 0;
+        private long _failCount = 0;
+
         /// <inheritdoc/>
         internal ShareUsageElement(
             ILogger<ShareUsageBase> logger,
@@ -118,11 +123,40 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                     content.Headers.Add("content-type", "text/xml");
 
                     var res = HttpClient.PostAsync(ShareUsageUri, content).Result;
-                    if (res.StatusCode != HttpStatusCode.OK)
+                    if (res.StatusCode == HttpStatusCode.OK)
                     {
-                        throw new HttpRequestException(
-                            $"HTTP response was {res.StatusCode}: " +
-                            $"{res.Content.ToString()}.");
+                        Interlocked.Increment(ref _successCount);
+                    } 
+                    else
+                    {
+                        Interlocked.Increment(ref _failCount);
+                        string response = "";
+                        try
+                        {
+                            response = res.Content.ReadAsStringAsync().Result;
+                        }
+                        // Ignore any failures to read the response content, we're only logging it.
+#pragma warning disable CA1031 // Do not catch general exception types
+                        catch (Exception) { }
+#pragma warning restore CA1031 // Do not catch general exception types
+
+                        // If failure percentage is > 1% then log this as a warning.
+                        // Otherwise, log at information level.
+                        var logLevel = LogLevel.Information;
+                        var percentageFailure = _failCount / (_successCount + _failCount);
+                        if (percentageFailure > 0.01)
+                        {
+                            logLevel = LogLevel.Warning;
+                        }
+
+                        var message = string.Format(CultureInfo.CurrentCulture,
+                            Messages.MessageShareUsageFailedToSend,
+                            percentageFailure,
+                            ShareUsageUri,
+                            (int)res.StatusCode,
+                            res.StatusCode,
+                            response);
+                        Logger.Log(logLevel, message);
                     }
                 }
             }

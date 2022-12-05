@@ -138,11 +138,11 @@
   <data name="MessageFailSequenceNumberRetreive" xml:space="preserve">
     <value>Failed to retrieve sequence number</value>
   </data>
-  <data name="MessageShareUsageCancelled" xml:space="preserve">
-    <value>Usage sharing was canceled due to an error</value>
-  </data>
   <data name="MessageShareUsageFailedToAddData" xml:space="preserve">
     <value>Share usage was canceled after failing to add data to the collection. This may mean that the max collection size is too low for the amount of traffic / min devices to send, or that the 'send' thread has stopped taking data from the collection</value>
+  </data>
+  <data name="MessageShareUsageFailedToSend" xml:space="preserve">
+    <value>Failure sending usage data. {0:P2} of usage sharing messages are failing. Occasional failures are expected, but large numbers of failures may indicate a network problem connecting to the usage sharing API @ {1}. HTTP response code: {2} - {3}. Response content: {4}.</value>
   </data>
   <data name="MessageShareUsageInvalidConfig" xml:space="preserve">
     <value>Configuration for '{0}' is invalid.{1}</value>
@@ -152,5 +152,8 @@
   </data>
   <data name="MessageShareUsageTooManyPipelines" xml:space="preserve">
     <value>Share usage element registered to {0} Pipelines. Unable to populate flow element information</value>
+  </data>
+  <data name="MessageShareUsageUnexpectedFailure" xml:space="preserve">
+    <value>Unexpected failure while sharing usage data. Please see exception message for details.</value>
   </data>
 </root>

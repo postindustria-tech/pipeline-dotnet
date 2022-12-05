@@ -106,7 +106,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The value for the ‘sequence’ parameter is not valid. See http://51degrees.com/documentation/_info__error_messages.html#Sequence_value_invalid for more information..
+        ///   Looks up a localized string similar to The value for the ‘sequence’ parameter is not valid. See https://51degrees.com/documentation/_info__error_messages.html#Sequence_value_invalid for more information..
         /// </summary>
         internal static string MessageFailSequenceNumberParse {
             get {
@@ -124,20 +124,20 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Usage sharing was canceled due to an error.
-        /// </summary>
-        internal static string MessageShareUsageCancelled {
-            get {
-                return ResourceManager.GetString("MessageShareUsageCancelled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Share usage was canceled after failing to add data to the collection. This may mean that the max collection size is too low for the amount of traffic / min devices to send, or that the &apos;send&apos; thread has stopped taking data from the collection.
         /// </summary>
         internal static string MessageShareUsageFailedToAddData {
             get {
                 return ResourceManager.GetString("MessageShareUsageFailedToAddData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failure sending usage data. {0:P2} of usage sharing messages are failing. Occasional failures are expected, but large numbers of failures may indicate a network problem connecting to the usage sharing API @ {1}. HTTP response code: {2} - {3}. Response content: {4}..
+        /// </summary>
+        internal static string MessageShareUsageFailedToSend {
+            get {
+                return ResourceManager.GetString("MessageShareUsageFailedToSend", resourceCulture);
             }
         }
         
@@ -165,6 +165,15 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne {
         internal static string MessageShareUsageTooManyPipelines {
             get {
                 return ResourceManager.GetString("MessageShareUsageTooManyPipelines", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unexpected failure while sharing usage data. Please see exception message for details..
+        /// </summary>
+        internal static string MessageShareUsageUnexpectedFailure {
+            get {
+                return ResourceManager.GetString("MessageShareUsageUnexpectedFailure", resourceCulture);
             }
         }
     }
