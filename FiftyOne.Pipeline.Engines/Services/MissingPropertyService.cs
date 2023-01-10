@@ -149,6 +149,14 @@ namespace FiftyOne.Pipeline.Engines.Services
                     reason = MissingPropertyReason.PropertyNotAccessibleWithResourceKey;
                 }
             }
+            else if (reason == MissingPropertyReason.Unknown &&
+                EngineDataContainsPropertyGetter(propertyName, engine))
+            {
+                // If the property meta data is not available, but the engine
+                // data class defines a getter, it's safe to assume that the data
+                // file needs upgrading.
+                reason = MissingPropertyReason.DataFileUpgradeRequired;
+            }
 
             // Build the message string to return to the caller.
             StringBuilder message = new StringBuilder();
@@ -163,7 +171,9 @@ namespace FiftyOne.Pipeline.Engines.Services
                     message.Append(
                         string.Format(CultureInfo.InvariantCulture,
                             Messages.MissingPropertyMessageDataUpgradeRequired,
-                            string.Join(",", property.DataTiersWherePresent),
+                            property == null ?
+                                "Unknown" :
+                                string.Join(",", property.DataTiersWherePresent),
                             engine.GetType().Name));
                     break;
                 case MissingPropertyReason.PropertyExcludedFromEngineConfiguration:
@@ -192,6 +202,32 @@ namespace FiftyOne.Pipeline.Engines.Services
             result.Description = message.ToString();
             result.Reason = reason;
             return result;
+        }
+
+        /// <summary>
+        /// Return true if there is an explicit property getter for the name provided
+        /// in the data type returned by the engine.
+        /// </summary>
+        /// <param name="propertyName"></param>
+        /// <param name="engine"></param>
+        /// <returns></returns>
+        private bool EngineDataContainsPropertyGetter(string propertyName, IAspectEngine engine)
+        {
+            foreach (var dataType in engine.GetType().GetInterfaces().SelectMany(i => i.GetGenericArguments())
+                .Where(i => typeof(IAspectData).IsAssignableFrom(i)))
+            {
+                if (dataType != null)
+                {
+                    foreach (var property in dataType.GetProperties())
+                    {
+                        if (property.Name.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
     }
 }
