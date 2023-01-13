@@ -81,11 +81,13 @@ namespace FiftyOne.Pipeline.Web.Framework
                       StringComparison.OrdinalIgnoreCase))
                 {
                     FiftyOneJsProvider.GetInstance().ServeJavascript(context);
+                    HttpContext.Current.ApplicationInstance.CompleteRequest();
                 }
                 if (context.Request.Path.EndsWith("51dpipeline/json",
                       StringComparison.OrdinalIgnoreCase))
                 {
                     FiftyOneJsProvider.GetInstance().ServeJson(context);
+                    HttpContext.Current.ApplicationInstance.CompleteRequest();
                 }
             }
         }

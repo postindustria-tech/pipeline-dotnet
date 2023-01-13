@@ -41,6 +41,14 @@ namespace FiftyOne.Pipeline.Engines.Services
         private static object _lock = new object();
 
         /// <summary>
+        /// Used to store the results of looking up whether a property is available or not.
+        /// <seealso cref="EngineDataContainsPropertyGetter"/>
+        /// The key is the engine type. The inner dictionary is keyed on property name.
+        /// </summary>
+        private static Dictionary<Type, Dictionary<string, bool>> _propertyAvailable = 
+            new Dictionary<Type, Dictionary<string, bool>>();
+
+        /// <summary>
         /// Get the singleton instance of this service.
         /// </summary>
         public static IMissingPropertyService Instance
@@ -149,6 +157,14 @@ namespace FiftyOne.Pipeline.Engines.Services
                     reason = MissingPropertyReason.PropertyNotAccessibleWithResourceKey;
                 }
             }
+            else if (reason == MissingPropertyReason.Unknown &&
+                EngineDataContainsPropertyGetter(propertyName, engine))
+            {
+                // If the property meta data is not available, but the engine
+                // data class defines a getter, it's safe to assume that the data
+                // file needs upgrading.
+                reason = MissingPropertyReason.DataFileUpgradeRequired;
+            }
 
             // Build the message string to return to the caller.
             StringBuilder message = new StringBuilder();
@@ -163,7 +179,9 @@ namespace FiftyOne.Pipeline.Engines.Services
                     message.Append(
                         string.Format(CultureInfo.InvariantCulture,
                             Messages.MissingPropertyMessageDataUpgradeRequired,
-                            string.Join(",", property.DataTiersWherePresent),
+                            property == null ?
+                                "Unknown" :
+                                string.Join(",", property.DataTiersWherePresent),
                             engine.GetType().Name));
                     break;
                 case MissingPropertyReason.PropertyExcludedFromEngineConfiguration:
@@ -191,6 +209,63 @@ namespace FiftyOne.Pipeline.Engines.Services
 
             result.Description = message.ToString();
             result.Reason = reason;
+            return result;
+        }
+
+        /// <summary>
+        /// Return true if there is an explicit property getter for the name provided
+        /// in the data type returned by the engine.
+        /// </summary>
+        /// <param name="propertyName"></param>
+        /// <param name="engine"></param>
+        /// <returns></returns>
+        private bool EngineDataContainsPropertyGetter(string propertyName, IAspectEngine engine)
+        {
+            // Get the property dictionary for this engine
+            Dictionary<string, bool> engineProperties;
+            if(_propertyAvailable.TryGetValue(engine.GetType(), out engineProperties) == false)
+            {
+                lock (_propertyAvailable)
+                {
+                    if (_propertyAvailable.TryGetValue(engine.GetType(), out engineProperties) == false)
+                    {
+                        engineProperties = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+                        _propertyAvailable.Add(engine.GetType(), engineProperties);
+                    }
+                }
+            }
+
+            // If we don't have a stored result in the dictionary for this property then use
+            // reflection to figure it out.
+            if (engineProperties.TryGetValue(propertyName, out var result) == false)
+            {
+                result = false;
+
+                foreach (var dataType in engine.GetType().GetInterfaces().SelectMany(i => i.GetGenericArguments())
+                    .Where(i => typeof(IAspectData).IsAssignableFrom(i)))
+                {
+                    if (dataType != null && result == false)
+                    {
+                        foreach (var property in dataType.GetProperties())
+                        {
+                            if (property.Name.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                result = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Add the result to the property dictionary.
+                lock (engineProperties)
+                {
+                    if (engineProperties.ContainsKey(propertyName) == false)
+                    {
+                        engineProperties.Add(propertyName, result);
+                    }
+                }
+            }
             return result;
         }
     }
