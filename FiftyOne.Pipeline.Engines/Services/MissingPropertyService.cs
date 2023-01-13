@@ -41,6 +41,14 @@ namespace FiftyOne.Pipeline.Engines.Services
         private static object _lock = new object();
 
         /// <summary>
+        /// Used to store the results of looking up whether a property is available or not.
+        /// <seealso cref="EngineDataContainsPropertyGetter"/>
+        /// The key is the engine type. The inner dictionary is keyed on property name.
+        /// </summary>
+        private static Dictionary<Type, Dictionary<string, bool>> _propertyAvailable = 
+            new Dictionary<Type, Dictionary<string, bool>>();
+
+        /// <summary>
         /// Get the singleton instance of this service.
         /// </summary>
         public static IMissingPropertyService Instance
@@ -213,21 +221,52 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// <returns></returns>
         private bool EngineDataContainsPropertyGetter(string propertyName, IAspectEngine engine)
         {
-            foreach (var dataType in engine.GetType().GetInterfaces().SelectMany(i => i.GetGenericArguments())
-                .Where(i => typeof(IAspectData).IsAssignableFrom(i)))
+            // Get the property dictionary for this engine
+            Dictionary<string, bool> engineProperties;
+            if(_propertyAvailable.TryGetValue(engine.GetType(), out engineProperties) == false)
             {
-                if (dataType != null)
+                lock (_propertyAvailable)
                 {
-                    foreach (var property in dataType.GetProperties())
+                    if (_propertyAvailable.TryGetValue(engine.GetType(), out engineProperties) == false)
                     {
-                        if (property.Name.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            return true;
-                        }
+                        engineProperties = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+                        _propertyAvailable.Add(engine.GetType(), engineProperties);
                     }
                 }
             }
-            return false;
+
+            // If we don't have a stored result in the dictionary for this property then use
+            // reflection to figure it out.
+            if (engineProperties.TryGetValue(propertyName, out var result) == false)
+            {
+                result = false;
+
+                foreach (var dataType in engine.GetType().GetInterfaces().SelectMany(i => i.GetGenericArguments())
+                    .Where(i => typeof(IAspectData).IsAssignableFrom(i)))
+                {
+                    if (dataType != null && result == false)
+                    {
+                        foreach (var property in dataType.GetProperties())
+                        {
+                            if (property.Name.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                result = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Add the result to the property dictionary.
+                lock (engineProperties)
+                {
+                    if (engineProperties.ContainsKey(propertyName) == false)
+                    {
+                        engineProperties.Add(propertyName, result);
+                    }
+                }
+            }
+            return result;
         }
     }
 }
