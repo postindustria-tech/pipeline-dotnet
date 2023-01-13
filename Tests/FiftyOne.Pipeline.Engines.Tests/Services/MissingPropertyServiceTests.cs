@@ -20,9 +20,16 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Core.TypedMap;
+using FiftyOne.Pipeline.Engines.Caching;
+using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
+using FiftyOne.Pipeline.Engines.TestHelpers;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
@@ -57,6 +64,71 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
             // Act
             var result = _service.GetMissingPropertyReason("testProperty", engine.Object);
+
+            // Assert
+            Assert.AreEqual(MissingPropertyReason.DataFileUpgradeRequired, result.Reason);
+        }
+
+        public interface ITestData : IAspectData
+        {
+            public string TestProperty { get; }
+        }
+
+        /// <summary>
+        /// Check that when the property meta data is not present, so the data tier
+        /// cannot be checked, that an upgrade message is returned correctly.
+        /// This will be the case if the property is not present in the data file,
+        /// but there is an explicit getter for it in the data class.
+        /// </summary>
+        [TestMethod]
+        public void MissingPropertyService_GetReason_UnknownUpgrade()
+        {
+            // Arrange
+            GenericEngine<ITestData> engine = new GenericEngine<ITestData>(
+                new Mock<ILogger<GenericEngine<ITestData>>>().Object,
+                "lite",
+                "test",
+                new List<IAspectPropertyMetaData>());
+
+            // Act
+            var result = _service.GetMissingPropertyReason("testProperty", engine);
+
+            // Assert
+            Assert.AreEqual(MissingPropertyReason.DataFileUpgradeRequired, result.Reason);
+        }
+
+        public class InheritedTestEngine : GenericEngine<ITestData>
+        {
+            public InheritedTestEngine(
+                ILogger<GenericEngine<ITestData>> logger,
+                string tier,
+                string dataKey,
+                IList<IAspectPropertyMetaData> properties)
+                : base(logger, tier, dataKey, properties)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Check that when the property meta data is not present, so the data tier
+        /// cannot be checked, that an upgrade message is returned correctly.
+        /// This will be the case if the property is not present in the data file,
+        /// but there is an explicit getter for it in the data class.
+        /// This test uses a further inherited class to check that the data type
+        /// can still be worked out if the generic data type is burried.
+        /// </summary>
+        [TestMethod]
+        public void MissingPropertyService_GetReason_UnknownUpgrade_Inherited()
+        {
+            // Arrange
+            InheritedTestEngine engine = new InheritedTestEngine(
+                new Mock<ILogger<InheritedTestEngine>>().Object,
+                "lite",
+                "test",
+                new List<IAspectPropertyMetaData>());
+
+            // Act
+            var result = _service.GetMissingPropertyReason("testProperty", engine);
 
             // Assert
             Assert.AreEqual(MissingPropertyReason.DataFileUpgradeRequired, result.Reason);
