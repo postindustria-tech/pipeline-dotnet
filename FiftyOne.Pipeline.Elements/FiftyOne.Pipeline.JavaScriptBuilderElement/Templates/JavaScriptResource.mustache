@@ -12,6 +12,11 @@
         console.log(json.error);
     }
 
+    // Log any warnings returned in the JSON object.
+    if (json.warnings !== undefined) {
+        console.log(json.warnings);
+    }
+
     // Set to true when the JSON object is complete.
     var completed = false;
 
