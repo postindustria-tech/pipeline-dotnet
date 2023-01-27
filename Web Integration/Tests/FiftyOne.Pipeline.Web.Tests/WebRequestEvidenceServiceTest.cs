@@ -29,6 +29,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 
 namespace FiftyOne.Pipeline.Web.Tests
@@ -348,6 +349,15 @@ namespace FiftyOne.Pipeline.Web.Tests
             _request.SetupGet(r => r.Form).Throws(new System.Exception(
                 "This test should not be trying to access form values"));
             CheckNotRequired("query");
+        }
+
+        [TestMethod]
+        public void WebRequestEvidenceService_InvalidForm()
+        {
+            _request.SetupGet(r => r.Form).Throws(new InvalidDataException());
+            // Check that this does not throw an exception.
+            _service.AddEvidenceFromRequest(_flowData.Object, _request.Object);
+            
         }
 
         /// <summary>
