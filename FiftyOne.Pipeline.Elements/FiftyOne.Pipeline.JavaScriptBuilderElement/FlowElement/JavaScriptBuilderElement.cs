@@ -42,6 +42,7 @@ using Stubble.Core.Settings;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines;
 using Newtonsoft.Json;
+using System.Globalization;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 {
@@ -143,6 +144,11 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 		public override IList<IElementPropertyMetaData> Properties => 
 			_properties;
 
+        /// <summary>
+        /// Flag to record whether we have already logged an error about an invalid uri.
+        /// This prevents us from spamming the user with error messages.
+        /// </summary>
+        private bool _invalidUriLogged = false;
 
         /// <summary>
         /// Default constructor.
@@ -357,7 +363,20 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                     endpoint = endpoint.Substring(1);
                 }
 
-                url = new Uri($"{protocol}://{host}{endpoint}");
+                var urlString = $"{protocol}://{host}{endpoint}";
+                try
+                {
+                    url = new Uri(urlString);
+                }
+                catch (UriFormatException ex)
+                {
+                    if (_invalidUriLogged == false) 
+                    {
+                        _invalidUriLogged = true;
+                        Logger.LogError(ex, string.Format(CultureInfo.InvariantCulture,
+                            Messages.ExceptionUriInvalid, urlString));
+                    }
+                }
             }
 
             // With the gathered resources, build a new JavaScriptResource.

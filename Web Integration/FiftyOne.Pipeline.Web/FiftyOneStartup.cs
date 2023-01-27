@@ -232,7 +232,7 @@ namespace FiftyOne.Pipeline.Web
                     BuilderName = nameof(JavaScriptBuilderElement),
                     BuildParameters = new Dictionary<string, object>()
                     {
-                        { "EndPoint", "/51dpipeline/json" }
+                        { "EndPoint", Engines.Constants.DEFAULT_JSON_ENDPOINT }
                     }
                 });
             }
@@ -242,7 +242,7 @@ namespace FiftyOne.Pipeline.Web
                 // the endpoint is specified. If not, add it.
                 if (javascriptConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
                 {
-                    javascriptConfig.Single().BuildParameters.Add("EndPoint", "/51dpipeline/json");
+                    javascriptConfig.Single().BuildParameters.Add("EndPoint", Engines.Constants.DEFAULT_JSON_ENDPOINT);
                 }
             }
         }

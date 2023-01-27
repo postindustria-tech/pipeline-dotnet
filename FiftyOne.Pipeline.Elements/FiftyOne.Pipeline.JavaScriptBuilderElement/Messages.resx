@@ -126,4 +126,7 @@
   <data name="ExceptionObjectNameInvalid" xml:space="preserve">
     <value>JavaScriptBuilder ObjectName '{0}' is invalid. This must be a valid JavaScript type identifier.</value>
   </data>
+  <data name="ExceptionUriInvalid" xml:space="preserve">
+    <value>The generated Uri '{0}' is invalid. Please check your JavaScriptBuilderElement protocol, host and endpoint configuration.</value>
+  </data>
 </root>

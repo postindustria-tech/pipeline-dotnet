@@ -86,5 +86,14 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder {
                 return ResourceManager.GetString("ExceptionObjectNameInvalid", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The generated Uri &apos;{0}&apos; is invalid. Please check your JavaScriptBuilderElement protocol, host and endpoint configuration..
+        /// </summary>
+        internal static string ExceptionUriInvalid {
+            get {
+                return ResourceManager.GetString("ExceptionUriInvalid", resourceCulture);
+            }
+        }
     }
 }
