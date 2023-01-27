@@ -68,8 +68,22 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         public override HttpBrowserCapabilities GetBrowserCapabilities(
             HttpRequest request)
         {
+            if (request == null) { throw new ArgumentNullException(nameof(request)); }
+
             HttpBrowserCapabilities caps;
             var baseCaps = base.GetBrowserCapabilities(request);
+
+            if(request.RequestContext.HttpContext.Response.HeadersWritten == true)
+            {
+                // The response has already been sent so just use the base capabilities.
+                // This can occur when using packages such as OWIN SignalR.
+                // SignalR intercepts certain requests, writes a response and closes it.
+                // This triggers our PipelineModule.OnEndRequest handler, which tries to
+                // get the browser capabilities object.
+                // Since it doesn't exist yet, it creates it and ends up doing all the
+                // processing for no reason at all.
+                return baseCaps;
+            }            
             
             var flowData = WebPipeline.Process(request);
             if (flowData != null)

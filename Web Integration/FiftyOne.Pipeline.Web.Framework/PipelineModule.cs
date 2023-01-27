@@ -99,7 +99,10 @@ namespace FiftyOne.Pipeline.Web.Framework
             if (context != null)
             {
                 PipelineCapabilities caps = context.Request.Browser as PipelineCapabilities;
-                caps.FlowData.Dispose();
+                if (caps != null)
+                {
+                    caps.FlowData.Dispose();
+                }
             }
         }
 
