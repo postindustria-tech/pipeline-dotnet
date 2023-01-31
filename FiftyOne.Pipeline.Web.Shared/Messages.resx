@@ -129,6 +129,9 @@
   <data name="MessageEvidenceError" xml:space="preserve">
     <value>Problem retrieving evidence from request</value>
   </data>
+  <data name="MessageInvalidForm" xml:space="preserve">
+    <value>The form data POSTed was invalid, so will not be added to the evidence.</value>
+  </data>
   <data name="MessageJavaScriptCachingError" xml:space="preserve">
     <value>Problem setting response headers for 51Degrees.core.js</value>
   </data>

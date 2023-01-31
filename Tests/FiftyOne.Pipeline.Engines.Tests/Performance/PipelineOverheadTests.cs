@@ -88,7 +88,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Performance
             stopwatch.Stop();
 
             double msOverheadPerCall =
-                stopwatch.ElapsedMilliseconds / iterations;
+                stopwatch.ElapsedMilliseconds / (double)iterations;
             Assert.IsTrue(msOverheadPerCall < 0.1,
                 $"Pipeline overhead per Process call was " +
                 $"{msOverheadPerCall}ms. Maximum permitted is 0.1ms");
@@ -124,7 +124,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Performance
             var end = DateTime.UtcNow;
 
             double msOverheadPerCall =
-                end.Subtract(start).TotalMilliseconds / iterations;
+                end.Subtract(start).TotalMilliseconds / (double)iterations;
             Assert.IsTrue(msOverheadPerCall < 0.1,
                 $"Pipeline overhead per Process call was " +
                 $"{msOverheadPerCall}ms. Maximum permitted is 0.1ms");
@@ -170,8 +170,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Performance
 
             // Calculate the time per call from the task results.
             List<double> results = tasks
-                .Select(t => t.Result.TotalMilliseconds / iterations).ToList();
-
+                .Select(t => t.Result.TotalMilliseconds / (double)iterations).ToList();
             Assert.IsTrue(results.All(r => r < 0.1),
                     $"Pipeline overhead per Process call was too high for " +
                     $"{results.Count(r => r > 0.1)} out of {threads} threads." +

@@ -97,6 +97,15 @@ namespace FiftyOne.Pipeline.Web.Shared {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The form data POSTed was invalid, so will not be added to the evidence..
+        /// </summary>
+        public static string MessageInvalidForm {
+            get {
+                return ResourceManager.GetString("MessageInvalidForm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Problem setting response headers for 51Degrees.core.js.
         /// </summary>
         public static string MessageJavaScriptCachingError {

@@ -83,7 +83,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                     FiftyOneJsProvider.GetInstance().ServeJavascript(context);
                     HttpContext.Current.ApplicationInstance.CompleteRequest();
                 }
-                if (context.Request.Path.EndsWith("51dpipeline/json",
+                if (context.Request.Path.EndsWith(Engines.Constants.DEFAULT_JSON_ENDPOINT,
                       StringComparison.OrdinalIgnoreCase))
                 {
                     FiftyOneJsProvider.GetInstance().ServeJson(context);
@@ -99,7 +99,10 @@ namespace FiftyOne.Pipeline.Web.Framework
             if (context != null)
             {
                 PipelineCapabilities caps = context.Request.Browser as PipelineCapabilities;
-                caps.FlowData.Dispose();
+                if (caps != null)
+                {
+                    caps.FlowData.Dispose();
+                }
             }
         }
 

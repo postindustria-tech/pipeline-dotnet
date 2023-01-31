@@ -122,15 +122,18 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             if (context == null) throw new ArgumentNullException(nameof(context));
             if (headersToSet == null) throw new ArgumentNullException(nameof(headersToSet));
 
-            foreach (var header in headersToSet)
+            if (context.Response.HeadersWritten == false)
             {
-                if (context.Response.Headers.AllKeys.Contains(header.Key))
+                foreach (var header in headersToSet)
                 {
-                    context.Response.Headers[header.Key] += $",{header.Value}";
-                }
-                else
-                {
-                    context.Response.Headers.Add(header.Key, header.Value);
+                    if (context.Response.Headers.AllKeys.Contains(header.Key))
+                    {
+                        context.Response.Headers[header.Key] += $",{header.Value}";
+                    }
+                    else
+                    {
+                        context.Response.Headers.Add(header.Key, header.Value);
+                    }
                 }
             }
         }

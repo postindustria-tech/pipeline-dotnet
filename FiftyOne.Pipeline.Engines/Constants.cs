@@ -59,5 +59,10 @@ namespace FiftyOne.Pipeline.Engines
         /// update distribution endpoint at exactly the same time.
         /// </summary>
         public const int DATA_UPDATE_RANDOMISATION_DEFAULT = 10 * 60;
+
+        /// <summary>
+        /// The default endpoint for the JavaScript to call when requesting json data
+        /// </summary>
+        public const string DEFAULT_JSON_ENDPOINT = "/51dpipeline/json";
     }
 }

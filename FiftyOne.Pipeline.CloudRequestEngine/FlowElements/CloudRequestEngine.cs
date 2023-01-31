@@ -281,6 +281,16 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     var errors = jObj.Value<JArray>("errors");
                     messages.AddRange(errors.Children<JValue>().Select(t => t.Value.ToString()));
                 }
+
+                // Log any warnings that were returned.
+                if (jObj.ContainsKey("warnings"))
+                {
+                    var warnings = jObj.Value<JArray>("warnings");
+                    foreach (var warning in warnings.Children<JValue>().Select(t => t.Value.ToString()))
+                    {
+                        Logger.LogWarning(warning);
+                    }
+                }
             }
             
             // If there were no errors but there was also no other data

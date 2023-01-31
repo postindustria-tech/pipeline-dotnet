@@ -22,6 +22,7 @@
 
 using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Web.Shared;
@@ -148,11 +149,19 @@ namespace FiftyOne.Pipeline.Web.Services
                 if (httpRequest.Method == Shared.Constants.METHOD_POST &&
                     Shared.Constants.CONTENT_TYPE_FORM.Contains(httpRequest.ContentType))
                 {
-                    foreach (var formValue in httpRequest.Form)
+                    try
                     {
-                        string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
-                            Core.Constants.EVIDENCE_SEPERATOR + formValue.Key;
-                        CheckAndAdd(flowData, evidenceKey, formValue.Value.ToString());
+                        foreach (var formValue in httpRequest.Form)
+                        {
+                            string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
+                                Core.Constants.EVIDENCE_SEPERATOR + formValue.Key;
+                            CheckAndAdd(flowData, evidenceKey, formValue.Value.ToString());
+                        }
+                    }
+                    catch (InvalidDataException e)
+                    {
+                        _logger.LogInformation(e,
+                            Messages.MessageInvalidForm);
                     }
                 }
                 if (GetSessionEnabled(httpRequest))

@@ -372,7 +372,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// <exception cref="ArgumentNullException">
         /// Thrown if one of the supplied parameters is null
         /// </exception>
-        protected static void AddErrors(IFlowData data,
+        protected virtual void AddErrors(IFlowData data,
             Dictionary<string, object> allProperties)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
