@@ -35,6 +35,8 @@ namespace FiftyOne.Pipeline.IpSplitter
     {
         private ILoggerFactory _loggerFactory;
 
+        private ILogger<SplitIpData> _dataLogger;
+
         /// <summary>
         /// Construct a new builder instance using the logger factory provided.
         /// </summary>
@@ -42,6 +44,7 @@ namespace FiftyOne.Pipeline.IpSplitter
         public IpSplitterElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
+            _dataLogger = _loggerFactory.CreateLogger<SplitIpData>();
         }
 
         /// <summary>
@@ -63,7 +66,7 @@ namespace FiftyOne.Pipeline.IpSplitter
         private ISplitIpData CreateAspectData(IPipeline pipeline, 
             FlowElementBase<ISplitIpData, IElementPropertyMetaData> element)
         {
-            return new SplitIpData(_loggerFactory.CreateLogger<SplitIpData>(), pipeline);
+            return new SplitIpData(_dataLogger, pipeline);
         }
     }
 }

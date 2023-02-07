@@ -44,9 +44,12 @@ namespace Examples.OnPremiseEngine.FlowElements
             IDataUpdateService dataUpdateService) : base(dataUpdateService)
         {
             _loggerFactory = loggerFactory;
+            _dataLogger = _loggerFactory.CreateLogger<StarSignData>();
         }
 
         private ILoggerFactory _loggerFactory;
+
+        private ILogger<StarSignData> _dataLogger;
 
         protected override SimpleOnPremiseEngine NewEngine(List<string> properties)
         {
@@ -69,7 +72,7 @@ namespace Examples.OnPremiseEngine.FlowElements
             FlowElementBase<IStarSignData, IAspectPropertyMetaData> aspectEngine)
         {
             return new StarSignData(
-                _loggerFactory.CreateLogger<StarSignData>(),
+                _dataLogger,
                 pipeline,
                 (SimpleOnPremiseEngine)aspectEngine,
                 MissingPropertyService.Instance);

@@ -39,6 +39,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
     public class JsonBuilderElementBuilder
     {
         private ILoggerFactory _loggerFactory;
+        private ILogger<JsonBuilderElementData> _dataLogger;
+
         private IEnumerable<JsonConverter> _jsonConverters = Enumerable.Empty<JsonConverter>();
 
         /// <summary>
@@ -51,6 +53,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         public JsonBuilderElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
+            _dataLogger = _loggerFactory.CreateLogger<JsonBuilderElementData>();
         }
 
         /// <summary>
@@ -124,7 +127,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             FlowElementBase<IJsonBuilderElementData, IElementPropertyMetaData> jsonBuilderElement)
         {
             return new JsonBuilderElementData(
-                _loggerFactory.CreateLogger<JsonBuilderElementData>(),
+                _dataLogger,
                 pipeline);
         }
 

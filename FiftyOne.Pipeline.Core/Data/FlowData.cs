@@ -814,7 +814,10 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </param>
         protected virtual void Dispose(bool disposing)
         {
-            _logger.LogDebug($"Dispose called on Flow data {this.GetHashCode()}.");
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug($"Dispose called on Flow data {this.GetHashCode()}.");
+            }
             if (!disposedValue)
             {
                 if (disposing)

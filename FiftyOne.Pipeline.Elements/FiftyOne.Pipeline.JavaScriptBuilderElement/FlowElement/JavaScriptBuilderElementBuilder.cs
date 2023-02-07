@@ -39,6 +39,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
     public class JavaScriptBuilderElementBuilder
     {
         private ILoggerFactory _loggerFactory;
+        private ILogger<JavaScriptBuilderElementData> _dataLogger; 
+
         /// <summary>
         /// The logger for this instance.
         /// </summary>
@@ -82,6 +84,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         {
             _loggerFactory = loggerFactory;
             Logger = _loggerFactory.CreateLogger<JavaScriptBuilderElementBuilder>();
+            _dataLogger = _loggerFactory.CreateLogger<JavaScriptBuilderElementData>();
         }
 
         /// <summary>
@@ -210,7 +213,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 javaScriptBuilderElement)
         {
             return new JavaScriptBuilderElementData(
-                _loggerFactory.CreateLogger<JavaScriptBuilderElementData>(),
+                _dataLogger,
                 pipeline);
         }
     }

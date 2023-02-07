@@ -139,8 +139,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             // Get loggers.
             var loggers = loggerFactory.Loggers
-                .Where(l => l.GetType().IsAssignableFrom(typeof(TestLogger<FlowElements.CloudRequestEngine>)));
-            var logger = loggers.FirstOrDefault();
+                .Where(l => l.Category == typeof(FlowElements.CloudRequestEngine).FullName);
+            var logger = loggers.First();
 
             // If warn is expected then check for warnings from cloud request 
             // engine.
@@ -232,13 +232,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             // Get loggers.
             var loggers = loggerFactory.Loggers
-                .Where(l => l.GetType().IsAssignableFrom(typeof(TestLogger<FlowElements.CloudRequestEngine>)));
-            var logger = loggers.FirstOrDefault();
+                .Where(l => l.Category == typeof(FlowElements.CloudRequestEngine).FullName);
+            var logger = loggers.First();
 
             // Check that the expected number of warnings has been logged.
             logger.AssertMaxWarnings(evidence.Length - 1);
             logger.AssertMaxErrors(0);
-            Assert.AreEqual(evidence.Length - 1, logger.WarningsLogged.Count);
+            Assert.AreEqual(evidence.Length - 1, logger.WarningsLogged.Count, 
+                $"The number of warnings logged ({logger.WarningsLogged.Count}) " +
+                $"did not match what was expected ({evidence.Length - 1})");
             // Check that only conflict warnings have been logged.
             foreach (var warning in logger.WarningsLogged)
             {

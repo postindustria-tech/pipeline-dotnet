@@ -37,9 +37,12 @@ namespace Examples.ClientSideEvidence.Shared
     {
         private ILoggerFactory _loggerFactory;
 
+        private ILogger<StarSignData> _dataLogger;
+
         public SimpleClientSideElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
+            _dataLogger = _loggerFactory.CreateLogger<StarSignData>();
         }
 
         public SimpleClientSideElement Build()
@@ -53,7 +56,7 @@ namespace Examples.ClientSideEvidence.Shared
         private IStarSignData CreateData(IPipeline pipeline, 
             FlowElementBase<IStarSignData,IElementPropertyMetaData> element)
         {
-            return new StarSignData(_loggerFactory.CreateLogger<StarSignData>(), pipeline);
+            return new StarSignData(_dataLogger, pipeline);
         }
     }
     //! [class]

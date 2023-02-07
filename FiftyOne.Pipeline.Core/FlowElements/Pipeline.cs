@@ -264,8 +264,11 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             {
                 throw new ArgumentNullException(nameof(data));
             }
-
-            _logger.LogDebug($"Pipeline '{GetHashCode()}' started processing.");
+            var log = _logger.IsEnabled(LogLevel.Debug);
+            if (log)
+            {
+                _logger.LogDebug($"Pipeline '{GetHashCode()}' started processing.");
+            }
 
             foreach (var element in _flowElements)
             {
@@ -301,7 +304,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     .Select(e => e.ExceptionData));
             }
 
-            _logger.LogDebug($"Pipeline '{GetHashCode()}' finished processing.");
+            if (log)
+            {
+                _logger.LogDebug($"Pipeline '{GetHashCode()}' finished processing.");
+            }
         }
 
         /// <summary>

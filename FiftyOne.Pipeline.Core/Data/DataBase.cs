@@ -175,7 +175,8 @@ namespace FiftyOne.Pipeline.Core.Data
         protected virtual T GetAs<T>(string key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            if (_logger.IsEnabled(LogLevel.Debug))
+            if (_logger != null &&
+                _logger.IsEnabled(LogLevel.Debug))
             {
                 _logger.LogDebug($"Data '{GetType().Name}' " +
                     $"property value requested for key '{key}'.");

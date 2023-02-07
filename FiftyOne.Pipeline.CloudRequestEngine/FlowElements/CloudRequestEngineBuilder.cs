@@ -46,6 +46,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         #region Private Properties
 
         private ILoggerFactory _loggerFactory;
+        private ILogger<CloudRequestData> _dataLogger;
         private HttpClient _httpClient;
 
         private string _dataEndpoint = "";
@@ -75,6 +76,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         {
             _loggerFactory = loggerFactory;
             _httpClient = httpClient;
+            _dataLogger = _loggerFactory.CreateLogger<CloudRequestData>();
         }
 
         #endregion
@@ -236,7 +238,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             FlowElementBase<CloudRequestData, IAspectPropertyMetaData> engine)
         {
             return new CloudRequestData(
-                _loggerFactory.CreateLogger<CloudRequestData>(),
+                _dataLogger,
                 pipeline,
                 (IAspectEngine)engine);
         }

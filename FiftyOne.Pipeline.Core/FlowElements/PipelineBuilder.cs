@@ -195,7 +195,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     // and log a warning. 
                     catch (ReflectionTypeLoadException ex)
                     {
-                        Logger.LogDebug(ex, $"Failed to get Types for {assembly.FullName}", null);
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                        {
+                            Logger.LogDebug(ex, $"Failed to get Types for {assembly.FullName}", null);
+                        }
                     }
                 }
             }

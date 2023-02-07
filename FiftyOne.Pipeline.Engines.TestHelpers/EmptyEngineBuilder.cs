@@ -35,12 +35,14 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
     {
         private long _processCostTicks;
         private ILoggerFactory _loggerFactory;
+        private ILogger<EmptyEngineData> _dataLogger;
 
         public EmptyEngineBuilder(
             ILoggerFactory loggerFactory) :
             base()
         {
             _loggerFactory = loggerFactory;
+            _dataLogger = _loggerFactory.CreateLogger<EmptyEngineData>();
         }
 
         public EmptyEngine Build()
@@ -51,7 +53,7 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
         private EmptyEngineData CreateAspectData(IPipeline pipeline, FlowElementBase<EmptyEngineData, IAspectPropertyMetaData> engine)
         {
             return new EmptyEngineData(
-                _loggerFactory.CreateLogger<EmptyEngineData>(),
+                _dataLogger,
                 pipeline,
                 engine as IAspectEngine,
                 MissingPropertyService.Instance);
