@@ -68,6 +68,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </summary>
         private bool _suppressProcessExceptions = false;
 
+        private ILogger<Evidence> _evidenceLogger;
+        private ILogger<FlowData> _flowDataLogger;
+
         /// <summary>
         /// Create a new <see cref="PipelineBuilderBase{T}"/> instance.
         /// </summary>
@@ -80,6 +83,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         {
             LoggerFactory = loggerFactory;
             Logger = LoggerFactory.CreateLogger<T>();
+            _evidenceLogger = LoggerFactory.CreateLogger<Evidence>();
+            _flowDataLogger = LoggerFactory.CreateLogger<FlowData>();
         }
 
         /// <summary>
@@ -223,9 +228,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </returns>
         private IFlowData NewFlowData(IPipelineInternal pipeline)
         {
-            var evidence = new Evidence(LoggerFactory.CreateLogger<Evidence>());
+            var evidence = new Evidence(_evidenceLogger);
             return new FlowData(
-                LoggerFactory.CreateLogger<FlowData>(),
+                _flowDataLogger,
                 pipeline,
                 evidence);
         }

@@ -37,6 +37,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     public class SetHeadersElementBuilder
     {
         private ILoggerFactory _loggerFactory;
+        private ILogger<SetHeadersData> _dataLogger;
 
         /// <summary>
         /// Constructor
@@ -48,6 +49,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         public SetHeadersElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
+            _dataLogger = _loggerFactory.CreateLogger<SetHeadersData>();
         }
 
         /// <summary>
@@ -81,7 +83,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             FlowElementBase<ISetHeadersData, IElementPropertyMetaData> setHeadersElement)
         {
             return new SetHeadersData(
-                _loggerFactory.CreateLogger<SetHeadersData>(),
+                _dataLogger,
                 pipeline);
         }
     }

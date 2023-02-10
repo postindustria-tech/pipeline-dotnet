@@ -35,9 +35,12 @@ namespace Examples.CustomFlowElement.FlowElements
     {
         private ILoggerFactory _loggerFactory;
 
+        private ILogger<StarSignData> _dataLogger;
+
         public SimpleFlowElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
+            _dataLogger = _loggerFactory.CreateLogger<StarSignData>();
         }
 
         public SimpleFlowElement Build()
@@ -50,7 +53,7 @@ namespace Examples.CustomFlowElement.FlowElements
         // This is the element data factory, and is called in the Process method of the element.
         public IStarSignData CreateData(IPipeline pipeline, FlowElementBase<IStarSignData,IElementPropertyMetaData> element)
         {
-            return new StarSignData(_loggerFactory.CreateLogger<StarSignData>(), pipeline);
+            return new StarSignData(_dataLogger, pipeline);
         }
     }
     //! [class]

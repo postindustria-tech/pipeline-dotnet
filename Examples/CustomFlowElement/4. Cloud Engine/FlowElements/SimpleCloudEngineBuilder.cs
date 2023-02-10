@@ -41,6 +41,7 @@ namespace Examples.CloudEngine.FlowElements
     public class SimpleCloudEngineBuilder : CloudAspectEngineBuilderBase<SimpleCloudEngineBuilder, SimpleCloudEngine>
     {
         private ILoggerFactory _loggerFactory;
+        private ILogger<StarSignData> _dataLogger;
         private CloudRequestEngine _engine;
 
         public SimpleCloudEngineBuilder(
@@ -48,6 +49,7 @@ namespace Examples.CloudEngine.FlowElements
             CloudRequestEngine engine)
         {
             _loggerFactory = loggerFactory;
+            _dataLogger = _loggerFactory.CreateLogger<StarSignData>();
             _engine = engine;
         }
 
@@ -67,7 +69,7 @@ namespace Examples.CloudEngine.FlowElements
         private IStarSignData CreateData(IPipeline pipeline, FlowElementBase<IStarSignData, IAspectPropertyMetaData> engine)
         {
             return new StarSignData(
-                _loggerFactory.CreateLogger<StarSignData>(),
+                _dataLogger,
                 pipeline,
                 (IAspectEngine)engine,
                 MissingPropertyService.Instance);

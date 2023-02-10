@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.Math
     public class MathElementBuilder
     {
         private ILoggerFactory _loggerFactory;
+        private ILogger<MathData> _dataLogger;
 
         /// <summary>
         /// Construct a new builder instance using the logger factory provided.
@@ -39,6 +40,7 @@ namespace FiftyOne.Pipeline.Math
         public MathElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
+            _dataLogger = _loggerFactory.CreateLogger<MathData>();
         }
 
         /// <summary>
@@ -60,7 +62,7 @@ namespace FiftyOne.Pipeline.Math
         private IMathData CreateAspectData(IPipeline pipeline, 
             FlowElementBase<IMathData, IElementPropertyMetaData> element)
         {
-            return new MathData(_loggerFactory.CreateLogger<MathData>(), pipeline);
+            return new MathData(_dataLogger, pipeline);
         }
     }
 }
