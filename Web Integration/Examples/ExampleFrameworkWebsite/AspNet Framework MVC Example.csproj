@@ -47,7 +47,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FiftyOne.Caching, Version=4.4.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\FiftyOne.Caching.4.4.1\lib\netstandard2.0\FiftyOne.Caching.dll</HintPath>
+      <HintPath>..\..\..\packages\FiftyOne.Caching.4.4.2\lib\netstandard2.0\FiftyOne.Caching.dll</HintPath>
     </Reference>
     <Reference Include="FiftyOne.Common, Version=4.4.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\FiftyOne.Common.4.4.3\lib\netstandard2.0\FiftyOne.Common.dll</HintPath>
