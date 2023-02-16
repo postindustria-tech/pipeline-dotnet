@@ -159,5 +159,14 @@ namespace FiftyOne.Pipeline.Engines.Caching
         {
             _internalCache.Dispose();
         }
+
+        /// <summary>
+        /// Not implemented.
+        /// </summary>
+        /// <param name="intial"></param>
+        public void Warm(IEnumerable<KeyValuePair<IFlowData, TValue>> intial)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
