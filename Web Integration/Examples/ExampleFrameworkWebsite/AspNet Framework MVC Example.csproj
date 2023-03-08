@@ -45,8 +45,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FiftyOne.Caching, Version=4.4.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\FiftyOne.Caching.4.4.2\lib\netstandard2.0\FiftyOne.Caching.dll</HintPath>
+    <Reference Include="FiftyOne.Caching, Version=4.4.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\FiftyOne.Caching.4.4.3-beta.20\lib\netstandard2.0\FiftyOne.Caching.dll</HintPath>
     </Reference>
     <Reference Include="FiftyOne.Common, Version=4.4.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\FiftyOne.Common.4.4.3\lib\netstandard2.0\FiftyOne.Common.dll</HintPath>
@@ -78,6 +78,9 @@
     </Reference>
     <Reference Include="Microsoft.Extensions.FileSystemGlobbing, Version=6.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Microsoft.Extensions.FileSystemGlobbing.6.0.0\lib\net461\Microsoft.Extensions.FileSystemGlobbing.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=6.0.0.3, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Microsoft.Extensions.Logging.Abstractions.6.0.3\lib\net461\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.Primitives, Version=6.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Microsoft.Extensions.Primitives.6.0.0\lib\net461\Microsoft.Extensions.Primitives.dll</HintPath>
