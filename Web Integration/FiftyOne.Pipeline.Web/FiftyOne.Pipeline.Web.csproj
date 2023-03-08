@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
     <Platforms>AnyCPU</Platforms>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -23,29 +23,24 @@
     <EmbeddedResource Include="Views\Shared\Components\FiftyOneJS\Default.cshtml" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
-	<!-- If these package references are updated or modified then don't forget to also 
-	     update the dependencies in the nuspec file in the parent directory. -->
-    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.34" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.3" />
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="2.1.1" />
-  </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
     <!-- If these package references are updated or modified then don't forget to also 
 	     update the dependencies in the nuspec file in the parent directory. -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="3.1.32" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation">
-      <Version>3.1.1</Version>
+      <Version>3.1.32</Version>
     </PackageReference>
   </ItemGroup>
-
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+    <!-- If these package references are updated or modified then don't forget to also 
+	     update the dependencies in the nuspec file in the parent directory. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="6.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation">
+      <Version>6.0.14</Version>
+    </PackageReference>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Elements\FiftyOne.Pipeline.JavaScriptBuilderElement\FiftyOne.Pipeline.JavaScriptBuilder.csproj" />
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines.FiftyOne\FiftyOne.Pipeline.Engines.FiftyOne.csproj" />

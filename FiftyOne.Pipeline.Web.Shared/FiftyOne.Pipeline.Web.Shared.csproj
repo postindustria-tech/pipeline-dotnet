@@ -30,13 +30,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\FiftyOne.Pipeline.Core\FiftyOne.Pipeline.Core.csproj" />
     <ProjectReference Include="..\FiftyOne.Pipeline.Elements\FiftyOne.Pipeline.JavaScriptBuilderElement\FiftyOne.Pipeline.JavaScriptBuilder.csproj" />
     <ProjectReference Include="..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
