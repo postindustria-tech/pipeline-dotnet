@@ -10,13 +10,13 @@ Individual engines (For example, device detection) are in separate repositories.
 
 ## Dependencies
 
-Visual Studio 2019 or later is recommended. Although Visual Studio Code can be used for working with most of the projects.
+Visual Studio 2022 or later is recommended. Although Visual Studio Code can be used for working with most of the projects.
 
 The Pipeline projects are written in C# and target .NET Standard 2.0.3
 The Web integration multi-targets the following:
-    - .NET Core 2.1
     - .NET Core 3.1
-    - .NET Framework 4.6.1
+    - .NET Core 6.0
+    - .NET Framework 4.6.2
 
 The [tested versions](https://51degrees.com/documentation/_info__tested_versions.html) page shows the .NET versions that we currently test against. The software may run fine against other versions, but additional caution should be applied.
 

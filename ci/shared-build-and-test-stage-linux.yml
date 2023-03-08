@@ -3,7 +3,7 @@ parameters:
 - name: imageName # Name of the agent to work on.
 - name: nugetVersion
   type: string
-  default: 5.8.0
+  default: 6.0.3
 - name: runTests
   type: string
   default: 'On'
@@ -55,10 +55,10 @@ stages:
       submodules: recursive
 
     - task: UseDotNet@2
-      displayName: 'Use .NET Core 3.1'
+      displayName: 'Use .NET 6.0'
       inputs:
         packageType: sdk
-        version: 3.1.x
+        version: 6.0.x
 
     # Restore NuGet packages using the dotnet core CLI.
     - task: DotNetCoreCLI@2

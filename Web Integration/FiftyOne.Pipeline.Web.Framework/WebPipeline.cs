@@ -287,7 +287,8 @@ namespace FiftyOne.Pipeline.Web.Framework
             // Process the evidence and return the result
             flowData.Process();
 
-            if (GetInstance().SetHeaderPropertiesEnabled)
+            if (GetInstance().SetHeaderPropertiesEnabled &&
+                request.RequestContext.HttpContext.ApplicationInstance != null)
             {
                 // Set HTTP headers in the response.
                 SetHeadersProvider.GetInstance().SetHeaders(flowData,

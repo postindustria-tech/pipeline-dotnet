@@ -3,7 +3,7 @@ parameters:
 - name: imageName # Name of the agent to work on.
 - name: nugetVersion
   type: string
-  default: 5.8.0
+  default: 6.0.3
 - name: runTests
   type: string
   default: 'On'
@@ -60,10 +60,10 @@ stages:
         versionSpec: ${{ parameters.nugetVersion }}
     
     - task: UseDotNet@2
-      displayName: 'Use .NET Core 3.1'
+      displayName: 'Use .NET 6.0'
       inputs:
         packageType: sdk
-        version: 3.1.x
+        version: 6.0.x
         performMultiLevelLookup: true
     
     - task: NuGetCommand@2
@@ -79,7 +79,7 @@ stages:
       displayName: 'Build solutions'
       inputs:
         solution: '$(RestoreBuildProjects)'
-        vsVersion: '15.0'
+        vsVersion: '17.0'
         platform: 'Any CPU'
         configuration: '$(BuildConfiguration)'
         clean: true
@@ -100,7 +100,7 @@ stages:
           !**\obj\**
         searchFolder: '$(System.DefaultWorkingDirectory)'
         codeCoverageEnabled: true
-        otherConsoleOptions: '/Framework:Framework45 /logger:console;verbosity="normal"'
+        otherConsoleOptions: '/Framework:Framework48 /logger:console;verbosity="normal"'
         configuration: '$(BuildConfiguration)'
         diagnosticsEnabled: true
         testRunTitle: 'framework-$(BuildConfiguration)'
@@ -110,14 +110,14 @@ stages:
       inputs:
         testSelector: 'testAssemblies'
         testAssemblyVer2: |
-          **\netcoreapp*\*Tests*.dll
+          **\net6*\*Tests*.dll
           !**\*TestAdapter*.dll
           !**\*TestFramework*.dll
           !**\obj\**
           !**\performance_tests.dll
         searchFolder: '$(System.DefaultWorkingDirectory)'
         codeCoverageEnabled: true
-        otherConsoleOptions: '/Framework:.NETCoreApp,Version=v3.1 /logger:console;verbosity="normal"'
+        otherConsoleOptions: '/Framework:net6.0 /logger:console;verbosity="normal"'
         configuration: '$(BuildConfiguration)'
         diagnosticsEnabled: true
         testRunTitle: 'dotnetcore-$(BuildConfiguration)'

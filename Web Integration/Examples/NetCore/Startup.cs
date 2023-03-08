@@ -34,7 +34,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace AspNetCore3_1_Example
+namespace AspNetCore_Example
 {
     public class Startup
     {

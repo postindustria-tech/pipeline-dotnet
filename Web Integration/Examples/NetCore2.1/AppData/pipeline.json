@@ -1,9 +1,0 @@
-﻿{
-  "PipelineOptions": {
-    "Elements": [
-      {
-        "BuilderName": "math"
-      }
-    ]
-  }
-}
