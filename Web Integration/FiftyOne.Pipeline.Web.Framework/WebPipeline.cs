@@ -111,13 +111,13 @@ namespace FiftyOne.Pipeline.Web.Framework
                 .AddPipelineConfig()
                 .Build();
             _options = new PipelineWebIntegrationOptions();
-            config.Bind("PipelineOptions", _options);
-            
+            var section = config.GetRequiredSection("PipelineOptions");
+            section.Bind(_options, (o) => { o.ErrorOnUnknownConfiguration = true; });
+
             if (_options == null ||
                 _options.Elements == null)
             {
-                throw new PipelineConfigurationException(
-                   Messages.ExceptionNoConfiguration);
+                throw new PipelineConfigurationException(Messages.ExceptionNoConfiguration);
             }
 
             // Add the sequence element.
