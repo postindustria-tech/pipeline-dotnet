@@ -36,9 +36,9 @@
     <!-- If these package references are updated or modified then don't forget to also 
 	     update the dependencies in the nuspec file in the parent directory. -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="6.0.14" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="6.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation">
-      <Version>6.0.14</Version>
+      <Version>6.0.15</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
