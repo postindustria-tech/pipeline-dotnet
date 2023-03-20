@@ -46,7 +46,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Configuration
             SetDataUpdateUrlFormatter(new FiftyOneUrlFormatter());
             // Set the flag to let the update service know that a license key is required 
             // when requesting data updates.
-            SetConfigureAction(f => f.LicenseKeyRequiredForUpdates = true);
+            SetLicenseKeyRequired(true);
         }
 
     }

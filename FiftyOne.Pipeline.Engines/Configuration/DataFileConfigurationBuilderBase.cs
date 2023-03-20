@@ -52,7 +52,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         private bool? _dataUpdateDecompress = Constants.DATA_FILE_DEFAULT_DECOMPRESS;
         private bool? _dataUpdateVerifyModifiedSince = Constants.DATA_FILE_DEFAULT_VERIFY_MODIFIED_SINCE;
         private bool? _updateOnStartup = Constants.DATA_FILE_DEFAULT_UPDATE_ON_STARTUP;
-        private Action<TConfig> _configureAction = null;
+        private bool _licenseKeyRequired = Constants.DATA_FILE_DEFAULT_LICENSE_KEY_REQUIRED;
 
         /// <summary>
         /// License keys to use when updating the Engine's data file.
@@ -64,6 +64,19 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// </summary>
         public DataFileConfigurationBuilderBase()
         {
+        }
+
+        /// <summary>
+        /// Set a flag that the data update service can use to determine if this data file 
+        /// requires license key to be set in order to request data updates.
+        /// </summary>
+        /// <param name="licenseKeyRequired"></param>
+        /// <returns>This builder</returns>
+        [CodeConfigOnly]
+        protected TBuilder SetLicenseKeyRequired(bool licenseKeyRequired)
+        {
+            _licenseKeyRequired = licenseKeyRequired;
+            return this as TBuilder;
         }
 
         /// <summary>
@@ -457,21 +470,6 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         }
 
         /// <summary>
-        /// Supply an action that can be used to configure any properties on the 
-        /// configuration instance when it is built.
-        /// </summary>
-        /// <param name="configureAction">
-        /// The action to execute on the 'TConfig' instance.
-        /// </param>
-        /// <returns>This builder</returns>
-        [CodeConfigOnly]
-        public TBuilder SetConfigureAction(Action<TConfig> configureAction)
-        {
-            _configureAction = configureAction;
-            return this as TBuilder;
-        }
-
-        /// <summary>
         /// Called to indicate that configuration of this file is complete
         /// and the user can continue to configure the engine that the
         /// data file will be used by.
@@ -506,7 +504,6 @@ namespace FiftyOne.Pipeline.Engines.Configuration
             }
 
             ConfigureCommonOptions(config);
-            _configureAction(config);
             config.DataFilePath = filename;
             config.CreateTempCopy = createTempCopy;
 
@@ -529,7 +526,6 @@ namespace FiftyOne.Pipeline.Engines.Configuration
             var config = new TConfig();
 
             ConfigureCommonOptions(config);
-            _configureAction(config);
             config.DataStream = data;
             config.MemoryOnly = true;
 
@@ -588,6 +584,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
             {
                 config.UpdateOnStartup = _updateOnStartup.Value;
             }
+            config.LicenseKeyRequiredForUpdates = _licenseKeyRequired;
         }
     }
 }
