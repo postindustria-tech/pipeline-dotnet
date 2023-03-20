@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -133,11 +134,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// If enabled, requests from a single user session will only be 
         /// shared once.
         /// </summary>
-        protected bool TrackSession { get; private set; }
+        protected bool TrackSession { get; private set; } = Constants.SHARE_USAGE_DEFAULT_TRACK_SESSION;
         /// <summary>
         /// If set to true then all evidence values will be shared.
         /// </summary>
-        protected bool ShareAllEvidence { get; private set; } = false;
+        protected bool ShareAllEvidence { get; private set; } = Constants.SHARE_USAGE_DEFAULT_SHARE_ALL_EVIDENCE;
 
         /// <summary>
         /// Constructor
@@ -178,6 +179,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <exception cref="ArgumentNullException">
         /// Thrown if the parameter is null
         /// </exception>
+        [DefaultValue("No sharing unless the query/form parameter starts with 51D_")]
+        [CodeConfigOnly]
         public ShareUsageBuilderBase<T> SetIncludedQueryStringParameters(List<string> queryStringParameterNames)
         {
             if (queryStringParameterNames == null)
@@ -205,6 +208,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <exception cref="ArgumentNullException">
         /// Thrown if the parameter is null
         /// </exception>
+        [DefaultValue("No sharing unless the query/form parameter starts with 51D_")]
         public ShareUsageBuilderBase<T> SetIncludedQueryStringParameters(string queryStringParameterNames)
         {
             if (queryStringParameterNames == null)
@@ -226,6 +230,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// The (case insensitive) name of the query string parameter to 
         /// include.
         /// </param>
+        [DefaultValue("No sharing unless the query/form parameter starts with 51D_")]
         public ShareUsageBuilderBase<T> SetIncludedQueryStringParameter(string queryStringParameterName)
         {
             IncludedQueryStringParameters.Add(queryStringParameterName);
@@ -242,6 +247,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <returns>
         /// This builder instance
         /// </returns>
+        [DefaultValue(false)]
         public ShareUsageBuilderBase<T> SetShareAllQueryStringParameters(bool shareAll)
         {
             if (shareAll)
@@ -265,6 +271,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <returns>
         /// This builder instance
         /// </returns>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_SHARE_ALL_EVIDENCE)]
         public ShareUsageBuilderBase<T> SetShareAllEvidence(bool shareAll)
         {
             ShareAllEvidence = shareAll;
@@ -279,6 +286,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="blockedHeaders">
         /// The (case insensitive) names of the headers to block.
         /// </param>
+        [DefaultValue("All HTTP Headers are shared except cookies that do not start with 51D_")]
         public ShareUsageBuilderBase<T> SetBlockedHttpHeaders(List<string> blockedHeaders)
         {
             BlockedHttpHeaders = blockedHeaders;
@@ -293,6 +301,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="blockedHeader">
         /// The (case insensitive) name of the header to block.
         /// </param>
+        [DefaultValue("All HTTP Headers are shared except cookies that do not start with 51D_")]
         public ShareUsageBuilderBase<T> SetBlockedHttpHeader(string blockedHeader)
         {
             BlockedHttpHeaders.Add(blockedHeader);
@@ -313,6 +322,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// not be shared.
         /// </param>
         /// <returns></returns>
+        [DefaultValue("All values are shared")]
         public ShareUsageBuilderBase<T> SetIgnoreFlowDataEvidenceFilter(string evidenceFilter)
         {
             if (string.IsNullOrWhiteSpace(evidenceFilter) == false)
@@ -354,6 +364,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// shared to 51Degrees.
         /// 1 = 100%, 0.5 = 50%, etc.
         /// </param>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_SHARE_PERCENTAGE)]
         public ShareUsageBuilderBase<T> SetSharePercentage(double sharePercentage)
         {
             SharePercentage = sharePercentage;
@@ -377,6 +388,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <see cref="ShareUsageElement"/> before they are sent to the
         /// remote service.
         /// </param>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_MIN_ENTRIES_PER_MESSAGE)]
         public ShareUsageBuilderBase<T> SetMinimumEntriesPerMessage(int minimumEntriesPerMessage)
         {
             MinimumEntriesPerMessage = minimumEntriesPerMessage;
@@ -390,6 +402,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// MinimumEntriesPerMessage setting.
         /// </summary>
         /// <param name="size">Size to set</param>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_MAX_QUEUE_SIZE)]
         public ShareUsageBuilderBase<T> SetMaximumQueueSize(int size)
         {
             MaximumQueueSize = size;
@@ -402,6 +415,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// will be disabled.
         /// </summary>
         /// <param name="milliseconds">Timeout to set</param>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_ADD_TIMEOUT)]
         public ShareUsageBuilderBase<T> SetAddTimeout(int milliseconds)
         {
             AddTimeout = milliseconds;
@@ -413,6 +427,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// item from the queue in order to send to the remote service.
         /// </summary>
         /// <param name="milliseconds">Timeout to set</param>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_TAKE_TIMEOUT)]
         public ShareUsageBuilderBase<T> SetTakeTimeout(int milliseconds)
         {
             TakeTimeout = milliseconds;
@@ -425,6 +440,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="shareUsageUrl">
         /// The URL to use when sharing usage data.
         /// </param>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_URL)]
         public ShareUsageBuilderBase<T> SetShareUsageUrl(string shareUsageUrl)
         {
             ShareUsageUri = new Uri(shareUsageUrl);
@@ -437,6 +453,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="shareUsageUrl">
         /// The URL to use when sharing usage data.
         /// </param>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_URL)]
+        [CodeConfigOnly]
         public ShareUsageBuilderBase<T> SetShareUsageUrl(Uri shareUsageUrl)
         {
             ShareUsageUri = shareUsageUrl;
@@ -451,6 +469,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="cookieName">
         /// The name of the cookie that contains the asp.net session id.
         /// </param>
+        [DefaultValue(Engines.Constants.DEFAULT_ASP_COOKIE_NAME)]
         public ShareUsageBuilderBase<T> SetAspSessionCookieName(string cookieName)
         {
             AspSessionCookieName = cookieName;
@@ -464,6 +483,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <param name="interval">
         /// The interval in minutes.
         /// </param>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_REPEAT_EVIDENCE_INTERVAL)]
         public ShareUsageBuilderBase<T> SetRepeatEvidenceIntervalMinutes(int interval)
         {
             RepeatEvidenceInterval = interval;
@@ -482,6 +502,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// track sessions.
         /// </param>
         /// <returns></returns>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_TRACK_SESSION)]
         public ShareUsageBuilderBase<T> SetTrackSession(bool track)
         {
             TrackSession = track;

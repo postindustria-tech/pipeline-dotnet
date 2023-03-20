@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Engines.Caching;
 using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.Data;
@@ -55,7 +56,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         protected List<string> Properties { get; } = new List<string>();
         private CacheConfiguration _cacheConfig;
         private LazyLoadingConfiguration _lazyLoadingConfig;
-        private bool _cacheHitOrMiss;
+        private bool _cacheHitOrMiss = Constants.CACHE_DEFAULT_HIT_OR_MISS_ENABLED;
 
         /// <summary>
         /// Configure lazy loading of results.
@@ -66,6 +67,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
+        [CodeConfigOnly]
         public TBuilder SetLazyLoading(LazyLoadingConfiguration lazyLoadingConfig)
         {
             _lazyLoadingConfig = lazyLoadingConfig;
@@ -81,6 +83,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
+        [DefaultValue(Constants.LAZY_LOADING_DEFAULT_TIMEOUT_MS)]
         public TBuilder SetLazyLoadingTimeout(int timeoutMs)
         {
             if (_lazyLoadingConfig == null) _lazyLoadingConfig = new LazyLoadingConfiguration();
@@ -98,6 +101,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
+        [CodeConfigOnly]
         public virtual TBuilder SetCache(CacheConfiguration cacheConfig)
         {
             _cacheConfig = cacheConfig;
@@ -114,6 +118,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
+        [DefaultValue(Constants.CACHE_DEFAULT_SIZE)]
         public virtual TBuilder SetCacheSize(int cacheSize)
         {
             if (_cacheConfig == null) _cacheConfig = new CacheConfiguration();
@@ -131,6 +136,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
+        [DefaultValue(Constants.CACHE_DEFAULT_HIT_OR_MISS_ENABLED)]
         public virtual TBuilder SetCacheHitOrMiss(bool cacheHitOrMiss)
         {
             _cacheHitOrMiss = cacheHitOrMiss;
@@ -148,6 +154,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
+        [DefaultValue("All properties")]
         public TBuilder SetProperties(List<string> properties)
         {
             Properties.AddRange(properties);
@@ -165,6 +172,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
+        [DefaultValue("All properties")]
         public TBuilder SetProperty(string property)
         {
             Properties.Add(property);

@@ -81,6 +81,26 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne
         internal const int SHARE_USAGE_DEFAULT_MIN_ENTRIES_PER_MESSAGE = 50;
 
         /// <summary>
+        /// Share ALL evidence values by default or not?
+        /// </summary>
+        internal const bool SHARE_USAGE_DEFAULT_SHARE_ALL_EVIDENCE = false;
+
+        /// <summary>
+        /// Share just one set of evidence from each user session or not?
+        /// This defaults to false because there may be useful data in subsequent requests 
+        /// (e.g. client-side properties or high entropy UACH values).
+        /// Regardless of this setting, usage data will not be shared if identical evidence 
+        /// values have already been shared recently.
+        /// </summary>
+        internal const bool SHARE_USAGE_DEFAULT_TRACK_SESSION = false;
+
+        /// <summary>
+        /// The default value for the flag on FiftyOnePipelineBuilder that controls whether 
+        /// usage sharing is enabled or disabled.
+        /// </summary>
+        internal const bool SHARE_USAGE_DEFAULT_ENABLED = true;
+
+        /// <summary>
         /// The default URL to send usage data to
         /// </summary>
         internal const string SHARE_USAGE_DEFAULT_URL = "https://devices-v4.51degrees.com/new.ashx";

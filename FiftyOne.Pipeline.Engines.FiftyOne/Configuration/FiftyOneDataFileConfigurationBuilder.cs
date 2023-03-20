@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Engines.Configuration;
+using FiftyOne.Pipeline.Engines.FiftyOne.Data;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -35,5 +36,18 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Configuration
         DataFileConfigurationBuilderBase<FiftyOneDataFileConfigurationBuilder,
             FiftyOneDataFileConfiguration>
     {
+        /// <summary>
+        /// Constructor
+        /// Specify configuration options for 51Degrees data files.
+        /// </summary>
+        public FiftyOneDataFileConfigurationBuilder()
+        {
+            // Default to using the 51Degrees URL formatter
+            SetDataUpdateUrlFormatter(new FiftyOneUrlFormatter());
+            // Set the flag to let the update service know that a license key is required 
+            // when requesting data updates.
+            SetConfigureAction(f => f.LicenseKeyRequiredForUpdates = true);
+        }
+
     }
 }

@@ -60,13 +60,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// If true then Pipeline will call Dispose on its child elements
         /// when it is disposed.
         /// </summary>
-        private bool _autoDisposeElements = true;
+        private bool _autoDisposeElements = Constants.PIPELINE_BUILDER_DEFAULT_AUTO_DISPOSE_ELEMENTS;
 
         /// <summary>
         /// If true then Pipeline will suppress exceptions added to
         /// <see cref="IFlowData.Errors"/>.
         /// </summary>
-        private bool _suppressProcessExceptions = false;
+        private bool _suppressProcessExceptions = Constants.PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTION;
 
         private ILogger<Evidence> _evidenceLogger;
         private ILogger<FlowData> _flowDataLogger;
@@ -186,6 +186,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.PIPELINE_BUILDER_DEFAULT_AUTO_DISPOSE_ELEMENTS)]
         public T SetAutoDisposeElements(bool autoDispose)
         {
             _autoDisposeElements = autoDispose;
@@ -204,6 +205,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTION)]
         public T SetSuppressProcessException(bool suppressExceptions)
         {
             _suppressProcessExceptions = suppressExceptions;

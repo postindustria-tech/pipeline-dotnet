@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.Data;
@@ -148,6 +149,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_UPDATE_OVERRIDE_URL)]
         public TBuilder SetDataUpdateUrl(string url)
         {
             _dataFileBuilder.SetDataUpdateUrl(new Uri(url));
@@ -164,6 +166,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [CodeConfigOnly]
         public TBuilder SetDataUpdateUrl(Uri url)
         {
             _dataFileBuilder.SetDataUpdateUrl(url);
@@ -181,7 +184,28 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [CodeConfigOnly]
         public TBuilder SetDataUpdateUrlFormatter(
+            IDataUpdateUrlFormatter formatter)
+        {
+            _dataFileBuilder.SetDataUpdateUrlFormatter(formatter);
+            return this as TBuilder;
+        }
+
+        /// <summary>
+        /// Enable/Disable the UrlFormatter to be used when this engine's
+        /// data file is updated.
+        /// Default is true.
+        /// If set to false, the UrlFormatter will be ignored.
+        /// </summary>
+        /// <param name="formatter">
+        /// The formatter to use.
+        /// </param>
+        /// <returns>
+        /// This builder instance.
+        /// </returns>
+        [CodeConfigOnly]
+        public TBuilder SetDataUpdateUseUrlFormatter(
             IDataUpdateUrlFormatter formatter)
         {
             _dataFileBuilder.SetDataUpdateUrlFormatter(formatter);
@@ -207,28 +231,10 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(true)]
         public TBuilder SetDataUpdateUseUrlFormatter(bool useFormatter)
         {
             _dataFileBuilder.SetDataUpdateUseUrlFormatter(useFormatter);
-            return this as TBuilder;
-        }
-
-        /// <summary>
-        /// Enable/Disable the UrlFormatter to be used when this engine's
-        /// data file is updated.
-        /// Default is true.
-        /// If set to false, the UrlFormatter will be ignored.
-        /// </summary>
-        /// <param name="formatter">
-        /// The formatter to use.
-        /// </param>
-        /// <returns>
-        /// This builder instance.
-        /// </returns>
-        public TBuilder SetDataUpdateUseUrlFormatter(
-            IDataUpdateUrlFormatter formatter)
-        {
-            _dataFileBuilder.SetDataUpdateUrlFormatter(formatter);
             return this as TBuilder;
         }
 
@@ -245,6 +251,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_VERIFY_MD5)]
         public TBuilder SetDataUpdateVerifyMd5(bool verify)
         {
             _dataFileBuilder.SetDataUpdateVerifyMd5(verify);
@@ -263,6 +270,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_DECOMPRESS)]
         public TBuilder SetDataUpdateDecompress(bool decompress)
         {
             _dataFileBuilder.SetDataUpdateDecompress(decompress);
@@ -282,6 +290,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_AUTO_UPDATES_ENABLED)]
         public TBuilder SetAutoUpdate(bool enabled)
         {
             _dataFileBuilder.SetAutoUpdate(enabled);
@@ -305,6 +314,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_FILESYSTEMWATCHER_ENABLED)]
         public TBuilder SetDataFileSystemWatcher(bool enabled)
         {
             _dataFileBuilder.SetDataFileSystemWatcher(enabled);
@@ -330,6 +340,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS)]
         public TBuilder SetUpdatePollingInterval(int pollingIntervalSeconds)
         {
             _dataFileBuilder.SetUpdatePollingInterval(pollingIntervalSeconds);
@@ -355,6 +366,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [CodeConfigOnly]
         public TBuilder SetUpdatePollingInterval(TimeSpan pollingInterval)
         {
             _dataFileBuilder.SetUpdatePollingInterval(pollingInterval);
@@ -373,6 +385,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_RANDOMISATION_SECONDS)]
         public TBuilder SetUpdateRandomisationMax(int maximumDeviationSeconds)
         {
             _dataFileBuilder.SetUpdateRandomisationMax(maximumDeviationSeconds);
@@ -391,6 +404,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [CodeConfigOnly]
         public TBuilder SetUpdateRandomisationMax(TimeSpan maximumDeviation)
         {
             _dataFileBuilder.SetUpdateRandomisationMax(maximumDeviation);
@@ -408,6 +422,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_VERIFY_MODIFIED_SINCE)]
         public TBuilder SetVerifyIfModifiedSince(bool enabled)
         {
             _dataFileBuilder.SetVerifyIfModifiedSince(enabled);
@@ -423,6 +438,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// automatic updates for this file.
         /// </param>
         /// <returns>This builder</returns>
+        [DefaultValue("")]
         public TBuilder SetDataUpdateLicenseKey(
             string key)
         {
@@ -435,6 +451,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// </summary>
         /// <param name="keys">51Degrees license keys</param>
         /// <returns>This builder</returns>
+        [DefaultValue("No keys")]
         public TBuilder SetDataUpdateLicenseKeys(
             string[] keys)
         {
@@ -453,6 +470,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// and the engine has loaded the new file.
         /// </param>
         /// <returns>This builder</returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_UPDATE_ON_STARTUP)]
         public TBuilder SetDataUpdateOnStartup(
             bool enabled)
         {

@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
@@ -40,22 +41,23 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         where TBuilder : DataFileConfigurationBuilderBase<TBuilder, TConfig>
         where TConfig : DataFileConfiguration, new()
     {
-        private string _identifier = "Default";
-        private string _dataUpdateUrlOverride = null;
-        private bool? _autoUpdateEnabled = null;
-        private bool? _dataFileSystemWatcherEnabled = null;
-        private int? _updatePollingIntervalSeconds = null;
-        private int? _updateMaxRandomisationSeconds = null;
+        private string _identifier = Constants.DATA_FILE_DEFAULT_IDENTIFIER;
+        private string _dataUpdateUrlOverride = Constants.DATA_FILE_DEFAULT_UPDATE_OVERRIDE_URL;
+        private bool? _autoUpdateEnabled = Constants.DATA_FILE_DEFAULT_AUTO_UPDATES_ENABLED;
+        private bool? _dataFileSystemWatcherEnabled = Constants.DATA_FILE_DEFAULT_FILESYSTEMWATCHER_ENABLED;
+        private int? _updatePollingIntervalSeconds = Constants.DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS;
+        private int? _updateMaxRandomisationSeconds = Constants.DATA_FILE_DEFAULT_RANDOMISATION_SECONDS;
         private IDataUpdateUrlFormatter _dataUpdateUrlFormatter = null;
-        private bool? _dataUpdateVerifyMd5 = null;
-        private bool? _dataUpdateDecompress = null;
-        private bool? _dataUpdateVerifyModifiedSince = null;
-        private bool? _updateOnStartup = null;
+        private bool? _dataUpdateVerifyMd5 = Constants.DATA_FILE_DEFAULT_VERIFY_MD5;
+        private bool? _dataUpdateDecompress = Constants.DATA_FILE_DEFAULT_DECOMPRESS;
+        private bool? _dataUpdateVerifyModifiedSince = Constants.DATA_FILE_DEFAULT_VERIFY_MODIFIED_SINCE;
+        private bool? _updateOnStartup = Constants.DATA_FILE_DEFAULT_UPDATE_ON_STARTUP;
+        private Action<TConfig> _configureAction = null;
 
         /// <summary>
         /// License keys to use when updating the Engine's data file.
         /// </summary>
-        protected List<string> DataUpdateLicenseKeys { get; private set; } = new List<string>();
+        protected List<string> DataUpdateLicenseKeys { get; private set; } = Constants.DATA_FILE_DEFAULT_LICENSE_KEYS;
 
         /// <summary>
         /// Constructor
@@ -76,6 +78,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_IDENTIFIER)]
         public TBuilder SetDataFileIdentifier(string identifier)
         {
             _identifier = identifier;
@@ -95,6 +98,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <exception cref="ArgumentNullException">
         /// Thrown if url parameter is null or and empty string
         /// </exception>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_UPDATE_OVERRIDE_URL)]
         public TBuilder SetDataUpdateUrl(string url)
         {
             if(string.IsNullOrEmpty(url)) throw new ArgumentNullException(nameof(url));
@@ -115,6 +119,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <exception cref="ArgumentNullException">
         /// Thrown if url parameter is null
         /// </exception>
+        [CodeConfigOnly]
         public TBuilder SetDataUpdateUrl(Uri url)
         {
             if (url == null) throw new ArgumentNullException(nameof(url));
@@ -133,6 +138,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [CodeConfigOnly]
         public TBuilder SetDataUpdateUrlFormatter(
             IDataUpdateUrlFormatter formatter)
         {
@@ -159,6 +165,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(true)]
         public TBuilder SetDataUpdateUseUrlFormatter(bool useFormatter)
         {
             if (useFormatter == false)
@@ -181,6 +188,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_VERIFY_MD5)]
         public TBuilder SetDataUpdateVerifyMd5(bool verify)
         {
             _dataUpdateVerifyMd5 = verify;
@@ -199,6 +207,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_DECOMPRESS)]
         public TBuilder SetDataUpdateDecompress(bool decompress)
         {
             _dataUpdateDecompress = decompress;
@@ -218,6 +227,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_AUTO_UPDATES_ENABLED)]
         public TBuilder SetAutoUpdate(bool enabled)
         {
             _autoUpdateEnabled = enabled;
@@ -241,6 +251,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_FILESYSTEMWATCHER_ENABLED)]
         public TBuilder SetDataFileSystemWatcher(bool enabled)
         {
             _dataFileSystemWatcherEnabled = enabled;
@@ -266,6 +277,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS)]
         public TBuilder SetUpdatePollingInterval(int pollingIntervalSeconds)
         {
             _updatePollingIntervalSeconds = pollingIntervalSeconds;
@@ -291,6 +303,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [CodeConfigOnly]
         public TBuilder SetUpdatePollingInterval(TimeSpan pollingInterval)
         {
             var seconds = pollingInterval.TotalSeconds;
@@ -319,6 +332,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_RANDOMISATION_SECONDS)]
         public TBuilder SetUpdateRandomisationMax(int maximumDeviationSeconds)
         {
             _updateMaxRandomisationSeconds = maximumDeviationSeconds;
@@ -340,6 +354,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <exception cref="ArgumentException">
         /// Thrown if the supplied deviation is too large.
         /// </exception>
+        [CodeConfigOnly]
         public TBuilder SetUpdateRandomisationMax(TimeSpan maximumDeviation)
         {
             var seconds = maximumDeviation.TotalSeconds;
@@ -366,6 +381,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_VERIFY_MODIFIED_SINCE)]
         public TBuilder SetVerifyIfModifiedSince(bool enabled)
         {
             _dataUpdateVerifyModifiedSince = enabled;
@@ -381,6 +397,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// automatic updates for this file.
         /// </param>
         /// <returns>This builder</returns>
+        [DefaultValue("")]
         public TBuilder SetDataUpdateLicenseKey(
             string key)
         {
@@ -407,6 +424,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <exception cref="ArgumentNullException">
         /// Thrown if the supplied array is null
         /// </exception>
+        [DefaultValue("No license keys")]
         public TBuilder SetDataUpdateLicenseKeys(
             string[] keys)
         {
@@ -431,9 +449,25 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// This action will block execution until the download is complete 
         /// and the engine has loaded the new file.
         /// </param>
+        [DefaultValue(Constants.DATA_FILE_DEFAULT_UPDATE_ON_STARTUP)]
         public TBuilder SetUpdateOnStartup (bool enabled)
         {
             _updateOnStartup = enabled;
+            return this as TBuilder;
+        }
+
+        /// <summary>
+        /// Supply an action that can be used to configure any properties on the 
+        /// configuration instance when it is built.
+        /// </summary>
+        /// <param name="configureAction">
+        /// The action to execute on the 'TConfig' instance.
+        /// </param>
+        /// <returns>This builder</returns>
+        [CodeConfigOnly]
+        public TBuilder SetConfigureAction(Action<TConfig> configureAction)
+        {
+            _configureAction = configureAction;
             return this as TBuilder;
         }
 
@@ -472,6 +506,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
             }
 
             ConfigureCommonOptions(config);
+            _configureAction(config);
             config.DataFilePath = filename;
             config.CreateTempCopy = createTempCopy;
 
@@ -494,6 +529,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
             var config = new TConfig();
 
             ConfigureCommonOptions(config);
+            _configureAction(config);
             config.DataStream = data;
             config.MemoryOnly = true;
 

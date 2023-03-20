@@ -29,6 +29,7 @@ using System.Text;
 using FiftyOne.Pipeline.Core.Data;
 using Newtonsoft.Json;
 using System.Linq;
+using FiftyOne.Pipeline.Core.Attributes;
 
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
@@ -87,6 +88,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// the JSON output.
         /// </param>
         /// <returns>This builder.</returns>
+        [CodeConfigOnly]
         public JsonBuilderElementBuilder SetJsonConverters(IEnumerable<JsonConverter> jsonConverters)
         {
             _jsonConverters = jsonConverters;
