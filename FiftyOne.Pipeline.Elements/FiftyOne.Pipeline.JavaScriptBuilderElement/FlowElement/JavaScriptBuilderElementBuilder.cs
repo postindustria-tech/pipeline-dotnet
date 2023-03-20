@@ -54,7 +54,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// The end point (i.e. the relative URL) to use when creating 
         /// a callback URL.
         /// </summary>
-        protected string Endpoint { get; private set; } = string.Empty;
+        protected string Endpoint { get; private set; } = Constants.BUILDER_DEFAULT_ENDPOINT;
         /// <summary>
         /// The protocol to use when creating a callback URL.
         /// </summary>

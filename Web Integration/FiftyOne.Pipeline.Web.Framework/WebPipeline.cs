@@ -173,21 +173,8 @@ namespace FiftyOne.Pipeline.Web.Framework
                     // The javascript builder is not included so add it.
                     _options.Elements.Add(new ElementOptions()
                     {
-                        BuilderName = nameof(JavaScriptBuilderElement),
-                        BuildParameters = new Dictionary<string, object>()
-                        {
-                            { "EndPoint", Engines.Constants.DEFAULT_JSON_ENDPOINT }
-                        }
+                        BuilderName = nameof(JavaScriptBuilderElement)
                     });
-                }
-                else
-                {
-                    // There is already a JavaScript builder config so check if 
-                    // the endpoint is specified. If not, add it.
-                    if (javascriptConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
-                    {
-                        javascriptConfig.Single().BuildParameters.Add("EndPoint", Engines.Constants.DEFAULT_JSON_ENDPOINT);
-                    }
                 }
             }
 

@@ -86,5 +86,11 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder
         /// a callback URL.
         /// </summary>
         public const string DEFAULT_PROTOCOL = "https";
+
+        /// <summary>
+        /// Default endpoint for the JavaScriptBuilderElementBuilder.
+        /// Note - this constant is redefinied here for consistency with other JS builder defaults.
+        /// </summary>
+        public const string BUILDER_DEFAULT_ENDPOINT = Engines.Constants.DEFAULT_JSON_ENDPOINT;
     }
 }
