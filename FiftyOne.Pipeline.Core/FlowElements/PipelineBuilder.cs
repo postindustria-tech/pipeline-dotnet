@@ -139,7 +139,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 // Process any additional parameters for the pipeline
                 // builder itself.
                 ProcessBuildParameters(
-                    options.PipelineBuilderParameters,
+                    options.BuildParameters,
                     GetType(),
                     this,
                     "pipeline");
