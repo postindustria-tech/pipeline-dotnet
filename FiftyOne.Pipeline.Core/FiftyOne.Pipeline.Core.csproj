@@ -59,4 +59,12 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Configuration\Validation\pipelineOptionsSchema.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <TargetPath>Schemas\pipelineOptionsSchema.json</TargetPath>
+    </Content>
+  </ItemGroup>
+
 </Project>
