@@ -130,7 +130,6 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// </summary>
         /// <param name="profile"></param>
         /// <returns></returns>
-        [DefaultValue("Depends on engine implementation")]
         public abstract TBuilder SetPerformanceProfile(PerformanceProfiles profile);
 
         /// <summary>

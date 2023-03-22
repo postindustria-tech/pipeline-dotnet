@@ -89,7 +89,9 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// An <see cref="IAspectEngine"/>
         /// </returns>
-        public virtual TEngine Build(string datafile, bool createTempDataCopy)
+        public virtual TEngine Build(
+            [DefaultValue("No default, value must be supplied")] string datafile, 
+            [DefaultValue("No default, value must be supplied")] bool createTempDataCopy)
         {
             var config = _dataFileBuilder.Build(datafile, createTempDataCopy);
             AddDataFile(config);
@@ -111,7 +113,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// An <see cref="IAspectEngine"/>.
         /// </returns>
-        public virtual TEngine Build(Stream data)
+        public virtual TEngine Build([CodeConfigOnly] Stream data)
         {
             var config = _dataFileBuilder.Build(data);
             AddDataFile(config);

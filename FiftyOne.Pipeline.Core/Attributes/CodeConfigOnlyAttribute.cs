@@ -8,7 +8,7 @@ namespace FiftyOne.Pipeline.Core.Attributes
     /// This attribute can be applied to methods to specify that they can only be used when
     /// configuring a fluent builder in code.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter)]
     public class CodeConfigOnlyAttribute : Attribute
     {
         /// <summary>
