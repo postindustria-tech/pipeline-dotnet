@@ -35,7 +35,8 @@ namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
     /// </summary>
     public class PropertyExceptionElementData : ElementDataBase
     {
-        private Dictionary<string, Exception> _propertiesToThrowExceptionFor;
+        private Dictionary<string, Exception> _propertiesToThrowExceptionFor = 
+            new Dictionary<string, Exception>();
 
         public PropertyExceptionElementData(ILogger<ElementDataBase> logger, IPipeline pipeline)
             : base(logger, pipeline)
