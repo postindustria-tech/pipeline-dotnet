@@ -29,6 +29,7 @@ using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net.Http;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
@@ -49,13 +50,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private ILogger<CloudRequestData> _dataLogger;
         private HttpClient _httpClient;
 
+        // Note - Defaults for these fields are set in the Build method.
         private string _dataEndpoint = "";
         private string _propertiesEndpoint = "";
         private string _evidenceKeysEndpoint = "";
-        private string _resourceKey = null;
-        private string _licenseKey = null;
-        private string _cloudRequestOrigin = null;
-        private int _timeout = 100;
+
+        private string _resourceKey = Constants.RESOURCE_KEY_DEFAULT;
+        private string _licenseKey = Constants.LICENSE_KEY_DEFAULT;
+        private string _cloudRequestOrigin = Constants.CLOUD_REQUEST_ORIGIN_DEFAULT;
+        private int _timeout = Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS;
 
         #endregion
 
@@ -90,6 +93,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
+        [DefaultValue(Constants.CLOUD_URI_DEFAULT)]
         public CloudRequestEngineBuilder SetEndPoint(string uri)
         {
             if (uri == null) throw new ArgumentNullException(nameof(uri));
@@ -109,6 +113,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         /// <param name="uri"></param>
         /// <returns></returns>
+        [DefaultValue(Constants.DATA_ENDPOINT_DEFAULT)]
         public CloudRequestEngineBuilder SetDataEndpoint(string uri)
         {
             _dataEndpoint = uri;
@@ -121,6 +126,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         /// <param name="uri"></param>
         /// <returns></returns>
+        [DefaultValue(Constants.PROPERTIES_ENDPOINT_DEFAULT)]
         public CloudRequestEngineBuilder SetPropertiesEndpoint(string uri)
         {
             _propertiesEndpoint = uri;
@@ -133,6 +139,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         /// <param name="uri"></param>
         /// <returns></returns>
+        [DefaultValue(Constants.EVIDENCE_KEYS_ENDPOINT_DEFAULT)]
         public CloudRequestEngineBuilder SetEvidenceKeysEndpoint(string uri)
         {
             _evidenceKeysEndpoint = uri;
@@ -148,6 +155,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <returns>
         /// This builder
         /// </returns>
+        [DefaultValue(Constants.DATA_ENDPOINT_DEFAULT)]
         public CloudRequestEngineBuilder SetResourceKey(string resourceKey)
         {
             _resourceKey = resourceKey;
@@ -214,6 +222,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
             // If any of the endpoints are not set, then check the environment 
             // variable for an endpoint.
+            // TODO - Split out to one for each Endpoint.
             if (string.IsNullOrWhiteSpace(_dataEndpoint) ||
                 string.IsNullOrWhiteSpace(_propertiesEndpoint) ||
                 string.IsNullOrWhiteSpace(_evidenceKeysEndpoint))

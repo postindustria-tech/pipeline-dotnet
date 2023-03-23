@@ -61,8 +61,7 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
                 {
                     if (File.Exists(Path.Combine(basePath, fileName + "." + extension)))
                     {
-                        // TODO - validate Xml in the same way as json
-                        // Note that this will require a different xsd to the one used for Java
+                        // Note - Schema validation not applied to XML.
                         return config.SetBasePath(basePath)
                             .AddXmlFile(fileName + "." + extension);
                     }
