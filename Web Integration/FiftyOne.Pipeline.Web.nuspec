@@ -18,6 +18,13 @@
 				<dependency id="FiftyOne.Pipeline.Engines.FiftyOne" version="$version$" />
 				<dependency id="FiftyOne.Pipeline.Web.Shared" version="$version$" />
 				<dependency id="FiftyOne.Pipeline.JavaScriptBuilder" version="$version$" />
+				<dependency id="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" version="6.0.15" />
+				<dependency id="Microsoft.Extensions.FileProviders.Embedded" version="6.0.15" />
+			</group>
+			<group targetFramework="netcoreapp3.1">
+				<dependency id="FiftyOne.Pipeline.Engines.FiftyOne" version="$version$" />
+				<dependency id="FiftyOne.Pipeline.Web.Shared" version="$version$" />
+				<dependency id="FiftyOne.Pipeline.JavaScriptBuilder" version="$version$" />
 				<dependency id="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" version="3.1.32" />
 				<dependency id="Microsoft.Extensions.FileProviders.Embedded" version="3.1.32" />
 			</group>
