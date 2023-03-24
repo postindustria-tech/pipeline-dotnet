@@ -223,24 +223,22 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     Messages.ExceptionResourceKeyNeeded);
             }
 
-            // If any of the endpoints are not set, then check the environment 
-            // variable for an endpoint.
-            // TODO - Split out to one for each Endpoint.
-            if (string.IsNullOrWhiteSpace(_dataEndpoint) ||
-                string.IsNullOrWhiteSpace(_propertiesEndpoint) ||
-                string.IsNullOrWhiteSpace(_evidenceKeysEndpoint))
+            // If any of the endpoints are not set, then use the environment variable if
+            // specified, or the default base url if not.
+            var endpoint = Environment.GetEnvironmentVariable(Constants.FOD_CLOUD_API_URL) ?? 
+                Constants.CLOUD_URI_DEFAULT;
+
+            if (string.IsNullOrWhiteSpace(_dataEndpoint))
             {
-                var endpoint = System.Environment.GetEnvironmentVariable(Constants.FOD_CLOUD_API_URL);
-                // If the environment variable is not set then set the default
-                // endpoints.
-                if (string.IsNullOrWhiteSpace(endpoint))
-                {
-                    SetEndPoint(Constants.CLOUD_URI_DEFAULT);
-                } 
-                else
-                {
-                    SetEndPoint(endpoint);
-                }
+                SetDataEndpoint(endpoint + Constants.DATA_FILENAME);
+            }
+            if (string.IsNullOrWhiteSpace(_propertiesEndpoint))
+            {
+                SetPropertiesEndpoint(endpoint + Constants.PROPERTIES_FILENAME);
+            }
+            if (string.IsNullOrWhiteSpace(_evidenceKeysEndpoint))
+            {
+                SetEvidenceKeysEndpoint(endpoint + Constants.EVIDENCE_KEYS_FILENAME);
             }
 
             return BuildEngine();
