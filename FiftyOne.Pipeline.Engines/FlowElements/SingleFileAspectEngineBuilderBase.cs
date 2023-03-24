@@ -151,7 +151,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
-        [DefaultValue(Constants.DATA_FILE_DEFAULT_UPDATE_OVERRIDE_URL)]
+        [DefaultValue("51Degrees default, set by subclass")]
         public TBuilder SetDataUpdateUrl(string url)
         {
             _dataFileBuilder.SetDataUpdateUrl(new Uri(url));

@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
+using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
@@ -29,7 +30,6 @@ using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Net.Http;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
@@ -155,7 +155,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <returns>
         /// This builder
         /// </returns>
-        [DefaultValue(Constants.DATA_ENDPOINT_DEFAULT)]
+        [DefaultValue("No default - a resource key must be supplied")]
         public CloudRequestEngineBuilder SetResourceKey(string resourceKey)
         {
             _resourceKey = resourceKey;
@@ -169,6 +169,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <returns></returns>
         [Obsolete("License key is no longer used directly. " +
             "Use a resource key instead.")]
+        [CodeConfigOnly]
         public CloudRequestEngineBuilder SetLicenseKey(string licenseKey)
         {
             _licenseKey = licenseKey;
@@ -180,6 +181,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         /// <param name="timeout"></param>
         /// <returns></returns>
+        [DefaultValue(Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS)]
         public CloudRequestEngineBuilder SetTimeOutSeconds(int timeout)
         {
             _timeout = timeout;
@@ -201,6 +203,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <returns>
         /// This builder
         /// </returns>
+        [DefaultValue(Constants.CLOUD_REQUEST_ORIGIN_DEFAULT)]
         public CloudRequestEngineBuilder SetCloudRequestOrigin(string cloudRequestOrigin)
         {
             _cloudRequestOrigin = cloudRequestOrigin;
