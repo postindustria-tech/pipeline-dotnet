@@ -266,12 +266,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         private IList<IElementPropertyMetaData> _properties;
 
         /// <summary>
-        /// Set to true if the evidence within a flow data contains invalid XML
-        /// characters such as control characters.
-        /// </summary>
-        private bool _flagBadSchema;
-
-        /// <summary>
         /// Get the IP address of the machine that this code is running on.
         /// </summary>
         protected string HostAddress
@@ -983,7 +977,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                 throw new ArgumentNullException(nameof(data));
             }
 
-            _flagBadSchema = false;
+            // Used to record whether the evidence within a flow data contains invalid XML
+            // characters such as control characters.
+            var flagBadSchema = false;
 
             // The SessionID used to track a series of requests
             writer.WriteElementString("SessionId", data.SessionId);
@@ -1017,18 +1013,19 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                     if (category.Key.Length > 0)
                     {
                         writer.WriteStartElement(category.Key);
-                        writer.WriteAttributeString("Name", EncodeInvalidXMLChars(entry.Key));
-                        writer.WriteCData(EncodeInvalidXMLChars(entry.Value));
+                        writer.WriteAttributeString("Name", EncodeInvalidXMLChars(entry.Key, ref flagBadSchema));
+                        writer.WriteCData(EncodeInvalidXMLChars(entry.Value, ref flagBadSchema));
                         writer.WriteEndElement();
                     }
                     else
                     {
-                        writer.WriteElementString(EncodeInvalidXMLChars(entry.Key),
-                            EncodeInvalidXMLChars(entry.Value));
+                        writer.WriteElementString(EncodeInvalidXMLChars(entry.Key, ref flagBadSchema),
+                            EncodeInvalidXMLChars(entry.Value, ref flagBadSchema));
                     }
                 }
             }
-            if (_flagBadSchema)
+            // If any written value contained invalid characters, add the 'BadSchema' element.
+            if (flagBadSchema)
             {
                 writer.WriteElementString("BadSchema", "true");
             }
@@ -1059,10 +1056,20 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <summary>
         /// encodes any unusual characters into their hex representation
         /// </summary>
+        /// <param name="text">
+        /// The text to encode
+        /// </param>
+        /// <param name="flagBadSchema">
+        /// A flag storing whether this usage message inculdes any invalid characters 
+        /// that we have had to encod.
+        /// </param>
+        /// <returns>
+        /// The encoded version of <paramref name="text"/>
+        /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown if the supplied text is null
         /// </exception>
-        public string EncodeInvalidXMLChars(string text)
+        public string EncodeInvalidXMLChars(string text, ref bool flagBadSchema)
         {
             if (text == null)
             {
@@ -1079,7 +1086,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             }
             catch (XmlException)
             {
-                _flagBadSchema = true;
+                flagBadSchema = true;
                 var tmp = new StringBuilder();
                 foreach (var c in text)
                 {
