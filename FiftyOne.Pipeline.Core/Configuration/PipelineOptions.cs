@@ -22,6 +22,7 @@
 
 using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -39,7 +40,7 @@ namespace FiftyOne.Pipeline.Core.Configuration
         public PipelineOptions()
         {
             Elements = new List<ElementOptions>();
-            PipelineBuilderParameters = new Dictionary<string, object>();
+            BuildParameters = new Dictionary<string, object>();
         }
 
         /// <summary>
@@ -60,6 +61,25 @@ namespace FiftyOne.Pipeline.Core.Configuration
         /// The method names can be exact matches, 'set' + name or match
         /// an AlternateNameAttribute.
         /// </summary>
-        public IDictionary<string, object> PipelineBuilderParameters { get; internal set; }
+        [Obsolete("Please use 'BuildParameters' instead.")]
+        public IDictionary<string, object> PipelineBuilderParameters
+        {
+            get
+            {
+                return BuildParameters;
+            }
+            internal set
+            {
+                BuildParameters = PipelineBuilderParameters;
+            }
+        }
+
+        /// <summary>
+        /// A dictionary where the keys are method names and the values
+        /// are parameter values.
+        /// The method names can be exact matches, 'set' + name or match
+        /// an AlternateNameAttribute.
+        /// </summary>
+        public IDictionary<string, object> BuildParameters { get; internal set; }
     }
 }

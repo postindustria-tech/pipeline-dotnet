@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
@@ -37,7 +38,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     /// </summary>
     public class FiftyOnePipelineBuilder : PipelineBuilder
     {
-        private bool _shareUsageEnabled = true;
+        private bool _shareUsageEnabled = Constants.SHARE_USAGE_DEFAULT_ENABLED;
 
         /// <summary>
         /// Default constructor
@@ -81,6 +82,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+        [DefaultValue(Constants.SHARE_USAGE_DEFAULT_ENABLED)]
         public FiftyOnePipelineBuilder SetShareUsage(bool enabled)
         {
             _shareUsageEnabled = enabled;

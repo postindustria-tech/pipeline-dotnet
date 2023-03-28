@@ -106,7 +106,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
             DataFileConfigs.Add(configuration);
             return this as TBuilder;
         }
-        
+
         /// <summary>
         /// Set the temporary path to use when the engine needs to create
         /// temporary files. (e.g. when downloading data updates)
@@ -118,6 +118,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// <returns>
         /// This engine builder instance.
         /// </returns>
+        [DefaultValue("The value returned by Path.GetTempPath()")]
         public TBuilder SetTempDirPath(string dirPath)
         {
             TempDir = dirPath;

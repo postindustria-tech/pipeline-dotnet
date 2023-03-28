@@ -66,7 +66,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// property will return immediately with a null value. 
         /// </param>
         public LazyLoadingConfiguration(
-            int propertyTimeoutMs = 1000,
+            int propertyTimeoutMs = Constants.LAZY_LOADING_DEFAULT_TIMEOUT_MS,
             CancellationToken? cancellationToken = null)
         {
             PropertyTimeoutMs = propertyTimeoutMs;

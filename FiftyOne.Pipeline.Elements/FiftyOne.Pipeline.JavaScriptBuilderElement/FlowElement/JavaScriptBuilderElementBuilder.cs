@@ -30,6 +30,7 @@ using System.Text.RegularExpressions;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.Data;
 using System.Globalization;
+using FiftyOne.Pipeline.Core.Attributes;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 {
@@ -49,30 +50,30 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <summary>
         /// The host name to use when creating a callback URL.
         /// </summary>
-        protected string Host { get; private set;} = string.Empty;
+        protected string Host { get; private set;} = Constants.BUILDER_DEFAULT_HOST;
         /// <summary>
         /// The end point (i.e. the relative URL) to use when creating 
         /// a callback URL.
         /// </summary>
-        protected string Endpoint { get; private set; } = string.Empty;
+        protected string Endpoint { get; private set; } = Constants.BUILDER_DEFAULT_ENDPOINT;
         /// <summary>
         /// The protocol to use when creating a callback URL.
         /// </summary>
-        protected string Protocol { get; private set; } = string.Empty;
+        protected string Protocol { get; private set; } = Constants.BUILDER_DEFAULT_PROTOCOL;
         /// <summary>
         /// The name of the JavaScript object that will be created.
         /// </summary>
-        protected string ObjName { get; private set; } = string.Empty;
+        protected string ObjName { get; private set; } = Constants.BUILDER_DEFAULT_OBJECT_NAME;
         /// <summary>
         /// If set to false, the JavaScript will automatically delete
         /// any cookies prefixed with 51D_
         /// </summary>
-        protected bool EnableCookies { get; private set; } = true;
+        protected bool EnableCookies { get; private set; } = Constants.BUILDER_DEFAULT_ENABLE_COOKIES;
 
         /// <summary>
         /// If set to true, the JavaScript output will be minified
         /// </summary>
-        protected bool Minify { get; private set; } = true;
+        protected bool Minify { get; private set; } = Constants.BUILDER_DEFAULT_MINIFY;
 
         /// <summary>
         /// Constructor.
@@ -93,6 +94,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </summary>
         /// <param name="enableCookies">Should enable cookies?</param>
         /// <returns></returns>
+        [DefaultValue(Constants.BUILDER_DEFAULT_ENABLE_COOKIES)]
         public JavaScriptBuilderElementBuilder SetEnableCookies(bool enableCookies)
         {
             EnableCookies = enableCookies;
@@ -105,6 +107,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </summary>
         /// <param name="host">The host name.</param>
         /// <returns></returns>
+        [DefaultValue(Constants.BUILDER_DEFAULT_HOST)]
         public JavaScriptBuilderElementBuilder SetHost(string host)
         {
             Host = host;
@@ -116,6 +119,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </summary>
         /// <param name="endpoint">The endpoint.</param>
         /// <returns></returns>
+        [DefaultValue(Constants.BUILDER_DEFAULT_ENDPOINT)]
         public JavaScriptBuilderElementBuilder SetEndpoint(string endpoint)
         {
             Endpoint = endpoint;
@@ -129,6 +133,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </summary>
         /// <param name="protocol">The protocol to use (http / https)</param>
         /// <returns></returns>
+        [DefaultValue(Constants.BUILDER_DEFAULT_PROTOCOL)]
         public JavaScriptBuilderElementBuilder SetProtocol(string protocol)
         {
             if (string.Equals(protocol, "http", StringComparison.OrdinalIgnoreCase) ||
@@ -151,6 +156,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </summary>
         /// <param name="objName"></param>
         /// <returns></returns>
+        [DefaultValue(Constants.BUILDER_DEFAULT_OBJECT_NAME)]
         public JavaScriptBuilderElementBuilder SetObjectName(string objName)
         {
             var match = Regex.Match(objName, @"[a-zA-Z_$][0-9a-zA-Z_$]*");
@@ -185,6 +191,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <returns>
         /// This builder.
         /// </returns>
+        [DefaultValue(Constants.BUILDER_DEFAULT_MINIFY)]
         public JavaScriptBuilderElementBuilder SetMinify(bool minify)
         {
             Minify = minify;

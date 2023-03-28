@@ -62,7 +62,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
         public void TestShareUsageOption_BuildFromConfig(bool shareUsageEnabled)
         {
             var options = new PipelineOptions();
-            options.PipelineBuilderParameters.Add("ShareUsage", shareUsageEnabled);
+            options.BuildParameters.Add("ShareUsage", shareUsageEnabled);
 
             var pipeline = new FiftyOnePipelineBuilder()
                 .BuildFromConfiguration(options);
@@ -82,7 +82,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
         public void TestShareUsageConfigOverridesOption(bool shareUsageEnabled)
         {
             var options = new PipelineOptions();
-            options.PipelineBuilderParameters.Add("ShareUsage", shareUsageEnabled);
+            options.BuildParameters.Add("ShareUsage", shareUsageEnabled);
             options.Elements.Add(new ElementOptions() { BuilderName = "ShareUsage" });
 
             using (var serviceProvider = new ServiceCollection()

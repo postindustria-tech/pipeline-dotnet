@@ -35,6 +35,13 @@ namespace FiftyOne.Pipeline.Engines.Configuration
     /// that can be supplied to an engine for a particular data file that 
     /// the engine uses.
     /// </summary>
+    /// <remarks>
+    /// Note that defaults should really only be set in the builder 
+    /// <see cref="DataFileConfigurationBuilderBase{TBuilder, TConfig}"/>.
+    /// However, if anyone externally is creating instances of this class for
+    /// any reason then they may be relying on the defaults, so they are 
+    /// maintained here as well.
+    /// </remarks>
     public class DataFileConfiguration : IDataFileConfiguration
     {
         /// <summary>
@@ -51,7 +58,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// If the engine only supports a single data file then this 
         /// value will be ignored.
         /// </summary>
-        public string Identifier { get; set; }
+        public string Identifier { get; set; } = Constants.DATA_FILE_DEFAULT_IDENTIFIER;
 
         /// <summary>
         /// The complete file path to the location of the data file.
@@ -92,7 +99,8 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// Flag that indicates if updates to the data file will be checked 
         /// for and applied to the engine automatically or not.
         /// </summary>
-        public bool AutomaticUpdatesEnabled { get; set; } = true;
+        public bool AutomaticUpdatesEnabled { get; set; } = 
+            Constants.DATA_FILE_DEFAULT_AUTO_UPDATES_ENABLED;
 
         /// <summary>
         /// A list of license keys to use when checking for updates
@@ -100,7 +108,8 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// Note that the exact formatting of the query string is 
         /// controlled by the configured <see cref="UrlFormatter"/>.
         /// </summary>
-        public IReadOnlyList<string> DataUpdateLicenseKeys { get; set; } = new List<string>();
+        public IReadOnlyList<string> DataUpdateLicenseKeys { get; set; } = 
+            Constants.DATA_FILE_DEFAULT_LICENSE_KEYS;
 
         /// <summary>
         /// If true, a <see cref="FileSystemWatcher"/> will be created
@@ -109,13 +118,15 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// be notified so that it can refresh it's internal data 
         /// structures.
         /// </summary>
-        public bool FileSystemWatcherEnabled { get; set; } = true;
+        public bool FileSystemWatcherEnabled { get; set; } = 
+            Constants.DATA_FILE_DEFAULT_FILESYSTEMWATCHER_ENABLED;
 
         /// <summary>
         /// The interval between checks for updates for this data file
         /// using the specified <see cref="DataUpdateUrl"/>.
         /// </summary>
-        public int PollingIntervalSeconds { get; set; } = Constants.DATA_UPDATE_POLLING_DEFAULT;
+        public int PollingIntervalSeconds { get; set; } = 
+            Constants.DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS;
 
         /// <summary>
         /// The maximum time in seconds that the polling interval may
@@ -128,7 +139,8 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// instances of a system stagger their update requests to
         /// reduce chance of conflict errors or slow update downloads.
         /// </remarks>
-        public int MaxRandomisationSeconds { get; set; } = Constants.DATA_UPDATE_RANDOMISATION_DEFAULT;
+        public int MaxRandomisationSeconds { get; set; } = 
+            Constants.DATA_FILE_DEFAULT_RANDOMISATION_SECONDS;
 
         /// <summary>
         /// The formatter to use when getting the data update URL with
@@ -140,7 +152,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// Must return true if the data downloaded from the DataUpdateUrl
         /// is compressed and false otherwise.
         /// </summary>
-        public bool DecompressContent { get; set; } = true;
+        public bool DecompressContent { get; set; } = Constants.DATA_FILE_DEFAULT_DECOMPRESS;
 
         /// <summary>
         /// Must return true if the response from the DataUpdateUrl
@@ -148,13 +160,14 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// contains an Md5 hash that can be used to check the 
         /// integrity of the downloaded content.
         /// </summary>
-        public bool VerifyMd5 { get; set; } = true;
+        public bool VerifyMd5 { get; set; } = Constants.DATA_FILE_DEFAULT_VERIFY_MD5;
 
         /// <summary>
         /// Must return true if the request to the DataUpdateUrl supports
         /// the 'If-Modified-Since' header and false if it does not.
         /// </summary>
-        public bool VerifyModifiedSince { get; set; } = true;
+        public bool VerifyModifiedSince { get; set; } = 
+            Constants.DATA_FILE_DEFAULT_VERIFY_MODIFIED_SINCE;
 
         /// <summary>
         /// If true then when this file is registered with the data 
@@ -163,7 +176,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// This action will block execution until the download is complete 
         /// and the engine has loaded the new file.
         /// </summary>
-        public bool UpdateOnStartup { get; set; } = false;
+        public bool UpdateOnStartup { get; set; } = Constants.DATA_FILE_DEFAULT_UPDATE_ON_STARTUP;
 
         /// <summary>
         /// If true then, if updates are enabled, the software will 
@@ -172,6 +185,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// If a license key has not been supplied, an exception will
         /// be thrown.
         /// </summary>
-        public bool LicenseKeyRequiredForUpdates { get; set; } = false;
+        public bool LicenseKeyRequiredForUpdates { get; set; } = 
+            Constants.DATA_FILE_DEFAULT_LICENSE_KEY_REQUIRED;
     }
 }

@@ -215,7 +215,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             Host = host;
             Endpoint = endpoint;
             Protocol = protocol;
-            ObjName = string.IsNullOrEmpty(objectName) ? Constants.DEFAULT_OBJECT_NAME : objectName;
+            ObjName = objectName;
             EnableCookies = enableCookies;
             _minify = minify;
 
@@ -273,7 +273,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             // Couldn't get protocol from anywhere 
             if (string.IsNullOrEmpty(protocol))
             {
-                protocol = Constants.DEFAULT_PROTOCOL;
+                protocol = Constants.FALLBACK_PROTOCOL;
             }
 
             // If device detection is in the Pipeline then we can check

@@ -37,7 +37,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         public CacheConfiguration()
         {
             Builder = new LruPutCacheBuilder();
-            Size = 1000;
+            Size = Constants.CACHE_DEFAULT_SIZE;
         }
 
         /// <summary>

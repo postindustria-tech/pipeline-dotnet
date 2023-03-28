@@ -76,5 +76,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// The name of the origin HTTP header
         /// </summary>
         public const string ORIGIN_HEADER_NAME = "Origin";
+
+        /// <summary>
+        /// Default value for license key when building CloudRequestEngine
+        /// </summary>
+        public const string LICENSE_KEY_DEFAULT = null;
+
+        /// <summary>
+        /// Default value for resource key when building CloudRequestEngine
+        /// </summary>
+        public const string RESOURCE_KEY_DEFAULT = null;
+
+        /// <summary>
+        /// Default value that the origin header will be set to when calling 
+        /// the cloud service with CloudRequestEngine
+        /// </summary>
+        public const string CLOUD_REQUEST_ORIGIN_DEFAULT = null;
+
+        /// <summary>
+        /// Default timeout when calling cloud service with CloudRequestEngine.
+        /// </summary>
+        public const int CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS = 100;
+
     }
 }
