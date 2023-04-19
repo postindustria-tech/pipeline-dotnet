@@ -43,3 +43,4 @@
   - [Device detection on premise](https://github.com/51Degrees/specifications/blob/main/device-detection-specification/pipeline-elements/device-detection-on-premise.md#element-data) - 
     mentions additional complexity in the match metric accessors in Java and .NET intended to cope with having separate 
     engines for each component. This is no longer needed and could be removed.
+  - DD on premise page mentions looking into the possibility of producing separate native language wrapper packages. (As has been discussed internally in the past)
