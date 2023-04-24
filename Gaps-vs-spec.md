@@ -1,5 +1,14 @@
 - Flow data changes
   - Cancellation token - This was added to the spec in the spring 2023 re-write.
+  - Stop mechanism - This is marked as obsolete and intended to be replaced by the cancellation token. However, it is 
+    currently the only way to allow customers to prevent default elements from running, and the cancellation token 
+    doesn't help with that. 
+    For example, a customer was using the server side Apple component and found the overhead from the json + javascript
+    elements was significant. These elements were automatically added by the web integration.
+    Since they didn't need that functionality, the workaround was to create a custom element that set the 'Stop' flag 
+    and configure it to be added at the end but before the json+javascript engines.
+    The spec requires that the elements added by the web integration are optional, which would solve this in a different
+    way and allow the removal of the stop mechanism.
   - Get property value directly from flow data by string name - This was removed from spec during the spring 2023 re-write.
   - .NET does not have 'GetDataTypeFromElement' - see pipeline-specification/features/access-to-results.md
   - Evidence is not immutable. (This was added in the spring 2023 re-write to prevent additional complexity that would be 
