@@ -13,12 +13,12 @@
   - .NET does not have 'GetDataTypeFromElement' - see pipeline-specification/features/access-to-results.md
   - Evidence is not immutable. (This was added in the spring 2023 re-write to prevent additional complexity that would be 
     required to handle mutable evidence in some scenarios)
-    - .NET has at least one element that writes to evidence (GetHighEntropyElement). This would need to change if immutable 
-      evidence was implemented.
+    - .NET has at least two elements that write to evidence (SequenceElement and GetHighEntropyElement). These would need to 
+      change if immutable evidence was implemented.
     - The suggestion [in the spec](https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/evidence.md#adding-evidence-values) 
       is to create some function that can return requested values from either element data or evidence. This would allow
       elements such as GetHighEntropyElement to instead output to element data just like everything else and let the 
-      consuming element (device detection engine in this case) access that data without significant changes.
+      consuming element access that data without significant changes.
 - Builders 
   - Side-by-side generic class hierarchies of elements and builders creates a very confusing picture.
   - Default values are not defined in a consistent location. Mostly, this is done in builders. In some cases, doing this 
