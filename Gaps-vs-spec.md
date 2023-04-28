@@ -30,6 +30,9 @@
     [reference implementation notes](https://github.com/51Degrees/specifications/blob/main/pipeline-specification/reference-implementation-notes.md#builders). 
     Suggest either marking it and related base classes obsolete or spending some effort to investigate how the downsides 
     could be mitigated. 
+  - Paths do not support tilde notation.
+    - Device detection engine supports relative paths to a limited extent. There is no support in the pipeline or builders 
+      for relative paths in general though.
 - Usage sharing - Java was updated with some changes in mid 2022. The spec includes these changes but they are not yet 
   implemented in .NET
   - CDATA wrapper should no longer be added to values
@@ -53,3 +56,6 @@
     mentions additional complexity in the match metric accessors in Java and .NET intended to cope with having separate 
     engines for each component. This is no longer needed and could be removed.
   - DD on premise page mentions looking into the possibility of producing separate native language wrapper packages. (As has been discussed internally in the past)
+- Other
+  - Example documentation is at the start of sources files. Not the end as suggested in [Required examples](https://github.com/51Degrees/specifications/blob/main/device-detection-specification/required-examples.md#code-comments)
+  - Comments in examples talk about the lite file having 'reduced accuracy' and/or 'smaller training data set' and the like. This isn't true, all v4 files use the same training data and detection graph.
