@@ -59,3 +59,4 @@
 - Other
   - Example documentation is at the start of sources files. Not the end as suggested in [Required examples](https://github.com/51Degrees/specifications/blob/main/device-detection-specification/required-examples.md#code-comments)
   - Comments in examples talk about the lite file having 'reduced accuracy' and/or 'smaller training data set' and the like. This isn't true, all v4 files use the same training data and detection graph.
+  - JsonBuilderElement does not implement the 'SetProperties' option to allow the user to configure which properties are included in the JSON.
