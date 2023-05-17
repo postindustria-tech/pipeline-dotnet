@@ -30,6 +30,7 @@ namespace FiftyOne.Pipeline.Core.Data
     /// <summary>
     /// This class contains the evidence that is passed in to a Pipeline
     /// as part of a <see cref="FlowData"/> object
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/evidence.md">Specification</see>
     /// </summary>
     public class Evidence : DataBase, IEvidence
     {

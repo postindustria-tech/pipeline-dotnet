@@ -28,6 +28,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
     /// <summary>
     /// Meta data relating to a specific value within a data set.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/data-model-specification/README.md#value">Specification</see>
     /// </summary>
     public interface IValueMetaData : IEquatable<IValueMetaData>, IComparable<IValueMetaData>, IDisposable
     {

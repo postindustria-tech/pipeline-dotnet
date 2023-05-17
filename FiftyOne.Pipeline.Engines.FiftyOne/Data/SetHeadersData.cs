@@ -32,6 +32,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
     /// <summary>
     /// Element data instance for <see cref="SetHeadersElement"/>
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/set-headers-element.md#element-data">Specification</see>
     /// </summary>
     public class SetHeadersData : ElementDataBase,  ISetHeadersData
     {

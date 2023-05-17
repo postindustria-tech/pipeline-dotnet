@@ -28,6 +28,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
 {
     /// <summary>
     /// Builder class for <see cref="DataFileConfiguration"/> instances.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/data-updates.md">Specification</see>
     /// </summary>
     public class DataFileConfigurationBuilder : 
         DataFileConfigurationBuilderBase<DataFileConfigurationBuilder, DataFileConfiguration>

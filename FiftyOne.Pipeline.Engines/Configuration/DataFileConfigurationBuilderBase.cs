@@ -36,6 +36,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
     /// <summary>
     /// Builder class that is used to create instances of
     /// <see cref="DataFileConfiguration"/> objects.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/data-updates.md">Specification</see>
     /// </summary>
     public abstract class DataFileConfigurationBuilderBase<TBuilder, TConfig>
         where TBuilder : DataFileConfigurationBuilderBase<TBuilder, TConfig>

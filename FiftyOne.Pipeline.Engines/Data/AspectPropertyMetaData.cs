@@ -32,6 +32,7 @@ namespace FiftyOne.Pipeline.Engines.Data
 {
     /// <summary>
     /// Meta-data relating to properties that are populated by Aspect Engines.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/properties.md#aspect-property-metadata">Specification</see>
     /// </summary>
     public class AspectPropertyMetaData : ElementPropertyMetaData, 
         IAspectPropertyMetaData

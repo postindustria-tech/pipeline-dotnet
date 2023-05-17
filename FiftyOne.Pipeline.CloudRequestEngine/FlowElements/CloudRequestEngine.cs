@@ -40,11 +40,8 @@ using System.Threading.Tasks;
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
     /// <summary>
-    /// Engine that makes requests to the 51Degrees cloud service based 
-    /// on the details passed at creation and the evidence in the
-    /// FlowData instance.
-    /// The unprocessed JSON response is stored in the FlowData
-    /// for other engines to make use of.
+    /// Engine that makes requests to the 51Degrees cloud service.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/cloud-request-engine.md">Specification</see> 
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming",
         "CA1724:Type names should not match namespaces",

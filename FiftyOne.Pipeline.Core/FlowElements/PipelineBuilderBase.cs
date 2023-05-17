@@ -36,6 +36,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 {
     /// <summary>
     /// Abstract pipeline builder base class
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#pipeline-builder">Specification</see>
     /// </summary>
     public abstract class PipelineBuilderBase<T>
         where T : PipelineBuilderBase<T>

@@ -29,6 +29,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
     /// <summary>
     /// 51Degrees specific meta data. This adds meta data properties which are
     /// available in 51Degrees Engines.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/data-model-specification/README.md#property">Specification</see>
     /// </summary>
     public interface IFiftyOneAspectPropertyMetaData : IAspectPropertyMetaData, 
         IEquatable<IFiftyOneAspectPropertyMetaData>, 

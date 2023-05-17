@@ -34,7 +34,8 @@ using System.Threading.Tasks;
 namespace FiftyOne.Pipeline.Engines.FlowElements
 {
     /// <summary>
-    /// Interface representing 51Degrees on-premise aspect engines. 
+    /// Interface representing 51Degrees on-premise aspect engines.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#aspect-engine">Specification</see> 
     /// </summary>
     public interface IAspectEngine : IFlowElement
     {

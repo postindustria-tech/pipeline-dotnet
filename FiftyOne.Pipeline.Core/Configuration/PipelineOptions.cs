@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.Core.Configuration
     /// <summary>
     /// Configuration object that describes how to build a 
     /// <see cref="Pipeline"/> using a <see cref="PipelineBuilder"/>
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/pipeline-configuration.md">Specification</see>
     /// </summary>
     public class PipelineOptions
     {

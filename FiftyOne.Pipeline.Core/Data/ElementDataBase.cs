@@ -28,8 +28,9 @@ using System.Collections.Generic;
 namespace FiftyOne.Pipeline.Core.Data
 {
     /// <summary>
-    /// This class stores property values that have be determined by a 
+    /// This class stores property values that have been determined by a 
     /// specific FlowElement based on the supplied evidence.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#element-data">Specification</see>
     /// </summary>
     public abstract class ElementDataBase : DataBase, IElementData
     {

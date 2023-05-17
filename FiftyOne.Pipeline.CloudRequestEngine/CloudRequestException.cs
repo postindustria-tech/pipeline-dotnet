@@ -30,6 +30,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
     /// <summary>
     /// Contains details about exceptions that occur when making 
     /// requests to the cloud service.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/exception-handling.md#cloud-request-exception">Specification</see> 
     /// </summary>
     public class CloudRequestException : PipelineException
     {

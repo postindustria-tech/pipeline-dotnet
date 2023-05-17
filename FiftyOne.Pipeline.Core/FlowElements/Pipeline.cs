@@ -36,6 +36,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
     /// A pipeline is used to create <see cref="IFlowData"/> instances
     /// which then automatically use the pipeline when their Process 
     /// method is called.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#pipeline">Specification</see>
     /// </summary>
 #pragma warning disable CA1724 // Class name 'Pipeline' conflicts with namespace
     // Pipeline is the correct name for both the Class and the namespace.

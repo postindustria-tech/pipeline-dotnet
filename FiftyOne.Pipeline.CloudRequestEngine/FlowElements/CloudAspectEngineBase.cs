@@ -39,7 +39,8 @@ using System.Text;
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
     /// <summary>
-    /// Base class for 51Degrees cloud aspect engines. 
+    /// Base class for 51Degrees cloud aspect engines.   
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/cloud-aspect-engine.md">Specification</see> 
     /// </summary>
     /// <typeparam name="T">
     /// The type of data that the engine will return. Must implement 

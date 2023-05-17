@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     /// An <see cref="IFlowElement"/> that collates responses from all
     /// engines that want to set headers in the HTTP response in order
     /// to gather additional data.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/set-headers-element.md">Specification</see>
     /// </summary>
     public interface ISetHeadersElement :
         IFlowElement<ISetHeadersData, IElementPropertyMetaData>

@@ -30,6 +30,7 @@ namespace FiftyOne.Pipeline.Core.Data.Types
     /// JavaScript type which can be returned as a value by an ElementData.
     /// A value being of type JavaScript indicates that it is intended to be
     /// run on a client browser.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/properties.md#the-javascript-type">Specification</see>
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", 
         "CA1036:Override methods on comparable types", 

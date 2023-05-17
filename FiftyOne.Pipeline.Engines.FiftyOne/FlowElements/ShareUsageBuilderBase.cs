@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
     /// Abstract base class for ShareUsageElement builders.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/usage-sharing-element.md">Specification</see>
     /// </summary>
     /// <typeparam name="T">Element type</typeparam>
     public abstract class ShareUsageBuilderBase<T>

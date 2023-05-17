@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
     /// <summary>
     /// ParallelElements executes it's child <see cref="IFlowElement"/> 
     /// objects in parallel.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/advanced-features/parallel-processing.md">Specification</see>
     /// </summary>
     internal class ParallelElements : FlowElementBase<IElementData, IElementPropertyMetaData>
     {

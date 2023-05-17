@@ -37,6 +37,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 {
     /// <summary>
     /// Default pipeline builder.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#pipeline-builder">Specification</see>
     /// </summary>
     public class PipelineBuilder : PipelineBuilderBase<PipelineBuilder>,
         IPipelineBuilderFromConfiguration

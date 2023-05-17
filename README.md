@@ -4,9 +4,14 @@
 
 [Developer Documentation](https://51degrees.com/pipeline-dotnet/index.html?utm_source=github&utm_medium=repository&utm_content=documentation&utm_campaign=dotnet-open-source "developer documentation")
 
-# Introduction
+## Introduction
+
 This repository contains all the projects required to build the .NET implementation of the Pipeline API.
 Individual engines (For example, device detection) are in separate repositories.
+
+The [specification](https://github.com/51Degrees/specifications/blob/main/pipeline-specification/README.md)
+is also available on GitHub and is recommended reading if you wish to understand
+the concepts and design of this API.
 
 ## Dependencies
 

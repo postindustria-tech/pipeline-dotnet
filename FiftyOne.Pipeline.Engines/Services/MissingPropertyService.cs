@@ -34,6 +34,7 @@ namespace FiftyOne.Pipeline.Engines.Services
     /// <summary>
     /// Service that determines the reason for a property not being populated 
     /// by an engine.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/properties.md#missing-properties">Specification</see>
     /// </summary>
     public class MissingPropertyService : IMissingPropertyService
     {

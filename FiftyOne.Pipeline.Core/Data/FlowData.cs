@@ -36,9 +36,7 @@ namespace FiftyOne.Pipeline.Core.Data
 {
     /// <summary>
     /// The FlowData class contains the data that is used within a pipeline.
-    /// The input data is referred to as 'evidence'.
-    /// The output data is split into groups of related properties called 
-    /// 'aspects'.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#flow-data">Specification</see>
     /// </summary>
     public class FlowData : IFlowData
     {

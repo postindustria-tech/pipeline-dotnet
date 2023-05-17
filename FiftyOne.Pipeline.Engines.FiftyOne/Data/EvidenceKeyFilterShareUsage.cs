@@ -30,13 +30,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
     /// <summary>
     /// This filter is used by the <see cref="ShareUsageElement"/>.
-    /// It will include anything that is:
-    /// 1) An HTTP header that is not blocked by the constructor parameter.
-    /// 2) A cookie that starts with <see cref="Engines.Constants.FIFTYONE_COOKIE_PREFIX"/>
-    ///     or is the asp session cookie (if configured in the constructor).
-    /// 3) An query string parameters that have been configured to be shared
-    ///     using the constructor parameter.
-    /// 4) Not a header, cookie or query string parameter.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/usage-sharing-element.md#accepted-evidence">Specification</see>
     /// </summary>
     /// <remarks>
     /// As this filter is generally inclusive, it will often cause far more

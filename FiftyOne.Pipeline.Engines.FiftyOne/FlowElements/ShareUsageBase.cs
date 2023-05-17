@@ -49,8 +49,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
     /// Abstract base class for ShareUsage elements. 
-    /// Contains common functionality such as filtering the evidence and
-    /// building the XML records.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/usage-sharing-element.md">Specification</see>
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", 
         "CA1054:Uri parameters should not be strings", 

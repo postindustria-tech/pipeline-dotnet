@@ -34,6 +34,7 @@ namespace FiftyOne.Pipeline.Engines.Data
     /// <see cref="IAspectEngine"/>.
     /// This data object will contain property values that relate to 
     /// a specific aspect.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#aspect-data">Specification</see>
     /// </summary>
     public interface IAspectData : IElementData
     {

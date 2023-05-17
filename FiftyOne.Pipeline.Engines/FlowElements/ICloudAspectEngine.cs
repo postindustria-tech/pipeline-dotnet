@@ -25,6 +25,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
     /// <summary>
     /// An interface for aspect engines that process responses from
     /// a cloud service.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#cloud-aspect-engine">Specification</see>
     /// </summary>
     public interface ICloudAspectEngine : IAspectEngine
     {
