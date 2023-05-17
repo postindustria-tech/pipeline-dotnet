@@ -29,6 +29,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
 {
     /// <summary>
     /// Used to store configuration values relating to lazy loading
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/advanced-features/lazy-loading.md">Specification</see>
     /// </summary>
     public class LazyLoadingConfiguration
     {

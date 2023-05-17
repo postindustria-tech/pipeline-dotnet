@@ -30,7 +30,7 @@ using FiftyOne.Pipeline.Engines.Services;
 namespace FiftyOne.Pipeline.Engines.Data
 {
     /// <summary>
-    /// Aspect 
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/properties.md#null-values">Specification</see>
     /// </summary>
     public interface IAspectPropertyValue
     {

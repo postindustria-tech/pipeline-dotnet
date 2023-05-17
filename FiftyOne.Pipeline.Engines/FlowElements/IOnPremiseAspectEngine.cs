@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
     /// <summary>
     /// Interface for an AspectEngine that processes evidence using one 
     /// or more local data files.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#on-premise-engines">Specification</see>
     /// </summary>
     public interface IOnPremiseAspectEngine : IAspectEngine
     {

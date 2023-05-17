@@ -28,8 +28,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
 
     /// <summary>
-    /// 51Degrees specific Engine interface. This adds the concept of license
-    /// keys to the standard Engine interface.
+    /// 51Degrees specific Engine interface.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/data-model-specification/README.md">Specification</see>
     /// </summary>
     public interface IFiftyOneAspectEngine : IOnPremiseAspectEngine
     {

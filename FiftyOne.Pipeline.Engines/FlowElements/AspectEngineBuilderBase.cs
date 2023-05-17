@@ -35,6 +35,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
     /// <summary>
     /// Abstract base class that exposes the common options that all
     /// 51Degrees engine builders should make use of.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#aspect-engine">Specification</see>
     /// </summary>
     /// <typeparam name="TBuilder">
     /// The specific builder type to use as the return type from the fluent 

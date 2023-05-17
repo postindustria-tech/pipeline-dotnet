@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.Engines
     /// <summary>
     /// Exception thrown when a user requests a property that is not present
     /// in the <see cref="IFlowData"/>.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/exception-handling.md#property-missing-exception">Specification</see>
     /// </summary>
     public class PropertyMissingException : Exception
     {

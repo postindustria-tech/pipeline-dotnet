@@ -29,9 +29,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 {
     /// <summary>
     /// The public interface for a Pipeline.
-    /// A pipeline is used to create <see cref="IFlowData"/> instances
-    /// which then automatically use the pipeline when their Process 
-    /// method is called.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#pipeline">Specification</see>
     /// </summary>
     public interface IPipeline : IDisposable
     {

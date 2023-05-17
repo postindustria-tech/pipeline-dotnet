@@ -32,6 +32,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
     /// Interface representing the configuration parameters 
     /// controlling the automatic update checks for a 
     /// specific data file.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/data-updates.md">Specification</see>
     /// </summary>
     public interface IDataFileConfiguration
     {

@@ -36,13 +36,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
     /// This element is used to determine the values for HTTP headers that other elements in the 
-    /// pipeline want to be sent to the client by making use of the 'SetHeader*' property name 
-    /// convention. 
-    /// Consequently, it must come after any elements that output 'SetHeader*' properties. 
-    /// In most cases, it will automatically be added to the Pipeline when needed. 
-    /// Note that this element does not actually set the HTTP response headers. That can be 
-    /// handled by the Web Integration (NuGet package FiftyOne.Pipeline.Web) or manually by 
-    /// the developer using the outputs from this element.
+    /// pipeline want to be sent to the client.    
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/set-headers-element.md">Specification</see>
     /// </summary>
     public class SetHeadersElement :
         FlowElementBase<ISetHeadersData, IElementPropertyMetaData>,

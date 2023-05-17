@@ -49,6 +49,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
     /// <summary>
     /// JavaScript Builder Element generates a JavaScript include to be run on 
     /// the client device.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/javascript-builder.md">Specification</see>
     /// </summary>
 	public class JavaScriptBuilderElement : 
         FlowElementBase<IJavaScriptBuilderElementData, IElementPropertyMetaData>

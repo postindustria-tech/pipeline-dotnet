@@ -36,6 +36,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
     /// <summary>
     /// Fluent builder class for constructing <see cref="JsonBuilderElement"/>
     /// instances.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/json-builder.md">Specification</see>
     /// </summary>
     public class JsonBuilderElementBuilder
     {

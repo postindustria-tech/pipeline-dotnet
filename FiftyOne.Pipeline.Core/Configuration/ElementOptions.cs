@@ -30,6 +30,7 @@ namespace FiftyOne.Pipeline.Core.Configuration
     /// <summary>
     /// Configuration object that describes how to build an 
     /// <see cref="IFlowElement"/>.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/pipeline-configuration.md">Specification</see>
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", 
         "CA2227:Collection properties should be read only", 

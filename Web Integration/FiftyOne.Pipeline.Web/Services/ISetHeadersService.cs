@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.Web.Services
     /// This service handles setting HTTP headers in the response for
     /// properties in the results from the pipeline that start with
     /// 'SetHeader'
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/web-integration.md#setting-response-headers">Specification</see>
     /// </summary>
     public interface ISetHeadersService
     {

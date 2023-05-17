@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.Core.Data
 {
     /// <summary>
     /// Meta-data relating to properties that are populated by Flow Elements.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/properties.md#property-metadata">Specification</see>
     /// </summary>
     public class ElementPropertyMetaData : IElementPropertyMetaData
     {

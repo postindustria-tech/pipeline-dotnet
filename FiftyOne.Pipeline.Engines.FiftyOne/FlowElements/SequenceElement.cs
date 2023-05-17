@@ -33,8 +33,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
     /// Sequence element establishes session and sequence evidence in the 
-    /// pipeline. If a session id is already in the evidence then the sequence 
-    /// is incremented.
+    /// pipeline.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/sequence-element.md">Specification</see>
     /// </summary>
     public class SequenceElement : FlowElementBase<IElementData, IElementPropertyMetaData>
     {

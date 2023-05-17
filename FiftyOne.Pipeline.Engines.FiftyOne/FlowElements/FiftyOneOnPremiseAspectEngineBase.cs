@@ -36,6 +36,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     /// <summary>
     /// 51Degrees specific Engine base class. This adds the concept of license
     /// keys to the standard Engine base class.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#on-premise-engines">Specification</see>
     /// </summary>
     /// <typeparam name="T">
     /// </typeparam>

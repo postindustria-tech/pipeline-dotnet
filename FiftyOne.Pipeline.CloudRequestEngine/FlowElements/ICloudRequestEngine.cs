@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
     /// <summary>
     /// The interface for <see cref="CloudRequestEngine"/>
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/cloud-request-engine.md">Specification</see> 
     /// </summary>
     public interface ICloudRequestEngine : IAspectEngine<CloudRequestData, IAspectPropertyMetaData>
     {

@@ -42,11 +42,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
     /// <summary>
     /// Class that provides functionality for the 'Client side Overrides'
     /// feature.
-    /// Client side overrides allow JavaScript running on the client device
-    /// to provide additional evidence in the form of cookies or query string 
-    /// parameters to the pipeline on subsequent requests.
-    /// This enables more detailed information to be supplied to the 
-    /// application. (e.g. iPhone model for device detection)
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/web-integration.md#client-side-features">Specification</see>
     /// </summary>
     public class ClientsidePropertyService : IClientsidePropertyService
     {

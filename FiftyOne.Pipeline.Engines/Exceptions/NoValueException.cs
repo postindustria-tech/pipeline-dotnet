@@ -30,6 +30,7 @@ namespace FiftyOne.Pipeline.Engines.Exceptions
     /// <summary>
     /// Exception that can be thrown when an <see cref="AspectPropertyValue{T}"/>
     /// does not have a value.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/properties.md#null-values">Specification</see>
     /// </summary>
     public class NoValueException : InvalidOperationException
     {

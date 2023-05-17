@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.Core.Data
     /// criteria.
     /// For example, a filter that only included evidence items relating to
     /// HTTP headers might use key.StartsWith("header.")
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/advertize-accepted-evidence.md">Specification</see>
     /// </summary>
     public interface IEvidenceKeyFilter
     {

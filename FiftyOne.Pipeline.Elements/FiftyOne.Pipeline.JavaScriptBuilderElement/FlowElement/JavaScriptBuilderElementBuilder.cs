@@ -36,6 +36,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 {
     /// <summary>
     /// Builder for the <see cref="JavaScriptBuilderElement"/>
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/javascript-builder.md">Specification</see>
     /// </summary>
     public class JavaScriptBuilderElementBuilder
     {

@@ -27,6 +27,7 @@ namespace FiftyOne.Pipeline.Web.Services
 {
     /// <summary>
     /// Interface for <see cref="WebRequestEvidenceService"/>
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/web-integration.md#populating-evidence">Specification</see>
     /// </summary>
     public interface IWebRequestEvidenceService
     {

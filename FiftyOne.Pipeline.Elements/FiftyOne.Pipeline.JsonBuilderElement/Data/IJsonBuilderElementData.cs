@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.Data
     /// <summary>
     /// The <see cref="IElementData"/> interface for 
     /// <see cref="JsonBuilderElement"/>.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/json-builder.md#element-data">Specification</see>
     /// </summary>
     public interface IJsonBuilderElementData : IElementData
     {

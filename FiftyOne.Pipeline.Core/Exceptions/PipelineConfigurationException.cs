@@ -28,6 +28,7 @@ namespace FiftyOne.Pipeline.Core.Exceptions
     /// <summary>
     /// Exception that is thrown when the configuration options provided 
     /// to <see cref="PipelineBuilder"/> are invalid
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/exception-handling.md#pipeline-configuration-exception">Specification</see>
     /// </summary>
     public class PipelineConfigurationException : PipelineException
     {

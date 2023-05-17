@@ -34,14 +34,8 @@ namespace FiftyOne.Pipeline.Engines.Configuration
     /// This class contains the automatic update configuration parameters 
     /// that can be supplied to an engine for a particular data file that 
     /// the engine uses.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/data-updates.md">Specification</see>
     /// </summary>
-    /// <remarks>
-    /// Note that defaults should really only be set in the builder 
-    /// <see cref="DataFileConfigurationBuilderBase{TBuilder, TConfig}"/>.
-    /// However, if anyone externally is creating instances of this class for
-    /// any reason then they may be relying on the defaults, so they are 
-    /// maintained here as well.
-    /// </remarks>
     public class DataFileConfiguration : IDataFileConfiguration
     {
         /// <summary>
