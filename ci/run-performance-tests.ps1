@@ -65,8 +65,10 @@ try {
         else{
             $scriptRoot = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
             $sr = "ApacheBench-prefix/src/ApacheBench-build/bin"
+            netstat -a
             Write-Host "starting process..."
             $serviceProcess = Start-Process powershell -argument "dotnet run --project $scriptRoot/.. *> out.log" –PassThru -NoNewWindow
+            netstat -a
             Write-Host "calling calibrate..."
             Invoke-WebRequest -Uri "http://127.0.0.1:5000/calibrate" -UseBasicParsing -DisableKeepAlive
             Write-Host "calling ab..."
