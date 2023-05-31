@@ -63,40 +63,7 @@ try {
             sh ./runPerf.sh 
         }
         else{
-            $scriptRoot = "D:\a\pipeline-dotnet-test\pipeline-dotnet-test\common\pipeline-dotnet-test\performance-tests"
-            $sr = "ApacheBench-prefix/src/ApacheBench-build/bin"
-            netstat -a
-            Write-Output "starting process..."
-            $serviceProcess = Start-Process powershell -argument "dotnet run --project $scriptRoot\ *> out.log" –PassThru -NoNewWindow
-            Function Get-StatusCode {
-                try{
-                    (Invoke-WebRequest -Uri "http://localhost:5000/calibrate" -UseBasicParsing -DisableKeepAlive).StatusCode
-                }
-                catch
-                {
-                    0
-                }
-            }
-
-            # Wait for the service to start
-            Write-Output "Waiting for host"
-            $Tries = 0
-            $HTTP_Status = Get-StatusCode
-            While ($HTTP_Status -ne 200 -And $Tries -le 50) {
-                Start-Sleep -Seconds 5
-                $Tries = $Tries +1
-                Write-Output "Waited $(5 * $Tries) seconds"
-                $HTTP_Status = Get-StatusCode
-            }
-            netstat -a
-            Write-Output "calling calibrate..."
-            curl http://localhost:5000/calibrate -v
-            Invoke-WebRequest -Uri "http://127.0.0.1:5000/calibrate" -UseBasicParsing -DisableKeepAlive
-            Write-Output "calling ab..."
-            Invoke-Expression "$sr/ab -U uas.csv -q -n 100 http://localhost:5000 > cal.out"
-            echo out.log
-            exit 1
-            #./runPerf.ps1
+            ./runPerf.ps1
         }
         
 
