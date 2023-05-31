@@ -70,6 +70,7 @@ try {
             $serviceProcess = Start-Process powershell -argument "dotnet run --project $scriptRoot/.. *> out.log" –PassThru -NoNewWindow
             netstat -a
             Write-Host "calling calibrate..."
+            curl http://localhost:5000/calibrate -v
             Invoke-WebRequest -Uri "http://127.0.0.1:5000/calibrate" -UseBasicParsing -DisableKeepAlive
             Write-Host "calling ab..."
             Invoke-Expression "$sr/ab -U uas.csv -q -n 100 http://localhost:5000 > cal.out"
