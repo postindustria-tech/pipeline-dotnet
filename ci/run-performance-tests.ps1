@@ -72,9 +72,9 @@ try {
                 try{
                     (Invoke-WebRequest -Uri "http://localhost:5000/calibrate" -UseBasicParsing -DisableKeepAlive).StatusCode
                 }
-                catch [Net.WebException]
+                catch
                 {
-                    [int]$_.Exception.Response.StatusCode
+                    0
                 }
             }
 
