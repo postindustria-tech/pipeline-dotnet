@@ -67,7 +67,7 @@ try {
             $sr = "ApacheBench-prefix/src/ApacheBench-build/bin"
             netstat -a
             Write-Host "starting process..."
-            $serviceProcess = Start-Process powershell -argument "dotnet run --project $scriptRoot/.. *> out.log" –PassThru -NoNewWindow
+            $serviceProcess = Start-Process powershell -argument "dotnet run --project $scriptRoot\ *> out.log" –PassThru -NoNewWindow
             netstat -a
             Write-Host "calling calibrate..."
             curl http://localhost:5000/calibrate -v
