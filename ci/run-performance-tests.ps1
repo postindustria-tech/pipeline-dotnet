@@ -67,12 +67,16 @@ try {
         }
         
 
-
         Get-ChildItem -Path $PerfPath -Filter "summary.json" -File -Recurse | ForEach-Object {
             $destinationPath = Join-Path -Path $PerfPath/build -ChildPath $_.Name
-            Copy-Item -Path $_.FullName -Destination $destinationPath -Force
-            Write-Host "Copied $($_.Name) to $destinationPath"
+            if (-not (Test-Path -Path $destinationPath)) {
+                Copy-Item -Path $_.FullName -Destination $destinationPath -Force
+                Write-Host "Copied $($_.Name) to $destinationPath"
+            } else {
+                Write-Host "File $($_.Name) already exists in $destinationPath. Skipping..."
+            }
         }
+
 
         # Write out the results for comparison
         Write-Output "Writing performance test results"
