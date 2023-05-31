@@ -8,9 +8,6 @@ param(
     [string]$BuildMethod = "dotnet"
 )
 
-# TODO - skip these while testing
-exit 0
-
 ./dotnet/run-unit-tests.ps1 -RepoName $RepoName -ProjectDir $ProjectDir -Name $Name -Configuration $Configuration -Arch $Arch -BuildMethod $BuildMethod -Filter ".*Tests(|\.Core|\.Web)\.dll"
 
 exit $LASTEXITCODE
