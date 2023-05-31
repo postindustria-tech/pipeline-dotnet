@@ -11,7 +11,7 @@ Individual engines (For example, device detection) are in separate repositories.
 ## Dependencies
 
 Visual Studio 2022 or later is recommended. Although Visual Studio Code can be used for working with most of the projects.
-
+ 
 The Pipeline projects are written in C# and target .NET Standard 2.0.3
 The Web integration multi-targets the following:
     - .NET Core 3.1
