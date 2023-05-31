@@ -2,11 +2,12 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$RepoName,
     [string]$ProjectDir = ".",
-    [string]$Name = "Release_AnyCPU",
+    [string]$Name = "Release_x64",
     [string]$Configuration = "Release",
-    [string]$Arch = "Any CPU"
+    [string]$Arch = "x64",
+    [string]$BuildMethod = "msbuild",
 )
 
-./dotnet/run-unit-tests.ps1 -RepoName $RepoName -ProjectDir $ProjectDir -Name $Name -Configuration $Configuration -Arch $Arch -BuildMethod $BuildMethod -Filter ".*\.Examples\.Tests\.dll" -OutputFolder "integration"
+./dotnet/run-integration-tests.ps1 -RepoName $RepoName -ProjectDir $ProjectDir -Name $Name -Configuration $Configuration -Arch $Arch -BuildMethod $BuildMethod -Filter ".*\.Examples\.Tests\.dll"
 
 exit $LASTEXITCODE
