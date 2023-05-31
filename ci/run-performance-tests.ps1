@@ -63,7 +63,17 @@ try {
             sh ./runPerf.sh 
         }
         else{
-            ./runPerf.ps1
+            $scriptRoot = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
+            $sr = "ApacheBench-prefix/src/ApacheBench-build/bin"
+            Write-Host "starting process..."
+            $serviceProcess = Start-Process powershell -argument "dotnet run --project $scriptRoot/.. *> out.log" –PassThru -NoNewWindow
+            Write-Host "calling calibrate..."
+            Invoke-WebRequest -Uri "http://localhost:5000/calibrate" -UseBasicParsing -DisableKeepAlive
+            Write-Host "calling ab..."
+            Invoke-Expression "$sr/ab -U uas.csv -q -n 100 http://localhost:5000 > cal.out"
+            echo out.log
+            exit 1
+            #./runPerf.ps1
         }
         
 
