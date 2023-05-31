@@ -10,29 +10,29 @@
     {
         "Image": "windows-latest",
         "Name": "Windows_AnyCPU_Debug",
-        "Configuration": "Debug",
+        "Configuration": "CoreDebug",
         "Arch": "Any CPU",
         "BuildMethod": "msbuild"
     },
     {
         "Image": "windows-latest",
         "Name": "Windows_AnyCPU_Core_Release",
-        "Configuration": "Release",
+        "Configuration": "CoreRelease",
         "Arch": "Any CPU",
         "BuildMethod": "dotnet",
         "RunPerformance": true
     },
     {
-        "Image": "ubuntu-latest",
+        "Image": "windows-latest",
         "Name": "Windows_AnyCPU_Core_Debug",
-        "Configuration": "Debug",
+        "Configuration": "CoreDebug",
         "Arch": "Any CPU",
         "BuildMethod": "dotnet"
     },
         {
         "Image": "ubuntu-latest",
         "Name": "Ubuntu_AnyCPU_Release",
-        "Configuration": "Release",
+        "Configuration": "CoreRelease",
         "Arch": "Any CPU",
         "BuildMethod": "dotnet",
         "RunPerformance": true
@@ -40,7 +40,7 @@
     {
         "Image": "ubuntu-latest",
         "Name": "Ubuntu_AnyCPU_Debug",
-        "Configuration": "Debug",
+        "Configuration": "CoreDebug",
         "Arch": "Any CPU",
         "BuildMethod": "dotnet"
     }
