@@ -63,7 +63,7 @@ try {
             sh ./runPerf.sh 
         }
         else{
-            $scriptRoot = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
+            $scriptRoot = "D:\a\pipeline-dotnet-test\pipeline-dotnet-test\common\pipeline-dotnet-test\performance-tests"
             $sr = "ApacheBench-prefix/src/ApacheBench-build/bin"
             netstat -a
             Write-Host "starting process..."
