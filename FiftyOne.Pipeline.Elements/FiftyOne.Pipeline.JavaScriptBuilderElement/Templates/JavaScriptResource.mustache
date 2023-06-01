@@ -99,7 +99,12 @@
         var keyValuePairs = [];
         for (var key in fodCookies) {
             if (fodCookies.hasOwnProperty(key)) {
-                keyValuePairs.push(key+"="+fodCookies[key]);
+                // Url encode the cookie value.
+                // This is done to ensure that invalid characters (e.g. = chars at the end of 
+                // base 64 encoded strings) reach the server intact.
+                // The server will automatically decode the value before passing it into the 
+                // Pipeline API.
+                keyValuePairs.push(key+"="+encodeURIComponent(fodCookies[key]));
             }
         }
         return keyValuePairs;

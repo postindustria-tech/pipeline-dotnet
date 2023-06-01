@@ -16,7 +16,7 @@ the concepts and design of this API.
 ## Dependencies
 
 Visual Studio 2022 or later is recommended. Although Visual Studio Code can be used for working with most of the projects.
-
+ 
 The Pipeline projects are written in C# and target .NET Standard 2.0.3
 The Web integration multi-targets the following:
     - .NET Core 3.1
@@ -68,6 +68,7 @@ There are several examples available that demonstrate how to make use of the Pip
 If you want examples that demonstrate how to use 51Degrees products such as device detection, then these are available in the corresponding [repository](https://github.com/51Degrees/device-detection-dotnet) and on our [website](https://51degrees.com/documentation/_examples__device_detection__index.html).
 
 | Example                                   | Description |
+|-------------------------------------------|-------------|
 | CustomFlowElement\1. Simple Flow Element  | Shows how to create a custom flow element that returns star sign based on a supplied date of birth. |
 | CustomFlowElement\2. On Premise Engine    | Shows how to modify SimpleFlowElement to make use of the 'engine' functionality and use a custom data file to map dates to star signs rather than relying on hard coded data. |
 | CustomFlowElement\3. Client-side evidence | Shows how to modify SimpleFlowElement to request the data of birth from the user using client-side JavaScript. |
