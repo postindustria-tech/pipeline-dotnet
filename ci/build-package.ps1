@@ -16,7 +16,7 @@ $Solutions = @("FiftyOne.CloudRequestEngine.sln", "FiftyOne.Pipeline.Elements.sl
 
 foreach($Solution in $Solutions){
 
-    ./dotnet/build-package-nuget.ps1 -RepoName $RepoName -Configuration "Release" -Arch $Arch -Version $Version -SolutionName $Solution -CodeSigningCert $Keys['CodeSigningCert'] -CodeSigningCertPassword $Keys['CodeSigningCertPassword']
+    ./dotnet/build-package-nuget.ps1 -RepoName $RepoName -Configuration "Release" -Arch $Arch -Version $Version -SolutionName $Solution -CodeSigningCert $Keys['CodeSigningCert'] -CodeSigningCertPassword $Keys['CodeSigningCertPassword'] -SearchPattern "^Project\(.*csproj"
 }
 
 exit $LASTEXITCODE
