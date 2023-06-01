@@ -6,10 +6,11 @@ param(
     [string]$Name = "Release_x64",
     [string]$Arch = "x64",
     [string]$Configuration = "Release",
+    [string]$BuildMethod,
     [hashtable]$Keys
 )
 
-if ($BuildMethod -ne "dotnet")) {
+if ($BuildMethod -ne "dotnet") {
 
     # Setup the MSBuild environment if it is required.
     ./environments/setup-msbuild.ps1
