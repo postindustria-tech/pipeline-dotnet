@@ -5,6 +5,7 @@
     <AssemblyName>FiftyOne.Pipline.IpSplitter</AssemblyName>
     <RootNamespace>FiftyOne.Pipeline.IpSplitter</RootNamespace>
     <Platforms>AnyCPU</Platforms>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
