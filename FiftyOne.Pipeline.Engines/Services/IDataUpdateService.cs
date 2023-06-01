@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.Engines.Services
     /// <summary>
     /// Service that manages updates to data files that are used by
     /// <see cref="IOnPremiseAspectEngine"/> instances.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/data-updates.md">Specification</see>
     /// </summary>
     public interface IDataUpdateService
     {

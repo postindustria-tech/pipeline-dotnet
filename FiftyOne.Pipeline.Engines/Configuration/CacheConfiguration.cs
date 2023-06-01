@@ -26,7 +26,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
 {
     /// <summary>
     /// Contains everything needed to build a cache.
-    /// Currently, an <see cref="ICacheBuilder"/> and an integer size parameter.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/caching.md">Specification</see>
     /// </summary>
     public class CacheConfiguration
     {
@@ -37,7 +37,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         public CacheConfiguration()
         {
             Builder = new LruPutCacheBuilder();
-            Size = 1000;
+            Size = Constants.CACHE_DEFAULT_SIZE;
         }
 
         /// <summary>

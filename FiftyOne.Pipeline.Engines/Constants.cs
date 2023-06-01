@@ -20,6 +20,11 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Engines.Configuration;
+using FiftyOne.Pipeline.Engines.Data;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Resources;
 using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("FiftyOne.Pipeline.Engines.Tests")]
@@ -48,21 +53,109 @@ namespace FiftyOne.Pipeline.Engines
         public const string DEFAULT_ASP_COOKIE_NAME = "asp.net_sessionid";
 
         /// <summary>
-        /// Default polling interval for the data update service
-        /// in seconds.
-        /// </summary>
-        public const int DATA_UPDATE_POLLING_DEFAULT = 30 * 60;
-        /// <summary>
-        /// Default randomization to be applied to the calculated
-        /// update timer interval in seconds.
-        /// This is used to help prevent many requests hitting the 
-        /// update distribution endpoint at exactly the same time.
-        /// </summary>
-        public const int DATA_UPDATE_RANDOMISATION_DEFAULT = 10 * 60;
-
-        /// <summary>
         /// The default endpoint for the JavaScript to call when requesting json data
         /// </summary>
         public const string DEFAULT_JSON_ENDPOINT = "/51dpipeline/json";
+
+        /// <summary>
+        /// Default value for the flag that controls whether data files automatically look
+        /// for updates or not.
+        /// </summary>
+        public const bool DATA_FILE_DEFAULT_AUTO_UPDATES_ENABLED = true;
+
+        /// <summary>
+        /// Default value for the list of license keys to use when checking for updates
+        /// for a data file.
+        /// </summary>
+        public static readonly List<string> DATA_FILE_DEFAULT_LICENSE_KEYS = new List<string>();
+
+        /// <summary>
+        /// Default value for the flag that controls whether the file system watcher is 
+        /// enabled for a data file or not.
+        /// </summary>
+        public const bool DATA_FILE_DEFAULT_FILESYSTEMWATCHER_ENABLED = true;
+
+        /// <summary>
+        /// Default polling interval for the data update service in seconds.
+        /// </summary>
+        public const int DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS = 30 * 60;
+        /// <summary>
+        /// Default polling interval for the data update service in seconds. This uses the older 
+        /// name. Please use the new name <see cref="DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS"/> 
+        /// which is more consistent with other default values.
+        /// </summary>
+        [Obsolete("Use DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS instead")]
+        public const int DATA_UPDATE_POLLING_DEFAULT = DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS;
+
+        /// <summary>
+        /// Default maximum randomization to be applied to the calculated data file update timer 
+        /// interval in seconds.
+        /// </summary>
+        public const int DATA_FILE_DEFAULT_RANDOMISATION_SECONDS = 10 * 60;
+        /// <summary>
+        /// Default randomization to be applied to the calculated data file update timer 
+        /// interval in seconds. This uses the older name. Please use the new name 
+        /// <see cref="DATA_FILE_DEFAULT_RANDOMISATION_SECONDS"/> which is more consistent 
+        /// with other default values.
+        /// </summary>
+        [Obsolete("Use DATA_FILE_DEFAULT_RANDOMISATION_SECONDS instead")]
+        public const int DATA_UPDATE_RANDOMISATION_DEFAULT = 10 * 60;
+
+        /// <summary>
+        /// Default value for the flag that controls whether an update that has been downloaded 
+        /// for a data file will be decompressed or not.
+        /// </summary>
+        public const bool DATA_FILE_DEFAULT_DECOMPRESS = true;
+
+        /// <summary>
+        /// Default value for the flag that controls whether a 'Content-Md5' header is expected
+        /// and should be verified when a data file update is downloaded.
+        /// </summary>
+        public const bool DATA_FILE_DEFAULT_VERIFY_MD5 = true;
+
+        /// <summary>
+        /// Default value for the flag that controls whether a the update service should supply
+        /// and 'If-Modified-Since' header to the data update url when requesting a new data file.
+        /// </summary>
+        public const bool DATA_FILE_DEFAULT_VERIFY_MODIFIED_SINCE = true;
+
+        /// <summary>
+        /// Default value for the flag that controls whether a the update service should look
+        /// for a new data file when the engine is created.
+        /// </summary>
+        public const bool DATA_FILE_DEFAULT_UPDATE_ON_STARTUP = false;
+
+        /// <summary>
+        /// Default value for the flag that controls whether a license key is required in order
+        /// for the data update url to supply a data file.
+        /// </summary>
+        public const bool DATA_FILE_DEFAULT_LICENSE_KEY_REQUIRED = false;
+
+        /// <summary>
+        /// Default value for the id that is used to differentiate one data file from another 
+        /// for the same engine.
+        /// </summary>
+        public const string DATA_FILE_DEFAULT_IDENTIFIER = "Default";
+
+        /// <summary>
+        /// Default value for the url that is used when checking for updates for a data file.
+        /// </summary>
+        public const string DATA_FILE_DEFAULT_UPDATE_OVERRIDE_URL = null;
+
+        /// <summary>
+        /// Default timeout value when accessing a property from an engine with lazy loading enabled. 
+        /// </summary>
+        public const int LAZY_LOADING_DEFAULT_TIMEOUT_MS = 1000;
+
+        /// <summary>
+        /// Default size for engine caches 
+        /// </summary>
+        public const int CACHE_DEFAULT_SIZE = 1000;
+
+        /// <summary>
+        /// Default value for the flag that controls whether the cache should be recording 
+        /// hit/miss counts.
+        /// </summary>
+        public const bool CACHE_DEFAULT_HIT_OR_MISS_ENABLED = false;
     }
 }

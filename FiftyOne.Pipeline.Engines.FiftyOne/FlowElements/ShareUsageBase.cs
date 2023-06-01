@@ -49,8 +49,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
     /// Abstract base class for ShareUsage elements. 
-    /// Contains common functionality such as filtering the evidence and
-    /// building the XML records.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/usage-sharing-element.md">Specification</see>
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", 
         "CA1054:Uri parameters should not be strings", 
@@ -165,6 +164,11 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// </summary>
         private double _sharePercentage = Constants.SHARE_USAGE_DEFAULT_SHARE_PERCENTAGE;
 
+        // Used to store the part of the xml message that will not change.
+        private string _staticXml = null;
+        private object _staticXmlLock = new object();
+
+
         private List<string> _flowElements = null;
 
         /// <summary>
@@ -264,12 +268,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 
         private string _hostAddress;
         private IList<IElementPropertyMetaData> _properties;
-
-        /// <summary>
-        /// Set to true if the evidence within a flow data contains invalid XML
-        /// characters such as control characters.
-        /// </summary>
-        private bool _flagBadSchema;
 
         /// <summary>
         /// Get the IP address of the machine that this code is running on.
@@ -983,7 +981,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                 throw new ArgumentNullException(nameof(data));
             }
 
-            _flagBadSchema = false;
+            // Used to record whether the evidence within a flow data contains invalid XML
+            // characters such as control characters.
+            var flagBadSchema = false;
 
             // The SessionID used to track a series of requests
             writer.WriteElementString("SessionId", data.SessionId);
@@ -994,20 +994,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             writer.WriteElementString("DateSent", DateTime.UtcNow.ToString(
                 "yyyy-MM-ddTHH:mm:ss", 
                 CultureInfo.InvariantCulture));
-            // The version number of the Pipeline API
-            writer.WriteElementString("Version", _coreVersion);
-            // Write Pipeline information
-            WritePipelineInfo(writer);
-            // The software language
-            writer.WriteElementString("Language", "dotnet");
-            // The software language version
-            writer.WriteElementString("LanguageVersion", _languageVersion);
             // The client IP of the request
             writer.WriteElementString("ClientIP", data.ClientIP);
-            // The IP of this server
-            writer.WriteElementString("ServerIP", HostAddress);
-            // The OS name and version
-            writer.WriteElementString("Platform", _osVersion);
+            writer.WriteRaw(GetStaticXml());
 
             // Write all other evidence data that has been included.
             foreach (var category in data.EvidenceData)
@@ -1017,21 +1006,72 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
                     if (category.Key.Length > 0)
                     {
                         writer.WriteStartElement(category.Key);
-                        writer.WriteAttributeString("Name", EncodeInvalidXMLChars(entry.Key));
-                        writer.WriteCData(EncodeInvalidXMLChars(entry.Value));
+                        writer.WriteAttributeString("Name", EncodeInvalidXMLChars(entry.Key, ref flagBadSchema));
+                        writer.WriteCData(EncodeInvalidXMLChars(entry.Value, ref flagBadSchema));
                         writer.WriteEndElement();
                     }
                     else
                     {
-                        writer.WriteElementString(EncodeInvalidXMLChars(entry.Key),
-                            EncodeInvalidXMLChars(entry.Value));
+                        writer.WriteElementString(EncodeInvalidXMLChars(entry.Key, ref flagBadSchema),
+                            EncodeInvalidXMLChars(entry.Value, ref flagBadSchema));
                     }
                 }
             }
-            if (_flagBadSchema)
+            // If any written value contained invalid characters, add the 'BadSchema' element.
+            if (flagBadSchema)
             {
                 writer.WriteElementString("BadSchema", "true");
             }
+        }
+
+        /// <summary>
+        /// Get the part of the xml message that will be the same for every usage 
+        /// sharing event on this machine.
+        /// This is written once to a string in memory and then re-used for
+        /// future messages.
+        /// </summary>
+        /// <returns></returns>
+        private string GetStaticXml()
+        {
+            if (_staticXml == null)
+            {
+                lock (_staticXmlLock)
+                {
+                    if (_staticXml == null)
+                    {
+                        var result = new StringBuilder();
+                        var settings = new XmlWriterSettings()
+                        {
+                            OmitXmlDeclaration = true,
+                            WriteEndDocumentOnClose = false,
+                            ConformanceLevel = ConformanceLevel.Fragment
+                        };
+                        using (var writer = XmlWriter.Create(result, settings))
+                        {
+                            // The version number of the Pipeline API
+                            writer.WriteElementString("Version", _coreVersion);
+                            // Write Pipeline information
+                            WritePipelineInfo(writer);
+                            // The software language
+                            writer.WriteElementString("Language", "dotnet");
+                            // The software language version
+                            writer.WriteElementString("LanguageVersion", _languageVersion);
+                            // The IP of this server
+                            writer.WriteElementString("ServerIP", HostAddress);
+                            // The OS name and version
+                            writer.WriteElementString("Platform", _osVersion);
+                        }
+
+                        _staticXml = result.ToString();
+                    }
+
+                    // If it's still null for some reason, set it to the empty string 
+                    // so that we don't keep hitting the lock every time evidence is 
+                    // processed.
+                    if (_staticXml == null) { _staticXml = string.Empty; }
+                }
+            }
+            return _staticXml;
         }
 
         /// <summary>
@@ -1059,10 +1099,20 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <summary>
         /// encodes any unusual characters into their hex representation
         /// </summary>
+        /// <param name="text">
+        /// The text to encode
+        /// </param>
+        /// <param name="flagBadSchema">
+        /// A flag storing whether this usage message inculdes any invalid characters 
+        /// that we have had to encod.
+        /// </param>
+        /// <returns>
+        /// The encoded version of <paramref name="text"/>
+        /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown if the supplied text is null
         /// </exception>
-        public string EncodeInvalidXMLChars(string text)
+        public string EncodeInvalidXMLChars(string text, ref bool flagBadSchema)
         {
             if (text == null)
             {
@@ -1079,7 +1129,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
             }
             catch (XmlException)
             {
-                _flagBadSchema = true;
+                flagBadSchema = true;
                 var tmp = new StringBuilder();
                 foreach (var c in text)
                 {

@@ -29,12 +29,14 @@ using System.Text;
 using FiftyOne.Pipeline.Core.Data;
 using Newtonsoft.Json;
 using System.Linq;
+using FiftyOne.Pipeline.Core.Attributes;
 
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
     /// <summary>
     /// Fluent builder class for constructing <see cref="JsonBuilderElement"/>
     /// instances.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/json-builder.md">Specification</see>
     /// </summary>
     public class JsonBuilderElementBuilder
     {
@@ -87,6 +89,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// the JSON output.
         /// </param>
         /// <returns>This builder.</returns>
+        [CodeConfigOnly]
         public JsonBuilderElementBuilder SetJsonConverters(IEnumerable<JsonConverter> jsonConverters)
         {
             _jsonConverters = jsonConverters;

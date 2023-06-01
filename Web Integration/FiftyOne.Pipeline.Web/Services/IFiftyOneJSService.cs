@@ -26,6 +26,7 @@ namespace FiftyOne.Pipeline.Web.Services
 {
     /// <summary>
     /// Interface for <see cref="FiftyOneJSService"/>.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/web-integration.md#client-side-features">Specification</see>
     /// </summary>
     public interface IFiftyOneJSService
     {

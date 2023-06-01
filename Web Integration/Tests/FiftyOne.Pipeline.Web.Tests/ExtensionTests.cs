@@ -53,7 +53,7 @@ namespace FiftyOne.Pipeline.Web.Tests
         {
             // Create configuration overrides.
             var testConfig = new Dictionary<string, string>();
-            testConfig.Add("PipelineOptions:PipelineBuilderParameters:ShareUsage",
+            testConfig.Add("PipelineOptions:BuildParameters:ShareUsage",
                 shareUsageEnabled.ToString());
             testConfig.Add("PipelineOptions:Elements:0:BuilderName",
                 "EmptyEngine");

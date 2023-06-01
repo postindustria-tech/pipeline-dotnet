@@ -20,13 +20,13 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Exceptions;
+using FiftyOne.Pipeline.Web.Shared;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Schema;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace FiftyOne.Pipeline.Web.Framework.Configuration
@@ -48,6 +48,9 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
         /// <returns>
         /// The same configuration builder
         /// </returns>
+        /// <exception cref="PipelineConfigurationException">
+        /// Thrown if the configuration file is not valid.
+        /// </exception>
         public static IConfigurationBuilder AddPipelineConfig(this IConfigurationBuilder config)
         {
             var basePath = HttpContext.Current.Server.MapPath("~/App_Data");
@@ -58,6 +61,7 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
                 {
                     if (File.Exists(Path.Combine(basePath, fileName + "." + extension)))
                     {
+                        // Note - Schema validation not applied to XML.
                         return config.SetBasePath(basePath)
                             .AddXmlFile(fileName + "." + extension);
                     }
@@ -68,14 +72,63 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
             {
                 foreach (var extension in Constants.JsonFileExtensions)
                 {
-                    if (File.Exists(Path.Combine(basePath, fileName + "." + extension)))
+                    var filePath = Path.Combine(basePath, fileName + "." + extension);
+                    if (File.Exists(filePath))
                     {
+                        ValidateJson(filePath);
+
                         return config.SetBasePath(basePath)
                             .AddJsonFile(fileName + "." + extension);
                     }
                 }
             }
             return config;
+        }
+
+        private const string JSON_SCHEMA_DIR = "Schemas";
+        private const string JSON_SCHEMA_FILENAME = "pipelineOptionsSchema.json";
+        private static readonly string JSON_SCHEMA_COMPLETE_PATH = 
+            Path.Combine(AppDomain.CurrentDomain.RelativeSearchPath,
+                JSON_SCHEMA_DIR, JSON_SCHEMA_FILENAME);
+
+        /// <summary>
+        /// Validate the specified json file using the pipeline options schema.
+        /// </summary>
+        /// <param name="jsonFile">
+        /// The file to validate.
+        /// </param>
+        /// <exception cref="PipelineConfigurationException">
+        /// Thrown if the json file is not valid.
+        /// </exception>
+        private static void ValidateJson(string jsonFile)
+        {            
+            // In some cases, the schema file is not going to be where we expect it to be.
+            // We don't want to crash the user's system and we don't have a logger in here,
+            // so just handle it by skipping validation.
+            if (File.Exists(JSON_SCHEMA_COMPLETE_PATH))
+            {
+                JSchema schema = JSchema.Parse(File.ReadAllText(JSON_SCHEMA_COMPLETE_PATH));
+
+                // Prepare the reader
+                JsonTextReader reader = new JsonTextReader(new StringReader(File.ReadAllText(jsonFile)));
+
+                // Add the schema validation
+                JSchemaValidatingReader validatingReader = new JSchemaValidatingReader(reader);
+                validatingReader.Schema = schema;
+
+                JsonSerializer serializer = new JsonSerializer();
+                // Try reading the content. Catch validation exceptions and rethrow with a 
+                // more friendly error message.
+                try
+                {
+                    dynamic temp = serializer.Deserialize<dynamic>(validatingReader);
+                }
+                catch (JSchemaValidationException ex)
+                {
+                    throw new PipelineConfigurationException(
+                        string.Format(Messages.ExceptionInvalidConfiguration, jsonFile), ex);
+                }
+            }
         }
     }
 }

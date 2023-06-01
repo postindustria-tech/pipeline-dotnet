@@ -29,10 +29,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
     /// Builder for <see cref="SequenceElement"/> instances.
-    /// Sequence Element is an element that is required by other Pipeline
-    /// elements to provide certain features.
-    /// In most cases, it will automatically be added to the Pipeline 
-    /// when needed.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/sequence-element.md">Specification</see>
     /// </summary>
     public class SequenceElementBuilder
     {

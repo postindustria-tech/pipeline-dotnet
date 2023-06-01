@@ -27,6 +27,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
     /// <summary>
     /// Meta data relating to a component of an Engine's results e.g. Hardware.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/data-model-specification/README.md#component">Specification</see>
     /// </summary>
     public interface IComponentMetaData : IEquatable<IComponentMetaData>, IComparable<IComponentMetaData>, IDisposable
     {

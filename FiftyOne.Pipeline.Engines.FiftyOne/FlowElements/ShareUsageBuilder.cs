@@ -30,6 +30,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
     /// <summary>
     /// Builder class that is used to create <see cref="ShareUsageElement"/>
     /// instances.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/usage-sharing-element.md">Specification</see>
     /// </summary>
     public class ShareUsageBuilder : ShareUsageBuilderBase<ShareUsageElement>
     {

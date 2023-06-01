@@ -46,8 +46,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
     /// <summary>
     /// The JsonBuilderElement takes accessible properties and adds the property
-    /// key:values to the Json object. The element will also add any errors 
-    /// which have been recorded in the FlowData.
+    /// key:values to the Json object.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/json-builder.md">Specification</see>
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization",
         "CA1308:Normalize strings to uppercase",

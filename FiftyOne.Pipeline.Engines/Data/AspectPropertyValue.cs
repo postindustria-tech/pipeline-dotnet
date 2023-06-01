@@ -30,10 +30,7 @@ namespace FiftyOne.Pipeline.Engines.Data
     /// <summary>
     /// This class can be used where engines have a property that 
     /// may be populated and may not.
-    /// It can be used to let the user know details of why a property
-    /// value is not available.
-    /// For example, if a property requires additional evidence from
-    /// client side code before it can be populated.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/properties.md#null-values">Specification</see>
     /// </summary>
     /// <typeparam name="T">
     /// The type of data stored within the instance.

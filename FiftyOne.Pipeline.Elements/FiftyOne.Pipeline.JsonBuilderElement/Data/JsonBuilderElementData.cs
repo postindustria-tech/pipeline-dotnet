@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.Data
 {
     /// <summary>
     /// JsonBuilderElement data class.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/json-builder.md#element-data">Specification</see>
     /// </summary>
     public class JsonBuilderElementData : ElementDataBase, IJsonBuilderElementData
     {

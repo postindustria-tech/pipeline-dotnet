@@ -39,6 +39,9 @@ using System.Collections.Generic;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.Web.Shared;
 using FiftyOne.Pipeline.Web.Shared.Services;
+using static System.Net.Mime.MediaTypeNames;
+using Newtonsoft.Json;
+using Microsoft.AspNetCore.SignalR;
 
 namespace FiftyOne.Pipeline.Web
 {
@@ -158,8 +161,9 @@ namespace FiftyOne.Pipeline.Web
             IPipelineBuilderFromConfiguration pipelineBuilder)
         {
             // Get Pipeline options to check that it is present
-            PipelineOptions options = new PipelineOptions();
-            config.Bind("PipelineOptions", options);
+            var section = config.GetRequiredSection("PipelineOptions");
+            PipelineWebIntegrationOptions options = new PipelineWebIntegrationOptions();
+            section.Bind(options, (o) => { o.ErrorOnUnknownConfiguration = true; });
 
             if (options == null ||
                 options.Elements == null ||
@@ -169,13 +173,21 @@ namespace FiftyOne.Pipeline.Web
                     Messages.ExceptionNoConfiguration);
             }
 
-            PipelineWebIntegrationOptions webOptions = new PipelineWebIntegrationOptions();
-            config.Bind("PipelineWebIntegrationOptions", webOptions);
+            // This section supports legacy functionality in which the web integration options 
+            // were specified in a separate section to the main pipeline options.
+            // We simply bind these options on top of the main ones.
+            // ----------
+            var webOptionsSection = config.GetSection("PipelineWebIntegrationOptions");
+            if (webOptionsSection.GetChildren().Any())
+            {
+                webOptionsSection.Bind(options, (o) => { o.ErrorOnUnknownConfiguration = true; });
+            }
+            // ---------
 
             // Add the sequence element.
             AddSequenceElement(options);
 
-            if (webOptions.ClientSideEvidenceEnabled)
+            if (options.ClientSideEvidenceEnabled)
             {
                 // Client-side evidence is enabled so make sure the 
                 // JsonBuilderElement and JavaScriptBundlerElement has been 
@@ -229,21 +241,8 @@ namespace FiftyOne.Pipeline.Web
                 // The builder is not included so add it.
                 options.Elements.Add(new ElementOptions()
                 {
-                    BuilderName = nameof(JavaScriptBuilderElement),
-                    BuildParameters = new Dictionary<string, object>()
-                    {
-                        { "EndPoint", Engines.Constants.DEFAULT_JSON_ENDPOINT }
-                    }
+                    BuilderName = nameof(JavaScriptBuilderElement)
                 });
-            }
-            else
-            {
-                // There is already a JavaScript builder config so check if 
-                // the endpoint is specified. If not, add it.
-                if (javascriptConfig.Single().BuildParameters.ContainsKey("EndPoint") == false)
-                {
-                    javascriptConfig.Single().BuildParameters.Add("EndPoint", Engines.Constants.DEFAULT_JSON_ENDPOINT);
-                }
             }
         }
 

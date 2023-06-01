@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FiftyOne.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
@@ -79,6 +80,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
         /// <returns>
         /// This builder.
         /// </returns>
+        [DefaultValue("Set by subclass")]
         public TBuilder SetDataDownloadType(string typeName)
         {
             _dataDownloadType = typeName;

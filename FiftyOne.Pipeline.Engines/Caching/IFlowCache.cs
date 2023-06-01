@@ -30,8 +30,7 @@ namespace FiftyOne.Pipeline.Engines.Caching
 {
     /// <summary>
     /// Represents a 'flow cache'
-    /// A flow cache is a cache that is used to cache results from individual
-    /// flow elements in the pipeline.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/caching.md">Specification</see>
     /// </summary>
     public interface IFlowCache : IDataKeyedCache<IElementData>
     {

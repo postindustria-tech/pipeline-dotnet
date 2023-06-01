@@ -28,6 +28,7 @@ using System.Threading;
 using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FiftyOne.Pipeline.Engines.Data
 {
@@ -44,13 +45,28 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// </summary>
         private IDataUpdateService _dataUpdateService;
 
+        private string _id = null;
         /// <summary>
         /// The name or identifier for this data file object.
         /// Note that this is not the same as the filename.
         /// It is used by engines that require multiple data-files to 
         /// determine what a given data file object relates to. 
         /// </summary>
-        public string Identifier { get; set;  }
+        public string Identifier 
+        { 
+            get { return _id == null ? Configuration?.Identifier : _id; }
+            set
+            {
+                if (Configuration == null)
+                {
+                    _id = value;
+                }
+                else
+                {
+                    Configuration.Identifier = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Get or set the <see cref="IOnPremiseAspectEngine"/> associated 

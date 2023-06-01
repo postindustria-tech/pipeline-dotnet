@@ -34,6 +34,7 @@ namespace FiftyOne.Pipeline.Web.Services
     /// <summary>
     /// A helper service that is used to add evidence from a web request 
     /// to a <see cref="IFlowData"/> instance.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/web-integration.md#populating-evidence">Specification</see>
     /// </summary>
     public class WebRequestEvidenceService : IWebRequestEvidenceService
     {

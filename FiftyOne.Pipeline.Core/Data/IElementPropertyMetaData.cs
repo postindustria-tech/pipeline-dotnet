@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.Core.Data
     /// <summary>
     /// Represents meta-data relating to a property that is populated 
     /// by a <see cref="IFlowElement"/> instance.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/properties.md#property-metadata">Specification</see>
     /// </summary>
     public interface IElementPropertyMetaData
     { 

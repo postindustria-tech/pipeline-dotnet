@@ -27,6 +27,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Data
 {
     /// <summary>
     /// Meta data relating to a profile within the data set.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/data-model-specification/README.md#profile">Specification</see>
     /// </summary>
     public interface IProfileMetaData : IEquatable<IProfileMetaData>, IComparable<IProfileMetaData>, IDisposable
     {

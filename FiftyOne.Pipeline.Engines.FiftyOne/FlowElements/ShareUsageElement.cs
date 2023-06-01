@@ -39,10 +39,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
     /// Flow element that sends usage data to 51Degrees for analysis.
-    /// The type and quantity of data being sent can be customised using the 
-    /// options on the constructor.
-    /// By default, data is queued until there are at least 50 items in memory.
-    /// It is then serialised to an XML file and sent to the specified URL.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/usage-sharing-element.md">Specification</see>
     /// </summary>
     public class ShareUsageElement : ShareUsageBase
     {

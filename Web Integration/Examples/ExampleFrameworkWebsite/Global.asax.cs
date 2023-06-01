@@ -44,6 +44,8 @@ namespace Example_Framework_Website
             BundleConfig.RegisterBundles(BundleTable.Bundles);
             // Make sure the assemblies that are needed by the pipeline
             // are loaded into the app domain.
+            // This is needed in order from BuildFromConfiguration to be able
+            // to find the relevant builder types when using reflection.
             AppDomain.CurrentDomain.Load(
                 typeof(MathElementBuilder).Assembly.GetName());
             AppDomain.CurrentDomain.Load(

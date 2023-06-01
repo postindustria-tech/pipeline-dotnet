@@ -34,9 +34,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 {
     /// <summary>
     /// Abstract base class for Flow Elements.
-    /// Contains common functionality such as checking the 'Stop' flag
-    /// on <see cref="IFlowData"/> and getting the <see cref="ITypedKey{T}"/>
-    /// for this instance.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#flow-element">Specification</see>
     /// </summary>
     /// <remarks>
     /// It is not a requirement for all FlowElements to extend 

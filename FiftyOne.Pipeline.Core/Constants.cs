@@ -100,5 +100,17 @@ namespace FiftyOne.Pipeline.Core
         /// passed as evidence
         /// </summary>
         public const string EVIDENCE_PROTOCOL = EVIDENCE_HTTPHEADER_PREFIX + EVIDENCE_SEPERATOR + "protocol";
+
+        /// <summary>
+        /// The default value for the flag that controls whether the pipeline will automatically 
+        /// dispose of its elements when it is disposed.
+        /// </summary>
+        public const bool PIPELINE_BUILDER_DEFAULT_AUTO_DISPOSE_ELEMENTS = true;
+
+        /// <summary>
+        /// The default value for the flag that controls whether the pipeline will allow exceptions
+        /// from flow elements to bubble up to the caller, or be caught and logged.
+        /// </summary>
+        public const bool PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTION = false;
     }
 }

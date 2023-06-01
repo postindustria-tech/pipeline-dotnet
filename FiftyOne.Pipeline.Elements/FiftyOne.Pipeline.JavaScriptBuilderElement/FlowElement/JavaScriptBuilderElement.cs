@@ -49,6 +49,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
     /// <summary>
     /// JavaScript Builder Element generates a JavaScript include to be run on 
     /// the client device.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/javascript-builder.md">Specification</see>
     /// </summary>
 	public class JavaScriptBuilderElement : 
         FlowElementBase<IJavaScriptBuilderElementData, IElementPropertyMetaData>
@@ -215,7 +216,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             Host = host;
             Endpoint = endpoint;
             Protocol = protocol;
-            ObjName = string.IsNullOrEmpty(objectName) ? Constants.DEFAULT_OBJECT_NAME : objectName;
+            ObjName = objectName;
             EnableCookies = enableCookies;
             _minify = minify;
 
@@ -273,7 +274,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             // Couldn't get protocol from anywhere 
             if (string.IsNullOrEmpty(protocol))
             {
-                protocol = Constants.DEFAULT_PROTOCOL;
+                protocol = Constants.FALLBACK_PROTOCOL;
             }
 
             // If device detection is in the Pipeline then we can check

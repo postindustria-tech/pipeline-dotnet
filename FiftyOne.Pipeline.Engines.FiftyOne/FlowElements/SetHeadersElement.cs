@@ -35,9 +35,9 @@ using System.Text;
 namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
-    /// An <see cref="IFlowElement"/> that collates responses from all
-    /// engines that want to set headers in the HTTP response in order
-    /// to gather additional data.
+    /// This element is used to determine the values for HTTP headers that other elements in the 
+    /// pipeline want to be sent to the client.    
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/set-headers-element.md">Specification</see>
     /// </summary>
     public class SetHeadersElement :
         FlowElementBase<ISetHeadersData, IElementPropertyMetaData>,

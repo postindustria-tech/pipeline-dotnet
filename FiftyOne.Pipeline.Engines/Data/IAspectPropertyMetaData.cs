@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.Engines.Data
     /// <summary>
     /// Represents meta-data relating to a property that is populated 
     /// by an <see cref="IAspectEngine"/> instance.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/properties.md#aspect-property-metadata">Specification</see>
     /// </summary>
     public interface IAspectPropertyMetaData : IElementPropertyMetaData
     {

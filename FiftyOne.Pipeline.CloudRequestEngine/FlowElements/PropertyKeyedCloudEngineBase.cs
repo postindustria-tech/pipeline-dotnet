@@ -40,6 +40,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
     /// A specialised type of <see cref="CloudAspectEngineBase{T}"/>
     /// that has functionality to support returning a list of matching 
     /// <see cref="IAspectData"/> profiles rather than a single item.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/device-detection-specification/pipeline-elements/hardware-profile-lookup-cloud.md">Specification</see> 
     /// </summary>
     /// <typeparam name="TData">
     /// The type of <see cref="IAspectData"/> returned by this engine.

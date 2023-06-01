@@ -27,6 +27,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
 {
     /// <summary>
     /// Interface for <see cref="ClientsidePropertyService"/>
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/web-integration.md#client-side-features">Specification</see>
     /// </summary>
     public interface IClientsidePropertyService
     {

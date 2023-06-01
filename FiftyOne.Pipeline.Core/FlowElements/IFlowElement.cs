@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
     /// <summary>
     /// <see cref="IFlowElement"/> is the basic building block of a pipeline.
     /// All FlowElements must implement it.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#flow-element">Specification</see>
     /// </summary>
     public interface IFlowElement : IDisposable
     {

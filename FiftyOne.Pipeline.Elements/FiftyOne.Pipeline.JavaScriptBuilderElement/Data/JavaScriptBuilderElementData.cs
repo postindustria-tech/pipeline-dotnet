@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.Data
     /// <summary>
     /// The <see cref="IElementData"/> class for 
     /// <see cref="JavaScriptBuilderElement"/>.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/javascript-builder.md#element-data">Specification</see>
     /// </summary>
     public class JavaScriptBuilderElementData : ElementDataBase, IJavaScriptBuilderElementData
     {

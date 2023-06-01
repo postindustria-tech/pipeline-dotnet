@@ -144,9 +144,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             _timerFactory.Verify(f => f(
                 It.IsAny<TimerCallback>(),
                 It.Is<object>(o => (o as AspectEngineDataFile) == file),
-                It.Is<TimeSpan>(t => t.TotalSeconds >= Constants.DATA_UPDATE_POLLING_DEFAULT &&
-                    t.TotalSeconds <= Constants.DATA_UPDATE_POLLING_DEFAULT +
-                    Constants.DATA_UPDATE_RANDOMISATION_DEFAULT)));
+                It.Is<TimeSpan>(t => t.TotalSeconds >= Constants.DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS &&
+                    t.TotalSeconds <= Constants.DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS +
+                    Constants.DATA_FILE_DEFAULT_RANDOMISATION_SECONDS)));
         }
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 It.IsAny<TimerCallback>(),
                 It.Is<object>(o => (o as AspectEngineDataFile) == file),
                 It.Is<TimeSpan>(t => t.TotalSeconds >= 0 &&
-                    t.TotalSeconds <= Constants.DATA_UPDATE_RANDOMISATION_DEFAULT)));
+                    t.TotalSeconds <= Constants.DATA_FILE_DEFAULT_RANDOMISATION_SECONDS)));
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             _timerFactory.Verify(f => f(
                 It.IsAny<TimerCallback>(),
                 It.Is<object>(o => (o as AspectEngineDataFile) == file),
-                It.Is<TimeSpan>(t => t.TotalSeconds == Constants.DATA_UPDATE_POLLING_DEFAULT)));
+                It.Is<TimeSpan>(t => t.TotalSeconds == Constants.DATA_FILE_DEFAULT_UPDATE_POLLING_SECONDS)));
         }
 
         /// <summary>

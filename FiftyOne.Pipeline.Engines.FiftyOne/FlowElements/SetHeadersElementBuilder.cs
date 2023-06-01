@@ -33,6 +33,7 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {
     /// <summary>
     /// Fluent builder for <see cref="SetHeadersElement"/> instances.
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/set-headers-element.md">Specification</see>
     /// </summary>
     public class SetHeadersElementBuilder
     {

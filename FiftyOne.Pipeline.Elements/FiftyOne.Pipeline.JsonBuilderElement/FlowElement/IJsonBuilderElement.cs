@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {
     /// <summary>
     /// The Interface for the <see cref="JsonBuilderElement"/>
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/pipeline-elements/json-builder.md">Specification</see>
     /// </summary>
     public interface IJsonBuilderElement : 
         IFlowElement<IJsonBuilderElementData, IElementPropertyMetaData>

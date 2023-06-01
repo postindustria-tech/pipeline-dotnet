@@ -37,6 +37,7 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
 {
     /// <summary>
     /// Base class for 51Degrees on-premise aspect engines. 
+    /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/conceptual-overview.md#on-premise-engines">Specification</see>
     /// </summary>
     /// <typeparam name="T">
     /// The type of data that the engine will return. Must implement 
