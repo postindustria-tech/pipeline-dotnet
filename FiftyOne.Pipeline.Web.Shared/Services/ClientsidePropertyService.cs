@@ -160,7 +160,6 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
             ServeContent(context, flowData, ContentType.Json);
         }
 
-
         private void ServeContent(IContextAdapter context, IFlowData flowData, ContentType contentType)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
@@ -250,11 +249,33 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                     new string[] {
                     hash,
                     }));
+                context.Response.SetHeader("Access-Control-Allow-Origin", GetAllowOrigins(context.Request).First());
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, Messages.MessageJavaScriptCachingError);
             }
+        }
+
+        private static readonly string[] ORIGIN_HEADERS = { "Origin", "Referer" };
+
+        /// <summary>
+        /// Returns the value for the Access-Control-Allow-Origin response header. The best headers are used initially
+        /// and then if no specific value can be determined the wildcard * returned.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        private IEnumerable<string> GetAllowOrigins(IRequestAdapter request)
+        {
+            foreach (var headerName in ORIGIN_HEADERS)
+            {
+                var value = request.GetHeaderValue(headerName);
+                if (String.IsNullOrEmpty(value) == false)
+                {
+                    yield return value;
+                }
+            }
+            yield return "*";
         }
     }
 }
