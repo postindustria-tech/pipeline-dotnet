@@ -249,7 +249,11 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                     new string[] {
                     hash,
                     }));
-                context.Response.SetHeader("Access-Control-Allow-Origin", GetAllowOrigins(context.Request).First());
+                var origin = GetAllowOrigin(context.Request);
+                if (origin != null)
+                {
+                    context.Response.SetHeader("Access-Control-Allow-Origin", origin);
+                }
             }
             catch (InvalidOperationException ex)
             {
@@ -257,25 +261,21 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
             }
         }
 
-        private static readonly string[] ORIGIN_HEADERS = { "Origin", "Referer" };
-
         /// <summary>
-        /// Returns the value for the Access-Control-Allow-Origin response header. The best headers are used initially
-        /// and then if no specific value can be determined the wildcard * returned.
+        /// Returns the value for the Access-Control-Allow-Origin response header by inspecting the Origin header
+        /// of the request. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin for details associated
+        /// with the Origin header.
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        private IEnumerable<string> GetAllowOrigins(IRequestAdapter request)
+        private string GetAllowOrigin(IRequestAdapter request)
         {
-            foreach (var headerName in ORIGIN_HEADERS)
+            var value = request.GetHeaderValue("Origin");
+            if (String.IsNullOrEmpty(value) == false && "null".Equals(value) == false)
             {
-                var value = request.GetHeaderValue(headerName);
-                if (String.IsNullOrEmpty(value) == false)
-                {
-                    yield return value;
-                }
+                return value;
             }
-            yield return "*";
+            return null;
         }
     }
 }

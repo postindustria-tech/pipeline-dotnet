@@ -23,6 +23,7 @@
 using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.JavaScriptBuilder.Data;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.Data;
@@ -32,7 +33,9 @@ using FiftyOne.Pipeline.Web.Shared.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.Net.Http.Json;
 
 namespace FiftyOne.Pipeline.Web.Shared.Tests
 {
@@ -108,7 +111,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
                 JS_CONTENT.Length.ToString(), 
                 JS_CONTENT_TYPE, 200, 
                 _defaultDataKey.GetHashCode().ToString(),
-                "");
+                "", 
+                null);
         }
 
         /// <summary>
@@ -128,7 +132,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
 
             _service.ServeJavascript(_context.Object, _flowData.Object);
 
-            ValidateResponse(null, null, null, 304, null, null);
+            ValidateResponse(null, null, null, 304, null, null, null);
         }
 
         /// <summary>
@@ -149,7 +153,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
                 JS_CONTENT.Length.ToString(),
                 JS_CONTENT_TYPE, 200,
                 _defaultDataKey.GetHashCode().ToString(),
-                expectedVary);
+                expectedVary, 
+                null);
         }
 
         /// <summary>
@@ -166,7 +171,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
                 JSON_CONTENT.Length.ToString(),
                 JSON_CONTENT_TYPE, 200,
                 _defaultDataKey.GetHashCode().ToString(),
-                "");
+                "",
+                null);
         }
 
         /// <summary>
@@ -185,7 +191,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
 
             _service.ServeJson(_context.Object, _flowData.Object);
 
-            ValidateResponse(null, null, null, 304, null, null);
+            ValidateResponse(null, null, null, 304, null, null, null);
         }
 
         /// <summary>
@@ -207,7 +213,88 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
                 JSON_CONTENT.Length.ToString(),
                 JSON_CONTENT_TYPE, 200,
                 _defaultDataKey.GetHashCode().ToString(),
-                expectedVary);
+                expectedVary,
+                null);
+        }
+
+        /// <summary>
+        /// If the Origin header is set to none null then the Access-Control-Allow-Origin header should be present in
+        /// the response with the same value as the request.
+        /// </summary>
+        [TestMethod]
+        public void Json_Cors()
+        {
+            const string ORIGIN_VALUE = "https://localhost";
+            Configure();
+            _request.Setup(r => r.GetHeaderValue("Origin"))
+                .Returns(ORIGIN_VALUE);
+            _service.ServeJson(_context.Object, _flowData.Object);
+            ValidateResponse(JSON_CONTENT,
+                JSON_CONTENT.Length.ToString(),
+                JSON_CONTENT_TYPE, 200,
+                _defaultDataKey.GetHashCode().ToString(),
+                "",
+                ORIGIN_VALUE);
+        }
+
+        /// <summary>
+        /// If the Origin header is set to  null then the Access-Control-Allow-Origin header should not be present in
+        /// the response.
+        /// </summary>
+        [TestMethod]
+        public void Json_Cors_Null()
+        {
+            const string ORIGIN_VALUE = "null";
+            Configure();
+            _request.Setup(r => r.GetHeaderValue("Origin"))
+                .Returns(ORIGIN_VALUE);
+            _service.ServeJson(_context.Object, _flowData.Object);
+            ValidateResponse(JSON_CONTENT,
+                JSON_CONTENT.Length.ToString(),
+                JSON_CONTENT_TYPE, 200,
+                _defaultDataKey.GetHashCode().ToString(),
+                "",
+            null);
+        }
+
+        /// <summary>
+        /// If the Origin header is set to none null then the Access-Control-Allow-Origin header should be present in
+        /// the response with the same value as the request.
+        /// </summary>
+        [TestMethod]
+        public void Javascript_Cors()
+        {
+            const string ORIGIN_VALUE = "https://localhost";
+            Configure();
+            _request.Setup(r => r.GetHeaderValue("Origin"))
+                .Returns(ORIGIN_VALUE);
+            _service.ServeJavascript(_context.Object, _flowData.Object);
+            ValidateResponse(JS_CONTENT,
+                JS_CONTENT.Length.ToString(),
+                JS_CONTENT_TYPE, 200,
+                _defaultDataKey.GetHashCode().ToString(),
+                "",
+                ORIGIN_VALUE);
+        }
+
+        /// <summary>
+        /// If the Origin header is set to  null then the Access-Control-Allow-Origin header should not be present in
+        /// the response.
+        /// </summary>
+        [TestMethod]
+        public void Javascript_Cors_Null()
+        {
+            const string ORIGIN_VALUE = "null";
+            Configure();
+            _request.Setup(r => r.GetHeaderValue("Origin"))
+                .Returns(ORIGIN_VALUE);
+            _service.ServeJavascript(_context.Object, _flowData.Object);
+            ValidateResponse(JS_CONTENT,
+                JS_CONTENT.Length.ToString(),
+                JS_CONTENT_TYPE, 200,
+                _defaultDataKey.GetHashCode().ToString(),
+                "",
+                null);
         }
 
         /// <summary>
@@ -268,13 +355,15 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
         /// <param name="expectedStatusCode"></param>
         /// <param name="expectedETag"></param>
         /// <param name="expectedVary"></param>
+        /// <param name="expectedOrigin"></param>
         private void ValidateResponse(
             string expectedContent,
             string contentLength, 
             string contentType,
             int expectedStatusCode,
             string expectedETag,
-            string expectedVary)
+            string expectedVary,
+            string expectedOrigin)
         {
             if (expectedContent != null)
             {
@@ -328,6 +417,14 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
             else
             {
                 _response.Verify(r => r.SetHeader("Vary", It.IsAny<string>()), Times.Never);
+            }
+            if (expectedOrigin != null)
+            {
+                _response.Verify(r => r.SetHeader("Access-Control-Allow-Origin", expectedOrigin));
+            }
+            else
+            {
+                _response.Verify(r => r.SetHeader("Access-Control-Allow-Origin", It.IsAny<string>()), Times.Never);
             }
         }
 
