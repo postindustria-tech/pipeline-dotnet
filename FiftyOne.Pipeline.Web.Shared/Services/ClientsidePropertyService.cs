@@ -160,7 +160,6 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
             ServeContent(context, flowData, ContentType.Json);
         }
 
-
         private void ServeContent(IContextAdapter context, IFlowData flowData, ContentType contentType)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
@@ -250,11 +249,33 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                     new string[] {
                     hash,
                     }));
+                var origin = GetAllowOrigin(context.Request);
+                if (origin != null)
+                {
+                    context.Response.SetHeader("Access-Control-Allow-Origin", origin);
+                }
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, Messages.MessageJavaScriptCachingError);
             }
+        }
+
+        /// <summary>
+        /// Returns the value for the Access-Control-Allow-Origin response header by inspecting the Origin header
+        /// of the request. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin for details associated
+        /// with the Origin header.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        private string GetAllowOrigin(IRequestAdapter request)
+        {
+            var value = request.GetHeaderValue("Origin");
+            if (String.IsNullOrEmpty(value) == false && "null".Equals(value) == false)
+            {
+                return value;
+            }
+            return null;
         }
     }
 }
