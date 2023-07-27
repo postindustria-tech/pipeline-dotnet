@@ -49,7 +49,7 @@ namespace performance_tests
 
             // Call AddFiftyOne to add all the things the Pipeline will need
             // to the services collection and create it based on the supplied
-            // configruation.
+            // configuration.
             services.AddFiftyOne(Configuration);
         }
 
