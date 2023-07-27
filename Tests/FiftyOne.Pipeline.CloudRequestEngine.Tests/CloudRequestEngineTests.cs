@@ -33,7 +33,6 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -148,8 +147,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             {
                 logger.AssertMaxWarnings(1);
                 logger.AssertMaxErrors(0);
-                Assert.AreEqual(1, logger.WarningsLogged.Count);
-                var warning = logger.WarningsLogged.Single();
+                Assert.AreEqual(1, logger.WarningEntries.Count());
+                var warning = logger.WarningEntries.Single();
                 Assert.IsTrue(warning.Contains($"'{evidence1}' evidence conflicts with '{evidence2}'"));
             } 
             else
@@ -238,11 +237,11 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             // Check that the expected number of warnings has been logged.
             logger.AssertMaxWarnings(evidence.Length - 1);
             logger.AssertMaxErrors(0);
-            Assert.AreEqual(evidence.Length - 1, logger.WarningsLogged.Count, 
-                $"The number of warnings logged ({logger.WarningsLogged.Count}) " +
+            Assert.AreEqual(evidence.Length - 1, logger.WarningEntries.Count(), 
+                $"The number of warnings logged ({logger.WarningEntries.Count()}) " +
                 $"did not match what was expected ({evidence.Length - 1})");
             // Check that only conflict warnings have been logged.
-            foreach (var warning in logger.WarningsLogged)
+            foreach (var warning in logger.WarningEntries)
             {
                 Assert.IsTrue(warning.Contains("evidence conflicts"));
             }

@@ -24,11 +24,7 @@ using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.JsonBuilder.Converters;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace FiftyOne.Pipeline.JsonBuilderElementTests
 {

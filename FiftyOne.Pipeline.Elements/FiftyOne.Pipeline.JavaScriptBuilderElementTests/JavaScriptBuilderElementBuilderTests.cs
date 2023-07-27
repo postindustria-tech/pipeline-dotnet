@@ -22,14 +22,9 @@
 
 using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.Core.Exceptions;
-using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 
 namespace FiftyOne.Pipeline.JavaScript.Tests
@@ -129,7 +124,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                 .SetProtocol(protocol)
                 .Build();
 
-            var loggers = loggerFactory.Loggers.Where(x => x.WarningsLogged.Count > 0);
+            var loggers = loggerFactory.Loggers.Where(x => x.WarningEntries.Count() > 0);
 
             Assert.IsTrue(loggers.Count() == 0);
         }
