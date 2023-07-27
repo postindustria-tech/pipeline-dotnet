@@ -20,7 +20,6 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using Examples.OnPremiseEngine.Data;
@@ -30,9 +29,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using FiftyOne.Pipeline.Engines;
-using FiftyOne.Pipeline.Engines.Configuration;
 
 namespace Examples.OnPremiseEngine.FlowElements
 {

@@ -22,7 +22,6 @@
 
 using FiftyOne.Pipeline.Math;
 using FiftyOne.Pipeline.Web.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Example_Website.Controllers

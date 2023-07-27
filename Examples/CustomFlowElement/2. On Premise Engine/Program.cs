@@ -21,7 +21,6 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.FlowElements;
-using FiftyOne.Pipeline.Engines.Services;
 using Microsoft.Extensions.Logging;
 using Examples.OnPremiseEngine.Data;
 using Examples.OnPremiseEngine.FlowElements;

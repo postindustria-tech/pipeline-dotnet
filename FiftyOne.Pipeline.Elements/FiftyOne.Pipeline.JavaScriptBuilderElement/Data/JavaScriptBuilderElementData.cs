@@ -24,7 +24,6 @@ using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.Data
 {

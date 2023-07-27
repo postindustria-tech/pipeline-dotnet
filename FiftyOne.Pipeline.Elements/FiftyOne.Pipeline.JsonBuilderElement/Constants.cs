@@ -20,11 +20,6 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using System;
-using System.Collections.Generic;
-using System.Resources;
-using System.Text;
-
 namespace FiftyOne.Pipeline.JsonBuilder
 {
     /// <summary>

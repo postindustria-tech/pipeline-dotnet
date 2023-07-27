@@ -23,7 +23,6 @@
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace FiftyOne.Pipeline.Math
 {

@@ -20,11 +20,6 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using FiftyOne.Pipeline.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using SimpleClientSideElement.Data;

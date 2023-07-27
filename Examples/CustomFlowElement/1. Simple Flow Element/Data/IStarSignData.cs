@@ -21,9 +21,6 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 //! [class]
 namespace Examples.CustomFlowElement.Data
