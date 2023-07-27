@@ -37,11 +37,11 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using FiftyOne.Pipeline.Engines.TestHelpers;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Text;
 
 namespace FiftyOne.Pipeline.JsonBuilderElementTests
 {
@@ -545,7 +545,7 @@ carriage return and new line
             expectedValue = expectedValue.Replace(@"
 ", @"\r\n");
 
-            // Replacing as there is no carriage returnon Linux format.
+            // Replacing as there is no carriage return in Linux format.
             expectedValue = expectedValue.Replace(@"\r", @"");
             expectedValue = valueOfProperty == null ? expectedValue : $"\"{expectedValue}\"";
 
@@ -561,8 +561,8 @@ carriage return and new line
                 case TypeToBeTested.List:
                     valueInDict = new List<string>() { valueOfProperty };
                     expectedValue = $@"[
-      {expectedValue}
-    ]";
+                      {expectedValue}
+                    ]";
                     break;
                 case TypeToBeTested.APV_String:
                     valueInDict = new AspectPropertyValue<string>(valueOfProperty);
@@ -573,8 +573,8 @@ carriage return and new line
                 case TypeToBeTested.APV_List:
                     valueInDict = new AspectPropertyValue<IReadOnlyList<string>>(new List<string>() { valueOfProperty });
                     expectedValue = $@"[
-      {expectedValue}
-    ]";
+                      {expectedValue}
+                    ]";
                     break;
                 default:
                     break;
@@ -593,12 +593,11 @@ carriage return and new line
             };
 
             var result = jsonBuilder.Serialize(data);
-            Assert.AreEqual($@"{{
-  ""element"": {{
-    ""property"": {expectedValue}
-  }}
-}}", 
-                result.Replace(@"\r", @""));
+            JsonEqual($@"{{
+              ""element"": {{
+                ""property"": {expectedValue}
+              }}
+            }}", result);
         }
 
         /// <summary>
@@ -632,26 +631,26 @@ carriage return and new line
             };
 
             var result = jsonBuilder.Serialize(data);
-            Assert.AreEqual(@"{
-  ""element"": {
-    ""property1"": 10,
-    ""property2"": 10,
-    ""property3"": 10.1,
-    ""property4"": 10.1,
-    ""property5"": true,
-    ""property6"": true,
-    ""property7"": [
-      ""itema"",
-      ""itemb""
-    ],
-    ""property8"": [
-      ""itema"",
-      ""itemb""
-    ],
-    ""property9"": [],
-    ""property10"": []
-  }
-}", result);
+            JsonEqual(@"{
+                ""element"": {
+                ""property1"": 10,
+                ""property2"": 10,
+                ""property3"": 10.1,
+                ""property4"": 10.1,
+                ""property5"": true,
+                ""property6"": true,
+                ""property7"": [
+                    ""itema"",
+                    ""itemb""
+                ],
+                ""property8"": [
+                    ""itema"",
+                    ""itemb""
+                ],
+                ""property9"": [],
+                ""property10"": []
+                }
+                }", result);
         }
 
         [TestMethod]
@@ -823,6 +822,31 @@ carriage return and new line
                     break;
             }
             return result;
+        }
+
+        /// <summary>
+        /// Asserts two JSON strings are equal having first removed all 
+        /// carriage returns and leading and trailing white space for each
+        /// line.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        private static void JsonEqual(string a, string b)
+        {
+            Assert.AreEqual(JsonTrim(a), JsonTrim(b));
+        }
+
+        private static string JsonTrim(string value)
+        {
+            var sb = new StringBuilder();
+            var lines = value.Split(
+                new char[] { '\r', '\n' }, 
+                StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                sb.Append(line.Trim());
+            }
+            return sb.ToString();
         }
     }
 }
