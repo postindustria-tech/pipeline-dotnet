@@ -21,8 +21,6 @@
  * ********************************************************************* */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FiftyOne.Pipeline.Core.Data.Types
 {

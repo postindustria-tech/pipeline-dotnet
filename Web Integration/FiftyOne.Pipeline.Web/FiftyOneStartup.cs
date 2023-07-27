@@ -21,11 +21,9 @@
  * ********************************************************************* */
 
 using System;
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.FileProviders;
 using FiftyOne.Pipeline.Web.Services;
 using FiftyOne.Pipeline.Core.FlowElements;
@@ -35,13 +33,9 @@ using System.Net.Http;
 using System.Linq;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
-using System.Collections.Generic;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.Web.Shared;
 using FiftyOne.Pipeline.Web.Shared.Services;
-using static System.Net.Mime.MediaTypeNames;
-using Newtonsoft.Json;
-using Microsoft.AspNetCore.SignalR;
 
 namespace FiftyOne.Pipeline.Web
 {
