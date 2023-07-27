@@ -387,9 +387,9 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
 
             // Assert
             // Check that a warning was logged.
-            Assert.AreEqual(1, _logger.WarningsLogged.Count);
-            Assert.IsTrue(_logger.WarningsLogged[0].StartsWith("Failure sending usage data"));
-            Console.WriteLine(_logger.WarningsLogged[0]);
+            Assert.AreEqual(1, _logger.WarningEntries.Count());
+            Assert.IsTrue(_logger.WarningEntries.First().StartsWith("Failure sending usage data"));
+            Console.WriteLine(_logger.WarningEntries.First());
         }
 
         /// <summary>
@@ -485,8 +485,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
                 .SetIgnoreFlowDataEvidenceFilter(config)
                 .Build();
 
-            Assert.IsTrue(logger.WarningsLogged.Count > 0);
-            Assert.IsTrue(logger.ErrorsLogged.Count == 0);
+            Assert.IsTrue(logger.WarningEntries.Count() > 0);
+            Assert.IsTrue(logger.ErrorEntries.Count() == 0);
         }
 
         /// <summary>
@@ -507,8 +507,8 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
                 .SetIgnoreFlowDataEvidenceFilter(config)
                 .Build();
 
-            Assert.IsTrue(logger.WarningsLogged.Count == 0);
-            Assert.IsTrue(logger.ErrorsLogged.Count == 0);
+            Assert.IsTrue(logger.WarningEntries.Count() == 0);
+            Assert.IsTrue(logger.ErrorEntries.Count() == 0);
         }
 
         /// <summary>

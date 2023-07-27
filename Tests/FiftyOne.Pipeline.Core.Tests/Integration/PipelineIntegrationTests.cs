@@ -26,7 +26,6 @@ using FiftyOne.Pipeline.Core.Tests.HelperClasses;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System;
 using System.Collections.Generic;
 
 namespace FiftyOne.Pipeline.Core.Tests.Integration

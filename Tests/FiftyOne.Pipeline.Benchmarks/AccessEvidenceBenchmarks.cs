@@ -22,12 +22,7 @@
 
 using BenchmarkDotNet.Attributes;
 using FiftyOne.Pipeline.Engines.TestHelpers;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
 
 namespace FiftyOne.Pipeline.Benchmarks
 {

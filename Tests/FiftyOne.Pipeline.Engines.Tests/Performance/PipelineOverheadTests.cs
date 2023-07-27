@@ -21,11 +21,9 @@
  * ********************************************************************* */
 
 using FiftyOne.Caching;
-using FiftyOne.Common.Wrappers.IO;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Caching;
 using FiftyOne.Pipeline.Engines.Configuration;
-using FiftyOne.Pipeline.Engines.Services;
 using FiftyOne.Pipeline.Engines.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -33,7 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 

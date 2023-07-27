@@ -218,7 +218,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
         /// <summary>
         /// Check that a timer will be created with the expected timing 
-        /// values if the randomisation property is set to zero.
+        /// values if the randomization property is set to zero.
         /// </summary>
         [TestMethod]
         public void DataUpdateService_Register_AutoUpdateNoRandomisation()
@@ -889,7 +889,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // We expect one error to be logged so make sure it's
                 // ignored in cleanup and verify its presence.
                 _ignoreErrors = 1;
-                Assert.AreEqual(1, _logger.ErrorsLogged.Count);
+                Assert.AreEqual(1, _logger.ErrorEntries.Count());
                 Assert.AreEqual(AutoUpdateStatus.AUTO_UPDATE_HTTPS_ERR, completeEventArgs.Status);
             }
             finally

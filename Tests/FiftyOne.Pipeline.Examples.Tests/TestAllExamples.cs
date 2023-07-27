@@ -21,11 +21,6 @@
  * ********************************************************************* */
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using Ex = Examples;
 
 namespace FiftyOne.Pipeline.Examples.Tests

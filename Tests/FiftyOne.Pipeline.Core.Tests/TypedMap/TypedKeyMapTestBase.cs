@@ -20,7 +20,6 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.TypedMap;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;

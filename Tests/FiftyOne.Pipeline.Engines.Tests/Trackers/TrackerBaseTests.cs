@@ -22,7 +22,6 @@
 
 using FiftyOne.Caching;
 using FiftyOne.Pipeline.Core.Data;
-using FiftyOne.Pipeline.Engines.Caching;
 using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.TestHelpers;
 using FiftyOne.Pipeline.Engines.Trackers;

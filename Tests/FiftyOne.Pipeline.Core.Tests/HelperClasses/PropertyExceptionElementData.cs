@@ -25,7 +25,6 @@ using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace FiftyOne.Pipeline.Core.Tests.HelperClasses
 {

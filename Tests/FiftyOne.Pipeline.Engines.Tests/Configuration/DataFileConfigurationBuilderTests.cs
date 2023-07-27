@@ -24,8 +24,6 @@ using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FiftyOne.Pipeline.Engines.Tests.Configuration
 {
