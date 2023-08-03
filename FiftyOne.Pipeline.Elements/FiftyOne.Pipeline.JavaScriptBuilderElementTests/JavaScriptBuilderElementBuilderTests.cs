@@ -26,7 +26,6 @@ using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 
-
 namespace FiftyOne.Pipeline.JavaScript.Tests
 {
     [TestClass]
@@ -126,7 +125,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
             var loggers = loggerFactory.Loggers.Where(x => x.WarningEntries.Count() > 0);
 
-            Assert.IsTrue(loggers.Count() == 0);
+            Assert.AreEqual(loggers.Count(), 0);
         }
     }
 }
