@@ -27,7 +27,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.Math
 {

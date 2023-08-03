@@ -22,9 +22,6 @@
 
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder.Data
 {

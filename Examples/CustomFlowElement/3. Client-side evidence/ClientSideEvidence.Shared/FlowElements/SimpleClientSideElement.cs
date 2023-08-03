@@ -26,7 +26,6 @@ using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using FiftyOne.Pipeline.Core.Data.Types;
 
 namespace Examples.ClientSideEvidence.Shared

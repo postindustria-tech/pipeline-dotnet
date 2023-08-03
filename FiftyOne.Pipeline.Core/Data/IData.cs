@@ -20,7 +20,6 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using System;
 using System.Collections.Generic;
 
 namespace FiftyOne.Pipeline.Core.Data

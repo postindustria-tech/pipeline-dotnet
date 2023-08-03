@@ -21,14 +21,12 @@
  * ********************************************************************* */
 
 using FiftyOne.Common.Wrappers.IO;
-using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Engines.Configuration;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.Exceptions;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -36,7 +34,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -44,12 +41,12 @@ using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.Engines.Services
 {
-	/// <summary>
-	/// Service that manages updates to data files that are used by
-	/// <see cref="IAspectEngine"/> instances.
+    /// <summary>
+    /// Service that manages updates to data files that are used by
+    /// <see cref="IAspectEngine"/> instances.
     /// See the <see href="https://github.com/51Degrees/specifications/blob/main/pipeline-specification/features/data-updates.md">Specification</see>
-	/// </summary>
-	public class DataUpdateService : IDataUpdateService
+    /// </summary>
+    public class DataUpdateService : IDataUpdateService
 	{
 		#region Fields
 		private ILogger<DataUpdateService> _logger;

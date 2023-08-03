@@ -32,7 +32,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using System.Linq;
-using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.Data;
 using Stubble.Core.Builders;
 using Stubble.Core;

@@ -22,7 +22,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Core.TypedMap;

@@ -24,7 +24,6 @@ using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace FiftyOne.Pipeline.Core.Tests.HelperClasses

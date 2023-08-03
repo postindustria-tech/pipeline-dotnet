@@ -24,9 +24,6 @@ using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
 
 namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.FlowElements
 {

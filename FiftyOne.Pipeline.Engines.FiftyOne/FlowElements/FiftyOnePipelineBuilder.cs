@@ -21,14 +21,11 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Attributes;
-using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 
 namespace FiftyOne.Pipeline.Engines.FiftyOne.FlowElements
 {

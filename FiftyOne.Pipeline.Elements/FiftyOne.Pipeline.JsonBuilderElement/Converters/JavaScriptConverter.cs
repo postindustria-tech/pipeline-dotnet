@@ -22,10 +22,7 @@
 
 using FiftyOne.Pipeline.Core.Data.Types;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FiftyOne.Pipeline.JsonBuilder.Converters
 {

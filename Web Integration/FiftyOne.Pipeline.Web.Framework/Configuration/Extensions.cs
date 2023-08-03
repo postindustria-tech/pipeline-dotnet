@@ -38,6 +38,19 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
     public static class Extensions
 #pragma warning restore CA1724 // Type names should not match namespaces
     {
+
+        private const string JSON_SCHEMA_DIR = "Schemas";
+        private const string JSON_SCHEMA_FILENAME = "pipelineOptionsSchema.json";
+
+        /// <summary>
+        /// Function used to determine the base directory. Defaults to using
+        /// the HttpContext. Provided to enable tests operating without a web
+        /// server to be performed.
+        /// HttpContext.Current.Server.MapPath("~/App_Data")
+        /// </summary>
+        public static Func<string> BaseDirectory = 
+            () => HttpContext.Current.Server.MapPath("~/App_Data");
+
         /// <summary>
         /// Find and add a configuration file in the web application's
         /// "App_Data" folder to the server configuration builder.
@@ -53,7 +66,7 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
         /// </exception>
         public static IConfigurationBuilder AddPipelineConfig(this IConfigurationBuilder config)
         {
-            var basePath = HttpContext.Current.Server.MapPath("~/App_Data");
+            var basePath = BaseDirectory();
             // Try possible XML files.
             foreach (var fileName in Constants.ConfigFileNames)
             {
@@ -85,11 +98,11 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
             return config;
         }
 
-        private const string JSON_SCHEMA_DIR = "Schemas";
-        private const string JSON_SCHEMA_FILENAME = "pipelineOptionsSchema.json";
-        private static readonly string JSON_SCHEMA_COMPLETE_PATH = 
-            Path.Combine(AppDomain.CurrentDomain.RelativeSearchPath,
-                JSON_SCHEMA_DIR, JSON_SCHEMA_FILENAME);
+        /// <summary>
+        /// Returns the full path to the json settings file.
+        /// </summary>
+        private static string JsonSchemaFullPath =>
+            Path.Combine(BaseDirectory(), JSON_SCHEMA_DIR, JSON_SCHEMA_FILENAME);
 
         /// <summary>
         /// Validate the specified json file using the pipeline options schema.
@@ -105,9 +118,9 @@ namespace FiftyOne.Pipeline.Web.Framework.Configuration
             // In some cases, the schema file is not going to be where we expect it to be.
             // We don't want to crash the user's system and we don't have a logger in here,
             // so just handle it by skipping validation.
-            if (File.Exists(JSON_SCHEMA_COMPLETE_PATH))
+            if (File.Exists(JsonSchemaFullPath))
             {
-                JSchema schema = JSchema.Parse(File.ReadAllText(JSON_SCHEMA_COMPLETE_PATH));
+                JSchema schema = JSchema.Parse(File.ReadAllText(JsonSchemaFullPath));
 
                 // Prepare the reader
                 JsonTextReader reader = new JsonTextReader(new StringReader(File.ReadAllText(jsonFile)));

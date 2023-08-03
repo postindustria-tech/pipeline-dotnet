@@ -35,11 +35,7 @@ using FiftyOne.Pipeline.Web.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace FiftyOne.Pipeline.Web.Framework
@@ -312,7 +308,7 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// </summary>
         private static void AddRequestProtocolToEvidence(IFlowData flowData, HttpRequest request)
         {
-            string protocol = "https";
+            string protocol;
             if (request.IsSecureConnection)
             {
                 protocol = "https";

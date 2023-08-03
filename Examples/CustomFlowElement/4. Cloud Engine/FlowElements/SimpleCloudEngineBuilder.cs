@@ -20,19 +20,13 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using Examples.CloudEngine.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using FiftyOne.Pipeline.Engines;
-using System.Net.Http;
 using FiftyOne.Pipeline.CloudRequestEngine.FlowElements;
 
 namespace Examples.CloudEngine.FlowElements

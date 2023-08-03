@@ -21,10 +21,6 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
-using System;
-using System.Collections.Generic;
-using System.Resources;
-using System.Text;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilder
 {

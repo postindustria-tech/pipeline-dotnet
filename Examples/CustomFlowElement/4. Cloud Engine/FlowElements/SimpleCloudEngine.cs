@@ -24,17 +24,12 @@ using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using Examples.CloudEngine.Data;
-using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using FiftyOne.Pipeline.CloudRequestEngine.FlowElements;
-using System.Net.Http;
 using FiftyOne.Pipeline.Core.Exceptions;
 using Newtonsoft.Json;
-using FiftyOne.Pipeline.CloudRequestEngine.Data;
 
 namespace Examples.CloudEngine.FlowElements
 {

@@ -22,9 +22,6 @@
 
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Data.Types;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SimpleClientSideElement.Data
 {

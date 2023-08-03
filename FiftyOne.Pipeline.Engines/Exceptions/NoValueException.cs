@@ -21,8 +21,6 @@
  * ********************************************************************* */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using FiftyOne.Pipeline.Engines.Data;
 
 namespace FiftyOne.Pipeline.Engines.Exceptions
