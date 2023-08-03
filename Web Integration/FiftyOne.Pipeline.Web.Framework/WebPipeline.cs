@@ -308,7 +308,7 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// </summary>
         private static void AddRequestProtocolToEvidence(IFlowData flowData, HttpRequest request)
         {
-            string protocol = "https";
+            string protocol;
             if (request.IsSecureConnection)
             {
                 protocol = "https";
