@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.Core.Configuration;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
@@ -51,14 +52,14 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
 
 
         [TestInitialize]
-        public void Initialise()
+        public void Initialize()
         {
             _loggerFactory = new TestLoggerFactory();
             _builder = new PipelineBuilder(_loggerFactory);
         }
 
         [TestCleanup]
-        public void Cleaup()
+        public void Cleanup()
         {
             foreach (var logger in _loggerFactory.Loggers)
             {
