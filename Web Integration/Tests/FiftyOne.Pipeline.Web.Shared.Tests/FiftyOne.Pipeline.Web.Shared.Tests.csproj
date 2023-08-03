@@ -2,12 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
-    <StartupObject></StartupObject>
-
-    <IsPublishable>True</IsPublishable>
   </PropertyGroup>
 
   <ItemGroup>
