@@ -61,12 +61,6 @@ namespace FiftyOne.Pipeline.Engines
         public const bool DATA_FILE_DEFAULT_AUTO_UPDATES_ENABLED = true;
 
         /// <summary>
-        /// Default value for the list of license keys to use when checking for updates
-        /// for a data file.
-        /// </summary>
-        public static readonly List<string> DATA_FILE_DEFAULT_LICENSE_KEYS = new List<string>();
-
-        /// <summary>
         /// Default value for the flag that controls whether the file system watcher is 
         /// enabled for a data file or not.
         /// </summary>

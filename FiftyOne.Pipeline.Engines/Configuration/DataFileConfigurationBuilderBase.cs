@@ -55,7 +55,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// <summary>
         /// License keys to use when updating the Engine's data file.
         /// </summary>
-        protected List<string> DataUpdateLicenseKeys { get; private set; } = Constants.DATA_FILE_DEFAULT_LICENSE_KEYS;
+        protected List<string> DataUpdateLicenseKeys { get; private set; } = new List<string>();
 
         /// <summary>
         /// Constructor
