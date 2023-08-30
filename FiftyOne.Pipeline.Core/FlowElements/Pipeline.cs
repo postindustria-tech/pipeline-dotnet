@@ -135,9 +135,17 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                         {
                             var evidenceKeyFilter = 
                                 new EvidenceKeyFilterAggregator();
-                            foreach (var filter in _flowElements.Select(e => 
-                                e.EvidenceKeyFilter))
+                            foreach (var nextElement in _flowElements)
                             {
+                                IEvidenceKeyFilter filter;
+                                try
+                                {
+                                    filter = nextElement.EvidenceKeyFilter;
+                                }
+                                catch
+                                {
+                                    continue;
+                                }
                                 evidenceKeyFilter.AddFilter(filter);
                             }
                             _evidenceKeyFilter = evidenceKeyFilter;
@@ -470,7 +478,16 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                                 StringComparer.OrdinalIgnoreCase);
                     }
                     var availableElementProperties = dictionary[element.ElementDataKey];
-                    foreach (var property in element.Properties.Where(p => p.Available))
+                    IList<IElementPropertyMetaData> elementProps;
+                    try
+                    {
+                        elementProps = element.Properties;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                    foreach (var property in elementProps.Where(p => p.Available))
                     {
                         if (availableElementProperties.ContainsKey(property.Name) == false)
                         {
