@@ -87,6 +87,12 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         /// casting, etc.
         /// </summary>
         new IList<IAspectPropertyMetaData> Properties { get; }
+
+        /// <summary>
+        /// Whether `Properties` field already has a meaningful value, 
+        /// or one will be lazily loaded upon next access.
+        /// </summary>
+        bool HasLoadedProperties { get; }
     }
 
     /// <summary>
