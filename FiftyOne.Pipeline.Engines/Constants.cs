@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("FiftyOne.Pipeline.Engines.Tests")]
+[assembly: InternalsVisibleTo("FiftyOne.Pipeline.Engines.FiftyOne.Tests")]
 
 namespace FiftyOne.Pipeline.Engines
 {
@@ -58,12 +59,6 @@ namespace FiftyOne.Pipeline.Engines
         /// for updates or not.
         /// </summary>
         public const bool DATA_FILE_DEFAULT_AUTO_UPDATES_ENABLED = true;
-
-        /// <summary>
-        /// Default value for the list of license keys to use when checking for updates
-        /// for a data file.
-        /// </summary>
-        public static readonly List<string> DATA_FILE_DEFAULT_LICENSE_KEYS = new List<string>();
 
         /// <summary>
         /// Default value for the flag that controls whether the file system watcher is 
