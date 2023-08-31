@@ -120,8 +120,6 @@ namespace FiftyOne.Pipeline.Engines.FiftyOne.Tests.Data
             Assert.IsFalse(url2.Contains("license1"));
         }
 
-
-
         /// <summary>
         /// Check that license keys are used when constructing a download URL for
         /// an on premise engine. Also check that only the license key for that
