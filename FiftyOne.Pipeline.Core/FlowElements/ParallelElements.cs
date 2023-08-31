@@ -87,8 +87,17 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 if (_evidenceKeyFilter == null)
                 {
                     _evidenceKeyFilter = new EvidenceKeyFilterAggregator();
-                    foreach (var filter in _flowElements.Select(e => e.EvidenceKeyFilter))
+                    foreach (var nextElement in _flowElements)
                     {
+                        IEvidenceKeyFilter filter;
+                        try
+                        {
+                            filter = nextElement.EvidenceKeyFilter;
+                        }
+                        catch
+                        {
+                            continue;
+                        }
                         _evidenceKeyFilter.AddFilter(filter);
                     }
                 }

@@ -84,6 +84,12 @@ namespace FiftyOne.Pipeline.Engines.FlowElements
         }
 
         /// <summary>
+        /// Provide an implementation for the non-generic, 
+        /// aspect-specific version of the meta-data property.
+        /// </summary>
+        public virtual bool HasLoadedProperties { get { return true; } }
+
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="logger">

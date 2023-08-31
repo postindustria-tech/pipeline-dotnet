@@ -128,24 +128,29 @@ namespace FiftyOne.Pipeline.Engines.Services
             MissingPropertyReason reason = MissingPropertyReason.Unknown;
 
             IAspectPropertyMetaData property = null;
-            property = engine.Properties.FirstOrDefault(p => p.Name == propertyName);
 
-            if (property != null)
+            if (engine.HasLoadedProperties)
             {
-                // Check if the property is available in the data file that is 
-                // being used by the engine.
-                if (property.DataTiersWherePresent.Any(t => t == engine.DataSourceTier) == false)
+                property = engine.Properties.FirstOrDefault(p => p.Name == propertyName);
+
+                if (property != null)
                 {
-                    reason = MissingPropertyReason.DataFileUpgradeRequired;
-                }
-                // Check if the property is excluded from the results.
-                else if (property.Available == false)
-                {
-                    reason = MissingPropertyReason.PropertyExcludedFromEngineConfiguration;
+                    // Check if the property is available in the data file that is 
+                    // being used by the engine.
+                    if (property.DataTiersWherePresent.Any(t => t == engine.DataSourceTier) == false)
+                    {
+                        reason = MissingPropertyReason.DataFileUpgradeRequired;
+                    }
+                    // Check if the property is excluded from the results.
+                    else if (property.Available == false)
+                    {
+                        reason = MissingPropertyReason.PropertyExcludedFromEngineConfiguration;
+                    }
                 }
             }
 
             if(reason == MissingPropertyReason.Unknown &&
+                engine.HasLoadedProperties &&
                 typeof(ICloudAspectEngine).IsAssignableFrom(engine.GetType()))
             {
                 if (engine.Properties.Count == 0)

@@ -62,7 +62,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// If true then Pipeline will suppress exceptions added to
         /// <see cref="IFlowData.Errors"/>.
         /// </summary>
-        private bool _suppressProcessExceptions = Constants.PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTION;
+        private bool _suppressProcessExceptions = Constants.PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTIONS;
 
         private ILogger<Evidence> _evidenceLogger;
         private ILogger<FlowData> _flowDataLogger;
@@ -201,8 +201,29 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <returns>
         /// This builder instance.
         /// </returns>
+#       pragma warning disable CS0618 // Type or member is obsolete
         [DefaultValue(Constants.PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTION)]
+#       pragma warning restore CS0618 // Type or member is obsolete
+        [ObsoleteAttribute("This setter is obsolete. Use " + nameof(SetSuppressProcessExceptions) + " instead.", false)]
         public T SetSuppressProcessException(bool suppressExceptions)
+        {
+            return SetSuppressProcessExceptions(suppressExceptions);
+        }
+
+        /// <summary>
+        /// Configure the Pipeline to either suppress exceptions added to
+        /// <see cref="IFlowData.Errors"/> during processing or to throw them
+        /// as an aggregate exception once processing is complete.
+        /// </summary>
+        /// <param name="suppressExceptions">
+        /// If true then Pipeline will suppress exceptions added to
+        /// <see cref="IFlowData.Errors"/>.
+        /// </param>
+        /// <returns>
+        /// This builder instance.
+        /// </returns>
+        [DefaultValue(Constants.PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTIONS)]
+        public T SetSuppressProcessExceptions(bool suppressExceptions)
         {
             _suppressProcessExceptions = suppressExceptions;
             return this as T;

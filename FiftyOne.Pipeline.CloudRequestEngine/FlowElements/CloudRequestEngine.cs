@@ -44,7 +44,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         "CA1724:Type names should not match namespaces",
         Justification = "This would be a breaking change so will be " +
         "addressed in a future version.")]
-    public class CloudRequestEngine : 
+    public class CloudRequestEngine :
         AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>,
         ICloudRequestEngine
     {
@@ -112,8 +112,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// Thrown if a required parameter is null.
         /// </exception>
         public CloudRequestEngine(
-            ILogger<AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>> logger, 
-            Func<IPipeline, FlowElementBase<CloudRequestData, IAspectPropertyMetaData>, 
+            ILogger<AspectEngineBase<CloudRequestData, IAspectPropertyMetaData>> logger,
+            Func<IPipeline, FlowElementBase<CloudRequestData, IAspectPropertyMetaData>,
                 CloudRequestData> aspectDataFactory,
             HttpClient httpClient,
             string dataEndpoint,
@@ -123,7 +123,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             string evidenceKeysEndpoint,
             int timeout,
             List<string> requestedProperties,
-            string cloudRequestOrigin = null) 
+            string cloudRequestOrigin = null)
             : base(logger, aspectDataFactory)
         {
             if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
@@ -147,9 +147,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 {
                     _httpClient.Timeout = new TimeSpan(0, 0, 0, 0, -1);
                 }
-
-                GetCloudProperties();
-                GetCloudEvidenceKeys();
 
                 _propertyMetaData = new List<IAspectPropertyMetaData>()
                 {
@@ -191,14 +188,32 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// be populated after a call to the cloud service as part of 
         /// object initialization.
         /// </summary>
-        public override IEvidenceKeyFilter EvidenceKeyFilter => _evidenceKeyFilter;
+        public override IEvidenceKeyFilter EvidenceKeyFilter {
+            get
+            {
+                if (_evidenceKeyFilter == null)
+                {
+                    GetCloudEvidenceKeys();
+                }
+                return _evidenceKeyFilter;
+            }
+        }
 
         /// <summary>
         /// A collection of the properties that the cloud service can
         /// populate in the JSON response.
         /// Keyed on property name.
         /// </summary>
-        public IReadOnlyDictionary<string, ProductMetaData> PublicProperties => _publicProperties;
+        public IReadOnlyDictionary<string, ProductMetaData> PublicProperties {
+            get
+            {
+                if (_publicProperties == null)
+                {
+                    GetCloudProperties();
+                }
+                return _publicProperties;
+            }
+        }
 
         /// <summary>
         /// Send evidence to the cloud and get back a JSON result.

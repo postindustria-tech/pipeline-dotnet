@@ -185,6 +185,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         }
 
         /// <summary>
+        /// Provide an implementation for the non-generic, 
+        /// aspect-specific version of the meta-data property.
+        /// </summary>
+        public override bool HasLoadedProperties { get { return _aspectProperties != null; } }
+
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="logger">
