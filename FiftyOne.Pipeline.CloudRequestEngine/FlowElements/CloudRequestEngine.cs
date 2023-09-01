@@ -302,7 +302,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
             if (hasData && checkForErrorMessages)
             {
-                var jObj = JObject.Parse(jsonResult);
+                JObject jObj;
+                try
+                {
+                    jObj = JObject.Parse(jsonResult);
+                }
+                catch (JsonReaderException ex)
+                {
+                    throw new CloudRequestException("Failed to parse server's response as JSON", ex);
+                }
                 var hasErrors = jObj.ContainsKey("errors");
                 hasData = hasErrors ?
                     jObj.Values().Count() > 1 :

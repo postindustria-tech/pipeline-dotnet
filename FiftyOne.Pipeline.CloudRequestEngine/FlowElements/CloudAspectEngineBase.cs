@@ -28,9 +28,11 @@ using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 
@@ -169,18 +171,25 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     {
                         if (_aspectProperties == null)
                         {
-                            if (LoadAspectProperties(
-                                RequestEngine.GetInstance()) == false)
+                            var engineInstance = RequestEngine.GetInstance();
+                            try
                             {
-                                throw new PipelineException(string.Format(
-                                    CultureInfo.InvariantCulture, 
-                                    Messages.ExceptionFailedToLoadProperties,
-                                    ElementDataKey));
+                                if (LoadAspectProperties(engineInstance) == false)
+                                {
+                                    throw new PipelineException(string.Format(
+                                        CultureInfo.InvariantCulture,
+                                        Messages.ExceptionFailedToLoadProperties,
+                                        ElementDataKey));
+                                }
+                            }
+                            catch (CloudRequestException)
+                            {
+                                // ignore server errors, properties will be requested again
                             }
                         }
                     }
                 }
-                return _aspectProperties;
+                return _aspectProperties ?? new IAspectPropertyMetaData[0];
             }
         }
 
