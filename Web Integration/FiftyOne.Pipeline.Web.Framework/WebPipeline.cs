@@ -283,7 +283,7 @@ namespace FiftyOne.Pipeline.Web.Framework
 
                 AddRequestProtocolToEvidence(flowData, request);
             } 
-            catch (Exception ex) when (ex is IFlowError)
+            catch (Exception ex)
             {
                 if (!GetInstance().SuppressProcessExceptionsWeb)
                 {
@@ -304,7 +304,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                     SetHeadersProvider.GetInstance().SetHeaders(flowData,
                         request.RequestContext.HttpContext.ApplicationInstance.Context);
                 }
-                catch (Exception ex) when (ex is IFlowError)
+                catch (Exception ex)
                 {
                     if (!GetInstance().SuppressProcessExceptionsWeb)
                     {
