@@ -22,6 +22,7 @@
 
 using FiftyOne.Common.TestHelpers;
 using FiftyOne.Pipeline.CloudRequestEngine.FlowElements;
+using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
@@ -455,10 +456,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             Exception exception = null;
 
-            try { 
-                var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
-                    .SetResourceKey(resourceKey)
-                    .Build();
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            try
+            {
+                var cloudEngineProps = engine.PublicProperties;
             }
             catch (Exception ex)
             {
@@ -825,11 +829,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         {
             string resourceKey = "resource_key";
 
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, new HttpClient())
+                .SetResourceKey(resourceKey)
+                .Build();
+
             try
             {
-                var engine = new CloudRequestEngineBuilder(_loggerFactory, new HttpClient())
-                    .SetResourceKey(resourceKey)
-                    .Build();
+                var cloudEngineProps = engine.PublicProperties;
                 Assert.Fail("Expected exception did not occur");
             }
             catch (CloudRequestException ex)
