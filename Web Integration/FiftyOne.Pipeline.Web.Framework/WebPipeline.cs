@@ -34,9 +34,13 @@ using FiftyOne.Pipeline.Web.Framework.Providers;
 using FiftyOne.Pipeline.Web.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NUglify.JavaScript.Syntax;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Xml.Linq;
 
 namespace FiftyOne.Pipeline.Web.Framework
 {
@@ -58,6 +62,13 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// Whether or not set header properties are enabled.
         /// </summary>
         public bool SetHeaderPropertiesEnabled => _options.UseSetHeaderProperties;
+
+        /// <summary>
+        /// Configure the Pipeline to either suppress exceptions added to
+        /// <see cref = "P:FiftyOne.Pipeline.Core.Data.IFlowData.Errors" /> during processing or to throw them
+        /// as an aggregate exception once processing is complete.
+        /// </summary>
+        public bool SuppressProcessExceptionsWeb => _options.SuppressProcessExceptionsWeb;
 
         /// <summary>
         /// Extra pipeline options which only apply to an implementation in a
@@ -227,45 +238,59 @@ namespace FiftyOne.Pipeline.Web.Framework
 
             // Create a new FlowData instance.
             var flowData = GetInstance().Pipeline.CreateFlowData();
-            // Add headers
-            foreach (var headerName in request.Headers.AllKeys)
-            {
-                CheckAndAdd(flowData, "header." + headerName, request.Headers[headerName]);
-            }
-            // Add cookies
-            foreach (var cookieName in request.Cookies.AllKeys)
-            {
-                CheckAndAdd(flowData, "cookie." + cookieName, request.Cookies[cookieName].Value);
-            }
-            // Add query parameters
-            foreach (var paramName in request.QueryString.AllKeys)
-            {
-                CheckAndAdd(flowData, "query." + paramName, request.QueryString[paramName]);
-            }
-            if (request.RequestContext.HttpContext.Session != null)
-            {
-                CheckAndAdd(flowData, "session", new AspFrameworkSession(request.RequestContext.HttpContext.Session));
-                foreach (var sessionValueName in request.RequestContext.HttpContext.Session.Keys)
-                {
-                    CheckAndAdd(flowData, (string)sessionValueName, request.RequestContext.HttpContext.Session[(string)sessionValueName]);
-                }
-            }
-            // Add form parameters to the evidence.
-            if (request.HttpMethod == Shared.Constants.METHOD_POST &&
-                Shared.Constants.CONTENT_TYPE_FORM.Contains(request.ContentType))
-            {
-                foreach (var formKey in request.Form.AllKeys)
-                {
-                    string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
-                        Core.Constants.EVIDENCE_SEPERATOR + formKey;
-                    CheckAndAdd(flowData, evidenceKey, request.Form[formKey]);
-                }
-            }
 
-            // Add the client IP
-            CheckAndAdd(flowData, "server.client-ip", request.UserHostAddress);
+            IList<Exception> webErrors = null;
 
-            AddRequestProtocolToEvidence(flowData, request);
+            try
+            {
+                // Add headers
+                foreach (var headerName in request.Headers.AllKeys)
+                {
+                    CheckAndAdd(flowData, "header." + headerName, request.Headers[headerName]);
+                }
+                // Add cookies
+                foreach (var cookieName in request.Cookies.AllKeys)
+                {
+                    CheckAndAdd(flowData, "cookie." + cookieName, request.Cookies[cookieName].Value);
+                }
+                // Add query parameters
+                foreach (var paramName in request.QueryString.AllKeys)
+                {
+                    CheckAndAdd(flowData, "query." + paramName, request.QueryString[paramName]);
+                }
+                if (request.RequestContext.HttpContext.Session != null)
+                {
+                    CheckAndAdd(flowData, "session", new AspFrameworkSession(request.RequestContext.HttpContext.Session));
+                    foreach (var sessionValueName in request.RequestContext.HttpContext.Session.Keys)
+                    {
+                        CheckAndAdd(flowData, (string)sessionValueName, request.RequestContext.HttpContext.Session[(string)sessionValueName]);
+                    }
+                }
+                // Add form parameters to the evidence.
+                if (request.HttpMethod == Shared.Constants.METHOD_POST &&
+                    Shared.Constants.CONTENT_TYPE_FORM.Contains(request.ContentType))
+                {
+                    foreach (var formKey in request.Form.AllKeys)
+                    {
+                        string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
+                            Core.Constants.EVIDENCE_SEPERATOR + formKey;
+                        CheckAndAdd(flowData, evidenceKey, request.Form[formKey]);
+                    }
+                }
+
+                // Add the client IP
+                CheckAndAdd(flowData, "server.client-ip", request.UserHostAddress);
+
+                AddRequestProtocolToEvidence(flowData, request);
+            } 
+            catch (Exception ex) when (ex is IFlowError)
+            {
+                if (!GetInstance().SuppressProcessExceptionsWeb)
+                {
+                    throw;
+                }
+                webErrors = new List<Exception> { ex };
+            }
 
             // Process the evidence and return the result
             flowData.Process();
@@ -273,9 +298,41 @@ namespace FiftyOne.Pipeline.Web.Framework
             if (GetInstance().SetHeaderPropertiesEnabled &&
                 request.RequestContext.HttpContext.ApplicationInstance != null)
             {
-                // Set HTTP headers in the response.
-                SetHeadersProvider.GetInstance().SetHeaders(flowData,
-                    request.RequestContext.HttpContext.ApplicationInstance.Context);
+                try
+                {
+                    // Set HTTP headers in the response.
+                    SetHeadersProvider.GetInstance().SetHeaders(flowData,
+                        request.RequestContext.HttpContext.ApplicationInstance.Context);
+                }
+                catch (Exception ex) when (ex is IFlowError)
+                {
+                    if (!GetInstance().SuppressProcessExceptionsWeb)
+                    {
+                        throw;
+                    }
+                    if (webErrors is null)
+                    {
+                        webErrors = new List<Exception>();
+                    }
+                    webErrors.Add(ex);
+                }
+            }
+
+            // If any errors have occurred and exceptions are not
+            // suppressed, then throw an aggregate exception.
+            if (webErrors != null && webErrors.Count > 0)
+            {
+                if (GetInstance().SuppressProcessExceptionsWeb)
+                {
+                    foreach (Exception ex in webErrors)
+                    {
+                        flowData.AddError(ex, null);
+                    }
+                }
+                else
+                {
+                    throw new AggregateException(webErrors);
+                }
             }
 
             return flowData;

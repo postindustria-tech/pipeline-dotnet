@@ -37,6 +37,7 @@ namespace FiftyOne.Pipeline.Web.Shared
             ClientSideEvidenceEnabled = true;
             UseAsyncScript = true;
             UseSetHeaderProperties = true;
+            SuppressProcessExceptionsWeb = false;
         }
 
         /// <summary>
@@ -61,5 +62,12 @@ namespace FiftyOne.Pipeline.Web.Shared
         /// Defaults to true.
         /// </summary>
         public bool UseSetHeaderProperties { get; set; }
+
+        /// <summary>
+        /// Configure the Pipeline to either suppress exceptions added to
+        /// <see cref = "P:FiftyOne.Pipeline.Core.Data.IFlowData.Errors" /> during processing or to throw them
+        /// as an aggregate exception once processing is complete.
+        /// </summary>
+        public bool SuppressProcessExceptionsWeb { get; set; }
     }
 }
