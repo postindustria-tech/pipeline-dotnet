@@ -193,11 +193,23 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 if (_evidenceKeyFilter == null)
                 {
-                    GetCloudEvidenceKeys();
+                    lock (_evidenceKeyFilterLock)
+                    {
+                        if (_evidenceKeyFilter == null)
+                        {
+                            _evidenceKeyFilter = GetCloudEvidenceKeys();
+                        }
+                    }
                 }
                 return _evidenceKeyFilter;
             }
         }
+
+        /// <summary>
+        /// Lock used when constructing an EvidenceKeyFilter.
+        /// </summary>
+        private readonly object _evidenceKeyFilterLock = new object();
+
 
         /// <summary>
         /// A collection of the properties that the cloud service can
@@ -209,11 +221,22 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 if (_publicProperties == null)
                 {
-                    GetCloudProperties();
+                    lock (_publicPropertiesLock)
+                    {
+                        if (_publicProperties == null)
+                        {
+                            _publicProperties = GetCloudProperties();
+                        }
+                    }
                 }
                 return _publicProperties;
             }
         }
+
+        /// <summary>
+        /// Lock used when constructing PublicProperties.
+        /// </summary>
+        private readonly object _publicPropertiesLock = new object();
 
         /// <summary>
         /// Send evidence to the cloud and get back a JSON result.
@@ -279,7 +302,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
             if (hasData && checkForErrorMessages)
             {
-                var jObj = JObject.Parse(jsonResult);
+                JObject jObj;
+                try
+                {
+                    jObj = JObject.Parse(jsonResult);
+                }
+                catch (JsonReaderException ex)
+                {
+                    throw new CloudRequestException("Failed to parse server's response as JSON", ex);
+                }
                 var hasErrors = jObj.ContainsKey("errors");
                 hasData = hasErrors ?
                     jObj.Values().Count() > 1 :
@@ -480,7 +511,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <summary>
         /// Get the properties that are available from the cloud service.
         /// </summary>
-        private void GetCloudProperties()
+        private Dictionary<string, ProductMetaData> GetCloudProperties()
         {
             string jsonResult = string.Empty;
 
@@ -496,7 +527,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 var accessiblePropertyData = JsonConvert
                     .DeserializeObject<LicencedProducts>(jsonResult);
 
-                _publicProperties = accessiblePropertyData.Products;
+                return accessiblePropertyData.Products;
             }
             else
             {
@@ -508,7 +539,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <summary>
         /// Get the evidence keys that are required by the cloud service.
         /// </summary>
-        private void GetCloudEvidenceKeys()
+        private IEvidenceKeyFilter GetCloudEvidenceKeys()
         {
             string jsonResult = string.Empty;
 
@@ -526,7 +557,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 var evidenceKeys = JsonConvert
                     .DeserializeObject<List<string>>(jsonResult);
 
-                _evidenceKeyFilter = new EvidenceKeyFilterWhitelist(evidenceKeys);
+                return new EvidenceKeyFilterWhitelist(evidenceKeys);
             }
             else
             {
