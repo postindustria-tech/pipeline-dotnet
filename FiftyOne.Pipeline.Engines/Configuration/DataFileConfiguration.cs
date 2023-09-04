@@ -98,8 +98,7 @@ namespace FiftyOne.Pipeline.Engines.Configuration
         /// Note that the exact formatting of the query string is 
         /// controlled by the configured <see cref="UrlFormatter"/>.
         /// </summary>
-        public IReadOnlyList<string> DataUpdateLicenseKeys { get; set; } = 
-            Constants.DATA_FILE_DEFAULT_LICENSE_KEYS;
+        public IReadOnlyList<string> DataUpdateLicenseKeys { get; set; } = new List<string>();
 
         /// <summary>
         /// If true, a <see cref="FileSystemWatcher"/> will be created
