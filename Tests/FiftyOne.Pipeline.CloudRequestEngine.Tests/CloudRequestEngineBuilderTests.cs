@@ -115,17 +115,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             Environment.SetEnvironmentVariable(Constants.FOD_CLOUD_API_URL, "http://localhost/test_env/");
 
-            var cloudRequestsEngine =
-                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
-                .SetEndPoint(expectedUrl)
-                .SetResourceKey("abcdefgh")
-                .Build();
-
-            _ = cloudRequestsEngine.PublicProperties;
-
-            _handlerMock.Protected().Verify(
+            Action<int> VerifyPublicPropsTimes = (timesExpected) => _handlerMock.Protected().Verify(
                "SendAsync",
-               Times.Exactly(1), // we expected a single external request
+               Times.Exactly(timesExpected), // we expected a single external request
                ItExpr.Is<HttpRequestMessage>(req =>
                   req.Method == HttpMethod.Get  // we expected a GET request
                   && req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUrl + Constants.PROPERTIES_FILENAME // to this uri
@@ -133,17 +125,45 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ItExpr.IsAny<CancellationToken>()
             );
 
-            _ = cloudRequestsEngine.EvidenceKeyFilter;
-
-            _handlerMock.Protected().Verify(
+            Action<int> VerifyEvidenceKeysTimes = (timesExpected) => _handlerMock.Protected().Verify(
                "SendAsync",
-               Times.Exactly(1), // we expected a single external request
+               Times.Exactly(timesExpected), // we expected a single external request
                ItExpr.Is<HttpRequestMessage>(req =>
                   req.Method == HttpMethod.Get  // we expected a GET request
                   && req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUrl + Constants.EVIDENCE_KEYS_FILENAME // to this uri
                ),
                ItExpr.IsAny<CancellationToken>()
             );
+
+            VerifyPublicPropsTimes(0);
+            VerifyEvidenceKeysTimes(0);
+
+            var cloudRequestsEngine =
+                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
+                .SetEndPoint(expectedUrl)
+                .SetResourceKey("abcdefgh")
+                .Build();
+
+            VerifyPublicPropsTimes(0);
+            VerifyEvidenceKeysTimes(0);
+
+            _ = cloudRequestsEngine.PublicProperties;
+
+            VerifyPublicPropsTimes(1);
+            VerifyEvidenceKeysTimes(0);
+
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
+
+            VerifyPublicPropsTimes(1);
+            VerifyEvidenceKeysTimes(1);
+
+            _ = cloudRequestsEngine.PublicProperties;
+            _ = cloudRequestsEngine.PublicProperties;
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
+
+            VerifyPublicPropsTimes(1);
+            VerifyEvidenceKeysTimes(1);
         }
 
         /// <summary>
@@ -157,16 +177,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             Environment.SetEnvironmentVariable(Constants.FOD_CLOUD_API_URL, expectedUrl);
 
-            var cloudRequestsEngine =
-                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
-                .SetResourceKey("abcdefgh")
-                .Build();
-
-            _ = cloudRequestsEngine.PublicProperties;
-
-            _handlerMock.Protected().Verify(
+            Action<int> VerifyPublicPropsTimes = (timesExpected) => _handlerMock.Protected().Verify(
                "SendAsync",
-               Times.Exactly(1), // we expected a single external request
+               Times.Exactly(timesExpected), // we expected a single external request
                ItExpr.Is<HttpRequestMessage>(req =>
                   req.Method == HttpMethod.Get  // we expected a GET request
                   && req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUrl + Constants.PROPERTIES_FILENAME // to this uri
@@ -174,17 +187,44 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ItExpr.IsAny<CancellationToken>()
             );
 
-            _ = cloudRequestsEngine.EvidenceKeyFilter;
-
-            _handlerMock.Protected().Verify(
+            Action<int> VerifyEvidenceKeysTimes = (timesExpected) => _handlerMock.Protected().Verify(
                "SendAsync",
-               Times.Exactly(1), // we expected a single external request
+               Times.Exactly(timesExpected), // we expected a single external request
                ItExpr.Is<HttpRequestMessage>(req =>
                   req.Method == HttpMethod.Get  // we expected a GET request
                   && req.RequestUri.GetLeftPart(UriPartial.Path) == expectedUrl + Constants.EVIDENCE_KEYS_FILENAME // to this uri
                ),
                ItExpr.IsAny<CancellationToken>()
             );
+
+            VerifyPublicPropsTimes(0);
+            VerifyEvidenceKeysTimes(0);
+
+            var cloudRequestsEngine =
+                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
+                .SetResourceKey("abcdefgh")
+                .Build();
+
+            VerifyPublicPropsTimes(0);
+            VerifyEvidenceKeysTimes(0);
+
+            _ = cloudRequestsEngine.PublicProperties;
+
+            VerifyPublicPropsTimes(1);
+            VerifyEvidenceKeysTimes(0);
+
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
+
+            VerifyPublicPropsTimes(1);
+            VerifyEvidenceKeysTimes(1);
+
+            _ = cloudRequestsEngine.PublicProperties;
+            _ = cloudRequestsEngine.PublicProperties;
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
+
+            VerifyPublicPropsTimes(1);
+            VerifyEvidenceKeysTimes(1);
         }
 
         /// <summary>
@@ -194,16 +234,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         [TestMethod]
         public void Endpoint_Config_Precedence_Default()
         {
-            var cloudRequestsEngine =
-                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
-                .SetResourceKey("abcdefgh")
-                .Build();
-
-            _ = cloudRequestsEngine.PublicProperties;
-
-            _handlerMock.Protected().Verify(
+            Action<int> VerifyPublicPropsTimes = (timesExpected) => _handlerMock.Protected().Verify(
                "SendAsync",
-               Times.Exactly(1), // we expected a single external request
+               Times.Exactly(timesExpected), // we expected a single external request
                ItExpr.Is<HttpRequestMessage>(req =>
                   req.Method == HttpMethod.Get  // we expected a GET request
                   && req.RequestUri.GetLeftPart(UriPartial.Path) == Constants.PROPERTIES_ENDPOINT_DEFAULT // to this uri
@@ -211,17 +244,44 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ItExpr.IsAny<CancellationToken>()
             );
 
-            _ = cloudRequestsEngine.EvidenceKeyFilter;
-
-            _handlerMock.Protected().Verify(
+            Action<int> VerifyEvidenceKeysTimes = (timesExpected) => _handlerMock.Protected().Verify(
                "SendAsync",
-               Times.Exactly(1), // we expected a single external request
+               Times.Exactly(timesExpected), // we expected a single external request
                ItExpr.Is<HttpRequestMessage>(req =>
                   req.Method == HttpMethod.Get  // we expected a GET request
                   && req.RequestUri.GetLeftPart(UriPartial.Path) == Constants.EVIDENCE_KEYS_ENDPOINT_DEFAULT // to this uri
                ),
                ItExpr.IsAny<CancellationToken>()
             );
+
+            VerifyPublicPropsTimes(0);
+            VerifyEvidenceKeysTimes(0);
+
+            var cloudRequestsEngine =
+                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
+                .SetResourceKey("abcdefgh")
+                .Build();
+
+            VerifyPublicPropsTimes(0);
+            VerifyEvidenceKeysTimes(0);
+
+            _ = cloudRequestsEngine.PublicProperties;
+
+            VerifyPublicPropsTimes(1);
+            VerifyEvidenceKeysTimes(0);
+
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
+
+            VerifyPublicPropsTimes(1);
+            VerifyEvidenceKeysTimes(1);
+
+            _ = cloudRequestsEngine.PublicProperties;
+            _ = cloudRequestsEngine.PublicProperties;
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
+
+            VerifyPublicPropsTimes(1);
+            VerifyEvidenceKeysTimes(1);
         }
 
         [TestCleanup]
