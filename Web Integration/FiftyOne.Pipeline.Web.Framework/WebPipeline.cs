@@ -64,13 +64,6 @@ namespace FiftyOne.Pipeline.Web.Framework
         public bool SetHeaderPropertiesEnabled => _options.UseSetHeaderProperties;
 
         /// <summary>
-        /// Configure the Pipeline to either suppress exceptions added to
-        /// <see cref = "P:FiftyOne.Pipeline.Core.Data.IFlowData.Errors" /> during processing or to throw them
-        /// as an aggregate exception once processing is complete.
-        /// </summary>
-        public bool SuppressProcessExceptionsWeb => _options.SuppressProcessExceptionsWeb;
-
-        /// <summary>
         /// Extra pipeline options which only apply to an implementation in a
         /// web server.
         /// </summary>
@@ -285,7 +278,7 @@ namespace FiftyOne.Pipeline.Web.Framework
             } 
             catch (Exception ex)
             {
-                if (!GetInstance().SuppressProcessExceptionsWeb)
+                if (!GetInstance().Pipeline.SuppressProcessExceptions)
                 {
                     throw;
                 }
@@ -306,7 +299,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                 }
                 catch (Exception ex)
                 {
-                    if (!GetInstance().SuppressProcessExceptionsWeb)
+                    if (!GetInstance().Pipeline.SuppressProcessExceptions)
                     {
                         throw;
                     }
@@ -322,7 +315,7 @@ namespace FiftyOne.Pipeline.Web.Framework
             // suppressed, then throw an aggregate exception.
             if (webErrors != null && webErrors.Count > 0)
             {
-                if (GetInstance().SuppressProcessExceptionsWeb)
+                if (GetInstance().Pipeline.SuppressProcessExceptions)
                 {
                     foreach (Exception ex in webErrors)
                     {

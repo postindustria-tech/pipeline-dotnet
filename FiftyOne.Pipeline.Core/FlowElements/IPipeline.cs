@@ -61,6 +61,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         bool IsDisposed { get; }
 
         /// <summary>
+        /// Control field that indicates if the Pipeline will throw an
+        /// aggregate exception during processing or suppress it and ignore the
+        /// exceptions added to <see cref="IFlowData.Errors"/>.
+        /// </summary>
+        bool SuppressProcessExceptions { get; }
+
+        /// <summary>
         /// Check if the pipeline contains an instance of <typeparamref name="TExpectedElement"/>
         /// that will be executed after <typeparamref name="TElement"/>.
         /// </summary>
