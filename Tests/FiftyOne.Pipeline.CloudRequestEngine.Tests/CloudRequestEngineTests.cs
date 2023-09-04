@@ -612,6 +612,76 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 throw;
             }
         }
+
+        /// <summary>
+        /// Test cloud request engine handles a lack of data from the 
+        /// cloud service as expected.
+        /// An exception should be thrown by the cloud request engine
+        /// and the pipeline is configured to throw any exceptions up 
+        /// the stack as an AggregateException.
+        /// </summary>
+        [TestMethod]
+        public void ValidateErrorHandling_RetryAfterNotJson()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+
+            ConfigureMockedClient(_ => true);
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var defaultResponses = new string[]
+                {
+                    _jsonResponse,
+                    _evidenceKeysResponse,
+                    _accessiblePropertiesResponse,
+                };
+
+                _jsonResponse = "Status code: 404, '*json' method not found";
+                _jsonResponseStatus = HttpStatusCode.NotFound;
+
+                _evidenceKeysResponse = "Status code: 404, '*evidencekeys' method not found";
+                _evidenceKeysResponseStatus = HttpStatusCode.NotFound;
+
+                _accessiblePropertiesResponse = "Status code: 404, '*accessibleproperties' method not found";
+                _accessiblePropertiesResponseStatus = HttpStatusCode.NotFound;
+
+                using (var flowData = pipeline.CreateFlowData())
+                {
+                    flowData.AddEvidence("query.User-Agent", userAgent);
+                    try
+                    {
+                        flowData.Process();
+                        Assert.Fail("Expected exception did not occur");
+                    }
+                    catch (AggregateException)
+                    {
+                        // nop
+                    }
+                }
+                _jsonResponse = defaultResponses[0];
+                _jsonResponseStatus = HttpStatusCode.OK;
+
+                _evidenceKeysResponse = defaultResponses[1];
+                _evidenceKeysResponseStatus = HttpStatusCode.OK;
+
+                _accessiblePropertiesResponse = defaultResponses[2];
+                _accessiblePropertiesResponseStatus = HttpStatusCode.OK;
+
+                using (var flowData = pipeline.CreateFlowData())
+                {
+                    flowData.AddEvidence("query.User-Agent", userAgent);
+                    flowData.Process();
+                    var result = flowData.GetFromElement(engine).JsonResponse;
+                    Assert.AreEqual("{'device':{'value':'1'}}", result);
+                }
+            }
+        }
+
         /// <summary>
         /// Verify that the 'DelayExecution' and 'EvidenceProperties'
         /// properties are populated correctly by the CloudRequestEngine.
@@ -993,7 +1063,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             else 
             { 
                // Prepare the expected response of the mocked http call
-               setup.ReturnsAsync(new HttpResponseMessage()
+               setup.ReturnsAsync(() => new HttpResponseMessage()
                 {
                     StatusCode = _jsonResponseStatus,
                     Content = new StringContent(_jsonResponse),
@@ -1012,7 +1082,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                   ItExpr.IsAny<CancellationToken>()
                )
                // prepare the expected response of the mocked http call
-               .ReturnsAsync(new HttpResponseMessage()
+               .ReturnsAsync(() => new HttpResponseMessage()
                {
                    StatusCode = _evidenceKeysResponseStatus,
                    Content = new StringContent(_evidenceKeysResponse),
@@ -1029,7 +1099,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                   ItExpr.IsAny<CancellationToken>()
                )
                // prepare the expected response of the mocked http call
-               .ReturnsAsync(new HttpResponseMessage()
+               .ReturnsAsync(() => new HttpResponseMessage()
                {
                    StatusCode = _accessiblePropertiesResponseStatus,
                    Content = new StringContent(_accessiblePropertiesResponse),
