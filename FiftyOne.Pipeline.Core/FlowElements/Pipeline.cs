@@ -176,6 +176,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         }
 
         /// <summary>
+        /// Control field that indicates if the Pipeline will throw an
+        /// aggregate exception during processing or suppress it and ignore the
+        /// exceptions added to <see cref="IFlowData.Errors"/>.
+        /// </summary>
+        public bool SuppressProcessExceptions => _suppressProcessExceptions;
+
+        /// <summary>
         /// Get a read only list of the flow elements that are part of this 
         /// pipeline.
         /// </summary>
@@ -301,7 +308,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // suppressed, then throw an aggregate exception.
             if (data.Errors != null &&
                 data.Errors.Count > 0 &&
-                _suppressProcessExceptions == false)
+                SuppressProcessExceptions == false)
             {
                 throw new AggregateException(data.Errors
                     .Where(e => e.ShouldThrow == true)
