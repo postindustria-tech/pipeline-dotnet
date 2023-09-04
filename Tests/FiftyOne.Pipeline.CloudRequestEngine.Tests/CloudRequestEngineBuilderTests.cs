@@ -121,6 +121,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 .SetResourceKey("abcdefgh")
                 .Build();
 
+            _ = cloudRequestsEngine.PublicProperties;
+
             _handlerMock.Protected().Verify(
                "SendAsync",
                Times.Exactly(1), // we expected a single external request
@@ -130,6 +132,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ),
                ItExpr.IsAny<CancellationToken>()
             );
+
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
 
             _handlerMock.Protected().Verify(
                "SendAsync",
@@ -158,6 +162,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 .SetResourceKey("abcdefgh")
                 .Build();
 
+            _ = cloudRequestsEngine.PublicProperties;
+
             _handlerMock.Protected().Verify(
                "SendAsync",
                Times.Exactly(1), // we expected a single external request
@@ -167,6 +173,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ),
                ItExpr.IsAny<CancellationToken>()
             );
+
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
 
             _handlerMock.Protected().Verify(
                "SendAsync",
@@ -191,6 +199,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 .SetResourceKey("abcdefgh")
                 .Build();
 
+            _ = cloudRequestsEngine.PublicProperties;
+
             _handlerMock.Protected().Verify(
                "SendAsync",
                Times.Exactly(1), // we expected a single external request
@@ -200,6 +210,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ),
                ItExpr.IsAny<CancellationToken>()
             );
+
+            _ = cloudRequestsEngine.EvidenceKeyFilter;
 
             _handlerMock.Protected().Verify(
                "SendAsync",

@@ -20,6 +20,7 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Common;
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
@@ -300,6 +301,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             var hasData = string.IsNullOrEmpty(jsonResult) == false;
             List<string> messages = new List<string>();
 
+            Func<Dictionary<string, string>> GetHeaders = () =>
+            {
+                // Get the response headers. 
+                return response.Headers.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => string.Join(", ", kvp.Value));
+            };
+
             if (hasData && checkForErrorMessages)
             {
                 JObject jObj;
@@ -309,7 +318,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 }
                 catch (JsonReaderException ex)
                 {
-                    throw new CloudRequestException("Failed to parse server's response as JSON", ex);
+                    throw new CloudRequestException("Failed to parse server's response as JSON", (int)response.StatusCode, GetHeaders(), ex);
                 }
                 var hasErrors = jObj.ContainsKey("errors");
                 hasData = hasErrors ?
@@ -357,15 +366,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 messages.Add(msg);
             }
 
-            Dictionary<string, string> headers = null;
-            if (messages.Count > 0)
-            {
-                // Get the response headers. 
-                headers = response.Headers.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => string.Join(", ", kvp.Value));
-            }
-
             // If there are any errors returned from the cloud service 
             // then throw an exception
             if (messages.Count > 1)
@@ -373,7 +373,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 throw new AggregateException(
                     Messages.ExceptionCloudErrorsMultiple,
                     messages.Select(m => new CloudRequestException(m, 
-                        (int)response.StatusCode, headers)));
+                        (int)response.StatusCode, GetHeaders())));
             }
             else if (messages.Count == 1)
             {
@@ -381,7 +381,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     Messages.ExceptionCloudError,
                     messages[0]);
                 throw new CloudRequestException(msg, 
-                    (int)response.StatusCode, headers);
+                    (int)response.StatusCode, GetHeaders());
             }
 
             return jsonResult;
