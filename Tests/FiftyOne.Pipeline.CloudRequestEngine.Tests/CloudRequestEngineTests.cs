@@ -29,6 +29,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
@@ -49,7 +50,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         private Uri expectedUri = new Uri("https://cloud.51degrees.com/api/v4/json");
 
         private string _jsonResponse = "{'device':{'value':'1'}}";
+        private HttpStatusCode _jsonResponseStatus = HttpStatusCode.OK;
         private string _evidenceKeysResponse = "['query.User-Agent']";
+        private HttpStatusCode _evidenceKeysResponseStatus = HttpStatusCode.OK;
         private string _accessiblePropertiesResponse =
             "{'Products': {'device': {'DataTier': 'tier','Properties': [{'Name': 'value','Type': 'String','Category': 'Device'}]}}}";
         private HttpStatusCode _accessiblePropertiesResponseStatus = HttpStatusCode.OK;
@@ -566,7 +569,49 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 data.Process();
             }
         }
-        
+
+        /// <summary>
+        /// Test cloud request engine handles a lack of data from the 
+        /// cloud service as expected.
+        /// An exception should be thrown by the cloud request engine
+        /// and the pipeline is configured to throw any exceptions up 
+        /// the stack as an AggregateException.
+        /// </summary>
+        [TestMethod]
+        [ExpectedException(typeof(CloudRequestException))]
+        public void ValidateErrorHandling_NotJson()
+        {
+            string resourceKey = "resource_key";
+
+            _jsonResponse = "Status code: 404, '*json' method not found";
+            _jsonResponseStatus = HttpStatusCode.NotFound;
+
+            _evidenceKeysResponse = "Status code: 404, '*evidencekeys' method not found";
+            _evidenceKeysResponseStatus = HttpStatusCode.NotFound;
+
+            _accessiblePropertiesResponse = "Status code: 404, '*accessibleproperties' method not found";
+            _accessiblePropertiesResponseStatus = HttpStatusCode.NotFound;
+
+            ConfigureMockedClient(_ => true);
+
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            try
+            {
+                var cloudEngineProps = engine.PublicProperties;
+                Assert.Fail("Expected exception did not occur");
+            }
+            catch (CloudRequestException ex)
+            {
+                Assert.AreEqual(ex.HttpStatusCode, 404, "Status code should be 404");
+                Assert.IsNotNull(ex.ResponseHeaders, "Response headers not populated");
+                Assert.IsNotNull(ex.InnerException, "Inner exception not populated");
+                Assert.IsInstanceOfType<JsonReaderException>(ex.InnerException, $"Inner exception is not an instance of {nameof(JsonReaderException)}");
+                throw;
+            }
+        }
         /// <summary>
         /// Verify that the 'DelayExecution' and 'EvidenceProperties'
         /// properties are populated correctly by the CloudRequestEngine.
@@ -885,6 +930,39 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         }
 
         /// <summary>
+        /// Verify that an exception throw by the task that is returned by HttpClient.SendAsync
+        /// will be handled and wrapped in nice informative CloudRequestException. 
+        /// </summary>
+        [TestMethod]
+        public void ValidateErrorHandling_ExceptionInRequestTaskSuppressed()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+
+            ConfigureMockedClient(r => true, true);
+            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).SetSuppressProcessExceptions(true).Build())
+            {
+                var data = pipeline.CreateFlowData();
+                data.AddEvidence("query.User-Agent", userAgent);
+                data.Process();
+
+                Assert.IsNotNull(data.Errors);
+                Assert.AreEqual(1, data.Errors.Count);
+                var error = data.Errors[0];
+                Assert.IsInstanceOfType<FlowElements.CloudRequestEngine>(error.FlowElement);
+                var exception = error.ExceptionData;
+
+                Assert.IsNotNull(exception, "Expected exception to occur");
+                Assert.IsInstanceOfType<CloudRequestException>(exception);
+            }
+        }
+
+        /// <summary>
         /// Setup _httpClient to respond with the configured messages.
         /// </summary>
         private void ConfigureMockedClient(
@@ -917,7 +995,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                // Prepare the expected response of the mocked http call
                setup.ReturnsAsync(new HttpResponseMessage()
                 {
-                    StatusCode = HttpStatusCode.OK,
+                    StatusCode = _jsonResponseStatus,
                     Content = new StringContent(_jsonResponse),
                 })
                .Verifiable();
@@ -936,7 +1014,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                // prepare the expected response of the mocked http call
                .ReturnsAsync(new HttpResponseMessage()
                {
-                   StatusCode = HttpStatusCode.OK,
+                   StatusCode = _evidenceKeysResponseStatus,
                    Content = new StringContent(_evidenceKeysResponse),
                })
                .Verifiable();
