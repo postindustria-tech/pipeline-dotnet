@@ -524,11 +524,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             }
 
             Assert.IsNotNull(exception, "Expected exception to occur");
-            Assert.IsInstanceOfType(exception, typeof(AggregateException));
-            var aggEx = (exception as AggregateException).Flatten();
+            Assert.IsInstanceOfType<AggregateException>(exception);
+            Assert.IsInstanceOfType<CloudRequestException>(exception.InnerException);
+            Assert.IsInstanceOfType<AggregateException>(exception.InnerException.InnerException);
+            var aggEx = (exception.InnerException.InnerException as AggregateException).Flatten();
             Assert.AreEqual(aggEx.InnerExceptions.Count, 2);
-            Assert.IsInstanceOfType(aggEx.InnerExceptions[0], typeof(PipelineException));
-            Assert.IsInstanceOfType(aggEx.InnerExceptions[1], typeof(PipelineException));
+            Assert.IsInstanceOfType<CloudRequestException>(aggEx.InnerExceptions[0]);
+            Assert.IsInstanceOfType<CloudRequestException>(aggEx.InnerExceptions[1]);
             Assert.IsTrue(aggEx.InnerExceptions.Any(e => e.Message.Contains(
                 "This resource key is not authorized for use with this domain")),
                 "Exception message did not contain the expected text.");

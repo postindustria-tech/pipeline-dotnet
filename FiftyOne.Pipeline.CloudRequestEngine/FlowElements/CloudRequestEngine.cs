@@ -189,6 +189,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// be populated after a call to the cloud service as part of 
         /// object initialization.
         /// </summary>
+        /// <exception cref="CloudRequestException">
+        /// Thrown if there is an error from the cloud service or
+        /// there is no data in the response.
+        /// </exception>
         public override IEvidenceKeyFilter EvidenceKeyFilter {
             get
             {
@@ -217,6 +221,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// populate in the JSON response.
         /// Keyed on property name.
         /// </summary>
+        /// <exception cref="CloudRequestException">
+        /// Thrown if there is an error from the cloud service or
+        /// there is no data in the response.
+        /// </exception>
         public IReadOnlyDictionary<string, ProductMetaData> PublicProperties {
             get
             {
@@ -246,6 +254,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="aspectData"></param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
+        /// </exception>
+        /// <exception cref="CloudRequestException">
+        /// Thrown if there is an error from the cloud service or
+        /// there is no data in the response.
         /// </exception>
         protected override void ProcessEngine(IFlowData data, CloudRequestData aspectData)
         {
@@ -285,10 +297,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// Set to false if the response will never contain error message
         /// text.
         /// </param>
-        /// <exception cref="AggregateException">
-        /// Thrown if there are multiple errors returned from the 
-        /// cloud service.
-        /// </exception>
         /// <exception cref="CloudRequestException">
         /// Thrown if there is an error from the cloud service or
         /// there is no data in the response.
@@ -370,10 +378,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             // then throw an exception
             if (messages.Count > 1)
             {
-                throw new AggregateException(
+                var headers = GetHeaders();
+                var aggregated = new AggregateException(
                     Messages.ExceptionCloudErrorsMultiple,
                     messages.Select(m => new CloudRequestException(m, 
-                        (int)response.StatusCode, GetHeaders())));
+                        (int)response.StatusCode, headers)));
+                throw new CloudRequestException(Messages.ExceptionCloudErrorsMultiple,
+                    (int)response.StatusCode, GetHeaders(), aggregated);
             }
             else if (messages.Count == 1)
             {
@@ -511,6 +522,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <summary>
         /// Get the properties that are available from the cloud service.
         /// </summary>
+        /// <returns>
+        /// The value to be saved into <see cref="PublicProperties"/>
+        /// </returns>
+        /// <exception cref="CloudRequestException">
+        /// Thrown if there is an error from the cloud service or
+        /// there is no data in the response.
+        /// </exception>
         private Dictionary<string, ProductMetaData> GetCloudProperties()
         {
             string jsonResult = string.Empty;
@@ -548,6 +566,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <summary>
         /// Get the evidence keys that are required by the cloud service.
         /// </summary>
+        /// <returns>
+        /// The value to be saved into <see cref="EvidenceKeyFilter"/>
+        /// </returns>
+        /// <exception cref="CloudRequestException">
+        /// Thrown if there is an error from the cloud service or
+        /// there is no data in the response.
+        /// </exception>
         private IEvidenceKeyFilter GetCloudEvidenceKeys()
         {
             string jsonResult = string.Empty;
