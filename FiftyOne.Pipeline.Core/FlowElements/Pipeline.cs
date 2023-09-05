@@ -269,6 +269,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The <see cref="IFlowData"/> that contains the evidence and will
         /// allow the user to access the results.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
+        /// <exception cref="AggregateException">
+        /// Thrown if an error occurred during processing, 
+        /// unless <see ref="SuppressProcessExceptions"/> is true.
+        /// </exception>
         public void Process(IFlowData data)
         {
             if(data == null)
