@@ -157,7 +157,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             catch (Exception ex)
             {
-                Logger.LogCritical(ex, $"Error creating {this.GetType().Name}");
+                Logger?.LogCritical(ex, $"Error creating {this.GetType().Name}");
                 throw;
             }
         }
@@ -260,9 +260,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             using (var requestMessage =
                 new HttpRequestMessage(HttpMethod.Post, _dataEndpoint))
             {
-                if (Logger != null && Logger.IsEnabled(LogLevel.Debug))
+                if (Logger?.IsEnabled(LogLevel.Debug) == true)
                 {
-                    Logger.LogDebug($"Sending request to cloud service at " +
+                    Logger?.LogDebug($"Sending request to cloud service at " +
                         $"'{_dataEndpoint}'. Content: {content}");
                 }
 
@@ -337,7 +337,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     var warnings = jObj.Value<JArray>("warnings");
                     foreach (var warning in warnings.Children<JValue>().Select(t => t.Value.ToString()))
                     {
-                        Logger.LogWarning(warning);
+                        Logger?.LogWarning(warning);
                     }
                 }
             }
@@ -492,7 +492,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                                 StringComparison.InvariantCultureIgnoreCase))
                             .Select(e => $"{e.Key}={e.Value}");
 
-                        Logger.LogWarning($"'{item.Key}={item.Value}' evidence " +
+                        Logger?.LogWarning($"'{item.Key}={item.Value}' evidence " +
                             $"conflicts with '{string.Join("', '", conflicts)}'");
                     }
                     // Overwrite the existing queryParameter value.
@@ -514,12 +514,22 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private Dictionary<string, ProductMetaData> GetCloudProperties()
         {
             string jsonResult = string.Empty;
+            Func<string> ErrorMessage = () => "Failed to retrieve available properties " +
+                    $"from cloud service at {_propertiesEndpoint}.";
 
             var url = $"{_propertiesEndpoint}?resource={_resourceKey}";
             using (var requestMessage =
                 new HttpRequestMessage(HttpMethod.Get, url))
             {
-                jsonResult = ProcessResponse(AddCommonHeadersAndSend(requestMessage));
+                try
+                {
+                    jsonResult = ProcessResponse(AddCommonHeadersAndSend(requestMessage));
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogError(ErrorMessage(), ex);
+                    throw;
+                }
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)
@@ -531,8 +541,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             else
             {
-                throw new Exception($"Failed to retrieve available properties " +
-                    $"from cloud service at {_propertiesEndpoint}.");
+                throw new Exception(ErrorMessage());
             }
         }
 
@@ -542,14 +551,24 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private IEvidenceKeyFilter GetCloudEvidenceKeys()
         {
             string jsonResult = string.Empty;
+            Func<string> ErrorMessage = () => "Failed to retrieve evidence keys " +
+                    $"from cloud service at {_evidenceKeysEndpoint}.";
 
             using (var requestMessage =
                 new HttpRequestMessage(HttpMethod.Get, _evidenceKeysEndpoint))
             {
-                // Note - Don't check for error messages in the response
-                // as it is a flat JSON array.
-                jsonResult = ProcessResponse(
-                    AddCommonHeadersAndSend(requestMessage), false);
+                try
+                {
+                    // Note - Don't check for error messages in the response
+                    // as it is a flat JSON array.
+                    jsonResult = ProcessResponse(
+                        AddCommonHeadersAndSend(requestMessage), false);
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogError(ErrorMessage(), ex);
+                    throw;
+                }
             }
 
             if (string.IsNullOrEmpty(jsonResult) == false)
@@ -561,8 +580,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             else
             {
-                throw new Exception($"Failed to retrieve evidence keys " +
-                    $"from cloud service at {_evidenceKeysEndpoint}.");
+                throw new Exception(ErrorMessage());
             }
         }
 
