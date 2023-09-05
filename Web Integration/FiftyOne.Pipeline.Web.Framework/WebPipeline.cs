@@ -34,13 +34,10 @@ using FiftyOne.Pipeline.Web.Framework.Providers;
 using FiftyOne.Pipeline.Web.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using NUglify.JavaScript.Syntax;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using System.Xml.Linq;
 
 namespace FiftyOne.Pipeline.Web.Framework
 {
