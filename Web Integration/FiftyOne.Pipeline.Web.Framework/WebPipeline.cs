@@ -225,6 +225,10 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
+        /// <exception cref="AggregateException">
+        /// Thrown if an error occurred during processing, 
+        /// unless inderlying <see ref="IPipeline.SuppressProcessExceptions"/> is true.
+        /// </exception>
         public static IFlowData Process(HttpRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -315,14 +319,11 @@ namespace FiftyOne.Pipeline.Web.Framework
             // suppressed, then throw an aggregate exception.
             if (webErrors != null && webErrors.Count > 0)
             {
-                if (GetInstance().Pipeline.SuppressProcessExceptions)
+                foreach (Exception ex in webErrors)
                 {
-                    foreach (Exception ex in webErrors)
-                    {
-                        flowData.AddError(ex, null);
-                    }
+                    flowData.AddError(ex, null);
                 }
-                else
+                if (!GetInstance().Pipeline.SuppressProcessExceptions)
                 {
                     throw new AggregateException(webErrors);
                 }
