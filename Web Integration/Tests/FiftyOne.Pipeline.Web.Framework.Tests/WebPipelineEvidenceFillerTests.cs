@@ -1,4 +1,5 @@
 ﻿using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.Exceptions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using NSubstitute.ReceivedExtensions;
@@ -35,27 +36,25 @@ namespace FiftyOne.Pipeline.Web.Framework.Tests
 
         [TestMethod]
         [ExpectedException(typeof(NullReferenceException))] // pass through (not explicitly handled)
-        public void TestConstructor_NoData()
+        public void TestConstructor_Error_OnNullData()
         {
             var filler = new WebPipeline.EvidenceFiller(null);
         }
 
         [TestMethod]
-        public void TestConstructor_NullFilter() // ignored till later
+        [ExpectedException(typeof(PipelineException))]
+        public void TestConstructor_Error_OnNullFilter()
         {
             IEvidenceKeyFilter noFilter = null;
             var fakeData = Substitute.For<IFlowData>();
             fakeData.EvidenceKeyFilter.Returns(noFilter);
 
             var filler = new WebPipeline.EvidenceFiller(fakeData);
-
-            _ = fakeData.Received(1).EvidenceKeyFilter;
-            Assert.IsNull(filler.Errors);
         }
 
         [TestMethod]
         [ExpectedException(typeof(FakeException))]
-        public void TestConstructor_ErrorOnFilter()
+        public void TestConstructor_Error_OnGetFilter()
         {
             var fakeData = Substitute.For<IFlowData>();
             fakeData.EvidenceKeyFilter.Returns(x => { throw new FakeException("no filter"); });
@@ -64,7 +63,7 @@ namespace FiftyOne.Pipeline.Web.Framework.Tests
         }
 
         [TestMethod]
-        public void TestCheckToAdd_Normal()
+        public void TestCheckToAdd_Ok()
         {
             var fakeData = Substitute.For<IFlowData>();
 
@@ -98,7 +97,7 @@ namespace FiftyOne.Pipeline.Web.Framework.Tests
         }
 
         [TestMethod]
-        public void TestCheckToAdd_ArgumentNull_OnAddEvidence()
+        public void TestCheckToAdd_Error_OnAddEvidence()
         {
             var fakeData = Substitute.For<IFlowData>();
 
@@ -146,7 +145,7 @@ namespace FiftyOne.Pipeline.Web.Framework.Tests
         }
 
         [TestMethod]
-        public void TestCheckToAdd_ArgumentNull_OnInclude()
+        public void TestCheckToAdd_Error_OnInclude()
         {
             var fakeData = Substitute.For<IFlowData>();
 
