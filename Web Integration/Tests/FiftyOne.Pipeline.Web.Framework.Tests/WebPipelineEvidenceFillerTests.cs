@@ -1,8 +1,10 @@
 ﻿using FiftyOne.Pipeline.Core.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
+using NSubstitute.ReceivedExtensions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Configuration;
 
 namespace FiftyOne.Pipeline.Web.Framework.Tests
@@ -70,11 +72,6 @@ namespace FiftyOne.Pipeline.Web.Framework.Tests
             filter.Include(Arg.Any<string>()).Returns(x => ((string)x[0]).Contains("s"));
             fakeData.EvidenceKeyFilter.Returns(filter);
 
-            var savedData = new Dictionary<string, object>();
-            fakeData
-                .When(x => x.AddEvidence(Arg.Any<string>(), Arg.Any<object>()))
-                .Do(x => savedData[(string)x[0]] = x[1]);
-
             var testData = new Dictionary<string, string>()
             {
                 { "crabby", "crabs" },
@@ -93,12 +90,108 @@ namespace FiftyOne.Pipeline.Web.Framework.Tests
             }
 
             _ = fakeData.Received(1).EvidenceKeyFilter;
+            filter.Received(testData.Count).Include(Arg.Any<string>());
             Assert.IsNull(filler.Errors);
-            CollectionAssert.AreEquivalent(new Dictionary<string, object>()
+            fakeData.Received(2).AddEvidence(Arg.Any<string>(), Arg.Any<string>());
+            fakeData.Received(1).AddEvidence("sleepy", "beetle");
+            fakeData.Received(1).AddEvidence("fishy", "cat");
+        }
+
+        [TestMethod]
+        public void TestCheckToAdd_ArgumentNull_OnAddEvidence()
+        {
+            var fakeData = Substitute.For<IFlowData>();
+
+            var filter = Substitute.For<IEvidenceKeyFilter>();
+            filter.Include(Arg.Any<string>()).Returns(x => ((string)x[0])?.Contains("s") != false);
+            fakeData.EvidenceKeyFilter.Returns(filter);
+            fakeData
+                .When(x => x.AddEvidence(Arg.Is((string)null), Arg.Any<object>()))
+                .Do(x => throw new ArgumentNullException());
+
+            var testData = new string[][]
             {
-                { "sleepy", "beetle" },
-                { "fishy", "cat" },
-            }, savedData);
+                new string[2]{ "crabby", "crabs" },
+                new string[2]{ null, "void" },
+                new string[2]{ "sleepy", "beetle" },
+                new string[2]{ "zummy", "fish" },
+                new string[2]{ null, "hell" },
+                new string[2]{ "gloomy", "day" },
+                new string[2]{ "fishy", "cat" },
+                new string[2]{ null, "the end" },
+                new string[2]{ "raw", "beef" },
+            };
+
+
+            var filler = new WebPipeline.EvidenceFiller(fakeData);
+            foreach (var data in testData)
+            {
+                filler.CheckAndAdd(data[0], data[1]);
+            }
+
+            _ = fakeData.Received(1).EvidenceKeyFilter;
+            filter.Received(testData.Length).Include(Arg.Any<string>());
+            Assert.IsNotNull(filler.Errors);
+            Assert.AreEqual(3, filler.Errors.Count);
+            foreach (var error in filler.Errors)
+            {
+                Assert.IsInstanceOfType<ArgumentNullException>(error);
+            }
+            fakeData.Received(5).AddEvidence(Arg.Any<string>(), Arg.Any<string>());
+            fakeData.Received(1).AddEvidence(null, "void");
+            fakeData.Received(1).AddEvidence("sleepy", "beetle");
+            fakeData.Received(1).AddEvidence(null, "hell");
+            fakeData.Received(1).AddEvidence("fishy", "cat");
+            fakeData.Received(1).AddEvidence(null, "the end");
+        }
+
+        [TestMethod]
+        public void TestCheckToAdd_ArgumentNull_OnInclude()
+        {
+            var fakeData = Substitute.For<IFlowData>();
+
+            var filter = Substitute.For<IEvidenceKeyFilter>();
+            filter.Include(Arg.Any<string>()).Returns(x =>
+            {
+                if (x[0] is null)
+                {
+                    throw new ArgumentNullException();  // <--- thrown here
+                }
+                return ((string)x[0]).Contains("s");
+            });
+            fakeData.EvidenceKeyFilter.Returns(filter);
+
+            var testData = new string[][]
+            {
+                new string[2]{ "crabby", "crabs" },
+                new string[2]{ null, "void" },
+                new string[2]{ "sleepy", "beetle" },
+                new string[2]{ "zummy", "fish" },
+                new string[2]{ null, "hell" },
+                new string[2]{ "gloomy", "day" },
+                new string[2]{ "fishy", "cat" },
+                new string[2]{ null, "the end" },
+                new string[2]{ "raw", "beef" },
+            };
+
+
+            var filler = new WebPipeline.EvidenceFiller(fakeData);
+            foreach (var data in testData)
+            {
+                filler.CheckAndAdd(data[0], data[1]);
+            }
+
+            _ = fakeData.Received(1).EvidenceKeyFilter;
+            filter.Received(testData.Length).Include(Arg.Any<string>());
+            Assert.IsNotNull(filler.Errors);
+            Assert.AreEqual(3, filler.Errors.Count);
+            foreach (var error in filler.Errors)
+            {
+                Assert.IsInstanceOfType<ArgumentNullException>(error);
+            }
+            fakeData.Received(2).AddEvidence(Arg.Any<string>(), Arg.Any<string>());
+            fakeData.Received(1).AddEvidence("sleepy", "beetle");
+            fakeData.Received(1).AddEvidence("fishy", "cat");
         }
     }
 }
