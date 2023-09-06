@@ -318,7 +318,7 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// A convenience wrapper around IFlowData.
         /// Reduces amount of calls to `IFlowData.EvidenceKeyFilter`
         /// </summary>
-        private struct EvidenceFiller
+        public struct EvidenceFiller
         {
             private readonly IFlowData _flowData;
             private readonly IEvidenceKeyFilter _evidenceKeyFilter;
@@ -333,12 +333,17 @@ namespace FiftyOne.Pipeline.Web.Framework
             /// The <see cref="IFlowData"/> to add the evidence to.
             /// </param>
             /// <exception cref="PipelineException">
-            /// may be rethrown from <see cref="IFlowData.EvidenceKeyFilter"/>
+            /// thrown if <see cref="IFlowData.EvidenceKeyFilter"/> is null
+            /// or re-thrown from <see cref="IFlowData.EvidenceKeyFilter"/> itself
             /// </exception>
             public EvidenceFiller(IFlowData flowData)
             {
                 _flowData = flowData;
                 _evidenceKeyFilter = flowData.EvidenceKeyFilter;
+                if (_evidenceKeyFilter is null)
+                {
+                    throw new PipelineException($"Failed to retrieve {nameof(flowData.EvidenceKeyFilter)} from {nameof(flowData)}");
+                }
                 _errors = null;
             }
 
