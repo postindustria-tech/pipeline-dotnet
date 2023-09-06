@@ -318,7 +318,7 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// A convenience wrapper around IFlowData.
         /// Reduces amount of calls to `IFlowData.EvidenceKeyFilter`
         /// </summary>
-        private struct EvidenceFiller
+        public struct EvidenceFiller
         {
             private readonly IFlowData _flowData;
             private readonly IEvidenceKeyFilter _evidenceKeyFilter;
