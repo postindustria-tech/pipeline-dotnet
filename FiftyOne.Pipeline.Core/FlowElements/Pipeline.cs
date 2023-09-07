@@ -228,7 +228,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         private object _elementAvailablePropertiesLock = new object();
 
         /// <summary>
-        /// Constructor
+        /// Constructor.
+        /// Calls back to each element via <see cref="IFlowElement.Properties"/>,
+        /// allowing them to perform some validations and throw.
         /// </summary>
         /// <param name="logger">
         /// Used for logging.
@@ -249,6 +251,11 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// If true then Pipeline will suppress exceptions added to
         /// <see cref="IFlowData.Errors"/>.
         /// </param>
+        /// <exception cref="PipelineException">
+        /// Thrown by the flow element(s) detecting UNRECOVERABLE errors.
+        /// In case of compromised pipeline integrity
+        /// <see cref="PipelineConfigurationException"/> may be used.
+        /// </exception>
         internal Pipeline(
             ILogger<Pipeline> logger,
             Func<IPipelineInternal, IFlowData> flowDataFactory,
