@@ -148,7 +148,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                     pipeline, element as IAspectEngine);
             }
 
-            public IReadOnlyDictionary<string, ProductMetaData> PublicProperties { get; set; }
+            public virtual IReadOnlyDictionary<string, ProductMetaData> PublicProperties { get; set; }
 
             public override string DataSourceTier => "";
 
@@ -228,6 +228,48 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                         "test"),
                     ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Test that <see cref="CloudRequestException"/>
+        /// thrown by <see cref="ICloudRequestEngine.PublicProperties"/>
+        /// gets wrapped in <see cref="PropertiesNotYetLoadedException"/>.
+        /// </summary>
+        [TestMethod]
+        [ExpectedException(typeof(PropertiesNotYetLoadedException))]
+        public void LoadProperties_CloudRequestExceptionOnPublicProperties()
+        {
+            // prepare flow elements
+            var mockTestInstance = new Mock<TestInstance>() { CallBase = true };
+            var mockRequestEngine = new Mock<TestRequestEngine>() { CallBase = true };
+
+            // count thrown `CloudRequestException` instances
+            int[] exceptionsGenerated = new int[] { 0 };
+            mockRequestEngine.Setup(x => x.PublicProperties).Throws(() => {
+                exceptionsGenerated[0] += 1;
+                return new CloudRequestException("Fake Properties extraction failure");
+            });
+
+            IPipeline pipeline;
+            try
+            {
+                // Verify that pipeline itself is built just fine
+                pipeline = new PipelineBuilder(new LoggerFactory())
+                    .AddFlowElement(mockRequestEngine.Object)
+                    .AddFlowElement(mockTestInstance.Object)
+                    .Build();
+            } 
+            catch(Exception ex)
+            {
+                // Else fail the test
+                Assert.Fail($"Exception was thrown by the {nameof(PipelineBuilder)}: {ex}");
+            }
+
+            // Verify `CloudRequestException` was generated
+            Assert.AreEqual(1, exceptionsGenerated[0]);
+
+            // Verify `CloudAspectEngineBase` wraps `CloudRequestException` into `PropertiesNotYetLoadedException`
+            _ = mockTestInstance.Object.Properties;
         }
 
         /// <summary>

@@ -502,7 +502,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     {
                         elementProps = element.Properties;
                     }
-                    catch (PipelineException)
+                    catch (PropertiesNotYetLoadedException)
                     {
                         hadFailures = true;
                         continue;
