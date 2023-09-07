@@ -76,6 +76,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <summary>
         /// Details of the properties that this element can populate 
         /// </summary>
+        /// <exception cref="Exceptions.PropertiesNotYetLoadedException">
+        /// Thrown if properties are not available yet
+        /// but MAY(!) be re-requested later.
+        /// </exception>
         IList<IElementPropertyMetaData> Properties { get; }
     }
 
