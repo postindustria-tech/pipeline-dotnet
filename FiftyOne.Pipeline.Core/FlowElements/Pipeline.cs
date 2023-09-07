@@ -204,9 +204,28 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         {
             get
             {
-                return _elementAvailableProperties;
+                if (_elementAvailableProperties is object)
+                {
+                    return _elementAvailableProperties;
+                }
+                lock (_elementAvailablePropertiesLock)
+                {
+                    if (_elementAvailableProperties is object)
+                    {
+                        return _elementAvailableProperties;
+                    }
+                    bool hadFailures = false;
+                    var properties = GetElementAvailableProperties(_flowElements, out hadFailures);
+                    if (!hadFailures)
+                    {
+                        _elementAvailableProperties = properties;
+                    }
+                    return properties;
+                }
             }
         }
+
+        private object _elementAvailablePropertiesLock = new object();
 
         /// <summary>
         /// Constructor
@@ -246,7 +265,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             _elementsByType = new Dictionary<Type, List<IFlowElement>>();
             AddElementsByType(_flowElements);
 
-            _elementAvailableProperties = GetElementAvailableProperties(_flowElements);
+            _ = ElementAvailableProperties; // perform caching attempt (default happy path)
 
             _logger.LogInformation($"Pipeline '{GetHashCode()}' created.");
         }
@@ -467,16 +486,28 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 
         private void AddAvailableProperties(
             IReadOnlyList<IFlowElement> elements,
-            IDictionary<string, IDictionary<string, IElementPropertyMetaData>> dictionary)
+            IDictionary<string, IDictionary<string, IElementPropertyMetaData>> dictionary,
+            ref bool hadFailures)
         {
             foreach (var element in elements)
             {
                 if (element is ParallelElements)
                 {
-                    AddAvailableProperties(((ParallelElements)element).FlowElements, dictionary);
+                    AddAvailableProperties(((ParallelElements)element).FlowElements, dictionary, ref hadFailures);
                 }
                 else
                 {
+                    IList<IElementPropertyMetaData> elementProps;
+                    try
+                    {
+                        elementProps = element.Properties;
+                    }
+                    catch (PipelineException)
+                    {
+                        hadFailures = true;
+                        continue;
+                    }
+
                     if (dictionary.ContainsKey(element.ElementDataKey) == false)
                     {
                         dictionary[element.ElementDataKey] =
@@ -484,7 +515,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                                 StringComparer.OrdinalIgnoreCase);
                     }
                     var availableElementProperties = dictionary[element.ElementDataKey];
-                    foreach (var property in element.Properties.Where(p => p.Available))
+                    foreach (var property in elementProps.Where(p => p.Available))
                     {
                         if (availableElementProperties.ContainsKey(property.Name) == false)
                         {
@@ -501,14 +532,18 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <param name="elements">
         /// Elements to get the available properties from
         /// </param>
+        /// <param name="hadFailures">
+        /// Flag variable to store whether there were failures during property collection.
+        /// </param>
         private IReadOnlyDictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>
-            GetElementAvailableProperties(IReadOnlyList<IFlowElement> elements)
+            GetElementAvailableProperties(IReadOnlyList<IFlowElement> elements, out bool hadFailures)
         {
             IDictionary<string, IDictionary<string, IElementPropertyMetaData>> dict =
                 new Dictionary<string, IDictionary<string, IElementPropertyMetaData>>(
                     StringComparer.OrdinalIgnoreCase);
 
-            AddAvailableProperties(elements, dict);
+            hadFailures = false;
+            AddAvailableProperties(elements, dict, ref hadFailures);
 
             return dict.Select(kvp => new KeyValuePair<string, 
                 IReadOnlyDictionary<string, IElementPropertyMetaData>>(

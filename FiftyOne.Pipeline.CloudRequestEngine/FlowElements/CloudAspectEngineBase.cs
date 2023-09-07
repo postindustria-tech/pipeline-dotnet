@@ -169,25 +169,18 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     {
                         if (_aspectProperties == null)
                         {
-                            var engineInstance = RequestEngine.GetInstance();
-                            try
+                            if (LoadAspectProperties(
+                                RequestEngine.GetInstance()) == false)
                             {
-                                if (LoadAspectProperties(engineInstance) == false)
-                                {
-                                    throw new PipelineException(string.Format(
-                                        CultureInfo.InvariantCulture,
-                                        Messages.ExceptionFailedToLoadProperties,
-                                        ElementDataKey));
-                                }
-                            }
-                            catch (CloudRequestException)
-                            {
-                                // ignore server errors, properties will be requested again
+                                throw new PipelineException(string.Format(
+                                    CultureInfo.InvariantCulture, 
+                                    Messages.ExceptionFailedToLoadProperties,
+                                    ElementDataKey));
                             }
                         }
                     }
                 }
-                return _aspectProperties ?? new IAspectPropertyMetaData[0];
+                return _aspectProperties;
             }
         }
 
