@@ -235,10 +235,18 @@ namespace FiftyOne.Pipeline.Web.Framework
             // Create a new FlowData instance.
             var flowData = GetInstance().Pipeline.CreateFlowData();
 
-            IList<Exception> webErrors = null;
             try
             {
-                var filler = new EvidenceFiller(flowData);
+                EvidenceFiller filler;
+                try
+                {
+                    filler = new EvidenceFiller(flowData);
+                }
+                catch (PipelineException ex)
+                {
+                    flowData.AddError(ex, null);
+                    throw;
+                }
 
                 filler.CheckAndAddAll("header.", request.Headers, (headers, k) => headers[k]);
                 filler.CheckAndAddAll("cookie.", request.Cookies, (cookies, k) => cookies[k].Value);
@@ -260,54 +268,32 @@ namespace FiftyOne.Pipeline.Web.Framework
                 filler.CheckAndAdd("server.client-ip", request.UserHostAddress);
                 filler.AddRequestProtocolToEvidence(request);
 
-                webErrors = filler.Errors;
-            } 
-            catch (PipelineException ex)
-            {
-                if (!GetInstance().Pipeline.SuppressProcessExceptions)
+                if (filler.Errors is IList<Exception> errors)
                 {
-                    throw;
+                    foreach (var error in errors)
+                    {
+                        flowData.AddError(error, null);
+                    }
+                    throw new AggregateException(errors);
                 }
-                webErrors = new List<Exception> { ex };
-            }
 
-            // Process the evidence and return the result
-            flowData.Process();
+                // Process the evidence and return the result
+                flowData.Process();
 
-            if (GetInstance().SetHeaderPropertiesEnabled &&
-                request.RequestContext.HttpContext.ApplicationInstance != null)
-            {
-                try
+                if (GetInstance().SetHeaderPropertiesEnabled &&
+                    request.RequestContext.HttpContext.ApplicationInstance != null)
                 {
                     // Set HTTP headers in the response.
                     SetHeadersProvider.GetInstance().SetHeaders(flowData,
                         request.RequestContext.HttpContext.ApplicationInstance.Context);
                 }
-                catch (Exception ex)
-                {
-                    if (!GetInstance().Pipeline.SuppressProcessExceptions)
-                    {
-                        throw;
-                    }
-                    if (webErrors is null)
-                    {
-                        webErrors = new List<Exception>();
-                    }
-                    webErrors.Add(ex);
-                }
-            }
-
-            // If any errors have occurred and exceptions are not
-            // suppressed, then throw an aggregate exception.
-            if (webErrors != null && webErrors.Count > 0)
+            } 
+            catch (Exception ex)
             {
-                foreach (Exception ex in webErrors)
-                {
-                    flowData.AddError(ex, null);
-                }
                 if (!GetInstance().Pipeline.SuppressProcessExceptions)
                 {
-                    throw new AggregateException(webErrors);
+                    if (ex is AggregateException) { throw; }
+                    throw new AggregateException(ex);
                 }
             }
 
