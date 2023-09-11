@@ -52,6 +52,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             Mock<IAspectEngine> engine = new Mock<IAspectEngine>();
             engine.Setup(e => e.DataSourceTier).Returns("lite");
+            engine.Setup(e => e.HasLoadedProperties).Returns(true);
             ConfigureProperty(engine);
 
             // Act
@@ -136,6 +137,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             Mock<IAspectEngine> engine = new Mock<IAspectEngine>();
             engine.Setup(e => e.DataSourceTier).Returns("premium");
+            engine.Setup(e => e.HasLoadedProperties).Returns(true);
             ConfigureProperty(engine, false);
 
             // Act
@@ -155,6 +157,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             Mock<IAspectEngine> engine = new Mock<IAspectEngine>();
             engine.Setup(e => e.DataSourceTier).Returns("premium");
+            engine.Setup(e => e.HasLoadedProperties).Returns(true);
             ConfigureProperty(engine, false);
 
             // Act
@@ -174,6 +177,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             Mock<ICloudAspectEngine> engine = new Mock<ICloudAspectEngine>();
             engine.SetupGet(e => e.ElementDataKey).Returns("testElement");
+            engine.SetupGet(e => e.HasLoadedProperties).Returns(true);
             engine.SetupGet(e => e.Properties).Returns(new List<IAspectPropertyMetaData>());
 
             // Act
@@ -206,6 +210,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             Mock<ICloudAspectEngine> engine = new Mock<ICloudAspectEngine>();
             engine.SetupGet(e => e.ElementDataKey).Returns("testElement");
+            engine.SetupGet(e => e.HasLoadedProperties).Returns(true);
             ConfigureProperty(engine.As<IAspectEngine>());
 
             // Act
@@ -240,6 +245,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Arrange
             Mock<IAspectEngine> engine = new Mock<IAspectEngine>();
             engine.Setup(e => e.DataSourceTier).Returns("premium");
+            engine.Setup(e => e.HasLoadedProperties).Returns(true);
             ConfigureProperty(engine);
 
             // Act

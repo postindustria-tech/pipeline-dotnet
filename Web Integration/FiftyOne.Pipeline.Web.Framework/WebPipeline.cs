@@ -35,8 +35,11 @@ using FiftyOne.Pipeline.Web.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Web;
+using static System.Collections.Specialized.BitVector32;
 
 namespace FiftyOne.Pipeline.Web.Framework
 {
@@ -221,113 +224,188 @@ namespace FiftyOne.Pipeline.Web.Framework
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
+        /// <exception cref="AggregateException">
+        /// Thrown if an error occurred during processing, 
+        /// unless inderlying <see ref="IPipeline.SuppressProcessExceptions"/> is true.
+        /// </exception>
         public static IFlowData Process(HttpRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
             // Create a new FlowData instance.
             var flowData = GetInstance().Pipeline.CreateFlowData();
-            // Add headers
-            foreach (var headerName in request.Headers.AllKeys)
+
+            try
             {
-                CheckAndAdd(flowData, "header." + headerName, request.Headers[headerName]);
-            }
-            // Add cookies
-            foreach (var cookieName in request.Cookies.AllKeys)
-            {
-                CheckAndAdd(flowData, "cookie." + cookieName, request.Cookies[cookieName].Value);
-            }
-            // Add query parameters
-            foreach (var paramName in request.QueryString.AllKeys)
-            {
-                CheckAndAdd(flowData, "query." + paramName, request.QueryString[paramName]);
-            }
-            if (request.RequestContext.HttpContext.Session != null)
-            {
-                CheckAndAdd(flowData, "session", new AspFrameworkSession(request.RequestContext.HttpContext.Session));
-                foreach (var sessionValueName in request.RequestContext.HttpContext.Session.Keys)
+                EvidenceFiller filler;
+                try
                 {
-                    CheckAndAdd(flowData, (string)sessionValueName, request.RequestContext.HttpContext.Session[(string)sessionValueName]);
+                    filler = new EvidenceFiller(flowData);
                 }
-            }
-            // Add form parameters to the evidence.
-            if (request.HttpMethod == Shared.Constants.METHOD_POST &&
-                Shared.Constants.CONTENT_TYPE_FORM.Contains(request.ContentType))
-            {
-                foreach (var formKey in request.Form.AllKeys)
+                catch (PipelineException ex)
                 {
-                    string evidenceKey = Core.Constants.EVIDENCE_QUERY_PREFIX +
-                        Core.Constants.EVIDENCE_SEPERATOR + formKey;
-                    CheckAndAdd(flowData, evidenceKey, request.Form[formKey]);
+                    flowData.AddError(ex, null);
+                    throw;
                 }
-            }
 
-            // Add the client IP
-            CheckAndAdd(flowData, "server.client-ip", request.UserHostAddress);
+                filler.CheckAndAddAll("header.", request.Headers, (headers, k) => headers[k]);
+                filler.CheckAndAddAll("cookie.", request.Cookies, (cookies, k) => cookies[k].Value);
+                filler.CheckAndAddAll("query.", request.QueryString, (query, k) => query[k]);
+                if (request.RequestContext.HttpContext.Session is HttpSessionStateBase session)
+                {
+                    filler.CheckAndAdd("session", new AspFrameworkSession(session));
+                    filler.CheckAndAddAll("", session.Keys, (k) => session[k]);
+                }
 
-            AddRequestProtocolToEvidence(flowData, request);
+                // Add form parameters to the evidence.
+                if (request.HttpMethod == Shared.Constants.METHOD_POST &&
+                    Shared.Constants.CONTENT_TYPE_FORM.Contains(request.ContentType))
+                {
+                    filler.CheckAndAddAll(Core.Constants.EVIDENCE_QUERY_PREFIX
+                        + Core.Constants.EVIDENCE_SEPERATOR, request.Form, (form, k) => form[k]);
+                }
 
-            // Process the evidence and return the result
-            flowData.Process();
+                filler.CheckAndAdd("server.client-ip", request.UserHostAddress);
+                filler.AddRequestProtocolToEvidence(request);
 
-            if (GetInstance().SetHeaderPropertiesEnabled &&
-                request.RequestContext.HttpContext.ApplicationInstance != null)
+                if (filler.Errors is IList<Exception> errors)
+                {
+                    foreach (var error in errors)
+                    {
+                        flowData.AddError(error, null);
+                    }
+                    throw new AggregateException(errors);
+                }
+
+                // Process the evidence and return the result
+                flowData.Process();
+
+                if (GetInstance().SetHeaderPropertiesEnabled &&
+                    request.RequestContext.HttpContext.ApplicationInstance != null)
+                {
+                    // Set HTTP headers in the response.
+                    SetHeadersProvider.GetInstance().SetHeaders(flowData,
+                        request.RequestContext.HttpContext.ApplicationInstance.Context);
+                }
+            } 
+            catch (Exception ex)
             {
-                // Set HTTP headers in the response.
-                SetHeadersProvider.GetInstance().SetHeaders(flowData,
-                    request.RequestContext.HttpContext.ApplicationInstance.Context);
+                if (!GetInstance().Pipeline.SuppressProcessExceptions)
+                {
+                    if (ex is AggregateException) { throw; }
+                    throw new AggregateException(ex);
+                }
             }
 
             return flowData;
         }
 
         /// <summary>
-        /// Check if the given key is needed by the given flowdata.
-        /// If it is then add it as evidence.
+        /// A convenience wrapper around IFlowData.
+        /// Reduces amount of calls to `IFlowData.EvidenceKeyFilter`
         /// </summary>
-        /// <param name="flowData">
-        /// The <see cref="IFlowData"/> to add the evidence to.
-        /// </param>
-        /// <param name="key">
-        /// The evidence key
-        /// </param>
-        /// <param name="value">
-        /// The evidence value
-        /// </param>
-        private static void CheckAndAdd(IFlowData flowData, string key, object value)
+        public struct EvidenceFiller
         {
-            if (flowData.EvidenceKeyFilter.Include(key))
-            {
-                flowData.AddEvidence(key, value);
-            }
-        }
+            private readonly IFlowData _flowData;
+            private readonly IEvidenceKeyFilter _evidenceKeyFilter;
+            private IList<Exception> _errors;
 
-        /// <summary>
-        /// Get the request protocol using .NET's Request object
-        /// 'isHttps'. Fall back to non-standard headers.
-        /// </summary>
-        private static void AddRequestProtocolToEvidence(IFlowData flowData, HttpRequest request)
-        {
-            string protocol;
-            if (request.IsSecureConnection)
+            /// <summary>
+            /// A collection of exceptions thrown while trying to set data.
+            /// </summary>
+            public IList<Exception> Errors => _errors;
+
+            /// <param name="flowData">
+            /// The <see cref="IFlowData"/> to add the evidence to.
+            /// </param>
+            /// <exception cref="PipelineException">
+            /// thrown if <see cref="IFlowData.EvidenceKeyFilter"/> is null
+            /// or re-thrown from <see cref="IFlowData.EvidenceKeyFilter"/> itself
+            /// </exception>
+            public EvidenceFiller(IFlowData flowData)
             {
-                protocol = "https";
-            }
-            else if (request.Headers.AllKeys.Contains("X-Origin-Proto"))
-            {
-                protocol = request.Headers["X-Origin-Proto"];
-            }
-            else if (request.Headers.AllKeys.Contains("X-Forwarded-Proto"))
-            {
-                protocol = request.Headers["X-Forwarded-Proto"];
-            }
-            else
-            {
-                protocol = "http";
+                _flowData = flowData;
+                _evidenceKeyFilter = flowData.EvidenceKeyFilter;
+                if (_evidenceKeyFilter is null)
+                {
+                    throw new PipelineException($"Failed to retrieve {nameof(flowData.EvidenceKeyFilter)} from {nameof(flowData)}");
+                }
+                _errors = null;
             }
 
-            // Add protocol to the evidence.
-            CheckAndAdd(flowData, Core.Constants.EVIDENCE_PROTOCOL, protocol);
+            /// <summary>
+            /// Check if the given key is needed by the given flowdata.
+            /// If it is then add it as evidence.
+            /// </summary>
+            /// <param name="key">
+            /// The evidence key
+            /// </param>
+            /// <param name="value">
+            /// The evidence value
+            /// </param>
+            public void CheckAndAdd(string key, object value)
+            {
+                try
+                {
+                    if (_evidenceKeyFilter.Include(key))
+                    {
+                        _flowData.AddEvidence(key, value);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (_errors is null)
+                    {
+                        _errors = new List<Exception>();
+                    }
+                    _errors.Add(ex);
+                }
+            }
+
+            /// <summary>
+            /// Convenience loop wrapper for enumerable of keys
+            /// </summary>
+            public void CheckAndAddAll(string keyPrefix, System.Collections.IEnumerable keys, Func<string, object> valueGetter)
+            {
+                foreach (string k in keys)
+                {
+                    CheckAndAdd(keyPrefix + k, valueGetter(k));
+                }
+            }
+
+            /// <summary>
+            /// Convenience loop wrapper for NameObjectCollectionBase derivatives
+            /// </summary>
+            public void CheckAndAddAll<T>(string keyPrefix, T nameObjectCollection, Func<T, string, object> valueGetter) where T : NameObjectCollectionBase
+                => CheckAndAddAll(keyPrefix, nameObjectCollection.Keys, (k) => valueGetter(nameObjectCollection, k));
+
+            /// <summary>
+            /// Get the request protocol using .NET's Request object
+            /// 'isHttps'. Fall back to non-standard headers.
+            /// </summary>
+            public void AddRequestProtocolToEvidence(HttpRequest request)
+            {
+                string protocol;
+                if (request.IsSecureConnection)
+                {
+                    protocol = "https";
+                }
+                else if (request.Headers.AllKeys.Contains("X-Origin-Proto"))
+                {
+                    protocol = request.Headers["X-Origin-Proto"];
+                }
+                else if (request.Headers.AllKeys.Contains("X-Forwarded-Proto"))
+                {
+                    protocol = request.Headers["X-Forwarded-Proto"];
+                }
+                else
+                {
+                    protocol = "http";
+                }
+
+                // Add protocol to the evidence.
+                CheckAndAdd(Core.Constants.EVIDENCE_PROTOCOL, protocol);
+            }
         }
     }
 }

@@ -85,5 +85,21 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
             HttpStatusCode = httpStatusCode;
             _responseHeaders = responseHeaders;
         }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="httpStatusCode"></param>
+        /// <param name="responseHeaders"></param>
+        /// <param name="innerException"></param>
+        public CloudRequestException(string message,
+            int httpStatusCode,
+            Dictionary<string, string> responseHeaders,
+            Exception innerException) : base(message, innerException)
+        {
+            HttpStatusCode = httpStatusCode;
+            _responseHeaders = responseHeaders;
+        }
     }
 }

@@ -48,6 +48,8 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
 
             public bool IsDisposed => _pipeline.IsDisposed;
 
+            public bool SuppressProcessExceptions => _pipeline.SuppressProcessExceptions;
+
             public IReadOnlyList<IFlowElement> FlowElements => _pipeline.FlowElements;
 
             public IReadOnlyDictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>> 

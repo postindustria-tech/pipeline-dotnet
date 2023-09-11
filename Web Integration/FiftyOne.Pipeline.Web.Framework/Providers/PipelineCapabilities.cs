@@ -43,7 +43,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         public IFlowData FlowData { get; private set; }
         private readonly HttpRequest _request;
         private readonly HttpBrowserCapabilities _baseCaps;
-        
+        private readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>> _availableElementProperties;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -66,6 +67,7 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
             _baseCaps = baseCaps;
             _request = request;
             FlowData = flowData;
+            _availableElementProperties = FlowData.Pipeline.ElementAvailableProperties;
         }
 
         private string IterateDown(string[] keys, IDictionary<string, object> dict)
@@ -110,13 +112,12 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
                 // Try getting the value from the FlowData
                 try
                 {
-                    var availableElements = FlowData.Pipeline.ElementAvailableProperties;
                     if (key != null && key.Contains("."))
                     {
                         var keys = key.Split('.');
-                        if (availableElements.ContainsKey(keys[0]) &&
-                            availableElements[keys[0]].ContainsKey(keys[1]) &&
-                            availableElements[keys[0]][keys[1]].Available)
+                        if (_availableElementProperties.ContainsKey(keys[0]) &&
+                            _availableElementProperties[keys[0]].ContainsKey(keys[1]) &&
+                            _availableElementProperties[keys[0]][keys[1]].Available)
                         {
                             var nonStringValue = FlowData.Get(keys[0])[keys[1]];
                             if (nonStringValue as string != null)
@@ -138,14 +139,14 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
                             }
                         }
                     }
-                    else if (availableElements.Any(i => i.Value.ContainsKey(key)))
+                    else if (_availableElementProperties.Any(i => i.Value.ContainsKey(key)))
                     {
-                        var elementKey = availableElements
+                        var elementKey = _availableElementProperties
                             .First(i => i.Value.ContainsKey(key))
                             .Key;
                         var valueObj = FlowData.Get(elementKey)[key];
 
-                        if (availableElements[elementKey][key].Type.Equals(typeof(IReadOnlyList<string>)))
+                        if (_availableElementProperties[elementKey][key].Type.Equals(typeof(IReadOnlyList<string>)))
                         {
                             value = string.Join("|", ((IEnumerable<object>)valueObj).Select(i => i.ToString()));
                         }
@@ -179,8 +180,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
-                if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("ismobile") &&
+                if (_availableElementProperties.ContainsKey("device") &&
+                    _availableElementProperties["device"].ContainsKey("ismobile") &&
                     FlowData.GetAs<AspectPropertyValue<bool>>("ismobile").HasValue)
                 {
                     return FlowData.GetAs<AspectPropertyValue<bool>>("ismobile").Value;
@@ -200,8 +201,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
-                if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("supportsphonecalls") &&
+                if (_availableElementProperties.ContainsKey("device") &&
+                    _availableElementProperties["device"].ContainsKey("supportsphonecalls") &&
                     FlowData.GetAs<AspectPropertyValue<bool>>("supportsphonecalls").HasValue)
                 {
                     return FlowData.GetAs<AspectPropertyValue<bool>>("supportsphonecalls").Value;
@@ -220,8 +221,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
-                if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("oem") &&
+                if (_availableElementProperties.ContainsKey("device") &&
+                    _availableElementProperties["device"].ContainsKey("oem") &&
                     FlowData.GetAs<AspectPropertyValue<string>>("oem").HasValue)
                 {
                     return FlowData.GetAs<AspectPropertyValue<string>>("oem").Value;
@@ -240,8 +241,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
-                if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("hardwaremodel") &&
+                if (_availableElementProperties.ContainsKey("device") &&
+                    _availableElementProperties["device"].ContainsKey("hardwaremodel") &&
                     FlowData.GetAs<AspectPropertyValue<string>>("hardwaremodel").HasValue)
                 {
                     return FlowData.GetAs<AspectPropertyValue<string>>("hardwaremodel").Value;
@@ -260,8 +261,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         public override int ScreenPixelsHeight {
             get
             {
-                if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("screenpixelsheight") &&
+                if (_availableElementProperties.ContainsKey("device") &&
+                    _availableElementProperties["device"].ContainsKey("screenpixelsheight") &&
                     FlowData.GetAs<AspectPropertyValue<int>>("screenpixelsheight").HasValue)
                 {
                     return FlowData.GetAs<AspectPropertyValue<int>>("screenpixelsheight").Value;
@@ -281,8 +282,8 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
-                if (FlowData.Pipeline.ElementAvailableProperties.ContainsKey("device") &&
-                    FlowData.Pipeline.ElementAvailableProperties["device"].ContainsKey("screenpixelswidth") &&
+                if (_availableElementProperties.ContainsKey("device") &&
+                    _availableElementProperties["device"].ContainsKey("screenpixelswidth") &&
                     FlowData.GetAs<AspectPropertyValue<int>>("screenpixelswidth").HasValue)
                 {
                     return FlowData.GetAs<AspectPropertyValue<int>>("screenpixelswidth").Value;

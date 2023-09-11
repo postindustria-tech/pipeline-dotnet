@@ -169,13 +169,20 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     {
                         if (_aspectProperties == null)
                         {
-                            if (LoadAspectProperties(
-                                RequestEngine.GetInstance()) == false)
+                            var engineInstance = RequestEngine.GetInstance();
+                            try
                             {
-                                throw new PipelineException(string.Format(
-                                    CultureInfo.InvariantCulture, 
-                                    Messages.ExceptionFailedToLoadProperties,
-                                    ElementDataKey));
+                                if (LoadAspectProperties(engineInstance) == false)
+                                {
+                                    throw new PipelineException(string.Format(
+                                        CultureInfo.InvariantCulture,
+                                        Messages.ExceptionFailedToLoadProperties,
+                                        ElementDataKey));
+                                }
+                            }
+                            catch (CloudRequestException ex)
+                            {
+                                throw new PropertiesNotYetLoadedException("Failed to request properties from the cloud.", ex);
                             }
                         }
                     }
@@ -183,6 +190,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 return _aspectProperties;
             }
         }
+
+        /// <summary>
+        /// Provide an implementation for the non-generic, 
+        /// aspect-specific version of the meta-data property.
+        /// </summary>
+        public override bool HasLoadedProperties { get { return _aspectProperties != null; } }
 
         /// <summary>
         /// Constructor

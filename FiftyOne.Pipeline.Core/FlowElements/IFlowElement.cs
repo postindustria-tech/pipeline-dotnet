@@ -74,8 +74,21 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         bool IsDisposed { get; }
 
         /// <summary>
-        /// Details of the properties that this element can populate 
+        /// Details of the properties that this element can populate.
+        /// MUST be semantically persistent (i.e. cacheable by IPipeline).
+        /// WILL be called from within the pipeline during initialization.
         /// </summary>
+        /// <exception cref="Exceptions.PropertiesNotYetLoadedException">
+        /// Thrown if properties are not available yet
+        /// but MAY(!) be re-requested later.
+        /// Means the component MIGHT still recover from the error
+        /// and return populated value sometime later.
+        /// </exception>
+        /// <exception cref="Exceptions.PipelineException">
+        /// Thrown when the component detects UNRECOVERABLE errors.
+        /// If thrown on the first call to this component,
+        /// WILL propagate through pipeline's constructor.
+        /// </exception>
         IList<IElementPropertyMetaData> Properties { get; }
     }
 

@@ -20,6 +20,8 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using System;
+
 namespace FiftyOne.Pipeline.Core
 {
     /// <summary>
@@ -107,6 +109,13 @@ namespace FiftyOne.Pipeline.Core
         /// The default value for the flag that controls whether the pipeline will allow exceptions
         /// from flow elements to bubble up to the caller, or be caught and logged.
         /// </summary>
-        public const bool PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTION = false;
+        [ObsoleteAttribute("This constant is obsolete. Use " + nameof(PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTIONS) + " instead.", false)]
+        public const bool PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTION = PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTIONS;
+
+        /// <summary>
+        /// The default value for the flag that controls whether the pipeline will allow exceptions
+        /// from flow elements to bubble up to the caller, or be caught and logged.
+        /// </summary>
+        public const bool PIPELINE_BUILDER_DEFAULT_AUTO_SUPRESS_PROCESS_EXCEPTIONS = false;
     }
 }

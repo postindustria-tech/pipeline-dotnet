@@ -158,6 +158,65 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
 
         [TestMethod]
         /// <summary>
+        /// Test pipeline handling <see cref="PropertiesNotYetLoadedException"/>
+        /// </summary>
+        public void Pipeline_PropertiesTest()
+        {
+            int[] propertyCalls = new int[] { 0 };
+
+            var element1 = new Mock<IFlowElement>();
+            element1.SetupGet(e => e.ElementDataKey).Returns("unstable");
+            element1.Setup(e => e.Properties).Returns(() =>
+            {
+                propertyCalls[0] += 1;
+                if (propertyCalls[0] <= 2)
+                {
+                    throw new PropertiesNotYetLoadedException("Properties not loaded yet, try again later!");
+                }
+                return new List<IElementPropertyMetaData>()
+                {
+                    new ElementPropertyMetaData(element1.Object, "unstable_property", typeof(string), true),
+                };
+            });
+
+            var element2 = new Mock<IFlowElement>();
+            element2.SetupGet(e => e.ElementDataKey).Returns("stable");
+            element2.Setup(e => e.Properties).Returns(new List<IElementPropertyMetaData>()
+            {
+                new ElementPropertyMetaData(element2.Object, "stable_property", typeof(string), true),
+            });
+
+            // Create the pipeline, properties will be read once
+            var pipeline = CreatePipeline(
+                false,
+                true,
+                element1.Object,
+                element2.Object);
+            Assert.AreEqual(1, propertyCalls[0]);
+
+            // Read properties manually, but still throw `PropertiesNotYetLoadedException`
+            var pipelineProps1 = pipeline.ElementAvailableProperties;
+            Assert.AreEqual(2, propertyCalls[0]);
+            Assert.AreEqual(1, pipelineProps1.Count);
+            Assert.IsTrue(pipelineProps1["stable"]["stable_property"].Available);
+
+            // Read without throwing `PropertiesNotYetLoadedException`
+            var pipelineProps2 = pipeline.ElementAvailableProperties;
+            Assert.AreEqual(3, propertyCalls[0]);
+            Assert.AreEqual(2, pipelineProps2.Count);
+            Assert.IsTrue(pipelineProps2["stable"]["stable_property"].Available);
+            Assert.IsTrue(pipelineProps2["unstable"]["unstable_property"].Available);
+
+            // Read one last time, the result should be already cached
+            var pipelineProps3 = pipeline.ElementAvailableProperties;
+            Assert.AreEqual(3, propertyCalls[0]);
+            Assert.AreEqual(2, pipelineProps3.Count);
+            Assert.IsTrue(pipelineProps3["stable"]["stable_property"].Available);
+            Assert.IsTrue(pipelineProps3["unstable"]["unstable_property"].Available);
+        }
+
+        [TestMethod]
+        /// <summary>
         /// Check that an exception being thrown by a flow element will 
         /// bubble up to be thrown by the Process method.
         /// </summary>

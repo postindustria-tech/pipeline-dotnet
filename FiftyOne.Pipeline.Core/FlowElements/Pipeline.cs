@@ -176,6 +176,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         }
 
         /// <summary>
+        /// Control field that indicates if the Pipeline will throw an
+        /// aggregate exception during processing or suppress it and ignore the
+        /// exceptions added to <see cref="IFlowData.Errors"/>.
+        /// </summary>
+        public bool SuppressProcessExceptions => _suppressProcessExceptions;
+
+        /// <summary>
         /// Get a read only list of the flow elements that are part of this 
         /// pipeline.
         /// </summary>
@@ -197,12 +204,33 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         {
             get
             {
-                return _elementAvailableProperties;
+                if (_elementAvailableProperties is object)
+                {
+                    return _elementAvailableProperties;
+                }
+                lock (_elementAvailablePropertiesLock)
+                {
+                    if (_elementAvailableProperties is object)
+                    {
+                        return _elementAvailableProperties;
+                    }
+                    bool hadFailures = false;
+                    var properties = GetElementAvailableProperties(_flowElements, out hadFailures);
+                    if (!hadFailures)
+                    {
+                        _elementAvailableProperties = properties;
+                    }
+                    return properties;
+                }
             }
         }
 
+        private object _elementAvailablePropertiesLock = new object();
+
         /// <summary>
-        /// Constructor
+        /// Constructor.
+        /// Calls back to each element via <see cref="IFlowElement.Properties"/>,
+        /// allowing them to perform some validations and throw.
         /// </summary>
         /// <param name="logger">
         /// Used for logging.
@@ -223,6 +251,11 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// If true then Pipeline will suppress exceptions added to
         /// <see cref="IFlowData.Errors"/>.
         /// </param>
+        /// <exception cref="PipelineException">
+        /// Thrown by the flow element(s) detecting UNRECOVERABLE errors.
+        /// In case of compromised pipeline integrity
+        /// <see cref="PipelineConfigurationException"/> may be used.
+        /// </exception>
         internal Pipeline(
             ILogger<Pipeline> logger,
             Func<IPipelineInternal, IFlowData> flowDataFactory,
@@ -239,7 +272,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             _elementsByType = new Dictionary<Type, List<IFlowElement>>();
             AddElementsByType(_flowElements);
 
-            _elementAvailableProperties = GetElementAvailableProperties(_flowElements);
+            _ = ElementAvailableProperties; // perform caching attempt (default happy path)
 
             _logger.LogInformation($"Pipeline '{GetHashCode()}' created.");
         }
@@ -262,6 +295,13 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The <see cref="IFlowData"/> that contains the evidence and will
         /// allow the user to access the results.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if a required parameter is null.
+        /// </exception>
+        /// <exception cref="AggregateException">
+        /// Thrown if an error occurred during processing, 
+        /// unless <see ref="SuppressProcessExceptions"/> is true.
+        /// </exception>
         public void Process(IFlowData data)
         {
             if(data == null)
@@ -301,7 +341,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // suppressed, then throw an aggregate exception.
             if (data.Errors != null &&
                 data.Errors.Count > 0 &&
-                _suppressProcessExceptions == false)
+                SuppressProcessExceptions == false)
             {
                 throw new AggregateException(data.Errors
                     .Where(e => e.ShouldThrow == true)
@@ -453,16 +493,28 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 
         private void AddAvailableProperties(
             IReadOnlyList<IFlowElement> elements,
-            IDictionary<string, IDictionary<string, IElementPropertyMetaData>> dictionary)
+            IDictionary<string, IDictionary<string, IElementPropertyMetaData>> dictionary,
+            ref bool hadFailures)
         {
             foreach (var element in elements)
             {
                 if (element is ParallelElements)
                 {
-                    AddAvailableProperties(((ParallelElements)element).FlowElements, dictionary);
+                    AddAvailableProperties(((ParallelElements)element).FlowElements, dictionary, ref hadFailures);
                 }
                 else
                 {
+                    IList<IElementPropertyMetaData> elementProps;
+                    try
+                    {
+                        elementProps = element.Properties;
+                    }
+                    catch (PropertiesNotYetLoadedException)
+                    {
+                        hadFailures = true;
+                        continue;
+                    }
+
                     if (dictionary.ContainsKey(element.ElementDataKey) == false)
                     {
                         dictionary[element.ElementDataKey] =
@@ -470,7 +522,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                                 StringComparer.OrdinalIgnoreCase);
                     }
                     var availableElementProperties = dictionary[element.ElementDataKey];
-                    foreach (var property in element.Properties.Where(p => p.Available))
+                    foreach (var property in elementProps.Where(p => p.Available))
                     {
                         if (availableElementProperties.ContainsKey(property.Name) == false)
                         {
@@ -487,14 +539,18 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <param name="elements">
         /// Elements to get the available properties from
         /// </param>
+        /// <param name="hadFailures">
+        /// Flag variable to store whether there were failures during property collection.
+        /// </param>
         private IReadOnlyDictionary<string, IReadOnlyDictionary<string, IElementPropertyMetaData>>
-            GetElementAvailableProperties(IReadOnlyList<IFlowElement> elements)
+            GetElementAvailableProperties(IReadOnlyList<IFlowElement> elements, out bool hadFailures)
         {
             IDictionary<string, IDictionary<string, IElementPropertyMetaData>> dict =
                 new Dictionary<string, IDictionary<string, IElementPropertyMetaData>>(
                     StringComparer.OrdinalIgnoreCase);
 
-            AddAvailableProperties(elements, dict);
+            hadFailures = false;
+            AddAvailableProperties(elements, dict, ref hadFailures);
 
             return dict.Select(kvp => new KeyValuePair<string, 
                 IReadOnlyDictionary<string, IElementPropertyMetaData>>(
