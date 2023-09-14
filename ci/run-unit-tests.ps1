@@ -19,11 +19,9 @@ $zip_uuid = New-Guid
 $ArtifactPath = [IO.Path]::Combine($ArtifactsLocation, "${TestName}_bin_${zip_uuid}.zip")
 $MyBinPath = [IO.Path]::Combine($RepoPath, "Web Integration", "Tests", $TestName, "bin")
 
-try {
+if (Test-Path -Path $MyBinPath) {
     mkdir -p $ArtifactsLocation
     Compress-Archive -Path $MyBinPath -DestinationPath $ArtifactPath
-}
-finally {
 }
 
 exit $result
