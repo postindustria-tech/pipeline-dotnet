@@ -13,10 +13,17 @@ param(
 $result=$LASTEXITCODE
 
 $RepoPath = [IO.Path]::Combine($pwd, $RepoName)
-$q = "FiftyOne.Pipeline.Web.Framework.Tests"
-$ArtifactsPath = [IO.Path]::Combine($RepoPath, "artifacts", $OutputFolder, $Name, "${q}_bin_${Configuration}")
-$MyBinPath = [IO.Path]::Combine($RepoPath, "Web Integration", "Tests", $q, "bin", $Configuration)
+$TestName = "FiftyOne.Pipeline.Web.Framework.Tests"
+$ArtifactsLocation = [IO.Path]::Combine($RepoPath, "artifacts", $OutputFolder, $Name)
+$zip_uuid = New-Guid
+$ArtifactPath = [IO.Path]::Combine($ArtifactsLocation, "${TestName}_bin_${Configuration}_${zip_uuid}.zip")
+$MyBinPath = [IO.Path]::Combine($RepoPath, "Web Integration", "Tests", $TestName, "bin", $Configuration)
 
-Compress-Archive -Path $MyBinPath -DestinationPath $ArtifactsPath
+try {
+    mkdir -p $ArtifactsLocation
+    Compress-Archive -Path $MyBinPath -DestinationPath $ArtifactPath
+}
+finally {
+}
 
 exit $result
