@@ -8,12 +8,9 @@ param(
     [string]$BuildMethod = "dotnet"
 )
 
-Write-Output "Will delegate to ./dotnet/run-unit-tests.ps1"
-
 ./dotnet/run-unit-tests.ps1 -RepoName $RepoName -ProjectDir $ProjectDir -Name $Name -Configuration $Configuration -Arch $Arch -BuildMethod $BuildMethod -Filter ".*Tests(|\.Core|\.Web)\.dll"
-$result=$LASTEXITCODE
 
-Write-Output "Did delegate to ./dotnet/run-unit-tests.ps1"
+$result=$LASTEXITCODE
 
 $RepoPath = [IO.Path]::Combine($pwd, $RepoName)
 $q = "FiftyOne.Pipeline.Web.Framework.Tests"
