@@ -14,9 +14,10 @@ $result=$LASTEXITCODE
 
 $RepoPath = [IO.Path]::Combine($pwd, $RepoName)
 $q = "FiftyOne.Pipeline.Web.Framework.Tests"
-$ArtifactsPath = [IO.Path]::Combine($RepoPath, "artifacts", $OutputFolder, $Name, "${q}_bin_${Configuration}")
+$TestResultPath = [IO.Path]::Combine($RepoPath, "test-results", $OutputFolder, $Name, "${q}_bin_${Configuration}")
 $MyBinPath = [IO.Path]::Combine($RepoPath, "Web Integration", "Tests", $q, "bin", $Configuration)
 
-Compress-Archive -Path $MyBinPath -DestinationPath $ArtifactsPath
+Compress-Archive -Path $MyBinPath -DestinationPath $TestResultPath
+Write-Output "Created $TestResultPath from $MyBinPath"
 
 exit $result
