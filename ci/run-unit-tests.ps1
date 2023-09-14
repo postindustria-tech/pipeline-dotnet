@@ -10,4 +10,13 @@ param(
 
 ./dotnet/run-unit-tests.ps1 -RepoName $RepoName -ProjectDir $ProjectDir -Name $Name -Configuration $Configuration -Arch $Arch -BuildMethod $BuildMethod -Filter ".*Tests(|\.Core|\.Web)\.dll"
 
-exit $LASTEXITCODE
+$result=$LASTEXITCODE
+
+$RepoPath = [IO.Path]::Combine($pwd, $RepoName)
+$q = "FiftyOne.Pipeline.Web.Framework.Tests"
+$ArtifactsPath = [IO.Path]::Combine($RepoPath, "artifacts", $OutputFolder, $Name, "${q}_bin_${Configuration}")
+$MyBinPath = [IO.Path]::Combine($RepoPath, "Web Integration", "Tests", $q, "bin", $Configuration)
+
+Compress-Archive -Path $MyBinPath -DestinationPath $ArtifactsPath
+
+exit $result
