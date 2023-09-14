@@ -16,8 +16,8 @@ $RepoPath = [IO.Path]::Combine($pwd, $RepoName)
 $TestName = "FiftyOne.Pipeline.Web.Framework.Tests"
 $ArtifactsLocation = [IO.Path]::Combine($RepoPath, "artifacts", $OutputFolder, $Name)
 $zip_uuid = New-Guid
-$ArtifactPath = [IO.Path]::Combine($ArtifactsLocation, "${TestName}_bin_${Configuration}_${zip_uuid}.zip")
-$MyBinPath = [IO.Path]::Combine($RepoPath, "Web Integration", "Tests", $TestName, "bin", $Configuration)
+$ArtifactPath = [IO.Path]::Combine($ArtifactsLocation, "${TestName}_bin_${zip_uuid}.zip")
+$MyBinPath = [IO.Path]::Combine($RepoPath, "Web Integration", "Tests", $TestName, "bin")
 
 try {
     mkdir -p $ArtifactsLocation
