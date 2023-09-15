@@ -663,6 +663,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
             string tempPath = Path.GetTempPath();
             string dataFile = Path.GetTempFileName();
+            if (File.Exists(dataFile)) { File.Delete(dataFile); }
             try
             {
                 // Configure the engine to return the relevant paths.
@@ -847,6 +848,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             Mock<IOnPremiseAspectEngine> engine = new Mock<IOnPremiseAspectEngine>();
             string tempPath = Path.GetTempPath();
             string dataFile = Path.GetTempFileName();
+            if (File.Exists(dataFile)) { File.Delete(dataFile); }
             try
             {
                 // Configure the engine to return the relevant paths.
