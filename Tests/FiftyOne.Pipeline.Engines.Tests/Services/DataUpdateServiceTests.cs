@@ -53,6 +53,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         private int _ignoreWranings = 0;
         private int _ignoreErrors = 0;
         private const int TEST_TIMEOUT_MS = 3000;
+        private const int LOGGING_TIMEOUT_MS = 75;
 
         private DataUpdateService _dataUpdate;
 
@@ -890,6 +891,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                     "event was never fired");
+                Thread.Sleep(LOGGING_TIMEOUT_MS);
                 _httpHandler.Verify(h => h.Send(It.IsAny<HttpRequestMessage>()), Times.Once());
                 // Make sure engine was not refreshed
                 engine.Verify(e => e.RefreshData(config.Identifier), Times.Never());
