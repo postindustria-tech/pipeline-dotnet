@@ -102,8 +102,18 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         [TestCleanup]
         public void Cleanup()
         {
-            _logger.AssertMaxErrors(_ignoreErrors);
-            _logger.AssertMaxWarnings(_ignoreWranings);
+            try
+            {
+                _logger.AssertMaxErrors(_ignoreErrors);
+                _logger.AssertMaxWarnings(_ignoreWranings);
+            }
+            finally
+            {
+                foreach (var entry in _logger.Entries)
+                {
+                    Console.WriteLine($"[LOGGER LOGS] {entry.Key} > {entry.Value}");
+                }
+            }
         }
 
         /// <summary>
