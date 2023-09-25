@@ -1104,6 +1104,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 
 							// If the response is successful then save the content to a 
 							// temporary file
+							LogDebugMessage(() => $"Will call {nameof(response.Content.ReadAsStreamAsync)}", dataFile);
 							using (var dataStream = response.Content.ReadAsStreamAsync().Result)
                             {
                                 LogDebugMessage(() => $"Will copy {nameof(dataStream)} into {nameof(tempStream)}", dataFile);
