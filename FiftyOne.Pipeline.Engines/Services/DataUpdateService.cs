@@ -546,8 +546,8 @@ namespace FiftyOne.Pipeline.Engines.Services
             }
             catch (DataUpdateException ex)
             {
-				LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received.", null);
-				_logger?.LogError(ex, $"Caught exception into {nameof(DataUpdateException)} clause.");
+				LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(DataUpdateException)} clause.", null);
+                LogDebugMessage(ex.ToString, null);
                 _logger.LogError(Messages.ExceptionAutoUpdate, ex);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
@@ -556,8 +556,8 @@ namespace FiftyOne.Pipeline.Engines.Services
 			catch (Exception ex)
 #pragma warning restore CA1031 // Do not catch general exception types
 			{
-                LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received.", null);
-                _logger?.LogError(ex, $"Caught exception into {nameof(Exception)} clause.");
+                LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(Exception)} clause.", null);
+                LogDebugMessage(ex.ToString, null);
                 AspectEngineDataFile dataFile = state == null ? null :
 					state as AspectEngineDataFile;
 				string msg = string.Format(CultureInfo.InvariantCulture,
