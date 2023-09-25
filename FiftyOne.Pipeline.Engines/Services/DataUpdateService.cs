@@ -150,6 +150,12 @@ namespace FiftyOne.Pipeline.Engines.Services
 		}
 
 		#region Public methods
+
+		/// <summary>
+		/// Enables logging debug information (intermediate states and results).
+		/// </summary>
+		public bool DebugLoggingEnabled { get; set; }
+
 		/// <summary>
 		/// Register an data file for automatic updates.
 		/// </summary>
@@ -170,6 +176,8 @@ namespace FiftyOne.Pipeline.Engines.Services
 
             if (dataFile != null)
 			{
+				LogDebugMessage(() => "dataFile is not null.", dataFile);
+
 				// If the data file is configured to refresh the data
 				// file on startup then download an update immediately.
 				// We also want to do this synchronously so that execution
@@ -179,6 +187,7 @@ namespace FiftyOne.Pipeline.Engines.Services
                 {
                     LogInfoMessage(Messages.MessageAutoUpdateOnStartup, dataFile);
                     var result = CheckForUpdate(dataFile, true);
+					LogDebugMessage(() => $"{nameof(CheckForUpdate)} resulted in {result}", dataFile);
 					if (result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
 					{
 						// If the update was successful then the timer 
@@ -197,6 +206,8 @@ namespace FiftyOne.Pipeline.Engines.Services
 				}
 				if(setTimer)
 				{
+					LogDebugMessage(() => $"{nameof(setTimer)} is {setTimer}", dataFile);
+
 					// Only create an automatic update timer if auto updates are 
 					// enabled for this engine and there is not already an associated 
 					// timer.
@@ -573,6 +584,7 @@ namespace FiftyOne.Pipeline.Engines.Services
         {
             AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
             AspectEngineDataFile dataFile = state as AspectEngineDataFile;
+            LogDebugMessage(() => $"Starting {nameof(CheckForUpdate)} with {nameof(result)} = {result}", dataFile);
             bool newDataAvailable = false;
 
 			OnUpdateStarted(new DataUpdateEventArgs()
@@ -612,25 +624,30 @@ namespace FiftyOne.Pipeline.Engines.Services
 							newDataAvailable = true;
 						}
 					}
+					LogDebugMessage(() => $"{nameof(newDataAvailable)} is yet {newDataAvailable}", dataFile);
 
 					if (newDataAvailable == false &&
 						string.IsNullOrEmpty(dataFile.Configuration.DataUpdateUrl) == false)
 					{
 						result = CheckForUpdateFromUrl(dataFile);
+						LogDebugMessage(() => $"{nameof(CheckForUpdateFromUrl)} resulted in {result}", dataFile);
 						newDataAvailable =
 							result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS ||
 							result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
 					}
+					LogDebugMessage(() => $"{nameof(newDataAvailable)} is {newDataAvailable}", dataFile);
 
 					if (newDataAvailable == false)
 					{
 						result = AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED;
+						LogDebugMessage(() => $"{nameof(result)} is {result}", dataFile);
 					}
 					else if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
 					{
 						// Data update was available but engine has not 
 						// yet been refreshed.
 						result = UpdatedDataAvailable(dataFile);
+						LogDebugMessage(() => $"{nameof(UpdatedDataAvailable)} resulted in {result}", dataFile);
 					}
 
 					if (result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
@@ -658,6 +675,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			}
 			finally
 			{
+				LogDebugMessage(() => $"Entering {nameof(CheckForUpdate)}-finally with {nameof(newDataAvailable)} = {newDataAvailable}, {nameof(result)} = {result}", dataFile);
 				if (newDataAvailable == false)
 				{
 					// No update available.
@@ -1279,6 +1297,20 @@ namespace FiftyOne.Pipeline.Engines.Services
         private void LogInfoMessage(
             string message, 
             IAspectEngineDataFile dataFile)
+			=> _logger.LogInformation(BuildLogMessage(message, dataFile));
+
+		private void LogDebugMessage(
+			Func<string> message,
+			IAspectEngineDataFile dataFile)
+		{
+			if (DebugLoggingEnabled) {
+				_logger.LogDebug(BuildLogMessage(message(), dataFile));
+			}
+		}
+
+        private static string BuildLogMessage(
+            string message,
+            IAspectEngineDataFile dataFile)
         {
             StringBuilder fullMessage = new StringBuilder();
             if (dataFile != null)
@@ -1287,7 +1319,7 @@ namespace FiftyOne.Pipeline.Engines.Services
                 fullMessage.Append($"for engine '{dataFile.EngineType?.Name}'");
             }
             fullMessage.Append(message);
-            _logger.LogInformation(fullMessage.ToString());
+            return fullMessage.ToString();
         }
 		#endregion
 	}
