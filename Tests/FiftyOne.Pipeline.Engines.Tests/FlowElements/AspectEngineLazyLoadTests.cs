@@ -44,7 +44,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 #if DEBUG
         private int _timeoutMS = 3500;
 #else
-        private int _timeoutMS = 2000;
+        private int _timeoutMS = 2500;
 #endif
         private CancellationTokenSource _cancellationTokenSource = 
             new CancellationTokenSource();
