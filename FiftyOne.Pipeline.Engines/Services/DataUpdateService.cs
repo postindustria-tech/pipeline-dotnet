@@ -546,6 +546,8 @@ namespace FiftyOne.Pipeline.Engines.Services
             }
             catch (DataUpdateException ex)
             {
+				LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received.", null);
+				_logger?.LogError(ex, $"Caught exception into {nameof(DataUpdateException)} clause.");
                 _logger.LogError(Messages.ExceptionAutoUpdate, ex);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
@@ -554,6 +556,8 @@ namespace FiftyOne.Pipeline.Engines.Services
 			catch (Exception ex)
 #pragma warning restore CA1031 // Do not catch general exception types
 			{
+                LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received.", null);
+                _logger?.LogError(ex, $"Caught exception into {nameof(Exception)} clause.");
                 AspectEngineDataFile dataFile = state == null ? null :
 					state as AspectEngineDataFile;
 				string msg = string.Format(CultureInfo.InvariantCulture,
@@ -1101,16 +1105,22 @@ namespace FiftyOne.Pipeline.Engines.Services
 							// If the response is successful then save the content to a 
 							// temporary file
 							using (var dataStream = response.Content.ReadAsStreamAsync().Result)
-							{
-								dataStream.CopyTo(tempStream);
-							}
-							if (dataFile.Configuration.VerifyMd5)
-							{
-								IEnumerable<string> values;
+                            {
+                                LogDebugMessage(() => $"Will copy {nameof(dataStream)} into {nameof(tempStream)}", dataFile);
+                                dataStream.CopyTo(tempStream);
+                                LogDebugMessage(() => $"Did copy {nameof(dataStream)} into {nameof(tempStream)}", dataFile);
+                            }
+                            LogDebugMessage(() => $"Will test for {nameof(dataFile.Configuration.VerifyMd5)}", dataFile);
+                            if (dataFile.Configuration.VerifyMd5)
+                            {
+                                LogDebugMessage(() => $"Did test for {nameof(dataFile.Configuration.VerifyMd5)}", dataFile);
+                                IEnumerable<string> values;
 								if (response.Content.Headers.TryGetValues("Content-MD5", out values))
 								{
 									expectedMd5Hash = values.SingleOrDefault();
-								}
+									var lastHash = expectedMd5Hash;
+                                    LogDebugMessage(() => $"{nameof(expectedMd5Hash)} = {lastHash}", dataFile);
+                                }
 								else
 								{
 									_logger.LogWarning(
