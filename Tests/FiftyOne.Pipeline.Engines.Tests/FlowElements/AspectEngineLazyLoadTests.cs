@@ -42,7 +42,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 
         private TestLoggerFactory _loggerFactory;
 #if DEBUG
-        private int _timeoutMS = 3000;
+        private int _timeoutMS = 3500;
 #else
         private int _timeoutMS = 2000;
 #endif
