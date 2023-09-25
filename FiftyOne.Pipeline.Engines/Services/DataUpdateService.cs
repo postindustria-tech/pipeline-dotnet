@@ -717,9 +717,12 @@ namespace FiftyOne.Pipeline.Engines.Services
 		private AutoUpdateStatus CheckForUpdateFromUrl(AspectEngineDataFile dataFile)
 		{
 			AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
+            LogDebugMessage(() => $"Starting {nameof(CheckForUpdateFromUrl)} with {nameof(result)} = {result}", dataFile);
 
 			if (dataFile.Configuration.MemoryOnly)
 			{
+                LogDebugMessage(() => $"{nameof(dataFile.Configuration.MemoryOnly)} is {dataFile.Configuration.MemoryOnly}", dataFile);
+                
 				// Perform the update entirely in memory.
 
 				// The uncompressed stream may be read by the engine at a
@@ -737,6 +740,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 						result = CheckForUpdateFromUrl(dataFile,
 							compressedStream,
 							uncompressedStream);
+                        LogDebugMessage(() => $"{nameof(CheckForUpdateFromUrl)} resulted in {result}", dataFile);
 						if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
 						{
 							if (dataFile.Engine != null)
@@ -810,6 +814,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 						result = CheckForUpdateFromUrl(dataFile,
 							compressedStream,
 							uncompressedStream);
+                        LogDebugMessage(() => $"{nameof(CheckForUpdateFromUrl)} resulted in {result}", dataFile);
 					}
 
 					if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
@@ -820,19 +825,23 @@ namespace FiftyOne.Pipeline.Engines.Services
 							dataFile.FileWatcher != null)
 						{
 							dataFile.FileWatcher.EnableRaisingEvents = false;
+                            LogDebugMessage(() => $"Disabled {nameof(dataFile.FileWatcher)} events", dataFile);
 						}
 
 						try
 						{
+                            LogDebugMessage(() => $"Will copy {uncompressedTempFile} into {dataFile.DataFilePath}", dataFile);
                             // Copy the uncompressed file to the engine's 
                             // data file location
                             _fileSystem.File.Copy(uncompressedTempFile,
 								dataFile.DataFilePath, true);
+                            LogDebugMessage(() => $"Did copy {uncompressedTempFile} into {dataFile.DataFilePath}", dataFile);
 							// Ensure creation time of the file is set
 							// correctly so that the 'If-Modified-Since' 
 							// header will be set to the expected value.
 							_fileSystem.File.SetCreationTimeUtc(
 								dataFile.DataFilePath, DateTime.UtcNow);
+                            LogDebugMessage(() => $"Did update timestamp of {dataFile.DataFilePath}", dataFile);
 						}
 						catch (Exception ex)
 						{
@@ -849,12 +858,14 @@ namespace FiftyOne.Pipeline.Engines.Services
 								dataFile.FileWatcher != null)
 							{
 								dataFile.FileWatcher.EnableRaisingEvents = true;
+                                LogDebugMessage(() => $"Restored {nameof(dataFile.FileWatcher)} events", dataFile);
 							}
 						}
 					}
 				}
 				finally
 				{
+                    LogDebugMessage(() => $"Entering {nameof(CheckForUpdateFromUrl)}-finally", dataFile);
 					// Make sure the temp files are cleaned up
 					if (_fileSystem.File.Exists(compressedTempFile))
 					{
