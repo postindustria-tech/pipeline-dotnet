@@ -93,6 +93,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 _fileSystem.Object,
                 _timerFactory.Object);
 
+            _dataUpdate.DebugLoggingEnabled = true;
         }
 
         /// <summary>
@@ -1553,6 +1554,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 _httpClient,
                 fileSystem,
                 _timerFactory.Object);
+
+            _dataUpdate.DebugLoggingEnabled = true;
+
             return fileSystem;
         }
 
