@@ -523,6 +523,35 @@ namespace FiftyOne.Pipeline.Engines.Services
 			});
 		}
 
+		private void DebugDescribeException(Exception x, bool deep = false)
+		{
+			if (!DebugLoggingEnabled)
+			{
+				return;
+			}
+			Func<string>[] reportPoints = {
+				() => $"type: {x.GetType().Name}",
+                () => $"message: {x.Message}",
+                () => $"inner exception: {x.InnerException}",
+                () => $"trace: {x.StackTrace}",
+                () => $"full: {x}",
+            };
+			foreach (var p in reportPoints)
+			{
+				try
+				{
+					LogDebugMessage(() => $"Exception (deep={deep}) {p()}", null);
+				}
+				catch (Exception e)
+				{
+					if (!deep)
+					{
+						DebugDescribeException(e, true);
+					}
+				}
+			}
+		}
+
 		/// <summary>
 		/// Private method called by update timers when an update is believed
 		/// to be available.
@@ -547,8 +576,7 @@ namespace FiftyOne.Pipeline.Engines.Services
             catch (DataUpdateException ex)
             {
 				LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(DataUpdateException)} clause.", null);
-				var exMessage = ex.ToString();
-                LogDebugMessage(() => $"Exception: {exMessage}", null);
+				DebugDescribeException(ex);
                 _logger.LogError(Messages.ExceptionAutoUpdate, ex);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
@@ -558,8 +586,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 #pragma warning restore CA1031 // Do not catch general exception types
 			{
                 LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(Exception)} clause.", null);
-                var exMessage = ex.ToString();
-                LogDebugMessage(() => $"Exception: {exMessage}", null);
+                DebugDescribeException(ex);
                 AspectEngineDataFile dataFile = state == null ? null :
 					state as AspectEngineDataFile;
 				string msg = string.Format(CultureInfo.InvariantCulture,
