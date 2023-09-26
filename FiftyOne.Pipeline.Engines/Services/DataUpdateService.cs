@@ -600,6 +600,8 @@ namespace FiftyOne.Pipeline.Engines.Services
 				reportUnknownException(ex);
             }
 
+            LogDebugMessage(() => $"At midpoint of {nameof(CheckForUpdate)} -- will call {nameof(OnUpdateComplete)} with {onUpdateCompleteReports.Count} reports", null);
+
 			try
 			{
 				foreach (var report in onUpdateCompleteReports)
@@ -968,6 +970,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS &&
 				dataFile.Configuration.VerifyMd5)
 			{
+                LogDebugMessage(() => $"Will call {nameof(VerifyMd5)}", dataFile);
 				result = VerifyMd5(dataFile, expectedMd5Hash, compressedDataStream);
                 LogDebugMessage(() => $"{nameof(VerifyMd5)} resulted in {result}", dataFile);
 			}
@@ -976,6 +979,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			{
 				if (dataFile.Configuration.DecompressContent)
 				{
+                    LogDebugMessage(() => $"Will call {nameof(Decompress)}", dataFile);
 					result = Decompress(
 						compressedDataStream, uncompressedDataStream);
                     LogDebugMessage(() => $"{nameof(Decompress)} resulted in {result}", dataFile);
