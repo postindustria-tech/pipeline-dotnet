@@ -963,11 +963,13 @@ namespace FiftyOne.Pipeline.Engines.Services
             string expectedMd5Hash = null;
 			// Check if there is an update and download it if there is                   
 			result = DownloadFile(dataFile, compressedDataStream, out expectedMd5Hash);
+            LogDebugMessage(() => $"{nameof(DownloadFile)} resulted in {result}, {nameof(expectedMd5Hash)} = {expectedMd5Hash}", dataFile);
 			// Check data integrity
 			if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS &&
 				dataFile.Configuration.VerifyMd5)
 			{
 				result = VerifyMd5(dataFile, expectedMd5Hash, compressedDataStream);
+                LogDebugMessage(() => $"{nameof(VerifyMd5)} resulted in {result}", dataFile);
 			}
 			// decompress the file
 			if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
@@ -976,6 +978,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 				{
 					result = Decompress(
 						compressedDataStream, uncompressedDataStream);
+                    LogDebugMessage(() => $"{nameof(Decompress)} resulted in {result}", dataFile);
 				}
 				else
 				{
