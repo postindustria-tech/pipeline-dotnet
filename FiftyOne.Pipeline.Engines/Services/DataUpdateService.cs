@@ -564,6 +564,16 @@ namespace FiftyOne.Pipeline.Engines.Services
             // This method is called from a background thread so
             // we need to make sure any exceptions that occur
             // are handled here.
+			var onUpdateCompleteReports = new List<DataUpdateCompleteArgs>();
+			Action<Exception> reportUnknownException = x =>
+			{
+                AspectEngineDataFile dataFile = state == null ? null :
+                    state as AspectEngineDataFile;
+                string msg = string.Format(CultureInfo.InvariantCulture,
+                    Messages.MessageAutoUpdateUnhandledError,
+                    dataFile?.EngineType?.Name ?? "Unknown");
+                _logger.LogError(msg, x);
+            };
             try
 			{
 				if (state == null)
@@ -571,7 +581,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 					throw new ArgumentNullException(nameof(state));
 				}
 
-				CheckForUpdate(state, false);
+				CheckForUpdate(state, false, onUpdateCompleteReports.Add);
             }
             catch (DataUpdateException ex)
             {
@@ -587,12 +597,19 @@ namespace FiftyOne.Pipeline.Engines.Services
 			{
                 LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(Exception)} clause.", null);
                 DebugDescribeException(ex);
-                AspectEngineDataFile dataFile = state == null ? null :
-					state as AspectEngineDataFile;
-				string msg = string.Format(CultureInfo.InvariantCulture,
-					Messages.MessageAutoUpdateUnhandledError,
-					dataFile?.EngineType?.Name ?? "Unknown");
-                _logger.LogError(msg, ex);
+				reportUnknownException(ex);
+            }
+
+			try
+			{
+				foreach (var report in onUpdateCompleteReports)
+				{
+					OnUpdateComplete(report);
+				}
+			}
+			catch(Exception ex)
+            {
+                reportUnknownException(ex);
             }
         }
 
@@ -614,6 +631,8 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// running in a background thread.
 		/// </param>
 		private AutoUpdateStatus CheckForUpdate(object state, bool manualUpdate)
+			=> CheckForUpdate(state, manualUpdate, OnUpdateComplete);
+        private AutoUpdateStatus CheckForUpdate(object state, bool manualUpdate, Action<DataUpdateCompleteArgs> onUpdateComplete)
         {
             AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
             AspectEngineDataFile dataFile = state as AspectEngineDataFile;
@@ -726,7 +745,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 					}
 				}
 
-				OnUpdateComplete(new DataUpdateCompleteArgs()
+				onUpdateComplete(new DataUpdateCompleteArgs()
 				{
 					DataFile = dataFile,
 					Status = result
