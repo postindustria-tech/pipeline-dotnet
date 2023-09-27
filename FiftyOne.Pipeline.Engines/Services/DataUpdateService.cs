@@ -613,6 +613,7 @@ namespace FiftyOne.Pipeline.Engines.Services
             {
                 reportUnknownException(ex);
             }
+            LogDebugMessage(() => $"Exiting timer-bound {nameof(CheckForUpdate)}", null);
         }
 
 		/// <summary>
@@ -1262,16 +1263,19 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// <returns>
 		/// True if the hashes match, false if not.
 		/// </returns>
-		private static AutoUpdateStatus VerifyMd5(
+		private AutoUpdateStatus VerifyMd5(
 			AspectEngineDataFile dataFile, 
 			string serverHash, Stream compressedDataStream)
 		{
 			AutoUpdateStatus status = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
+            LogDebugMessage(() => $"Starting {nameof(CheckForUpdate)} with {nameof(status)} = {status}", dataFile);
 			string downloadHash = GetMd5(compressedDataStream);
+            LogDebugMessage(() => $"{nameof(GetMd5)} resulted in {downloadHash}", dataFile);
 			if (serverHash == null ||
 				string.Equals(serverHash, downloadHash, StringComparison.Ordinal) == false)
 			{
 				status = AutoUpdateStatus.AUTO_UPDATE_ERR_MD5_VALIDATION_FAILED;
+                LogDebugMessage(() => $"Set {nameof(status)} to {status}", dataFile);
                 throw new DataUpdateException(
 					$"Integrity check failed. MD5 hash in HTTP response " +
 					$"'{serverHash}' for '{dataFile.EngineType?.Name}'" +
@@ -1288,14 +1292,17 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// The stream containing the data to hash
 		/// </param>
 		/// <returns>The MD5 hash of the given data.</returns>
-		private static string GetMd5(Stream compressedDataStream)
+		private string GetMd5(Stream compressedDataStream)
 		{
+            LogDebugMessage(() => $"Starting {nameof(GetMd5)}", null);
 #pragma warning disable CA5351 // Do Not Use Broken Cryptographic Algorithms
 			// TODO: Add support for a better hashing algorithm such as SHA512
 			using (MD5 md5Hash = MD5.Create())
 #pragma warning restore CA5351 // Do Not Use Broken Cryptographic Algorithms
 			{
+                LogDebugMessage(() => $"Created {nameof(MD5)} instance", null);
 				compressedDataStream.Position = 0;
+                LogDebugMessage(() => $"Did reset {nameof(compressedDataStream.Position)}", null);
 				return GetMd5(md5Hash, compressedDataStream);
 			}
 		}
@@ -1306,11 +1313,13 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// <param name="stream">calculate MD5 of this stream</param>
 		/// <param name="md5Hash">instance of MD5 hash calculator</param>
 		/// <returns>The MD5 hash of the given data.</returns>
-		private static string GetMd5(MD5 md5Hash, Stream stream)
+		private string GetMd5(MD5 md5Hash, Stream stream)
 		{
+            LogDebugMessage(() => $"Starting {nameof(GetMd5)}", null);
 			// Convert the input string to a byte array and compute the hash.
 			byte[] data = md5Hash.ComputeHash(stream);
 
+            LogDebugMessage(() => $"Did call {nameof(md5Hash.ComputeHash)}", null);
 			// Create a new stringbuilder to collect the bytes
 			// and create a string.
 			StringBuilder sb = new StringBuilder();
@@ -1323,7 +1332,9 @@ namespace FiftyOne.Pipeline.Engines.Services
 			}
 
 			// Return the hexadecimal string.
-			return sb.ToString();
+			var result = sb.ToString();
+            LogDebugMessage(() => $"{nameof(GetMd5)} will return {result}", null);
+            return result;
 		}
 		
 		/// <summary>
