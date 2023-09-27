@@ -156,6 +156,13 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// </summary>
 		public bool DebugLoggingEnabled { get; set; }
 
+        /// <summary>
+        /// Will redirect logging of exceptions in
+		/// <see cref="OnUpdateComplete"/> event from logger to console
+		/// during timer-bound <see cref="CheckForUpdate(object)"/>
+        /// </summary>
+        public bool RedirectTimeredOnUpdateCompleteExceptionsToConsole { get; set; }
+
 		/// <summary>
 		/// Register an data file for automatic updates.
 		/// </summary>
@@ -611,9 +618,15 @@ namespace FiftyOne.Pipeline.Engines.Services
 			}
 			catch(Exception ex)
             {
-                reportUnknownException(ex);
+				if (RedirectTimeredOnUpdateCompleteExceptionsToConsole)
+				{
+					Console.WriteLine($"Exception during {nameof(OnUpdateComplete)} call: {ex}");
+				}
+				else
+				{
+					reportUnknownException(ex);
+				}
             }
-            LogDebugMessage(() => $"Exiting timer-bound {nameof(CheckForUpdate)}", null);
         }
 
 		/// <summary>
