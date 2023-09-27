@@ -156,6 +156,16 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// </summary>
 		public bool DebugLoggingEnabled { get; set; }
 
+        /// <summary>
+        /// Called when <see cref="CheckForUpdate(object)"/> starts
+        /// </summary>
+        public event Action OnTimeredCheckForUpdateEntered;
+
+        /// <summary>
+        /// Called when <see cref="CheckForUpdate(object)"/> will exit
+        /// </summary>
+        public event Action OnTimeredCheckForUpdateWillExit;
+
 		/// <summary>
 		/// Register an data file for automatic updates.
 		/// </summary>
@@ -561,59 +571,83 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// </param>
 		private void CheckForUpdate(object state)
         {
-            // This method is called from a background thread so
-            // we need to make sure any exceptions that occur
-            // are handled here.
-			var onUpdateCompleteReports = new List<DataUpdateCompleteArgs>();
-			Action<Exception> reportUnknownException = x =>
+			try
 			{
-                AspectEngineDataFile dataFile = state == null ? null :
-                    state as AspectEngineDataFile;
-                string msg = string.Format(CultureInfo.InvariantCulture,
-                    Messages.MessageAutoUpdateUnhandledError,
-                    dataFile?.EngineType?.Name ?? "Unknown");
-                _logger.LogError(msg, x);
-            };
-            try
+				OnTimeredCheckForUpdateEntered?.Invoke();
+            }
+			catch
 			{
-				if (state == null)
-				{
-					throw new ArgumentNullException(nameof(state));
-				}
-
-				CheckForUpdate(state, false, onUpdateCompleteReports.Add);
-            }
-            catch (DataUpdateException ex)
-            {
-				LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(DataUpdateException)} clause.", null);
-				DebugDescribeException(ex);
-                _logger.LogError(Messages.ExceptionAutoUpdate, ex);
-            }
-#pragma warning disable CA1031 // Do not catch general exception types
-			// We want to catch any possible exception here so that 
-			// the relevant details can be logged.
-			catch (Exception ex)
-#pragma warning restore CA1031 // Do not catch general exception types
-			{
-                LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(Exception)} clause.", null);
-                DebugDescribeException(ex);
-				reportUnknownException(ex);
-            }
-
-            LogDebugMessage(() => $"At midpoint of {nameof(CheckForUpdate)} -- will call {nameof(OnUpdateComplete)} with {onUpdateCompleteReports.Count} reports", null);
+				// nop --- ignore all errors
+			}
 
 			try
 			{
-				foreach (var report in onUpdateCompleteReports)
+				// This method is called from a background thread so
+				// we need to make sure any exceptions that occur
+				// are handled here.
+				var onUpdateCompleteReports = new List<DataUpdateCompleteArgs>();
+				Action<Exception> reportUnknownException = x =>
 				{
-					OnUpdateComplete(report);
+					AspectEngineDataFile dataFile = state == null ? null :
+						state as AspectEngineDataFile;
+					string msg = string.Format(CultureInfo.InvariantCulture,
+						Messages.MessageAutoUpdateUnhandledError,
+						dataFile?.EngineType?.Name ?? "Unknown");
+					_logger.LogError(msg, x);
+				};
+				try
+				{
+					if (state == null)
+					{
+						throw new ArgumentNullException(nameof(state));
+					}
+
+					CheckForUpdate(state, false, onUpdateCompleteReports.Add);
+				}
+				catch (DataUpdateException ex)
+				{
+					LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(DataUpdateException)} clause.", null);
+					DebugDescribeException(ex);
+					_logger.LogError(Messages.ExceptionAutoUpdate, ex);
+				}
+#pragma warning disable CA1031 // Do not catch general exception types
+				// We want to catch any possible exception here so that 
+				// the relevant details can be logged.
+				catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+				{
+					LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(Exception)} clause.", null);
+					DebugDescribeException(ex);
+					reportUnknownException(ex);
+				}
+
+				LogDebugMessage(() => $"At midpoint of {nameof(CheckForUpdate)} -- will call {nameof(OnUpdateComplete)} with {onUpdateCompleteReports.Count} reports", null);
+
+				try
+				{
+					foreach (var report in onUpdateCompleteReports)
+					{
+						OnUpdateComplete(report);
+					}
+				}
+				catch (Exception ex)
+				{
+					reportUnknownException(ex);
+				}
+
+				LogDebugMessage(() => $"Exiting timer-bound {nameof(CheckForUpdate)}", null);
+			}
+			finally
+			{
+				try
+				{
+					OnTimeredCheckForUpdateWillExit?.Invoke();
+				}
+				catch
+				{
+					// nop --- ignore all errors
 				}
 			}
-			catch(Exception ex)
-            {
-                reportUnknownException(ex);
-            }
-            LogDebugMessage(() => $"Exiting timer-bound {nameof(CheckForUpdate)}", null);
         }
 
 		/// <summary>
