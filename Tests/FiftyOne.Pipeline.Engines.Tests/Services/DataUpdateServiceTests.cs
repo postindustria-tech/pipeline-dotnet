@@ -53,6 +53,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         private int _ignoreWranings = 0;
         private int _ignoreErrors = 0;
         private const int TEST_TIMEOUT_MS = 3000;
+        private const int LOGGER_UNLOCK_TIMEOUT_MS = 75;
 
         private DataUpdateService _dataUpdate;
 
@@ -92,8 +93,14 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 _fileSystem.Object,
                 _timerFactory.Object);
 
+            OnDataUpdateServiceCreated();
+        }
+
+        private void OnDataUpdateServiceCreated()
+        {
             _dataUpdate.DebugLoggingEnabled = true;
-            _dataUpdate.RedirectTimeredOnUpdateCompleteExceptionsToConsole = true;
+            _dataUpdate.OnTimeredCheckForUpdateEntered += () => Monitor.Enter(_logger);
+            _dataUpdate.OnTimeredCheckForUpdateWillExit += () => Monitor.Exit(_logger);
         }
 
         /// <summary>
@@ -105,6 +112,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         {
             try
             {
+                Assert.IsTrue(Monitor.TryEnter(_logger, LOGGER_UNLOCK_TIMEOUT_MS));
                 _logger.AssertMaxErrors(_ignoreErrors);
                 _logger.AssertMaxWarnings(_ignoreWranings);
             }
@@ -114,6 +122,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 {
                     Console.WriteLine($"[LOGGER LOGS] {entry.Key} > {entry.Value}");
                 }
+                Monitor.Exit(_logger);
             }
         }
 
@@ -1554,8 +1563,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 fileSystem,
                 _timerFactory.Object);
 
-            _dataUpdate.DebugLoggingEnabled = true;
-            _dataUpdate.RedirectTimeredOnUpdateCompleteExceptionsToConsole = true;
+            OnDataUpdateServiceCreated();
 
             return fileSystem;
         }
