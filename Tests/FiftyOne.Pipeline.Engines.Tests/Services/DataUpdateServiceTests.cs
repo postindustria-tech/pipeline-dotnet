@@ -93,6 +93,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 _timerFactory.Object);
 
             _dataUpdate.DebugLoggingEnabled = true;
+            _dataUpdate.RedirectTimeredOnUpdateCompleteExceptionsToConsole = true;
         }
 
         /// <summary>
@@ -1554,6 +1555,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 _timerFactory.Object);
 
             _dataUpdate.DebugLoggingEnabled = true;
+            _dataUpdate.RedirectTimeredOnUpdateCompleteExceptionsToConsole = true;
 
             return fileSystem;
         }
