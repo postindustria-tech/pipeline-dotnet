@@ -100,6 +100,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
         private void OnDataUpdateServiceCreated()
         {
+            _dataUpdate.DebugLoggingEnabled = true;
             _dataUpdate.OnTimeredCheckForUpdateEntered += () => Monitor.Enter(_logger);
             _dataUpdate.OnTimeredCheckForUpdateWillExit += () => Monitor.Exit(_logger);
             _didDumpLogs = false;
