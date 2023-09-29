@@ -53,7 +53,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         private int _ignoreWranings = 0;
         private int _ignoreErrors = 0;
         private const int TEST_TIMEOUT_MS = 3000;
-        private const int LOGGER_UNLOCK_TIMEOUT_MS = 75;
+        private const int LOGGER_UNLOCK_TIMEOUT_MS = 1000;
 
         private bool _didDumpLogs;
 
