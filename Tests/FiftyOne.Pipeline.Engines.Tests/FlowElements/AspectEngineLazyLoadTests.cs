@@ -379,26 +379,39 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 
             // Act
             var stopwatch = new Stopwatch();
+            long valueOneTimeMs;
+            long valueTwoTimeMs;
             using (var flowData = pipeline.CreateFlowData())
             {
                 Trace.WriteLine("Process starting");
                 stopwatch.Start();
                 flowData.Process();
+                var logsEvents = new List<Action>();
                 long processTimeMs = stopwatch.ElapsedMilliseconds;
-                Trace.WriteLine($"Process complete in {processTimeMs} ms");
-                Assert.IsTrue(processTimeMs < processCostMs,
-                    $"Process time should have been less than " +
-                    $"{processCostMs} ms but it took {processTimeMs} ms.");
+                try
+                {
+                    logsEvents.Add(() => Trace.WriteLine($"Process complete in {processTimeMs} ms"));
+                    Assert.IsTrue(processTimeMs < processCostMs,
+                        $"Process time should have been less than " +
+                        $"{processCostMs} ms but it took {processTimeMs} ms.");
 
-                // Assert
-                var data = flowData.Get<EmptyEngineData>();
-                Assert.IsNotNull(data);
-                Assert.AreEqual(1, data.ValueOne);
-                long valueOneTimeMs = stopwatch.ElapsedMilliseconds;
-                Trace.WriteLine($"Value one accessed after {valueOneTimeMs} ms");
-                Assert.AreEqual(2, data.ValueTwo);
-                long valueTwoTimeMs = stopwatch.ElapsedMilliseconds;
-                Trace.WriteLine($"Value two accessed after {valueTwoTimeMs} ms");
+                    // Assert
+                    var data = flowData.Get<EmptyEngineData>();
+                    Assert.IsNotNull(data);
+                    Assert.AreEqual(1, data.ValueOne);
+                    valueOneTimeMs = stopwatch.ElapsedMilliseconds;
+                    logsEvents.Add(() => Trace.WriteLine($"Value one accessed after {valueOneTimeMs} ms"));
+                    Assert.AreEqual(2, data.ValueTwo);
+                    valueTwoTimeMs = stopwatch.ElapsedMilliseconds;
+                    logsEvents.Add(() => Trace.WriteLine($"Value two accessed after {valueTwoTimeMs} ms"));
+                } 
+                finally
+                {
+                    foreach(var logEvent in logsEvents)
+                    {
+                        logEvent();
+                    }
+                }
 
                 Assert.IsTrue(valueOneTimeMs < processCostMs,
                     $"Accessing value one should have taken less than " +
