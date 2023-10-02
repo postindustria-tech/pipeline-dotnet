@@ -140,11 +140,15 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 Console.WriteLine($"[{DateTime.Now:O}] Did lock logger for {nameof(DumpLoggerLogs)}");
                 try
                 {
+                    if (_didDumpLogs)
+                    {
+                        return;
+                    }
+                    _didDumpLogs = true;
                     foreach (var entry in _logger.Entries)
                     {
                         Console.WriteLine($"[LOGGER LOGS] {entry.Key} > {entry.Value}");
                     }
-                    _didDumpLogs = true;
                 }
                 finally
                 {
@@ -152,7 +156,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                     Console.WriteLine($"[{DateTime.Now:O}] Unlocked logger for {nameof(DumpLoggerLogs)}");
                 }
             }
-            else
+            if (!_didDumpLogs)
             {
                 Assert.Fail($"[{DateTime.Now:O}] Failed to lock {nameof(_logger)} in {LOGGER_UNLOCK_TIMEOUT_MS}ms");
             }
