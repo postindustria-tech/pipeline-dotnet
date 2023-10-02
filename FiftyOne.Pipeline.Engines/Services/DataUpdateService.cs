@@ -1419,22 +1419,28 @@ namespace FiftyOne.Pipeline.Engines.Services
         private void LogInfoMessage(
             string message, 
             IAspectEngineDataFile dataFile)
-			=> _logger.LogInformation(BuildLogMessage(message, dataFile));
+			=> _logger.LogInformation(BuildLogMessage(message, dataFile, DebugLoggingEnabled));
 
 		private void LogDebugMessage(
 			Func<string> message,
 			IAspectEngineDataFile dataFile)
 		{
 			if (DebugLoggingEnabled) {
-				_logger.LogDebug(BuildLogMessage($"[{DateTime.Now:O}] " + message(), dataFile));
+				_logger.LogDebug(BuildLogMessage(message(), dataFile, DebugLoggingEnabled));
 			}
 		}
 
         private static string BuildLogMessage(
             string message,
-            IAspectEngineDataFile dataFile)
+            IAspectEngineDataFile dataFile,
+			bool includeTimestamp)
         {
             StringBuilder fullMessage = new StringBuilder();
+			if (includeTimestamp)
+			{
+				fullMessage.Append(DateTime.Now.ToString("O"));
+                fullMessage.Append(" ");
+            }
             if (dataFile != null)
             {
                 fullMessage.Append($"Data file '{dataFile.Identifier}' ");
