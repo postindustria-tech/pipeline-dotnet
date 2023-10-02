@@ -1426,7 +1426,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			IAspectEngineDataFile dataFile)
 		{
 			if (DebugLoggingEnabled) {
-				_logger.LogDebug(BuildLogMessage(message(), dataFile));
+				_logger.LogDebug(BuildLogMessage($"[{DateTime.Now:O}] " + message(), dataFile));
 			}
 		}
 
