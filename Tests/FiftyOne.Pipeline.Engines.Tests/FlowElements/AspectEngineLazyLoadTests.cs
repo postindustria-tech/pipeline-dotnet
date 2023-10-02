@@ -386,6 +386,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 
             // Act
             var stopwatch = new Stopwatch();
+            long gotDataTimeMs;
             long valueOneTimeMs;
             long valueTwoTimeMs;
             using (var flowData = pipeline.CreateFlowData())
@@ -404,6 +405,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 
                     // Assert
                     var data = flowData.Get<EmptyEngineData>();
+                    gotDataTimeMs = stopwatch.ElapsedMilliseconds;
+                    logsEvents.Add(() => Trace.WriteLine($"Got data after {gotDataTimeMs} ms"));
                     Assert.IsNotNull(data);
                     Assert.AreEqual(1, data.ValueOne);
                     valueOneTimeMs = stopwatch.ElapsedMilliseconds;
