@@ -62,6 +62,13 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
         [TestCleanup]
         public void Cleanup()
         {
+            for(int i = 0, n = _loggerFactory.Loggers.Count; i < n; ++i)
+            {
+                foreach (var entry in _loggerFactory.Loggers[i].Entries)
+                {
+                    Console.WriteLine($"[LOGGER {i} LOGS] {entry.Key} > {entry.Value}");
+                }
+            }
             // Check that no errors or warnings were logged.
             foreach (var logger in _loggerFactory.Loggers)
             {
