@@ -36,6 +36,7 @@ using FiftyOne.Pipeline.Engines.Data;
 using System.Collections.Generic;
 using System.Linq;
 
+using Microsoft.Extensions.Logging;
 namespace FiftyOne.Pipeline.Engines.Tests.Services
 {
     [TestClass]
@@ -101,8 +102,18 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         private void OnDataUpdateServiceCreated()
         {
             _dataUpdate.DebugLoggingEnabled = true;
-            _dataUpdate.OnTimeredCheckForUpdateEntered += () => Monitor.Enter(_logger);
-            _dataUpdate.OnTimeredCheckForUpdateWillExit += () => Monitor.Exit(_logger);
+            _dataUpdate.OnTimeredCheckForUpdateEntered += () =>
+            {
+                _logger.LogDebug($"[{DateTime.Now:O}] Locking logger for timered CheckForUpdate");
+                Monitor.Enter(_logger);
+                _logger.LogDebug($"[{DateTime.Now:O}] Locked logger for timered CheckForUpdate");
+            };
+            _dataUpdate.OnTimeredCheckForUpdateWillExit += () =>
+            {
+                _logger.LogDebug($"[{DateTime.Now:O}] Unlocking logger from timered CheckForUpdate");
+                Monitor.Exit(_logger);
+                _logger.LogDebug($"[{DateTime.Now:O}] Unlocked logger from timered CheckForUpdate");
+            };
             _didDumpLogs = false;
         }
 
@@ -123,8 +134,10 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
         private void DumpLoggerLogs()
         {
+            Console.WriteLine($"[{DateTime.Now:O}] Trying to lock logger for {nameof(DumpLoggerLogs)}");
             if (Monitor.TryEnter(_logger, LOGGER_UNLOCK_TIMEOUT_MS))
             {
+                Console.WriteLine($"[{DateTime.Now:O}] Did lock logger for {nameof(DumpLoggerLogs)}");
                 try
                 {
                     foreach (var entry in _logger.Entries)
@@ -136,11 +149,12 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 finally
                 {
                     Monitor.Exit(_logger);
+                    Console.WriteLine($"[{DateTime.Now:O}] Unlocked logger for {nameof(DumpLoggerLogs)}");
                 }
             }
             else
             {
-                Assert.Fail($"Failed to lock {nameof(_logger)} in {LOGGER_UNLOCK_TIMEOUT_MS}ms");
+                Assert.Fail($"[{DateTime.Now:O}] Failed to lock {nameof(_logger)} in {LOGGER_UNLOCK_TIMEOUT_MS}ms");
             }
         }
 
