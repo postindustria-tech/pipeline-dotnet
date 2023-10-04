@@ -64,9 +64,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
         {
             for(int i = 0, n = _loggerFactory.Loggers.Count; i < n; ++i)
             {
-                foreach (var entry in _loggerFactory.Loggers[i].Entries)
+                foreach (var entry in _loggerFactory.Loggers[i].ExtendedEntries)
                 {
-                    Console.WriteLine($"[LOGGER {i} LOGS] {entry.Key} > {entry.Value}");
+                    Console.WriteLine($"[LOGGER {i} LOGS] [{entry.Timestamp:O}] {entry.LogLevel} > {entry.Message} | {entry.Exception}");
                 }
             }
             // Check that no errors or warnings were logged.

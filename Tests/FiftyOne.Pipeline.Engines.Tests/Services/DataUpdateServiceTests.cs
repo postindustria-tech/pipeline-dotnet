@@ -145,9 +145,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                         return;
                     }
                     _didDumpLogs = true;
-                    foreach (var entry in _logger.Entries)
+                    foreach (var entry in _logger.ExtendedEntries)
                     {
-                        Console.WriteLine($"[LOGGER LOGS] {entry.Key} > {entry.Value}");
+                        Console.WriteLine($"[LOGGER LOGS] [{entry.Timestamp}] {entry.LogLevel} > {entry.Message} | {entry.Exception}");
                     }
                 }
                 finally
