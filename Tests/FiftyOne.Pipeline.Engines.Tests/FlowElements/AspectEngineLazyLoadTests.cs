@@ -387,7 +387,7 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             // Act
             var stopwatch = new Stopwatch();
             long gotDataTimeMs;
-            long processStartedTimeMs = 0;
+            long processStartedTimeMs = -1;
             long valueOneTimeMs;
             long valueTwoTimeMs;
             using (var flowData = pipeline.CreateFlowData())
@@ -426,8 +426,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                 }
 
                 Assert.IsTrue(
-                    processStartedTimeMs > 0,
-                    $"{nameof(processStartedTimeMs)} should be positive, got {processStartedTimeMs}");
+                    processStartedTimeMs >= 0,
+                    $"{nameof(processStartedTimeMs)} should be non-negative, got {processStartedTimeMs}");
                 Assert.IsTrue(
                     processStartedTimeMs < processCostMs,
                     $"{nameof(processStartedTimeMs)} is not within {nameof(processCostMs)}: {processStartedTimeMs} vs {processCostMs}");
