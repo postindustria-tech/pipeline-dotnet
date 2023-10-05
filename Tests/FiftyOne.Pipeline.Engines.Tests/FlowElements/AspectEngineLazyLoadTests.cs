@@ -387,10 +387,12 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
             // Act
             var stopwatch = new Stopwatch();
             long gotDataTimeMs;
+            long processStartedTimeMs = 0;
             long valueOneTimeMs;
             long valueTwoTimeMs;
             using (var flowData = pipeline.CreateFlowData())
             {
+                _engine.OnProcessEngineEntered += () => processStartedTimeMs = stopwatch.ElapsedMilliseconds;
                 Trace.WriteLine("Process starting");
                 stopwatch.Start();
                 flowData.Process();
@@ -423,13 +425,20 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                     }
                 }
 
-                var valueOneDeltaMs = valueOneTimeMs - gotDataTimeMs;
-                var valueTwoDeltaMs = valueTwoTimeMs - gotDataTimeMs;
+                Assert.IsTrue(
+                    processStartedTimeMs > 0,
+                    $"{nameof(processStartedTimeMs)} should be positive, got {processStartedTimeMs}");
+                Assert.IsTrue(
+                    processStartedTimeMs < processCostMs,
+                    $"{nameof(processStartedTimeMs)} is not within {nameof(processCostMs)}: {processStartedTimeMs} vs {processCostMs}");
+
+                var valueOneDeltaMs = valueOneTimeMs - processStartedTimeMs;
+                var valueTwoDeltaMs = valueTwoTimeMs - processStartedTimeMs;
 
                 Assert.IsTrue(valueOneDeltaMs < processCostMs,
                     $"Accessing value one should have taken less than " +
                     $"{processCostMs} ms from the time the Process method" +
-                    $"was called but it took {valueOneDeltaMs} ms.");
+                    $"was called but it took {valueOneDeltaMs} ms.");   
                 // Note - this should really take at least 'processCostMs'
                 // but the accuracy of the timer seems to cause issues
                 // if we are being that exact.

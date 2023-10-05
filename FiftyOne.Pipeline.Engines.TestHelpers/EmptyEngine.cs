@@ -37,6 +37,8 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
 
         private Exception _exception = null;
 
+        public event Action OnProcessEngineEntered;
+
         public EmptyEngine(
             ILogger<AspectEngineBase<EmptyEngineData, IAspectPropertyMetaData>> logger,
             Func<IPipeline, FlowElementBase<EmptyEngineData, IAspectPropertyMetaData>, EmptyEngineData> aspectDataFactory) :
@@ -75,16 +77,22 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
 
         protected override void ProcessEngine(IFlowData data, EmptyEngineData aspectData)
         {
+            Logger.LogDebug($"Did enter {nameof(ProcessEngine)}.");
+            OnProcessEngineEntered?.Invoke();
             if (_exception != null)
             {
                 throw _exception;
             }
             aspectData.ValueOne = 1;
+            Logger.LogDebug($"Did assign {nameof(aspectData.ValueOne)}.");
             if (_processCost.HasValue)
             {
+                Logger.LogDebug($"Will wait for {_processCost.Value}...");
                 Task.Delay(_processCost.Value).Wait();
+                Logger.LogDebug($"Did wait for {_processCost.Value}...");
             }
             aspectData.ValueTwo = 2;
+            Logger.LogDebug($"Did assign {nameof(aspectData.ValueTwo)}.");
         }
 
         protected override void ManagedResourcesCleanup()
