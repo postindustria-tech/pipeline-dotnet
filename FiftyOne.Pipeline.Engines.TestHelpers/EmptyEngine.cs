@@ -38,6 +38,7 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
         private Exception _exception = null;
 
         public event Action OnProcessEngineEntered;
+        public event Action OnWillDelayProcessEngine;
 
         public EmptyEngine(
             ILogger<AspectEngineBase<EmptyEngineData, IAspectPropertyMetaData>> logger,
@@ -87,6 +88,8 @@ namespace FiftyOne.Pipeline.Engines.TestHelpers
             Logger.LogDebug($"Did assign {nameof(aspectData.ValueOne)}.");
             if (_processCost.HasValue)
             {
+                Logger.LogDebug($"Will notify of incoming delay...");
+                OnWillDelayProcessEngine?.Invoke();
                 Logger.LogDebug($"Will wait for {_processCost.Value}...");
                 Task.Delay(_processCost.Value).Wait();
                 Logger.LogDebug($"Did wait for {_processCost.Value}...");
