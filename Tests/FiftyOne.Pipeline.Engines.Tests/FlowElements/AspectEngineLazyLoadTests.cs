@@ -42,9 +42,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 
         private TestLoggerFactory _loggerFactory;
 #if DEBUG
-        private int _timeoutMS = 10000;
+        private int _timeoutMS = 3000;
 #else
-        private int _timeoutMS = 4000;
+        private int _timeoutMS = 2000;
 #endif
         private CancellationTokenSource _cancellationTokenSource = 
             new CancellationTokenSource();
