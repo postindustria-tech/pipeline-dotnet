@@ -399,6 +399,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                     logsEvents.Add(() => Trace.WriteLine(
                         $"{nameof(_engine.OnProcessEngineEntered)} triggerred at {processStartedTimeMs} ms"));
                 };
+                var didSetValueOne = new ManualResetEventSlim(false);
+                _engine.OnWillDelayProcessEngine += didSetValueOne.Set;
                 Trace.WriteLine("Process starting");
                 stopwatch.Start();
                 flowData.Process();
@@ -414,7 +416,10 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                     var data = flowData.Get<EmptyEngineData>();
                     gotDataTimeMs = stopwatch.ElapsedMilliseconds;
                     logsEvents.Add(() => Trace.WriteLine($"Got data at {gotDataTimeMs} ms"));
+
                     Assert.IsNotNull(data);
+                    didSetValueOne.Wait(processCostMs); // wait for ValueOne to actually be set, to prevent delay on access
+
                     Assert.AreEqual(1, data.ValueOne);
                     valueOneTimeMs = stopwatch.ElapsedMilliseconds;
                     logsEvents.Add(() => Trace.WriteLine($"Value one accessed at {valueOneTimeMs} ms"));
@@ -437,22 +442,18 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
                     processStartedTimeMs < processCostMs,
                     $"{nameof(processStartedTimeMs)} is not within {nameof(processCostMs)}: {processStartedTimeMs} vs {processCostMs}");
 
-                long baseLine = ((gotDataTimeMs > processStartedTimeMs) ? gotDataTimeMs : processStartedTimeMs);
-                var valueOneDeltaMs = valueOneTimeMs - baseLine;
-                var valueTwoDeltaMs = valueTwoTimeMs - baseLine;
-
-                Assert.IsTrue(valueOneDeltaMs - processCostMs < baseLine,
+                Assert.IsTrue(valueOneTimeMs < processCostMs,
                     $"Accessing value one should have taken less than " +
                     $"{processCostMs} ms from the time the Process method" +
-                    $"was called but it took {valueOneDeltaMs} ms. (Tolerance: {baseLine} ms.)");   
+                    $"was called but it took {valueOneTimeMs} ms.");   
 
                 // Note - this should really take at least 'processCostMs'
                 // but the accuracy of the timer seems to cause issues
                 // if we are being that exact.
-                Assert.IsTrue(valueTwoDeltaMs >= processCostMs / 2,
+                Assert.IsTrue(valueTwoTimeMs >= processCostMs / 2,
                     $"Accessing value two should have taken at least " +
                     $"{processCostMs / 2} ms from the time the Process method" +
-                    $"was called but it only took {valueTwoDeltaMs} ms.");
+                    $"was called but it only took {valueTwoTimeMs} ms.");
             }
         }
 
