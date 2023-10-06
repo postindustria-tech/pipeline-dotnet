@@ -102,18 +102,26 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         private void OnDataUpdateServiceCreated()
         {
             _dataUpdate.DebugLoggingEnabled = true;
-            _dataUpdate.OnTimeredCheckForUpdateEntered += () =>
+
+            Func<string, Action> lockLoggerFor = reason => () =>
             {
-                _logger.LogDebug($"[{DateTime.Now:O}] Locking logger for timered CheckForUpdate");
+                _logger.LogDebug($"Locking logger for {reason}");
                 Monitor.Enter(_logger);
-                _logger.LogDebug($"[{DateTime.Now:O}] Locked logger for timered CheckForUpdate");
+                _logger.LogDebug($"Locked logger for {reason}");
             };
-            _dataUpdate.OnTimeredCheckForUpdateWillExit += () =>
+            Func<string, Action> unlockLoggerFrom = reason => () =>
             {
-                _logger.LogDebug($"[{DateTime.Now:O}] Unlocking logger from timered CheckForUpdate");
+                _logger.LogDebug($"Unlocking logger from {reason}");
                 Monitor.Exit(_logger);
-                _logger.LogDebug($"[{DateTime.Now:O}] Unlocked logger from timered CheckForUpdate");
+                _logger.LogDebug($"Unlocked logger from {reason}");
             };
+
+            _dataUpdate.OnTimeredCheckForUpdateEntered += lockLoggerFor("timered CheckForUpdate");
+            _dataUpdate.OnTimeredCheckForUpdateWillExit += unlockLoggerFrom("timered CheckForUpdate");
+
+            _dataUpdate.OnDataFileUpdatedEntered += lockLoggerFor("DataFileUpdated");
+            _dataUpdate.OnDataFileUpdatedWillExit += unlockLoggerFrom("DataFileUpdated");
+
             _didDumpLogs = false;
         }
 
