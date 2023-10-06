@@ -166,6 +166,16 @@ namespace FiftyOne.Pipeline.Engines.Services
         /// </summary>
         public event Action OnTimeredCheckForUpdateWillExit;
 
+        /// <summary>
+        /// Called when <see cref="DataFileUpdated(object, FileSystemEventArgs)"/> starts
+        /// </summary>
+        public event Action OnDataFileUpdatedEntered;
+
+        /// <summary>
+        /// Called when <see cref="DataFileUpdated(object, FileSystemEventArgs)"/> will exit
+        /// </summary>
+        public event Action OnDataFileUpdatedWillExit;
+
 		/// <summary>
 		/// Register an data file for automatic updates.
 		/// </summary>
@@ -454,7 +464,15 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// </param>
 		private void DataFileUpdated(object sender, FileSystemEventArgs e)
 		{
-			AutoUpdateStatus status = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
+			try
+            {
+                OnDataFileUpdatedEntered?.Invoke();
+            }
+            catch
+            {
+                // nop -- ignore all errors
+            }
+
 			// Get the associated update configuration
 			AspectEngineDataFile dataFile = null;
 			try
@@ -468,6 +486,26 @@ namespace FiftyOne.Pipeline.Engines.Services
 			{
 				dataFile = null;
 			}
+
+			try
+			{
+				DataFileUpdatedInternal(sender, e, dataFile);
+            }
+			finally
+			{
+                try
+                {
+                    OnDataFileUpdatedWillExit?.Invoke();
+                }
+                catch
+                {
+                    // nop -- ignore all errors
+                }
+            }
+		}
+        private void DataFileUpdatedInternal(object sender, FileSystemEventArgs e, AspectEngineDataFile dataFile)
+        {
+            AutoUpdateStatus status = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
 
 			OnUpdateStarted(new DataUpdateEventArgs()
 			{
