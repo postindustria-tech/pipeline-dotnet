@@ -105,15 +105,15 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
 
             Func<string, Action> lockLoggerFor = reason => () =>
             {
-                _logger.LogDebug($"Locking logger for {reason}");
+                Console.WriteLine($"{DateTime.Now:O} Locking logger for {reason}");
                 Monitor.Enter(_logger);
-                _logger.LogDebug($"Locked logger for {reason}");
+                Console.WriteLine($"{DateTime.Now:O} Locked logger for {reason}");
             };
             Func<string, Action> unlockLoggerFrom = reason => () =>
             {
-                _logger.LogDebug($"Unlocking logger from {reason}");
+                Console.WriteLine($"{DateTime.Now:O} Unlocking logger from {reason}");
                 Monitor.Exit(_logger);
-                _logger.LogDebug($"Unlocked logger from {reason}");
+                Console.WriteLine($"{DateTime.Now:O} Unlocked logger from {reason}");
             };
 
             _dataUpdate.OnTimeredCheckForUpdateEntered += lockLoggerFor("timered CheckForUpdate");
