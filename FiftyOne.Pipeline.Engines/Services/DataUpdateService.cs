@@ -150,6 +150,32 @@ namespace FiftyOne.Pipeline.Engines.Services
 		}
 
 		#region Public methods
+
+		/// <summary>
+		/// Enables logging debug information (intermediate states and results).
+		/// </summary>
+		public bool DebugLoggingEnabled { get; set; }
+
+        /// <summary>
+        /// Called when <see cref="CheckForUpdate(object)"/> starts
+        /// </summary>
+        public event Action OnTimeredCheckForUpdateEntered;
+
+        /// <summary>
+        /// Called when <see cref="CheckForUpdate(object)"/> will exit
+        /// </summary>
+        public event Action OnTimeredCheckForUpdateWillExit;
+
+        /// <summary>
+        /// Called when <see cref="DataFileUpdated(object, FileSystemEventArgs)"/> starts
+        /// </summary>
+        public event Action OnDataFileUpdatedEntered;
+
+        /// <summary>
+        /// Called when <see cref="DataFileUpdated(object, FileSystemEventArgs)"/> will exit
+        /// </summary>
+        public event Action OnDataFileUpdatedWillExit;
+
 		/// <summary>
 		/// Register an data file for automatic updates.
 		/// </summary>
@@ -170,6 +196,8 @@ namespace FiftyOne.Pipeline.Engines.Services
 
             if (dataFile != null)
 			{
+				LogDebugMessage(() => "dataFile is not null.", dataFile);
+
 				// If the data file is configured to refresh the data
 				// file on startup then download an update immediately.
 				// We also want to do this synchronously so that execution
@@ -179,6 +207,7 @@ namespace FiftyOne.Pipeline.Engines.Services
                 {
                     LogInfoMessage(Messages.MessageAutoUpdateOnStartup, dataFile);
                     var result = CheckForUpdate(dataFile, true);
+					LogDebugMessage(() => $"{nameof(CheckForUpdate)} resulted in {result}", dataFile);
 					if (result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
 					{
 						// If the update was successful then the timer 
@@ -197,6 +226,8 @@ namespace FiftyOne.Pipeline.Engines.Services
 				}
 				if(setTimer)
 				{
+					LogDebugMessage(() => $"{nameof(setTimer)} is {setTimer}", dataFile);
+
 					// Only create an automatic update timer if auto updates are 
 					// enabled for this engine and there is not already an associated 
 					// timer.
@@ -433,7 +464,15 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// </param>
 		private void DataFileUpdated(object sender, FileSystemEventArgs e)
 		{
-			AutoUpdateStatus status = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
+			try
+            {
+                OnDataFileUpdatedEntered?.Invoke();
+            }
+            catch
+            {
+                // nop -- ignore all errors
+            }
+
 			// Get the associated update configuration
 			AspectEngineDataFile dataFile = null;
 			try
@@ -447,6 +486,26 @@ namespace FiftyOne.Pipeline.Engines.Services
 			{
 				dataFile = null;
 			}
+
+			try
+			{
+				DataFileUpdatedInternal(sender, e, dataFile);
+            }
+			finally
+			{
+                try
+                {
+                    OnDataFileUpdatedWillExit?.Invoke();
+                }
+                catch
+                {
+                    // nop -- ignore all errors
+                }
+            }
+		}
+        private void DataFileUpdatedInternal(object sender, FileSystemEventArgs e, AspectEngineDataFile dataFile)
+        {
+            AutoUpdateStatus status = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
 
 			OnUpdateStarted(new DataUpdateEventArgs()
 			{
@@ -512,6 +571,35 @@ namespace FiftyOne.Pipeline.Engines.Services
 			});
 		}
 
+		private void DebugDescribeException(Exception x, bool deep = false)
+		{
+			if (!DebugLoggingEnabled)
+			{
+				return;
+			}
+			Func<string>[] reportPoints = {
+				() => $"type: {x.GetType().Name}",
+                () => $"message: {x.Message}",
+                () => $"inner exception: {x.InnerException}",
+                () => $"trace: {x.StackTrace}",
+                () => $"full: {x}",
+            };
+			foreach (var p in reportPoints)
+			{
+				try
+				{
+					LogDebugMessage(() => $"Exception (deep={deep}) {p()}", null);
+				}
+				catch (Exception e)
+				{
+					if (!deep)
+					{
+						DebugDescribeException(e, true);
+					}
+				}
+			}
+		}
+
 		/// <summary>
 		/// Private method called by update timers when an update is believed
 		/// to be available.
@@ -521,35 +609,83 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// </param>
 		private void CheckForUpdate(object state)
         {
-            // This method is called from a background thread so
-            // we need to make sure any exceptions that occur
-            // are handled here.
-            try
+			try
 			{
-				if (state == null)
+				OnTimeredCheckForUpdateEntered?.Invoke();
+            }
+			catch
+			{
+				// nop --- ignore all errors
+			}
+
+			try
+			{
+				// This method is called from a background thread so
+				// we need to make sure any exceptions that occur
+				// are handled here.
+				var onUpdateCompleteReports = new List<DataUpdateCompleteArgs>();
+				Action<Exception> reportUnknownException = x =>
 				{
-					throw new ArgumentNullException(nameof(state));
+					AspectEngineDataFile dataFile = state == null ? null :
+						state as AspectEngineDataFile;
+					string msg = string.Format(CultureInfo.InvariantCulture,
+						Messages.MessageAutoUpdateUnhandledError,
+						dataFile?.EngineType?.Name ?? "Unknown");
+					_logger.LogError(msg, x);
+				};
+				try
+				{
+					if (state == null)
+					{
+						throw new ArgumentNullException(nameof(state));
+					}
+
+					CheckForUpdate(state, false, onUpdateCompleteReports.Add);
+				}
+				catch (DataUpdateException ex)
+				{
+					LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(DataUpdateException)} clause.", null);
+					DebugDescribeException(ex);
+					_logger.LogError(Messages.ExceptionAutoUpdate, ex);
+				}
+#pragma warning disable CA1031 // Do not catch general exception types
+				// We want to catch any possible exception here so that 
+				// the relevant details can be logged.
+				catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+				{
+					LogDebugMessage(() => $"Exception of type '{ex.GetType().Name}' received into {nameof(Exception)} clause.", null);
+					DebugDescribeException(ex);
+					reportUnknownException(ex);
 				}
 
-				CheckForUpdate(state, false);
-            }
-            catch (DataUpdateException ex)
-            {
-                _logger.LogError(Messages.ExceptionAutoUpdate, ex);
-            }
-#pragma warning disable CA1031 // Do not catch general exception types
-			// We want to catch any possible exception here so that 
-			// the relevant details can be logged.
-			catch (Exception ex)
-#pragma warning restore CA1031 // Do not catch general exception types
+				LogDebugMessage(() => $"At midpoint of {nameof(CheckForUpdate)} -- will call {nameof(OnUpdateComplete)} with {onUpdateCompleteReports.Count} reports", null);
+
+				try
+				{
+					foreach (var report in onUpdateCompleteReports)
+					{
+						OnUpdateComplete(report);
+					}
+				}
+				catch (Exception ex)
+				{
+					reportUnknownException(ex);
+				}
+
+				LogDebugMessage(() => $"Exiting timer-bound {nameof(CheckForUpdate)}", null);
+			}
+			finally
 			{
-                AspectEngineDataFile dataFile = state == null ? null :
-					state as AspectEngineDataFile;
-				string msg = string.Format(CultureInfo.InvariantCulture,
-					Messages.MessageAutoUpdateUnhandledError,
-					dataFile?.EngineType?.Name ?? "Unknown");
-                _logger.LogError(msg, ex);
-            }
+				try
+				{
+					OnTimeredCheckForUpdateWillExit?.Invoke();
+				}
+				catch
+				{
+					// nop --- ignore all errors
+				}
+			}
         }
 
 		/// <summary>
@@ -570,9 +706,12 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// running in a background thread.
 		/// </param>
 		private AutoUpdateStatus CheckForUpdate(object state, bool manualUpdate)
+			=> CheckForUpdate(state, manualUpdate, OnUpdateComplete);
+        private AutoUpdateStatus CheckForUpdate(object state, bool manualUpdate, Action<DataUpdateCompleteArgs> onUpdateComplete)
         {
             AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
             AspectEngineDataFile dataFile = state as AspectEngineDataFile;
+            LogDebugMessage(() => $"Starting {nameof(CheckForUpdate)} with {nameof(result)} = {result}", dataFile);
             bool newDataAvailable = false;
 
 			OnUpdateStarted(new DataUpdateEventArgs()
@@ -612,25 +751,30 @@ namespace FiftyOne.Pipeline.Engines.Services
 							newDataAvailable = true;
 						}
 					}
+					LogDebugMessage(() => $"{nameof(newDataAvailable)} is yet {newDataAvailable}", dataFile);
 
 					if (newDataAvailable == false &&
 						string.IsNullOrEmpty(dataFile.Configuration.DataUpdateUrl) == false)
 					{
 						result = CheckForUpdateFromUrl(dataFile);
+						LogDebugMessage(() => $"{nameof(CheckForUpdateFromUrl)} resulted in {result}", dataFile);
 						newDataAvailable =
 							result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS ||
 							result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS;
 					}
+					LogDebugMessage(() => $"{nameof(newDataAvailable)} is {newDataAvailable}", dataFile);
 
 					if (newDataAvailable == false)
 					{
 						result = AutoUpdateStatus.AUTO_UPDATE_NOT_NEEDED;
+						LogDebugMessage(() => $"{nameof(result)} is {result}", dataFile);
 					}
 					else if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
 					{
 						// Data update was available but engine has not 
 						// yet been refreshed.
 						result = UpdatedDataAvailable(dataFile);
+						LogDebugMessage(() => $"{nameof(UpdatedDataAvailable)} resulted in {result}", dataFile);
 					}
 
 					if (result == AutoUpdateStatus.AUTO_UPDATE_SUCCESS)
@@ -658,6 +802,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 			}
 			finally
 			{
+				LogDebugMessage(() => $"Entering {nameof(CheckForUpdate)}-finally with {nameof(newDataAvailable)} = {newDataAvailable}, {nameof(result)} = {result}", dataFile);
 				if (newDataAvailable == false)
 				{
 					// No update available.
@@ -675,7 +820,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 					}
 				}
 
-				OnUpdateComplete(new DataUpdateCompleteArgs()
+				onUpdateComplete(new DataUpdateCompleteArgs()
 				{
 					DataFile = dataFile,
 					Status = result
@@ -699,9 +844,12 @@ namespace FiftyOne.Pipeline.Engines.Services
 		private AutoUpdateStatus CheckForUpdateFromUrl(AspectEngineDataFile dataFile)
 		{
 			AutoUpdateStatus result = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
+            LogDebugMessage(() => $"Starting {nameof(CheckForUpdateFromUrl)} with {nameof(result)} = {result}", dataFile);
 
 			if (dataFile.Configuration.MemoryOnly)
 			{
+                LogDebugMessage(() => $"{nameof(dataFile.Configuration.MemoryOnly)} is {dataFile.Configuration.MemoryOnly}", dataFile);
+                
 				// Perform the update entirely in memory.
 
 				// The uncompressed stream may be read by the engine at a
@@ -719,6 +867,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 						result = CheckForUpdateFromUrl(dataFile,
 							compressedStream,
 							uncompressedStream);
+                        LogDebugMessage(() => $"{nameof(CheckForUpdateFromUrl)} resulted in {result}", dataFile);
 						if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
 						{
 							if (dataFile.Engine != null)
@@ -792,6 +941,7 @@ namespace FiftyOne.Pipeline.Engines.Services
 						result = CheckForUpdateFromUrl(dataFile,
 							compressedStream,
 							uncompressedStream);
+                        LogDebugMessage(() => $"{nameof(CheckForUpdateFromUrl)} resulted in {result}", dataFile);
 					}
 
 					if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
@@ -802,19 +952,23 @@ namespace FiftyOne.Pipeline.Engines.Services
 							dataFile.FileWatcher != null)
 						{
 							dataFile.FileWatcher.EnableRaisingEvents = false;
+                            LogDebugMessage(() => $"Disabled {nameof(dataFile.FileWatcher)} events", dataFile);
 						}
 
 						try
 						{
+                            LogDebugMessage(() => $"Will copy {uncompressedTempFile} into {dataFile.DataFilePath}", dataFile);
                             // Copy the uncompressed file to the engine's 
                             // data file location
                             _fileSystem.File.Copy(uncompressedTempFile,
 								dataFile.DataFilePath, true);
+                            LogDebugMessage(() => $"Did copy {uncompressedTempFile} into {dataFile.DataFilePath}", dataFile);
 							// Ensure creation time of the file is set
 							// correctly so that the 'If-Modified-Since' 
 							// header will be set to the expected value.
 							_fileSystem.File.SetCreationTimeUtc(
 								dataFile.DataFilePath, DateTime.UtcNow);
+                            LogDebugMessage(() => $"Did update timestamp of {dataFile.DataFilePath}", dataFile);
 						}
 						catch (Exception ex)
 						{
@@ -831,12 +985,14 @@ namespace FiftyOne.Pipeline.Engines.Services
 								dataFile.FileWatcher != null)
 							{
 								dataFile.FileWatcher.EnableRaisingEvents = true;
+                                LogDebugMessage(() => $"Restored {nameof(dataFile.FileWatcher)} events", dataFile);
 							}
 						}
 					}
 				}
 				finally
 				{
+                    LogDebugMessage(() => $"Entering {nameof(CheckForUpdateFromUrl)}-finally", dataFile);
 					// Make sure the temp files are cleaned up
 					if (_fileSystem.File.Exists(compressedTempFile))
 					{
@@ -882,19 +1038,24 @@ namespace FiftyOne.Pipeline.Engines.Services
             string expectedMd5Hash = null;
 			// Check if there is an update and download it if there is                   
 			result = DownloadFile(dataFile, compressedDataStream, out expectedMd5Hash);
+            LogDebugMessage(() => $"{nameof(DownloadFile)} resulted in {result}, {nameof(expectedMd5Hash)} = {expectedMd5Hash}", dataFile);
 			// Check data integrity
 			if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS &&
 				dataFile.Configuration.VerifyMd5)
 			{
+                LogDebugMessage(() => $"Will call {nameof(VerifyMd5)}", dataFile);
 				result = VerifyMd5(dataFile, expectedMd5Hash, compressedDataStream);
+                LogDebugMessage(() => $"{nameof(VerifyMd5)} resulted in {result}", dataFile);
 			}
 			// decompress the file
 			if (result == AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS)
 			{
 				if (dataFile.Configuration.DecompressContent)
 				{
+                    LogDebugMessage(() => $"Will call {nameof(Decompress)}", dataFile);
 					result = Decompress(
 						compressedDataStream, uncompressedDataStream);
+                    LogDebugMessage(() => $"{nameof(Decompress)} resulted in {result}", dataFile);
 				}
 				else
 				{
@@ -1071,17 +1232,24 @@ namespace FiftyOne.Pipeline.Engines.Services
 
 							// If the response is successful then save the content to a 
 							// temporary file
+							LogDebugMessage(() => $"Will call {nameof(response.Content.ReadAsStreamAsync)}", dataFile);
 							using (var dataStream = response.Content.ReadAsStreamAsync().Result)
-							{
-								dataStream.CopyTo(tempStream);
-							}
-							if (dataFile.Configuration.VerifyMd5)
-							{
-								IEnumerable<string> values;
+                            {
+                                LogDebugMessage(() => $"Will copy {nameof(dataStream)} into {nameof(tempStream)}", dataFile);
+                                dataStream.CopyTo(tempStream);
+                                LogDebugMessage(() => $"Did copy {nameof(dataStream)} into {nameof(tempStream)}", dataFile);
+                            }
+                            LogDebugMessage(() => $"Will test for {nameof(dataFile.Configuration.VerifyMd5)}", dataFile);
+                            if (dataFile.Configuration.VerifyMd5)
+                            {
+                                LogDebugMessage(() => $"Did test for {nameof(dataFile.Configuration.VerifyMd5)}", dataFile);
+                                IEnumerable<string> values;
 								if (response.Content.Headers.TryGetValues("Content-MD5", out values))
 								{
 									expectedMd5Hash = values.SingleOrDefault();
-								}
+									var lastHash = expectedMd5Hash;
+                                    LogDebugMessage(() => $"{nameof(expectedMd5Hash)} = {lastHash}", dataFile);
+                                }
 								else
 								{
 									_logger.LogWarning(
@@ -1167,16 +1335,19 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// <returns>
 		/// True if the hashes match, false if not.
 		/// </returns>
-		private static AutoUpdateStatus VerifyMd5(
+		private AutoUpdateStatus VerifyMd5(
 			AspectEngineDataFile dataFile, 
 			string serverHash, Stream compressedDataStream)
 		{
 			AutoUpdateStatus status = AutoUpdateStatus.AUTO_UPDATE_IN_PROGRESS;
+            LogDebugMessage(() => $"Starting {nameof(CheckForUpdate)} with {nameof(status)} = {status}", dataFile);
 			string downloadHash = GetMd5(compressedDataStream);
+            LogDebugMessage(() => $"{nameof(GetMd5)} resulted in {downloadHash}", dataFile);
 			if (serverHash == null ||
 				string.Equals(serverHash, downloadHash, StringComparison.Ordinal) == false)
 			{
 				status = AutoUpdateStatus.AUTO_UPDATE_ERR_MD5_VALIDATION_FAILED;
+                LogDebugMessage(() => $"Set {nameof(status)} to {status}", dataFile);
                 throw new DataUpdateException(
 					$"Integrity check failed. MD5 hash in HTTP response " +
 					$"'{serverHash}' for '{dataFile.EngineType?.Name}'" +
@@ -1193,14 +1364,17 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// The stream containing the data to hash
 		/// </param>
 		/// <returns>The MD5 hash of the given data.</returns>
-		private static string GetMd5(Stream compressedDataStream)
+		private string GetMd5(Stream compressedDataStream)
 		{
+            LogDebugMessage(() => $"Starting {nameof(GetMd5)}", null);
 #pragma warning disable CA5351 // Do Not Use Broken Cryptographic Algorithms
 			// TODO: Add support for a better hashing algorithm such as SHA512
 			using (MD5 md5Hash = MD5.Create())
 #pragma warning restore CA5351 // Do Not Use Broken Cryptographic Algorithms
 			{
+                LogDebugMessage(() => $"Created {nameof(MD5)} instance", null);
 				compressedDataStream.Position = 0;
+                LogDebugMessage(() => $"Did reset {nameof(compressedDataStream.Position)}", null);
 				return GetMd5(md5Hash, compressedDataStream);
 			}
 		}
@@ -1211,11 +1385,13 @@ namespace FiftyOne.Pipeline.Engines.Services
 		/// <param name="stream">calculate MD5 of this stream</param>
 		/// <param name="md5Hash">instance of MD5 hash calculator</param>
 		/// <returns>The MD5 hash of the given data.</returns>
-		private static string GetMd5(MD5 md5Hash, Stream stream)
+		private string GetMd5(MD5 md5Hash, Stream stream)
 		{
+            LogDebugMessage(() => $"Starting {nameof(GetMd5)}", null);
 			// Convert the input string to a byte array and compute the hash.
 			byte[] data = md5Hash.ComputeHash(stream);
 
+            LogDebugMessage(() => $"Did call {nameof(md5Hash.ComputeHash)}", null);
 			// Create a new stringbuilder to collect the bytes
 			// and create a string.
 			StringBuilder sb = new StringBuilder();
@@ -1228,7 +1404,9 @@ namespace FiftyOne.Pipeline.Engines.Services
 			}
 
 			// Return the hexadecimal string.
-			return sb.ToString();
+			var result = sb.ToString();
+            LogDebugMessage(() => $"{nameof(GetMd5)} will return {result}", null);
+            return result;
 		}
 		
 		/// <summary>
@@ -1279,6 +1457,20 @@ namespace FiftyOne.Pipeline.Engines.Services
         private void LogInfoMessage(
             string message, 
             IAspectEngineDataFile dataFile)
+			=> _logger.LogInformation(BuildLogMessage(message, dataFile));
+
+		private void LogDebugMessage(
+			Func<string> message,
+			IAspectEngineDataFile dataFile)
+		{
+			if (DebugLoggingEnabled) {
+				_logger.LogDebug(BuildLogMessage(message(), dataFile));
+			}
+		}
+
+        private static string BuildLogMessage(
+            string message,
+            IAspectEngineDataFile dataFile)
         {
             StringBuilder fullMessage = new StringBuilder();
             if (dataFile != null)
@@ -1287,7 +1479,7 @@ namespace FiftyOne.Pipeline.Engines.Services
                 fullMessage.Append($"for engine '{dataFile.EngineType?.Name}'");
             }
             fullMessage.Append(message);
-            _logger.LogInformation(fullMessage.ToString());
+            return fullMessage.ToString();
         }
 		#endregion
 	}

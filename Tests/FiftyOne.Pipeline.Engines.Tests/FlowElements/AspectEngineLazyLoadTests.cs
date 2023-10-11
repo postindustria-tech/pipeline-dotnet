@@ -62,6 +62,13 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
         [TestCleanup]
         public void Cleanup()
         {
+            for(int i = 0, n = _loggerFactory.Loggers.Count; i < n; ++i)
+            {
+                foreach (var entry in _loggerFactory.Loggers[i].ExtendedEntries)
+                {
+                    Console.WriteLine($"[LOGGER {i} LOGS] [{entry.Timestamp:O}] {entry.LogLevel} > {entry.Message} | {entry.Exception}");
+                }
+            }
             // Check that no errors or warnings were logged.
             foreach (var logger in _loggerFactory.Loggers)
             {
@@ -379,31 +386,67 @@ namespace FiftyOne.Pipeline.Engines.Tests.FlowElements
 
             // Act
             var stopwatch = new Stopwatch();
+            long gotDataTimeMs;
+            long processStartedTimeMs = -1;
+            long valueOneTimeMs;
+            long valueTwoTimeMs;
             using (var flowData = pipeline.CreateFlowData())
             {
+                var logsEvents = new List<Action>();
+                _engine.OnProcessEngineEntered += () =>
+                {
+                    processStartedTimeMs = stopwatch.ElapsedMilliseconds;
+                    logsEvents.Add(() => Trace.WriteLine(
+                        $"{nameof(_engine.OnProcessEngineEntered)} triggerred at {processStartedTimeMs} ms"));
+                };
+                var didSetValueOne = new ManualResetEventSlim(false);
+                _engine.OnWillDelayProcessEngine += didSetValueOne.Set;
                 Trace.WriteLine("Process starting");
                 stopwatch.Start();
                 flowData.Process();
                 long processTimeMs = stopwatch.ElapsedMilliseconds;
-                Trace.WriteLine($"Process complete in {processTimeMs} ms");
-                Assert.IsTrue(processTimeMs < processCostMs,
-                    $"Process time should have been less than " +
-                    $"{processCostMs} ms but it took {processTimeMs} ms.");
+                try
+                {
+                    logsEvents.Add(() => Trace.WriteLine($"Process complete in {processTimeMs} ms"));
+                    Assert.IsTrue(processTimeMs < processCostMs,
+                        $"Process time should have been less than " +
+                        $"{processCostMs} ms but it took {processTimeMs} ms.");
 
-                // Assert
-                var data = flowData.Get<EmptyEngineData>();
-                Assert.IsNotNull(data);
-                Assert.AreEqual(1, data.ValueOne);
-                long valueOneTimeMs = stopwatch.ElapsedMilliseconds;
-                Trace.WriteLine($"Value one accessed after {valueOneTimeMs} ms");
-                Assert.AreEqual(2, data.ValueTwo);
-                long valueTwoTimeMs = stopwatch.ElapsedMilliseconds;
-                Trace.WriteLine($"Value two accessed after {valueTwoTimeMs} ms");
+                    // Assert
+                    var data = flowData.Get<EmptyEngineData>();
+                    gotDataTimeMs = stopwatch.ElapsedMilliseconds;
+                    logsEvents.Add(() => Trace.WriteLine($"Got data at {gotDataTimeMs} ms"));
+
+                    Assert.IsNotNull(data);
+                    didSetValueOne.Wait(processCostMs); // wait for ValueOne to actually be set, to prevent delay on access
+
+                    Assert.AreEqual(1, data.ValueOne);
+                    valueOneTimeMs = stopwatch.ElapsedMilliseconds;
+                    logsEvents.Add(() => Trace.WriteLine($"Value one accessed at {valueOneTimeMs} ms"));
+                    Assert.AreEqual(2, data.ValueTwo);
+                    valueTwoTimeMs = stopwatch.ElapsedMilliseconds;
+                    logsEvents.Add(() => Trace.WriteLine($"Value two accessed at {valueTwoTimeMs} ms"));
+                } 
+                finally
+                {
+                    foreach(var logEvent in logsEvents)
+                    {
+                        logEvent();
+                    }
+                }
+
+                Assert.IsTrue(
+                    processStartedTimeMs >= 0,
+                    $"{nameof(processStartedTimeMs)} should be non-negative, got {processStartedTimeMs}");
+                Assert.IsTrue(
+                    processStartedTimeMs < processCostMs,
+                    $"{nameof(processStartedTimeMs)} is not within {nameof(processCostMs)}: {processStartedTimeMs} vs {processCostMs}");
 
                 Assert.IsTrue(valueOneTimeMs < processCostMs,
                     $"Accessing value one should have taken less than " +
                     $"{processCostMs} ms from the time the Process method" +
-                    $"was called but it took {valueOneTimeMs} ms.");
+                    $"was called but it took {valueOneTimeMs} ms.");   
+
                 // Note - this should really take at least 'processCostMs'
                 // but the accuracy of the timer seems to cause issues
                 // if we are being that exact.

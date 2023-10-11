@@ -36,6 +36,7 @@ using FiftyOne.Pipeline.Engines.Data;
 using System.Collections.Generic;
 using System.Linq;
 
+using Microsoft.Extensions.Logging;
 namespace FiftyOne.Pipeline.Engines.Tests.Services
 {
     [TestClass]
@@ -53,7 +54,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         private int _ignoreWranings = 0;
         private int _ignoreErrors = 0;
         private const int TEST_TIMEOUT_MS = 3000;
-        private const int LOGGING_TIMEOUT_MS = 75;
+        private const int LOGGER_UNLOCK_TIMEOUT_MS = 1000;
+
+        private bool _didDumpLogs;
 
         private DataUpdateService _dataUpdate;
 
@@ -93,6 +96,33 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 _fileSystem.Object,
                 _timerFactory.Object);
 
+            OnDataUpdateServiceCreated();
+        }
+
+        private void OnDataUpdateServiceCreated()
+        {
+            _dataUpdate.DebugLoggingEnabled = true;
+
+            Func<string, Action> lockLoggerFor = reason => () =>
+            {
+                Console.WriteLine($"{DateTime.Now:O} Locking logger for {reason}");
+                Monitor.Enter(_logger);
+                Console.WriteLine($"{DateTime.Now:O} Locked logger for {reason}");
+            };
+            Func<string, Action> unlockLoggerFrom = reason => () =>
+            {
+                Console.WriteLine($"{DateTime.Now:O} Unlocking logger from {reason}");
+                Monitor.Exit(_logger);
+                Console.WriteLine($"{DateTime.Now:O} Unlocked logger from {reason}");
+            };
+
+            _dataUpdate.OnTimeredCheckForUpdateEntered += lockLoggerFor("timered CheckForUpdate");
+            _dataUpdate.OnTimeredCheckForUpdateWillExit += unlockLoggerFrom("timered CheckForUpdate");
+
+            _dataUpdate.OnDataFileUpdatedEntered += lockLoggerFor("DataFileUpdated");
+            _dataUpdate.OnDataFileUpdatedWillExit += unlockLoggerFrom("DataFileUpdated");
+
+            _didDumpLogs = false;
         }
 
         /// <summary>
@@ -102,17 +132,41 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
         [TestCleanup]
         public void Cleanup()
         {
-            try
+            if (!_didDumpLogs)
             {
-                _logger.AssertMaxErrors(_ignoreErrors);
-                _logger.AssertMaxWarnings(_ignoreWranings);
+                DumpLoggerLogs();
             }
-            finally
+            _logger.AssertMaxErrors(_ignoreErrors);
+            _logger.AssertMaxWarnings(_ignoreWranings);
+        }
+
+        private void DumpLoggerLogs()
+        {
+            Console.WriteLine($"[{DateTime.Now:O}] Trying to lock logger for {nameof(DumpLoggerLogs)}");
+            if (Monitor.TryEnter(_logger, LOGGER_UNLOCK_TIMEOUT_MS))
             {
-                foreach (var entry in _logger.Entries)
+                Console.WriteLine($"[{DateTime.Now:O}] Did lock logger for {nameof(DumpLoggerLogs)}");
+                try
                 {
-                    Console.WriteLine($"[LOGGER LOGS] {entry.Key} > {entry.Value}");
+                    if (_didDumpLogs)
+                    {
+                        return;
+                    }
+                    _didDumpLogs = true;
+                    foreach (var entry in _logger.ExtendedEntries)
+                    {
+                        Console.WriteLine($"[LOGGER LOGS] [{entry.Timestamp:O}] {entry.LogLevel} > {entry.Message} | {entry.Exception}");
+                    }
                 }
+                finally
+                {
+                    Monitor.Exit(_logger);
+                    Console.WriteLine($"[{DateTime.Now:O}] Unlocked logger for {nameof(DumpLoggerLogs)}");
+                }
+            }
+            if (!_didDumpLogs)
+            {
+                Assert.Fail($"[{DateTime.Now:O}] Failed to lock {nameof(_logger)} in {LOGGER_UNLOCK_TIMEOUT_MS}ms");
             }
         }
 
@@ -392,6 +446,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Wait until processing is complete.
                 completeFlag.Wait(TEST_TIMEOUT_MS);
 
+                DumpLoggerLogs();
+
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                     "event was never fired");
@@ -513,6 +569,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Wait until processing is complete.
             completeFlag.Wait(TEST_TIMEOUT_MS);
 
+            DumpLoggerLogs();
+
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                 "event was never fired");
@@ -563,6 +621,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             _dataUpdate.RegisterDataFile(file);
             // Wait until processing is complete.
             completeFlag.Wait(TEST_TIMEOUT_MS);
+
+            DumpLoggerLogs();
 
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -622,6 +682,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             _dataUpdate.RegisterDataFile(file);
             // Wait until processing is complete.
             completeFlag.Wait(TEST_TIMEOUT_MS);
+
+            DumpLoggerLogs();
 
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -711,6 +773,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 _dataUpdate.RegisterDataFile(file);
                 // Wait until processing is complete.
                 completeFlag.Wait(TEST_TIMEOUT_MS);
+
+                DumpLoggerLogs();
 
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -810,6 +874,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Wait until processing is complete.
                 completeFlag.Wait(TEST_TIMEOUT_MS);
 
+                DumpLoggerLogs();
+
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                     "event was never fired");
@@ -898,10 +964,11 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Wait until processing is complete.
                 completeFlag.Wait(TEST_TIMEOUT_MS);
 
+                DumpLoggerLogs();
+
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                     "event was never fired");
-                Thread.Sleep(LOGGING_TIMEOUT_MS);
                 _httpHandler.Verify(h => h.Send(It.IsAny<HttpRequestMessage>()), Times.Once());
                 // Make sure engine was not refreshed
                 engine.Verify(e => e.RefreshData(config.Identifier), Times.Never());
@@ -973,6 +1040,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 _dataUpdate.RegisterDataFile(file);
                 // Wait until processing is complete.
                 completeFlag.Wait(TEST_TIMEOUT_MS);
+
+                DumpLoggerLogs();
 
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
@@ -1193,6 +1262,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Wait until processing is complete.
                 completeFlag.Wait(TEST_TIMEOUT_MS);
 
+                DumpLoggerLogs();
+
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                     "event was never fired");
@@ -1312,6 +1383,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Wait until processing is complete.
             completeFlag.Wait(TEST_TIMEOUT_MS);
 
+            DumpLoggerLogs();
+
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                 "event was never fired");
@@ -1410,6 +1483,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 // Wait until processing is complete.
                 completeFlag.Wait(TEST_TIMEOUT_MS);
 
+                DumpLoggerLogs();
+
                 // Assert
                 Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                     "event was never fired");
@@ -1494,6 +1569,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             // Wait until processing is complete.
             completeFlag.Wait(TEST_TIMEOUT_MS);
 
+            DumpLoggerLogs();
+
             // Assert
             Assert.IsTrue(completeFlag.IsSet, "The 'CheckForUpdateComplete' " +
                 "event was never fired");
@@ -1553,6 +1630,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 _httpClient,
                 fileSystem,
                 _timerFactory.Object);
+
+            OnDataUpdateServiceCreated();
+
             return fileSystem;
         }
 
