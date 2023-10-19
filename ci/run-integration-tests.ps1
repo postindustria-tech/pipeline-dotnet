@@ -8,6 +8,6 @@ param(
     [string]$BuildMethod = "msbuild"
 )
 
-# ./dotnet/run-integration-tests.ps1 -RepoName $RepoName -ProjectDir $ProjectDir -Name $Name -Configuration $Configuration -Arch $Arch -BuildMethod $BuildMethod -Filter ".*\.Examples\.Tests\.dll"
+./dotnet/run-integration-tests.ps1 -RepoName $RepoName -ProjectDir $ProjectDir -Name $Name -Configuration $Configuration -Arch $Arch -BuildMethod $BuildMethod -Filter ".*\.Examples\.Tests\.dll"
 
-# exit $LASTEXITCODE
+exit $LASTEXITCODE
