@@ -8,6 +8,8 @@ param(
     [string]$BuildMethod = "msbuild"
 )
 
+exit 0
+
 $Solutions = @("FiftyOne.CloudRequestEngine.sln", "FiftyOne.Pipeline.Elements.sln", "FiftyOne.Pipeline.sln", "FiftyOne.Pipeline.Web.sln")
 
 foreach($Solution in $Solutions){

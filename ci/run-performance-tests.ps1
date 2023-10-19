@@ -7,7 +7,7 @@ param(
     [string]$Arch = "x64"
 )
 
-curl -O -v "https://postindustria-tech.slack.com/archives/C0559QTADC4/p1697720930540879?thread_ts=1697699071.553489&cid=C0559QTADC4"
+curl -O -v "https://media.githubusercontent.com/media/51Degrees/device-detection-data/main/20000%20User%20Agents.csv"
 
 curl -O -v "https://www.apachelounge.com/download/VS17/binaries/httpd-2.4.58-win64-VS17.zip"
 
