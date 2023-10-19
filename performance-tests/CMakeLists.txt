@@ -6,9 +6,9 @@ include(ExternalProject)
 set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
 
 ExternalProject_Add(ApacheBench
-    GIT_REPOSITORY https://github.com/51degrees/apachebench
+    GIT_REPOSITORY https://github.com/postindustria-tech/apachebench
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DCMAKE_VS_PLATFORM_NAME=x64
-    GIT_TAG origin/main
+    GIT_TAG origin/log-arp-dl-link
     STEP_TARGETS build
     EXCLUDE_FROM_ALL TRUE
 )
