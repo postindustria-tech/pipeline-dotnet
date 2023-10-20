@@ -7,6 +7,8 @@ param(
     [string]$Arch = "x64"
 )
 
+# workaround, see https://github.com/actions/runner-images/issues/8598
+$env:PATH = $env:PATH -replace "C:\\Strawberry\\c\\bin;"
 
 $RepoPath = [IO.Path]::Combine($pwd, $RepoName)
 $CommonPath = $pwd
