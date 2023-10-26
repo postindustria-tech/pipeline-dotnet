@@ -23,7 +23,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace FiftyOne.Pipeline.JavaScriptBuilder.Templates
+namespace FiftyOne.Pipeline.JavaScriptBuilder.TemplateData
 {
     /// <summary>
     /// A helper class that packages the parameters required by the 
