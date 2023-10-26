@@ -2,3 +2,6 @@
 	path = FiftyOne.Pipeline.Core/Configuration/Validation
 	url = ../configuration-validation
 
+[submodule "JavascriptTemplates"]
+	path = FiftyOne.Pipeline.Elements/FiftyOne.Pipeline.JavaScriptBuilderElement/Templates
+	url = ../javascript-templates
