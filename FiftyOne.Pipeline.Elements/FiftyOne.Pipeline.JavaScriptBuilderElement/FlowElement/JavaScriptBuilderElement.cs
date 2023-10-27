@@ -21,7 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.JavaScriptBuilder.Data;
-using FiftyOne.Pipeline.JavaScriptBuilder.Templates;
+using FiftyOne.Pipeline.JavaScriptBuilder.TemplateData;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
