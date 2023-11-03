@@ -22,7 +22,7 @@
 
 using System.Web.Mvc;
 
-/// @example ExampleFrameworkWebSite/Controllers/HomeController.cs
+/// @example ExampleFrameworkWebsite/Controllers/HomeController.cs
 /// ASP.NET core example
 /// 
 /// This example shows how to:
