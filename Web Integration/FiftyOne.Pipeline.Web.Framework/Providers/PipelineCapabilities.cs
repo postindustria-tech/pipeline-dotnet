@@ -180,6 +180,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
+                if (FlowData.Errors != null && FlowData.Errors.Count > 0)
+                {
+                    return _baseCaps.IsMobileDevice;
+                }
                 if (_availableElementProperties.ContainsKey("device") &&
                     _availableElementProperties["device"].ContainsKey("ismobile") &&
                     FlowData.GetAs<AspectPropertyValue<bool>>("ismobile").HasValue)
@@ -201,6 +205,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
+                if (FlowData.Errors != null && FlowData.Errors.Count > 0)
+                {
+                    return _baseCaps.CanInitiateVoiceCall;
+                }
                 if (_availableElementProperties.ContainsKey("device") &&
                     _availableElementProperties["device"].ContainsKey("supportsphonecalls") &&
                     FlowData.GetAs<AspectPropertyValue<bool>>("supportsphonecalls").HasValue)
@@ -221,6 +229,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
+                if (FlowData.Errors != null && FlowData.Errors.Count > 0)
+                {
+                    return _baseCaps.MobileDeviceManufacturer;
+                }
                 if (_availableElementProperties.ContainsKey("device") &&
                     _availableElementProperties["device"].ContainsKey("oem") &&
                     FlowData.GetAs<AspectPropertyValue<string>>("oem").HasValue)
@@ -241,6 +253,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
+                if (FlowData.Errors != null && FlowData.Errors.Count > 0)
+                {
+                    return _baseCaps.MobileDeviceModel;
+                }
                 if (_availableElementProperties.ContainsKey("device") &&
                     _availableElementProperties["device"].ContainsKey("hardwaremodel") &&
                     FlowData.GetAs<AspectPropertyValue<string>>("hardwaremodel").HasValue)
@@ -261,6 +277,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         public override int ScreenPixelsHeight {
             get
             {
+                if (FlowData.Errors != null && FlowData.Errors.Count > 0)
+                {
+                    return _baseCaps.ScreenPixelsHeight;
+                }
                 if (_availableElementProperties.ContainsKey("device") &&
                     _availableElementProperties["device"].ContainsKey("screenpixelsheight") &&
                     FlowData.GetAs<AspectPropertyValue<int>>("screenpixelsheight").HasValue)
@@ -282,6 +302,10 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
         {
             get
             {
+                if (FlowData.Errors != null && FlowData.Errors.Count > 0)
+                {
+                    return _baseCaps.ScreenPixelsWidth;
+                }
                 if (_availableElementProperties.ContainsKey("device") &&
                     _availableElementProperties["device"].ContainsKey("screenpixelswidth") &&
                     FlowData.GetAs<AspectPropertyValue<int>>("screenpixelswidth").HasValue)
