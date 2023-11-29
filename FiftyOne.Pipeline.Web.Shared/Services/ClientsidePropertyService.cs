@@ -35,6 +35,8 @@ using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using System.Text;
 using FiftyOne.Pipeline.Web.Shared.Adapters;
 using Microsoft.Extensions.Logging;
+using FiftyOne.Pipeline.JavaScriptBuilder.Data;
+using FiftyOne.Pipeline.JsonBuilder.Data;
 
 namespace FiftyOne.Pipeline.Web.Shared.Services
 {
@@ -248,7 +250,15 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                             throw new PipelineConfigurationException(
                                 Messages.ExceptionNoJavaScriptBuilder);
                         }
-                        var jsData = flowData.GetFromElement(jsElement);
+                        IJavaScriptBuilderElementData jsData = null;
+                        try
+                        {
+                            jsData = flowData.GetFromElement(jsElement);
+                        }
+                        catch (PipelineException ex)
+                        {
+                            _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsElement.GetType().Name);
+                        }
                         content = jsData?.JavaScript;
                         break;
                     case ContentType.Json:
@@ -258,7 +268,15 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                             throw new PipelineConfigurationException(
                                 Messages.ExceptionNoJsonBuilder);
                         }
-                        var jsonData = flowData.GetFromElement(jsonElement);
+                        IJsonBuilderElementData jsonData = null;
+                        try
+                        {
+                            jsonData = flowData.GetFromElement(jsonElement);
+                        }
+                        catch (PipelineException ex)
+                        {
+                            _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsonElement.GetType().Name);
+                        }
                         content = jsonData?.Json;
                         break;
                     default:
