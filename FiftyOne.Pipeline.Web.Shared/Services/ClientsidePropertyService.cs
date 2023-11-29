@@ -211,10 +211,24 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
             context.Response.Clear();
             context.Response.ClearHeaders();
 
-            // Get the hash code.
-            var hash = flowData.GenerateKey(_pipeline.EvidenceKeyFilter).GetHashCode();
+            IEvidenceKeyFilter pipelineEvidenceKeyFilter = null;
+            try
+            {
+                pipelineEvidenceKeyFilter = _pipeline.EvidenceKeyFilter;
+            }
+            catch (PipelineException ex)
+            {
+                _logger?.LogError(ex, $"Failed to get {nameof(_pipeline.EvidenceKeyFilter)} from {nameof(_pipeline)}");
+            }
 
-            if (int.TryParse(context.Request.GetHeaderValue("If-None-Match"), 
+            // Get the hash code.
+            int? hash = null;
+            if (pipelineEvidenceKeyFilter != null) {
+                hash = flowData.GenerateKey(pipelineEvidenceKeyFilter).GetHashCode();
+            }
+
+            if (hash.HasValue &&
+                int.TryParse(context.Request.GetHeaderValue("If-None-Match"), 
                     out int previousHash) &&
                 hash == previousHash)
             {
@@ -259,7 +273,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
 
                 context.Response.StatusCode = 200;
                 SetHeaders(context, 
-                    hash.ToString(CultureInfo.InvariantCulture),
+                    hash.HasValue ? hash.Value.ToString(CultureInfo.InvariantCulture) : null,
                     length,
                     contentType == ContentType.JavaScript ? "x-javascript" : "json");
 
@@ -289,10 +303,13 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                 {
                     context.Response.SetHeader("Vary", headersAffectingJavaScript);
                 }
-                context.Response.SetHeader("ETag", new StringValues(
-                    new string[] {
+                if (!string.IsNullOrEmpty(hash))
+                {
+                    context.Response.SetHeader("ETag", new StringValues(
+                        new string[] {
                     hash,
-                    }));
+                        }));
+                }
                 var origin = GetAllowOrigin(context.Request);
                 if (origin != null)
                 {
