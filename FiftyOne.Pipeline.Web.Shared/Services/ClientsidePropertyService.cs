@@ -241,44 +241,54 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
             {
                 // Otherwise, return the requested content to the client.
                 string content = null;
+                Func<IJsonBuilderElementData> GetJsonData = () =>
+                {
+                    var jsonElement = flowData.Pipeline.GetElement<JsonBuilderElement>();
+                    if (jsonElement == null)
+                    {
+                        throw new PipelineConfigurationException(
+                            Messages.ExceptionNoJsonBuilder);
+                    }
+                    IJsonBuilderElementData jsonData = null;
+                    try
+                    {
+                        jsonData = flowData.GetFromElement(jsonElement);
+                    }
+                    catch (PipelineException ex)
+                    {
+                        _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsonElement.GetType().Name);
+                    }
+                    return jsonData;
+                };
+
+                Func<IJavaScriptBuilderElementData> GetJsData = () =>
+                {
+                    var jsElement = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
+                    if (jsElement == null)
+                    {
+                        throw new PipelineConfigurationException(
+                            Messages.ExceptionNoJavaScriptBuilder);
+                    }
+                    IJavaScriptBuilderElementData jsData;
+                    try
+                    {
+                        jsData = flowData.GetFromElement(jsElement);
+                    }
+                    catch (PipelineException ex)
+                    {
+                        _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsElement.GetType().Name);
+                        jsData = jsElement.GetFallbackResponse(flowData, GetJsonData());
+                    }
+                    return jsData;
+                };
+
                 switch (contentType)
                 {
                     case ContentType.JavaScript:
-                        var jsElement = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
-                        if (jsElement == null)
-                        {
-                            throw new PipelineConfigurationException(
-                                Messages.ExceptionNoJavaScriptBuilder);
-                        }
-                        IJavaScriptBuilderElementData jsData;
-                        try
-                        {
-                            jsData = flowData.GetFromElement(jsElement);
-                        }
-                        catch (PipelineException ex)
-                        {
-                            _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsElement.GetType().Name);
-                            jsData = jsElement.GetFallbackResponse(flowData);
-                        }
-                        content = jsData?.JavaScript;
+                        content = GetJsData()?.JavaScript;
                         break;
                     case ContentType.Json:
-                        var jsonElement = flowData.Pipeline.GetElement<JsonBuilderElement>();
-                        if (jsonElement == null)
-                        {
-                            throw new PipelineConfigurationException(
-                                Messages.ExceptionNoJsonBuilder);
-                        }
-                        IJsonBuilderElementData jsonData = null;
-                        try
-                        {
-                            jsonData = flowData.GetFromElement(jsonElement);
-                        }
-                        catch (PipelineException ex)
-                        {
-                            _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsonElement.GetType().Name);
-                        }
-                        content = jsonData?.Json;
+                        content = GetJsonData()?.Json;
                         break;
                     default:
                         break;
