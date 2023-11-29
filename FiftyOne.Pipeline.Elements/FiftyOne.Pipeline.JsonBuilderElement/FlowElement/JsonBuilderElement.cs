@@ -215,7 +215,27 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// <exception cref="ArgumentNullException">
         /// Thrown if the supplied flow data is null.
         /// </exception>
-        protected override void ProcessInternal(IFlowData data)
+        protected override void ProcessInternal(IFlowData data) =>
+            BuildAndInjectJSON(
+                data,
+                data.GetOrAdd(
+                    ElementDataKeyTyped,
+                    CreateElementData));
+
+        /// <summary>
+        /// Transform the data in the flow data instance into a
+        /// JSON object.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/>
+        /// </param>
+        /// <param name="elementData">
+        /// The <see cref="IJsonBuilderElementData"/>
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        private void BuildAndInjectJSON(IFlowData data, IJsonBuilderElementData elementData)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
@@ -225,11 +245,25 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 config = _pipelineConfigs.GetOrAdd(data.Pipeline, config);
             }
 
-            var elementData = data.GetOrAdd(
-                    ElementDataKeyTyped,
-                    CreateElementData);
             var jsonString = BuildJson(data, config);
             elementData.Json = jsonString;
+        }
+
+        /// <summary>
+        /// Transform the data in the flow data instance into a
+        /// JSON object.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/>
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        public IJsonBuilderElementData GetFallbackResponse(IFlowData data)
+        {
+            var elementData = CreateElementData(data.Pipeline);
+            BuildAndInjectJSON(data, elementData);
+            return elementData;
         }
 
         /// <summary>

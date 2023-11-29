@@ -99,6 +99,17 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
         }
 
         /// <summary>
+        /// Check that the JSON produced by the JsonBuilder is valid.
+        /// </summary>
+        [TestMethod]
+        public void JsonBuilder_NonEmptyFallback()
+        {
+            var json = TestIteration(1, null, null, (e, fd) => ((JsonBuilderElement)e).GetFallbackResponse(fd).Json);
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(json));
+        }
+
+        /// <summary>
         /// Check that the JSON element removes JavaScript properties from the 
         /// response after max number of iterations has been reached.
         /// </summary>
@@ -731,7 +742,8 @@ carriage return and new line
 
         private string TestIteration(int iteration,
             Dictionary<string, object> data = null,
-            Mock<IFlowData> flowData = null)
+            Mock<IFlowData> flowData = null,
+            Func<IJsonBuilderElement, IFlowData, string> processFunc = null)
         {
             if(data == null)
             {
@@ -764,6 +776,11 @@ carriage return and new line
                     return result;
                 });
             flowData.Setup(d => d.Pipeline).Returns(_pipeline.Object);
+
+            if (processFunc != null)
+            {
+                return processFunc(_jsonBuilderElement, flowData.Object);
+            }
 
             _jsonBuilderElement.Process(flowData.Object);
 
