@@ -48,15 +48,43 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         /// <summary>
         /// Pipeline
         /// </summary>
-        private IPipeline _pipeline;
+        private readonly IPipeline _pipeline;
 
-        private ILogger<ClientsidePropertyService> _logger;
+        private readonly ILogger<ClientsidePropertyService> _logger;
 
         /// <summary>
         /// A list of all the HTTP headers that are requested evidence
         /// for elements that populate JavaScript properties 
         /// </summary>
-        private StringValues _headersAffectingJavaScript;
+        private StringValues? _headersAffectingJavaScript = null;
+        private readonly object _headersAffectingJavaScriptLock = new object();
+
+        private StringValues HeadersAffectingJavaScript
+        {
+            get
+            {
+                if (_headersAffectingJavaScript.HasValue)
+                {
+                    return _headersAffectingJavaScript.Value;
+                }
+
+                lock (_headersAffectingJavaScriptLock)
+                {
+                    if (_headersAffectingJavaScript.HasValue)
+                    {
+                        return _headersAffectingJavaScript.Value;
+                    }
+
+                    CollectHeadersAffectingJavaScript(out StringValues newHeaders, out bool gotExceptions);
+
+                    if (!gotExceptions)
+                    {
+                        _headersAffectingJavaScript = newHeaders;
+                    }
+                    return newHeaders;
+                }
+            }
+        }
 
         private enum ContentType
         {
@@ -68,7 +96,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         /// The cache control values that will be set for the JavaScript and
         /// JSON.
         /// </summary>
-        private StringValues _cacheControl = new StringValues(
+        private readonly StringValues _cacheControl = new StringValues(
             new string[] {
                 "private",
                 "max-age=1800",
@@ -90,11 +118,27 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
 
             _pipeline = pipeline;
             _logger = logger;
+        }
 
+        private void CollectHeadersAffectingJavaScript(out StringValues headers, out bool gotExceptions)
+        {
             var headersAffectingJavaScript = new List<string>();
+            gotExceptions = false;
 
-            foreach (var filter in _pipeline.FlowElements.Select(e => e.EvidenceKeyFilter))
+            foreach (var flowElement in _pipeline.FlowElements)
             {
+                IEvidenceKeyFilter filter;
+                try
+                {
+                    filter = flowElement.EvidenceKeyFilter;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Failed to get {nameof(flowElement.EvidenceKeyFilter)} from {{flowElementType}}", flowElement.GetType().Name);
+                    gotExceptions = true;
+                    continue;
+                }
+
                 // If the filter is a white list or derived type then
                 // get all HTTP header evidence keys from white list
                 // and add them to the headers that could affect the 
@@ -120,7 +164,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                         .Distinct(StringComparer.OrdinalIgnoreCase));
                 }
             }
-            _headersAffectingJavaScript = new StringValues(headersAffectingJavaScript.ToArray());
+            headers = new StringValues(headersAffectingJavaScript.ToArray());
         }
 
         /// <summary>
@@ -240,9 +284,10 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                 context.Response.SetHeader("Content-Length",
                     contentLength.ToString(CultureInfo.InvariantCulture));
                 context.Response.SetHeader("Cache-Control", _cacheControl);
-                if (string.IsNullOrEmpty(_headersAffectingJavaScript.ToString()) == false)
+                var headersAffectingJavaScript = HeadersAffectingJavaScript;
+                if (string.IsNullOrEmpty(headersAffectingJavaScript.ToString()) == false)
                 {
-                    context.Response.SetHeader("Vary", _headersAffectingJavaScript);
+                    context.Response.SetHeader("Vary", headersAffectingJavaScript);
                 }
                 context.Response.SetHeader("ETag", new StringValues(
                     new string[] {
