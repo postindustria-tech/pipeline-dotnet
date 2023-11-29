@@ -245,7 +245,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </exception>
         protected override void ProcessInternal(IFlowData data)
         {
-            SetUp(data, GetOrAddToData(data));
+            SetUp(data, GetJSONFromData(data), GetOrAddToData(data));
         }
 
 
@@ -253,17 +253,38 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// Default process method.
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="jsonData"></param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if the supplied flow data is null.
         /// </exception>
-        public JavaScriptBuilderElementData GetFallbackResponse(IFlowData data)
+        public JavaScriptBuilderElementData GetFallbackResponse(IFlowData data, IJsonBuilderElementData jsonData)
         {
+            if (jsonData == null)
+            {
+                throw new ArgumentNullException(nameof(jsonData));
+            }
             JavaScriptBuilderElementData result = (JavaScriptBuilderElementData)CreateElementData(data.Pipeline);
-            SetUp(data, () => result);
+            SetUp(data, () => jsonData, () => result);
             return result;
         }
 
-        private void SetUp(IFlowData data, Func<JavaScriptBuilderElementData> targetElementDataProvider)
+        private static Func<IJsonBuilderElementData> GetJSONFromData(IFlowData data) => () =>
+        {
+            try
+            {
+                return data.Get<IJsonBuilderElementData>();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new PipelineConfigurationException(
+                    Messages.ExceptionJsonBuilderNotRun, ex);
+            }
+        };
+
+        private void SetUp(
+            IFlowData data, 
+            Func<IJsonBuilderElementData> jsonDataProvider, 
+            Func<JavaScriptBuilderElementData> targetElementDataProvider)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             var host = Host;
@@ -342,16 +363,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             }
 
             // Get the JSON include to embed into the JavaScript include.
-            string jsonObject = string.Empty;
-            try
-            {
-                jsonObject = data.Get<IJsonBuilderElementData>().Json;
-            }
-            catch (KeyNotFoundException ex)
-            {
-                throw new PipelineConfigurationException(
-                    Messages.ExceptionJsonBuilderNotRun, ex);
-            }
+            string jsonObject = jsonDataProvider().Json;
+            
 
             var parameters = GetParameters(data);
             var paramsObject = JsonConvert.SerializeObject(parameters);

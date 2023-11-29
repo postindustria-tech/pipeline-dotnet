@@ -199,6 +199,34 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         /// <summary>
         /// Check that the callback URL is generated correctly.
         /// </summary>
+        [TestMethod]
+        public void JavaScriptBuilder_VerifyFallbackResponse()
+        {
+            _javaScriptBuilderElement =
+                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                .SetEndpoint("/json")
+                .Build();
+
+            var flowData = new Mock<IFlowData>();
+
+            flowData.Setup(d => d.Get<IJsonBuilderElementData>())
+                .Throws<KeyNotFoundException>();
+            var evidence = new Evidence(_loggerFactory.CreateLogger<Evidence>()); 
+            flowData.Setup(d => d.GetEvidence())
+                .Returns(evidence);
+
+            var jsonData = new Mock<IJsonBuilderElementData>();
+            jsonData.Setup(j => j.Json)
+                .Returns("{}");
+
+            IJavaScriptBuilderElementData result = _javaScriptBuilderElement.GetFallbackResponse(flowData.Object, jsonData.Object);
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result.JavaScript));
+        }
+
+        /// <summary>
+        /// Check that the callback URL is generated correctly.
+        /// </summary>
         /// <remarks>
         /// </remarks>
         [TestMethod]
