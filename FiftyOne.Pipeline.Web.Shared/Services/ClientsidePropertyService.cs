@@ -250,7 +250,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                             throw new PipelineConfigurationException(
                                 Messages.ExceptionNoJavaScriptBuilder);
                         }
-                        IJavaScriptBuilderElementData jsData = null;
+                        IJavaScriptBuilderElementData jsData;
                         try
                         {
                             jsData = flowData.GetFromElement(jsElement);
@@ -258,6 +258,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                         catch (PipelineException ex)
                         {
                             _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsElement.GetType().Name);
+                            jsData = jsElement.GetFallbackResponse(flowData);
                         }
                         content = jsData?.JavaScript;
                         break;
