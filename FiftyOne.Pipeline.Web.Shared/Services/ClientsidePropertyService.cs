@@ -257,6 +257,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                     catch (PipelineException ex)
                     {
                         _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsonElement.GetType().Name);
+                        jsonData = jsonElement.GetFallbackResponse(flowData);
                     }
                     return jsonData;
                 };
