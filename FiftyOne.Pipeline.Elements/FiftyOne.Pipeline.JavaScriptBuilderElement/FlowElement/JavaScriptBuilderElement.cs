@@ -245,7 +245,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </exception>
         protected override void ProcessInternal(IFlowData data)
         {
-            SetUp(data, GetJSONFromData(data), GetOrAddToData(data));
+            SetUp(data, GetJSONFromData(data), GetOrAddToData(data), true);
         }
 
 
@@ -264,7 +264,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 throw new ArgumentNullException(nameof(jsonData));
             }
             JavaScriptBuilderElementData result = (JavaScriptBuilderElementData)CreateElementData(data.Pipeline);
-            SetUp(data, () => jsonData, () => result);
+            SetUp(data, () => jsonData, () => result, false);
             return result;
         }
 
@@ -284,7 +284,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         private void SetUp(
             IFlowData data, 
             Func<IJsonBuilderElementData> jsonDataProvider, 
-            Func<JavaScriptBuilderElementData> targetElementDataProvider)
+            Func<JavaScriptBuilderElementData> targetElementDataProvider,
+            bool throwOnGetAsFailure)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             var host = Host;
@@ -312,6 +313,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 protocol = Constants.FALLBACK_PROTOCOL;
             }
 
+            const string errorFormat_GetAsFailed = "Failed to get property {propertyName}";
+
             // If device detection is in the Pipeline then we can check
             // if the client's browser supports promises.
             // This can be used to customize the JavaScript response. 
@@ -328,7 +331,19 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 
                 try
                 {
-                    var promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
+                    IAspectPropertyValue<string> promise = null;
+                    try
+                    {
+                        promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
+                    }
+                    catch (Exception ex)
+                    {
+                        if (throwOnGetAsFailure)
+                        {
+                            throw;
+                        }
+                        Logger.LogError(ex, errorFormat_GetAsFailed, "Promise");
+                    }
                     supportsPromises = promise != null && promise.HasValue && promise.Value == "Full";
                 }
                 catch (PropertyMissingException) { promisesNotAvailable(); }
@@ -353,7 +368,19 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 
                 try
                 {
-                    var fetch = data.GetAs<IAspectPropertyValue<bool>>("Fetch");
+                    IAspectPropertyValue<bool> fetch = null;
+                    try
+                    {
+                        fetch = data.GetAs<IAspectPropertyValue<bool>>("Fetch");
+                    }
+                    catch (Exception ex)
+                    {
+                        if (throwOnGetAsFailure)
+                        {
+                            throw;
+                        }
+                        Logger.LogError(ex, errorFormat_GetAsFailed, "Fetch");
+                    }
                     supportsFetch = fetch != null && fetch.HasValue && fetch.Value;
                 }
                 catch (PropertyMissingException) { fetchNotAvailable(); }
