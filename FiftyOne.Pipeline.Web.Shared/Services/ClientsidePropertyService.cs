@@ -213,6 +213,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
             context.Response.Clear();
             context.Response.ClearHeaders();
 
+            bool hadFailures = false;
+
             IEvidenceKeyFilter pipelineEvidenceKeyFilter = null;
             try
             {
@@ -221,6 +223,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
             catch (PipelineException ex)
             {
                 _logger?.LogError(ex, $"Failed to get {nameof(_pipeline.EvidenceKeyFilter)} from {nameof(_pipeline)}");
+                hadFailures = true;
             }
 
             // Get the hash code.
@@ -258,6 +261,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                     {
                         _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsonElement.GetType().Name);
                         jsonData = jsonElement.GetFallbackResponse(flowData);
+                        hadFailures = true;
                     }
                     return jsonData;
                 };
@@ -279,6 +283,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                     {
                         _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsElement.GetType().Name);
                         jsData = jsElement.GetFallbackResponse(flowData, GetJsonData());
+                        hadFailures = true;
                     }
                     return jsData;
                 };
@@ -305,7 +310,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                 SetHeaders(context, 
                     hash.HasValue ? hash.Value.ToString(CultureInfo.InvariantCulture) : null,
                     length,
-                    contentType == ContentType.JavaScript ? "x-javascript" : "json");
+                    contentType == ContentType.JavaScript ? "x-javascript" : "json",
+                    !hadFailures);
 
                 context.Response.Write(content);
             }
@@ -319,7 +325,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         /// <param name="hash"></param>
         /// <param name="contentLength"></param>
         /// <param name="contentType"></param>
-        private void SetHeaders(IContextAdapter context, string hash, int contentLength, string contentType)
+        /// <param name="shouldCache"></param>
+        private void SetHeaders(IContextAdapter context, string hash, int contentLength, string contentType, bool shouldCache)
         {
             try
             {
@@ -327,7 +334,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                     $"application/{contentType}");
                 context.Response.SetHeader("Content-Length",
                     contentLength.ToString(CultureInfo.InvariantCulture));
-                context.Response.SetHeader("Cache-Control", _cacheControl);
+                context.Response.SetHeader("Cache-Control", shouldCache ? _cacheControl.ToString() : "no-cache");
                 var headersAffectingJavaScript = HeadersAffectingJavaScript;
                 if (string.IsNullOrEmpty(headersAffectingJavaScript.ToString()) == false)
                 {
