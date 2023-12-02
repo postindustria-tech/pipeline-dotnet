@@ -215,7 +215,31 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// <exception cref="ArgumentNullException">
         /// Thrown if the supplied flow data is null.
         /// </exception>
-        protected override void ProcessInternal(IFlowData data)
+        protected override void ProcessInternal(IFlowData data) =>
+            BuildAndInjectJSON(
+                data,
+                data.GetOrAdd(
+                    ElementDataKeyTyped,
+                    CreateElementData),
+                true);
+
+        /// <summary>
+        /// Transform the data in the flow data instance into a
+        /// JSON object.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/>
+        /// </param>
+        /// <param name="elementData">
+        /// The <see cref="IJsonBuilderElementData"/>
+        /// </param>
+        /// <param name="requireSequenceNumber">
+        /// Whether to throw if sequence number was not found
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        private void BuildAndInjectJSON(IFlowData data, IJsonBuilderElementData elementData, bool requireSequenceNumber)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
@@ -225,11 +249,25 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 config = _pipelineConfigs.GetOrAdd(data.Pipeline, config);
             }
 
-            var elementData = data.GetOrAdd(
-                    ElementDataKeyTyped,
-                    CreateElementData);
-            var jsonString = BuildJson(data, config);
+            var jsonString = BuildJson(data, config, requireSequenceNumber);
             elementData.Json = jsonString;
+        }
+
+        /// <summary>
+        /// Transform the data in the flow data instance into a
+        /// JSON object.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/>
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        public IJsonBuilderElementData GetFallbackResponse(IFlowData data)
+        {
+            var elementData = CreateElementData(data.Pipeline);
+            BuildAndInjectJSON(data, elementData, false);
+            return elementData;
         }
 
         /// <summary>
@@ -237,12 +275,25 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         /// </summary>
         /// <param name="data"></param>
         /// <param name="config">The configuration to use</param>
+        /// <param name="requireSequenceNumber">The configuration to use</param>
         /// <returns>
         /// A string containing the data in JSON format.
         /// </returns>
-        protected virtual string BuildJson(IFlowData data, PipelineConfig config)
+        protected virtual string BuildJson(IFlowData data, PipelineConfig config, bool requireSequenceNumber)
         {
-            int sequenceNumber = GetSequenceNumber(data);
+            int? sequenceNumber = null;
+            try
+            {
+                sequenceNumber = GetSequenceNumber(data);
+            }
+            catch (PipelineException e)
+            {
+                if (requireSequenceNumber)
+                {
+                    throw;
+                }
+                Logger.LogError(e, $"Failed to get {nameof(sequenceNumber)}.");
+            }
 
             // Get property values from all the elements and add the ones that
             // are accessible to a dictionary.
@@ -250,7 +301,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 
             // Only populate the JavaScript properties if the sequence 
             // has not reached max iterations.
-            if (sequenceNumber < Constants.MAX_JAVASCRIPT_ITERATIONS)
+            if (!sequenceNumber.HasValue || sequenceNumber.Value < Constants.MAX_JAVASCRIPT_ITERATIONS)
             {
                 AddJavaScriptProperties(data, allProperties);
             }

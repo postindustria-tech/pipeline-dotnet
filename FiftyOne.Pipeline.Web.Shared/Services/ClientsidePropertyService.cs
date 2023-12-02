@@ -35,6 +35,8 @@ using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using System.Text;
 using FiftyOne.Pipeline.Web.Shared.Adapters;
 using Microsoft.Extensions.Logging;
+using FiftyOne.Pipeline.JavaScriptBuilder.Data;
+using FiftyOne.Pipeline.JsonBuilder.Data;
 
 namespace FiftyOne.Pipeline.Web.Shared.Services
 {
@@ -48,15 +50,43 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         /// <summary>
         /// Pipeline
         /// </summary>
-        private IPipeline _pipeline;
+        private readonly IPipeline _pipeline;
 
-        private ILogger<ClientsidePropertyService> _logger;
+        private readonly ILogger<ClientsidePropertyService> _logger;
 
         /// <summary>
         /// A list of all the HTTP headers that are requested evidence
         /// for elements that populate JavaScript properties 
         /// </summary>
-        private StringValues _headersAffectingJavaScript;
+        private StringValues? _headersAffectingJavaScript = null;
+        private readonly object _headersAffectingJavaScriptLock = new object();
+
+        private StringValues HeadersAffectingJavaScript
+        {
+            get
+            {
+                if (_headersAffectingJavaScript.HasValue)
+                {
+                    return _headersAffectingJavaScript.Value;
+                }
+
+                lock (_headersAffectingJavaScriptLock)
+                {
+                    if (_headersAffectingJavaScript.HasValue)
+                    {
+                        return _headersAffectingJavaScript.Value;
+                    }
+
+                    CollectHeadersAffectingJavaScript(out StringValues newHeaders, out bool gotExceptions);
+
+                    if (!gotExceptions)
+                    {
+                        _headersAffectingJavaScript = newHeaders;
+                    }
+                    return newHeaders;
+                }
+            }
+        }
 
         private enum ContentType
         {
@@ -68,7 +98,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         /// The cache control values that will be set for the JavaScript and
         /// JSON.
         /// </summary>
-        private StringValues _cacheControl = new StringValues(
+        private readonly StringValues _cacheControl = new StringValues(
             new string[] {
                 "private",
                 "max-age=1800",
@@ -90,11 +120,27 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
 
             _pipeline = pipeline;
             _logger = logger;
+        }
 
+        private void CollectHeadersAffectingJavaScript(out StringValues headers, out bool gotExceptions)
+        {
             var headersAffectingJavaScript = new List<string>();
+            gotExceptions = false;
 
-            foreach (var filter in _pipeline.FlowElements.Select(e => e.EvidenceKeyFilter))
+            foreach (var flowElement in _pipeline.FlowElements)
             {
+                IEvidenceKeyFilter filter;
+                try
+                {
+                    filter = flowElement.EvidenceKeyFilter;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Failed to get {nameof(flowElement.EvidenceKeyFilter)} from {{flowElementType}}", flowElement.GetType().Name);
+                    gotExceptions = true;
+                    continue;
+                }
+
                 // If the filter is a white list or derived type then
                 // get all HTTP header evidence keys from white list
                 // and add them to the headers that could affect the 
@@ -120,7 +166,7 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                         .Distinct(StringComparer.OrdinalIgnoreCase));
                 }
             }
-            _headersAffectingJavaScript = new StringValues(headersAffectingJavaScript.ToArray());
+            headers = new StringValues(headersAffectingJavaScript.ToArray());
         }
 
         /// <summary>
@@ -167,10 +213,27 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
             context.Response.Clear();
             context.Response.ClearHeaders();
 
-            // Get the hash code.
-            var hash = flowData.GenerateKey(_pipeline.EvidenceKeyFilter).GetHashCode();
+            bool hadFailures = false;
 
-            if (int.TryParse(context.Request.GetHeaderValue("If-None-Match"), 
+            IEvidenceKeyFilter pipelineEvidenceKeyFilter = null;
+            try
+            {
+                pipelineEvidenceKeyFilter = _pipeline.EvidenceKeyFilter;
+            }
+            catch (PipelineException ex)
+            {
+                _logger?.LogError(ex, $"Failed to get {nameof(_pipeline.EvidenceKeyFilter)} from {nameof(_pipeline)}");
+                hadFailures = true;
+            }
+
+            // Get the hash code.
+            int? hash = null;
+            if (pipelineEvidenceKeyFilter != null) {
+                hash = flowData.GenerateKey(pipelineEvidenceKeyFilter).GetHashCode();
+            }
+
+            if (hash.HasValue &&
+                int.TryParse(context.Request.GetHeaderValue("If-None-Match"), 
                     out int previousHash) &&
                 hash == previousHash)
             {
@@ -181,27 +244,57 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
             {
                 // Otherwise, return the requested content to the client.
                 string content = null;
+                Func<IJsonBuilderElementData> GetJsonData = () =>
+                {
+                    var jsonElement = flowData.Pipeline.GetElement<JsonBuilderElement>();
+                    if (jsonElement == null)
+                    {
+                        throw new PipelineConfigurationException(
+                            Messages.ExceptionNoJsonBuilder);
+                    }
+                    IJsonBuilderElementData jsonData = null;
+                    try
+                    {
+                        jsonData = flowData.GetFromElement(jsonElement);
+                    }
+                    catch (PipelineException ex)
+                    {
+                        _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsonElement.GetType().Name);
+                        jsonData = jsonElement.GetFallbackResponse(flowData);
+                        hadFailures = true;
+                    }
+                    return jsonData;
+                };
+
+                Func<IJavaScriptBuilderElementData> GetJsData = () =>
+                {
+                    var jsElement = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
+                    if (jsElement == null)
+                    {
+                        throw new PipelineConfigurationException(
+                            Messages.ExceptionNoJavaScriptBuilder);
+                    }
+                    IJavaScriptBuilderElementData jsData;
+                    try
+                    {
+                        jsData = flowData.GetFromElement(jsElement);
+                    }
+                    catch (PipelineException ex)
+                    {
+                        _logger?.LogError(ex, "Failed to get data from {flowElementType}", jsElement.GetType().Name);
+                        jsData = jsElement.GetFallbackResponse(flowData, GetJsonData());
+                        hadFailures = true;
+                    }
+                    return jsData;
+                };
+
                 switch (contentType)
                 {
                     case ContentType.JavaScript:
-                        var jsElement = flowData.Pipeline.GetElement<JavaScriptBuilderElement>();
-                        if (jsElement == null)
-                        {
-                            throw new PipelineConfigurationException(
-                                Messages.ExceptionNoJavaScriptBuilder);
-                        }
-                        var jsData = flowData.GetFromElement(jsElement);
-                        content = jsData?.JavaScript;
+                        content = GetJsData()?.JavaScript;
                         break;
                     case ContentType.Json:
-                        var jsonElement = flowData.Pipeline.GetElement<JsonBuilderElement>();
-                        if (jsonElement == null)
-                        {
-                            throw new PipelineConfigurationException(
-                                Messages.ExceptionNoJsonBuilder);
-                        }
-                        var jsonData = flowData.GetFromElement(jsonElement);
-                        content = jsonData?.Json;
+                        content = GetJsonData()?.Json;
                         break;
                     default:
                         break;
@@ -215,9 +308,10 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
 
                 context.Response.StatusCode = 200;
                 SetHeaders(context, 
-                    hash.ToString(CultureInfo.InvariantCulture),
+                    hash.HasValue ? hash.Value.ToString(CultureInfo.InvariantCulture) : null,
                     length,
-                    contentType == ContentType.JavaScript ? "x-javascript" : "json");
+                    contentType == ContentType.JavaScript ? "x-javascript" : "json",
+                    !hadFailures);
 
                 context.Response.Write(content);
             }
@@ -231,7 +325,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
         /// <param name="hash"></param>
         /// <param name="contentLength"></param>
         /// <param name="contentType"></param>
-        private void SetHeaders(IContextAdapter context, string hash, int contentLength, string contentType)
+        /// <param name="shouldCache"></param>
+        private void SetHeaders(IContextAdapter context, string hash, int contentLength, string contentType, bool shouldCache)
         {
             try
             {
@@ -239,15 +334,19 @@ namespace FiftyOne.Pipeline.Web.Shared.Services
                     $"application/{contentType}");
                 context.Response.SetHeader("Content-Length",
                     contentLength.ToString(CultureInfo.InvariantCulture));
-                context.Response.SetHeader("Cache-Control", _cacheControl);
-                if (string.IsNullOrEmpty(_headersAffectingJavaScript.ToString()) == false)
+                context.Response.SetHeader("Cache-Control", shouldCache ? _cacheControl.ToString() : "no-cache");
+                var headersAffectingJavaScript = HeadersAffectingJavaScript;
+                if (string.IsNullOrEmpty(headersAffectingJavaScript.ToString()) == false)
                 {
-                    context.Response.SetHeader("Vary", _headersAffectingJavaScript);
+                    context.Response.SetHeader("Vary", headersAffectingJavaScript);
                 }
-                context.Response.SetHeader("ETag", new StringValues(
-                    new string[] {
+                if (!string.IsNullOrEmpty(hash))
+                {
+                    context.Response.SetHeader("ETag", new StringValues(
+                        new string[] {
                     hash,
-                    }));
+                        }));
+                }
                 var origin = GetAllowOrigin(context.Request);
                 if (origin != null)
                 {

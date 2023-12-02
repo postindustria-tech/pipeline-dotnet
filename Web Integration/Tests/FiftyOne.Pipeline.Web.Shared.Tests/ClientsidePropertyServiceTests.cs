@@ -437,6 +437,8 @@ namespace FiftyOne.Pipeline.Web.Shared.Tests
             }
             _pipeline.Setup(p => p.FlowElements)
                 .Returns(flowElements);
+            _pipeline.Setup(p => p.EvidenceKeyFilter)
+                .Returns(new EvidenceKeyFilterWhitelist(new List<string>()));
             // Configure the key for this flow data to contain a fake value
             // that we can use to test the cached response handling.
             _defaultDataKey = new DataKeyBuilder().Add(1, "test", "value").Build();

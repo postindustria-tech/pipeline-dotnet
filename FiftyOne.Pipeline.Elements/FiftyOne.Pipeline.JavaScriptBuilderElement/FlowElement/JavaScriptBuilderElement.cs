@@ -245,12 +245,49 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </exception>
         protected override void ProcessInternal(IFlowData data)
         {
-            if (data == null) throw new ArgumentNullException(nameof(data));
-            SetUp(data);
+            SetUp(data, GetJSONFromData(data), GetOrAddToData(data), true);
         }
 
-        private void SetUp(IFlowData data)
+
+        /// <summary>
+        /// Default process method.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="jsonData"></param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        public JavaScriptBuilderElementData GetFallbackResponse(IFlowData data, IJsonBuilderElementData jsonData)
         {
+            if (jsonData == null)
+            {
+                throw new ArgumentNullException(nameof(jsonData));
+            }
+            JavaScriptBuilderElementData result = (JavaScriptBuilderElementData)CreateElementData(data.Pipeline);
+            SetUp(data, () => jsonData, () => result, false);
+            return result;
+        }
+
+        private static Func<IJsonBuilderElementData> GetJSONFromData(IFlowData data) => () =>
+        {
+            try
+            {
+                return data.Get<IJsonBuilderElementData>();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new PipelineConfigurationException(
+                    Messages.ExceptionJsonBuilderNotRun, ex);
+            }
+        };
+
+        private void SetUp(
+            IFlowData data, 
+            Func<IJsonBuilderElementData> jsonDataProvider, 
+            Func<JavaScriptBuilderElementData> targetElementDataProvider,
+            bool throwOnGetAsFailure)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
             var host = Host;
             var protocol = Protocol;
             bool supportsPromises = false;
@@ -276,6 +313,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 protocol = Constants.FALLBACK_PROTOCOL;
             }
 
+            const string errorFormat_GetAsFailed = "Failed to get property {propertyName}";
+
             // If device detection is in the Pipeline then we can check
             // if the client's browser supports promises.
             // This can be used to customize the JavaScript response. 
@@ -292,7 +331,19 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 
                 try
                 {
-                    var promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
+                    IAspectPropertyValue<string> promise = null;
+                    try
+                    {
+                        promise = data.GetAs<IAspectPropertyValue<string>>("Promise");
+                    }
+                    catch (Exception ex)
+                    {
+                        if (throwOnGetAsFailure)
+                        {
+                            throw;
+                        }
+                        Logger.LogError(ex, errorFormat_GetAsFailed, "Promise");
+                    }
                     supportsPromises = promise != null && promise.HasValue && promise.Value == "Full";
                 }
                 catch (PropertyMissingException) { promisesNotAvailable(); }
@@ -317,7 +368,19 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
 
                 try
                 {
-                    var fetch = data.GetAs<IAspectPropertyValue<bool>>("Fetch");
+                    IAspectPropertyValue<bool> fetch = null;
+                    try
+                    {
+                        fetch = data.GetAs<IAspectPropertyValue<bool>>("Fetch");
+                    }
+                    catch (Exception ex)
+                    {
+                        if (throwOnGetAsFailure)
+                        {
+                            throw;
+                        }
+                        Logger.LogError(ex, errorFormat_GetAsFailed, "Fetch");
+                    }
                     supportsFetch = fetch != null && fetch.HasValue && fetch.Value;
                 }
                 catch (PropertyMissingException) { fetchNotAvailable(); }
@@ -327,16 +390,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             }
 
             // Get the JSON include to embed into the JavaScript include.
-            string jsonObject = string.Empty;
-            try
-            {
-                jsonObject = data.Get<IJsonBuilderElementData>().Json;
-            }
-            catch (KeyNotFoundException ex)
-            {
-                throw new PipelineConfigurationException(
-                    Messages.ExceptionJsonBuilderNotRun, ex);
-            }
+            string jsonObject = jsonDataProvider().Json;
+            
 
             var parameters = GetParameters(data);
             var paramsObject = JsonConvert.SerializeObject(parameters);
@@ -380,7 +435,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             }
 
             // With the gathered resources, build a new JavaScriptResource.
-            BuildJavaScript(data, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, url, paramsObject);
+            BuildJavaScript(data, targetElementDataProvider, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, url, paramsObject);
         }
 
 
@@ -474,6 +529,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <param name="data">
         /// The <see cref="IFlowData"/> instance to populate with the
         /// resulting <see cref="JavaScriptBuilderElementData"/> 
+        /// and additional evidence source
+        /// </param>
+        /// <param name="targetElementDataProvider">
+        /// The method the will inject the resulting 
+        /// <see cref="JavaScriptBuilderElementData"/> 
+        /// into the response (even if differs from `data` above)
         /// </param>
         /// <param name="jsonObject">
         /// The JSON data object to include in the JavaScript.
@@ -503,6 +564,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </exception>
         protected void BuildJavaScript(
             IFlowData data,
+            Func<JavaScriptBuilderElementData> targetElementDataProvider,
             string jsonObject,
             string sessionId,
             int sequence,
@@ -511,7 +573,15 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             string url,
             string parameters)
         {
-            BuildJavaScript(data, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, new Uri(url), parameters);
+            BuildJavaScript(data, targetElementDataProvider, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, new Uri(url), parameters);
+        }
+
+        private Func<JavaScriptBuilderElementData> GetOrAddToData(IFlowData data)
+        {
+            return () => (JavaScriptBuilderElementData)
+                data.GetOrAdd(
+                ElementDataKeyTyped,
+                CreateElementData);
         }
 
         /// <summary>
@@ -521,6 +591,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <param name="data">
         /// The <see cref="IFlowData"/> instance to populate with the
         /// resulting <see cref="JavaScriptBuilderElementData"/> 
+        /// and additional evidence source
+        /// </param>
+        /// <param name="targetElementDataProvider">
+        /// The method the will inject the resulting 
+        /// <see cref="JavaScriptBuilderElementData"/> 
+        /// into the response (even if differs from `data` above)
         /// </param>
         /// <param name="jsonObject">
         /// The JSON data object to include in the JavaScript.
@@ -549,7 +625,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// Thrown if the supplied flow data is null.
         /// </exception>
         protected void BuildJavaScript(
-            IFlowData data,
+            IFlowData data, 
+            Func<JavaScriptBuilderElementData> targetElementDataProvider,
             string jsonObject,
             string sessionId,
             int sequence,
@@ -559,11 +636,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             string parameters)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
-            
-            JavaScriptBuilderElementData elementData = (JavaScriptBuilderElementData)
-                data.GetOrAdd(
-                ElementDataKeyTyped,
-                CreateElementData);
+
+            JavaScriptBuilderElementData elementData = targetElementDataProvider();
 
             string objectName = ObjName;
             // Try and get the requested object name from evidence.
