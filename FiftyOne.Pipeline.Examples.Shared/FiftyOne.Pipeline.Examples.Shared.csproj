@@ -12,7 +12,7 @@
 		The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services.
 		The package contains helper classes to make writing examples easier.
 	</PackageDescription>
-	<Authors>51D_Steve;Ben51Degrees;Joseph51Degrees</Authors>
+	<Authors>51Degrees Engineering</Authors>
 	<PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
 	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
 	<Copyright>51Degrees Mobile Experts Limited</Copyright>
