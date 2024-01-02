@@ -37,6 +37,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Microsoft.Extensions.Logging;
+using System.Security.AccessControl;
 namespace FiftyOne.Pipeline.Engines.Tests.Services
 {
     [TestClass]
@@ -395,6 +396,44 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             }
         }
 
+        // Adds an ACL entry on the specified file for the specified account.
+        private static void AddFileSecurity(string fileName, string account,
+            FileSystemRights rights, AccessControlType controlType)
+        {
+
+            var fInfo = new FileInfo(fileName);
+            FileSecurity fSecurity = fInfo.GetAccessControl();
+
+            var rules = fSecurity.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+            foreach (FileSystemAccessRule nextRule in rules)
+            {
+                Console.WriteLine($"'{nextRule.IdentityReference}' -> {nextRule.FileSystemRights} : {nextRule.AccessControlType}");
+            }
+
+            // Add the FileSystemAccessRule to the security settings.
+            fSecurity.AddAccessRule(new FileSystemAccessRule(account,
+                rights, controlType));
+
+            // Set the new access settings.
+            fInfo.SetAccessControl(fSecurity);
+        }
+
+        // Removes an ACL entry on the specified file for the specified account.
+        private static void RemoveFileSecurity(string fileName, string account,
+            FileSystemRights rights, AccessControlType controlType)
+        {
+
+            var fInfo = new FileInfo(fileName);
+            FileSecurity fSecurity = fInfo.GetAccessControl();
+
+            // Remove the FileSystemAccessRule from the security settings.
+            fSecurity.RemoveAccessRule(new FileSystemAccessRule(account,
+                rights, controlType));
+
+            // Set the new access settings.
+            fInfo.SetAccessControl(fSecurity);
+        }
+
         /// <summary>
         /// Check that the FileSystemWatcher works as expected.
         /// This is not great as we need to make use of the file system. 
@@ -443,6 +482,8 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
                 string temp2 = Path.GetTempFileName();
                 File.WriteAllText(temp2, "Testing");
                 File.Copy(temp2, tempData, true);
+                AddFileSecurity(tempData, @"LAPTOP-62MJ4UH3\maxim", FileSystemRights.ReadData, AccessControlType.Deny);
+
                 // Wait until processing is complete.
                 completeFlag.Wait(TEST_TIMEOUT_MS);
 
@@ -470,7 +511,9 @@ namespace FiftyOne.Pipeline.Engines.Tests.Services
             finally
             {
                 // Make sure we tidy up the temp file.
-                if (File.Exists(tempData)) { File.Delete(tempData); }
+                if (File.Exists(tempData)) {
+                    File.Delete(tempData); 
+                }
             }
         }
 
