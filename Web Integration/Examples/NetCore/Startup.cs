@@ -34,7 +34,7 @@ using Microsoft.Extensions.Hosting;
 /// This example shows how to:
 /// 
 /// 1. Set up configuration options to add elements to the 51Degrees Pipeline.
-/// @include appsettings.json
+/// @include Web Integration\Examples\NetCore\appsettings.json
 /// @until //{
 /// @skip //}
 /// @until "'"
@@ -73,7 +73,6 @@ using Microsoft.Extensions.Hosting;
 /// 
 /// 6. Call UseFiftyOne to add the Middleware component that will send any
 /// requests through the 51Degrees pipeline.
-/// 
 /// ```{cs}
 /// ...
 ///     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
