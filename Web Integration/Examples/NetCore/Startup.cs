@@ -27,6 +27,66 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+
+/// @example ExampleCoreWebsite/Startup.cs
+/// ASP.NET core example
+/// 
+/// This example shows how to:
+/// 
+/// 1. Set up configuration options to add elements to the 51Degrees Pipeline.
+/// @include appsettings.json
+/// @until //{
+/// @skip //}
+/// @until "'"
+/// 
+/// 2. Configure HostBuilder to use Startup class.
+/// @dontinclude Program.cs
+/// @skip namespace
+/// @until "'"
+/// 
+/// 3. Populate ViewData in HomeController.
+/// @dontinclude Controllers/HomeController.cs
+/// @skip namespace
+/// @until "zzz"
+/// 
+/// 4. Add the MathElemenetBuilder to the services collection so that
+/// the Pipeline creation process knows where to find it.
+/// ```{cs}
+/// public class HomeController : Controller
+/// {
+///     ...
+///     public void ConfigureServices(IServiceCollection services)
+///     {
+///         ...
+///         services.AddSingleton<MathElementBuilder>();
+///         ...
+/// ```
+/// 5. Call AddFiftyOne to add all the things the Pipeline will need
+/// to the services collection and create it based on the supplied
+/// configruation.
+/// ```{cs}
+///         ...
+///         services.AddFiftyOne(Configuration);
+///         ...
+///     }
+/// ```
+/// 
+/// 6. Call UseFiftyOne to add the Middleware component that will send any
+/// requests through the 51Degrees pipeline.
+/// 
+/// ```{cs}
+/// ...
+///     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+///     {
+///         ...
+///         app.UseFiftyOne();
+///         ...
+///     }
+/// ...
+/// ```
+/// 
+/// ## Startup
+/// 
 namespace AspNetCore_Example
 {
     public class Startup
