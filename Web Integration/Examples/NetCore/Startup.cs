@@ -34,18 +34,18 @@ using Microsoft.Extensions.Hosting;
 /// This example shows how to:
 /// 
 /// 1. Set up configuration options to add elements to the 51Degrees Pipeline.
-/// @include Web Integration\Examples\NetCore\appsettings.json
+/// @include NetCore/appsettings.json
 /// @until //{
 /// @skip //}
 /// @until "'"
 /// 
 /// 2. Configure HostBuilder to use Startup class.
-/// @dontinclude Program.cs
+/// @dontinclude NetCore/Program.cs
 /// @skip namespace
 /// @until "'"
 /// 
 /// 3. Populate ViewData in HomeController.
-/// @dontinclude Controllers/HomeController.cs
+/// @dontinclude NetCore/Controllers/HomeController.cs
 /// @skip namespace
 /// @until "zzz"
 /// 
