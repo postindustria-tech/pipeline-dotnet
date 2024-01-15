@@ -34,20 +34,20 @@ using Microsoft.Extensions.Hosting;
 /// This example shows how to:
 /// 
 /// 1. Set up configuration options to add elements to the 51Degrees Pipeline.
-/// @include NetCore/appsettings.json
+/// @dontinclude NetCore/appsettings.json
 /// @until //{
 /// @skip //}
-/// @until "'"
+/// @until ^}$
 /// 
 /// 2. Configure HostBuilder to use Startup class.
 /// @dontinclude NetCore/Program.cs
 /// @skip namespace
-/// @until "'"
+/// @until ^}$
 /// 
 /// 3. Populate ViewData in HomeController.
 /// @dontinclude NetCore/Controllers/HomeController.cs
 /// @skip namespace
-/// @until "zzz"
+/// @until ^}$
 /// 
 /// 4. Add the MathElemenetBuilder to the services collection so that
 /// the Pipeline creation process knows where to find it.
