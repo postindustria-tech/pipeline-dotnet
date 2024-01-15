@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.15"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>51Degrees Pipeline .NET: Examples</title>
+<title>51Degrees Pipeline .NET: ExampleCoreWebsite/Startup.cs</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -57,25 +57,25 @@
 	<div class="g-docs__sidenav">																														         <nav id="nav-tree-contents" class="c-sidenav">																														     <h4 class="c-sidenav__heading">Documentation</h4>																									         <div id="nav-sync" class="sync"></div>
   <ul class="c-sidenav__list">																														     </ul>																																				   </nav>    </div><script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('examples.html','');});
+$(document).ready(function(){initNavTree('_example_core_website_2_startup_8cs-example.html','');});
 /* @license-end */
 </script>
 <div id="doc-content" class="g-docs__content">
 <div class="g-docs__header">
-<h2 class="g-docs__page-title">Examples</h2></div><!--header-->
+<h2 class="g-docs__page-title">ExampleCoreWebsite/Startup.cs</h2></div><!--header-->
 <div class="g-docs__inner">
 <div class="g-docs__primary" id="primary">
-<section class="g-docs__section">51Degrees Pipeline API examples. These show how the API can be used for a few example use cases.</section><ul>
-<li><a class="el" href="_example_core_website_2_startup_8cs-example.html">ExampleCoreWebsite/Startup.cs</a></li>
-
-<li><a class="el" href="_example_framework_website_2_controllers_2_home_controller_8cs-example.html">ExampleFrameworkWebsite/Controllers/HomeController.cs</a></li>
-
-<li><a class="el" href="_result_caching_2_program_8cs-example.html">ResultCaching/Program.cs</a></li>
-
-<li><a class="el" href="_usage_sharing_2_program_8cs-example.html">UsageSharing/Program.cs</a></li>
-
-</ul>
-</div><!-- primary -->
+<p>ASP.NET core exampleThis example shows how to:</p>
+<ol type="1">
+<li>Set up configuration options to add elements to the 51Degrees Pipeline. <div class="c-code__block c-code__block--outline"></div> <div class="c-code__block c-code__block--outline"></div></li>
+<li>Configure HostBuilder to use Startup class.  <div class="c-code__block c-code__block--outline"></div></li>
+<li>Populate ViewData in HomeController.  <div class="c-code__block c-code__block--outline"></div></li>
+<li>Add the MathElemenetBuilder to the services collection so that the Pipeline creation process knows where to find it. <div class="c-code__block c-code__block--outline"><div class="c-code__line"><span class="c-code__keyword">public</span> <span class="c-code__keyword">class </span>HomeController : Controller</div><div class="c-code__line">{</div><div class="c-code__line">    ...</div><div class="c-code__line">    <span class="c-code__keyword">public</span> <span class="c-code__keywordtype">void</span> ConfigureServices(IServiceCollection services)</div><div class="c-code__line">    {</div><div class="c-code__line">        ...</div><div class="c-code__line">        services.AddSingleton&lt;MathElementBuilder&gt;();</div><div class="c-code__line">        ...</div></div></li>
+<li>Call AddFiftyOne to add all the things the Pipeline will need to the services collection and create it based on the supplied configruation. <div class="c-code__block c-code__block--outline"><div class="c-code__line">    ...</div><div class="c-code__line">    services.AddFiftyOne(Configuration);</div><div class="c-code__line">    ...</div><div class="c-code__line">}</div></div></li>
+<li>Call UseFiftyOne to add the Middleware component that will send any requests through the 51Degrees pipeline.</li>
+</ol>
+<div class="c-code__block c-code__block--outline"><div class="c-code__line">...</div><div class="c-code__line">    <span class="c-code__keyword">public</span> <span class="c-code__keywordtype">void</span> Configure(IApplicationBuilder app, IWebHostEnvironment env)</div><div class="c-code__line">    {</div><div class="c-code__line">        ...</div><div class="c-code__line">        app.UseFiftyOne();</div><div class="c-code__line">        ...</div><div class="c-code__line">    }</div><div class="c-code__line">...</div></div><h2>Startup</h2>
+<div class="c-code__block c-code__block--outline"></div> </div><!-- primary -->
 </div><!-- inner-->
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->
