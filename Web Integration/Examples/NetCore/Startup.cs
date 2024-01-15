@@ -37,17 +37,17 @@ using Microsoft.Extensions.Hosting;
 /// @dontinclude NetCore/appsettings.json
 /// @until //{
 /// @skip //}
-/// @until ^}$
+/// @until }
 /// 
 /// 2. Configure HostBuilder to use Startup class.
 /// @dontinclude NetCore/Program.cs
 /// @skip namespace
-/// @until ^}$
+/// @until
 /// 
 /// 3. Populate ViewData in HomeController.
 /// @dontinclude NetCore/Controllers/HomeController.cs
 /// @skip namespace
-/// @until ^}$
+/// @until ""
 /// 
 /// 4. Add the MathElemenetBuilder to the services collection so that
 /// the Pipeline creation process knows where to find it.
