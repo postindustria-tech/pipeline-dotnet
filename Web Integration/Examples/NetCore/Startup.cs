@@ -28,8 +28,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 
-/// @example ExampleCoreWebsite/Startup.cs
-/// ASP.NET core example
+/// @example NetCore/Startup.cs
+/// 
+/// ## ASP.NET core example
 /// 
 /// This example shows how to:
 /// 
@@ -77,6 +78,7 @@ using Microsoft.Extensions.Hosting;
 ///         services.AddFiftyOne(Configuration);
 ///         ...
 ///     }
+/// ...
 /// ```
 /// 
 /// 6. Call UseFiftyOne to add the Middleware component that will send any
