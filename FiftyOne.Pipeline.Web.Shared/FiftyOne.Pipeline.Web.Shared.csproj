@@ -11,7 +11,6 @@
 
     <!-- NuGet package properties -->
     <Description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. The package contains shared functionality that is needed by both the ASP.NET Core and ASP.NET integrations.</Description>
-    <Company>51D_Steve;Ben51Degrees;Joseph51Degrees</Company>
     <Authors>51Degrees Engineering</Authors>
     <Copyright>51Degrees Mobile Experts Limited</Copyright>
     <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>

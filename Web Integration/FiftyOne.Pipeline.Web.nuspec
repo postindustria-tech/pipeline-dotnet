@@ -4,7 +4,7 @@
         <id>FiftyOne.Pipeline.Web</id>
         <version>$version$</version>
 		<description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains components that integrate the 51Degrees Pipeline API into ASP.NET and ASP.NET Core web projects.</description>
-        <authors>51D_Steve,Ben51Degrees,Joseph51Degrees</authors>
+        <authors>51Degrees Engineering</authors>
 		<owners>51Degrees.mobi Limited</owners>
 		<license type="expression">EUPL-1.2</license>
 		<icon>images\51d-logo.png</icon>
