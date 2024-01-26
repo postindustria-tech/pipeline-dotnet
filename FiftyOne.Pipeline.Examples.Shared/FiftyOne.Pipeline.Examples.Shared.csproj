@@ -18,6 +18,7 @@
 	<Copyright>51Degrees Mobile Experts Limited</Copyright>
 	<PackageTags>51degrees,pipeline,data service</PackageTags>
 	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
+	<PackageProjectUrl>https://51degrees.com</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
