@@ -257,13 +257,13 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <exception cref="ArgumentNullException">
         /// Thrown if the supplied flow data is null.
         /// </exception>
-        public JavaScriptBuilderElementData GetFallbackResponse(IFlowData data, IJsonBuilderElementData jsonData)
+        public IJavaScriptBuilderElementData GetFallbackResponse(IFlowData data, IJsonBuilderElementData jsonData)
         {
             if (jsonData == null)
             {
                 throw new ArgumentNullException(nameof(jsonData));
             }
-            JavaScriptBuilderElementData result = (JavaScriptBuilderElementData)CreateElementData(data.Pipeline);
+            IJavaScriptBuilderElementData result = CreateElementData(data.Pipeline);
             SetUp(data, () => jsonData, () => result, false);
             return result;
         }
@@ -300,7 +300,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         private void SetUp(
             IFlowData data, 
             Func<IJsonBuilderElementData> jsonDataProvider, 
-            Func<JavaScriptBuilderElementData> targetElementDataProvider,
+            Func<IJavaScriptBuilderElementData> javascriptBuilderElementDataProvider,
             bool throwOnGetAsFailure)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
@@ -451,7 +451,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             }
 
             // With the gathered resources, build a new JavaScriptResource.
-            BuildJavaScript(data, targetElementDataProvider, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, url, paramsObject);
+            BuildJavaScript(data, javascriptBuilderElementDataProvider, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, url, paramsObject);
         }
 
 
@@ -547,10 +547,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// resulting <see cref="JavaScriptBuilderElementData"/> 
         /// and additional evidence source
         /// </param>
-        /// <param name="targetElementDataProvider">
-        /// The method the will inject the resulting 
+        /// <param name="javascriptBuilderElementDataProvider">
+        /// Defines a destination for
         /// <see cref="JavaScriptBuilderElementData"/> 
-        /// into the response (even if differs from `data` above)
+        /// to be set into.
+        /// Allows to store results outside of
+        /// `data` (previous parameter).
         /// </param>
         /// <param name="jsonObject">
         /// The JSON data object to include in the JavaScript.
@@ -580,7 +582,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </exception>
         protected void BuildJavaScript(
             IFlowData data,
-            Func<JavaScriptBuilderElementData> targetElementDataProvider,
+            Func<IJavaScriptBuilderElementData> javascriptBuilderElementDataProvider,
             string jsonObject,
             string sessionId,
             int sequence,
@@ -589,17 +591,17 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             string url,
             string parameters)
         {
-            BuildJavaScript(data, targetElementDataProvider, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, new Uri(url), parameters);
+            BuildJavaScript(data, javascriptBuilderElementDataProvider, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, new Uri(url), parameters);
         }
 
         /// <summary>
         /// Delegates to <see cref="IFlowData.GetOrAdd{T}(string, Func{IPipeline, T})"/>.
         /// </summary>
         /// <param name="data">Flow data to operate on.</param>
-        /// <returns><see cref="JavaScriptBuilderElementData"/> to set <see cref="IJavaScriptBuilderElementData.JavaScript"/> into.</returns>
-        protected Func<JavaScriptBuilderElementData> GetOrAddToData(IFlowData data)
+        /// <returns><see cref="IJavaScriptBuilderElementData"/> to set <see cref="IJavaScriptBuilderElementData.JavaScript"/> into.</returns>
+        protected Func<IJavaScriptBuilderElementData> GetOrAddToData(IFlowData data)
         {
-            return () => (JavaScriptBuilderElementData)
+            return () =>
                 data.GetOrAdd(
                 ElementDataKeyTyped,
                 CreateElementData);
@@ -614,10 +616,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// resulting <see cref="JavaScriptBuilderElementData"/> 
         /// and additional evidence source
         /// </param>
-        /// <param name="targetElementDataProvider">
-        /// The method the will inject the resulting 
+        /// <param name="javascriptBuilderElementDataProvider">
+        /// Defines a destination for
         /// <see cref="JavaScriptBuilderElementData"/> 
-        /// into the response (even if differs from `data` above)
+        /// to be set into.
+        /// Allows to store results outside of
+        /// `data` (previous parameter).
         /// </param>
         /// <param name="jsonObject">
         /// The JSON data object to include in the JavaScript.
@@ -647,7 +651,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </exception>
         protected void BuildJavaScript(
             IFlowData data, 
-            Func<JavaScriptBuilderElementData> targetElementDataProvider,
+            Func<IJavaScriptBuilderElementData> javascriptBuilderElementDataProvider,
             string jsonObject,
             string sessionId,
             int sequence,
@@ -658,7 +662,7 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
 
-            JavaScriptBuilderElementData elementData = targetElementDataProvider();
+            IJavaScriptBuilderElementData elementData = javascriptBuilderElementDataProvider();
 
             string objectName = ObjName;
             // Try and get the requested object name from evidence.
