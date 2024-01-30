@@ -268,11 +268,27 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             return result;
         }
 
-        private static Func<IJsonBuilderElementData> GetJSONFromData(IFlowData data) => () =>
+        /// <summary>
+        /// Attempts to extract <see cref="IJsonBuilderElementData"/> from `data`.
+        /// </summary>
+        /// <param name="flowData">
+        /// <see cref="IFlowData"/> to extract <see cref="IJsonBuilderElementData"/> from.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        /// <exception cref="PipelineConfigurationException">
+        /// Wraps <see cref="KeyNotFoundException"/> if thrown.
+        /// </exception>
+        protected static Func<IJsonBuilderElementData> GetJSONFromData(IFlowData flowData) => () =>
         {
+            if (flowData == null)
+            {
+                throw new ArgumentNullException(nameof(flowData));
+            }
             try
             {
-                return data.Get<IJsonBuilderElementData>();
+                return flowData.Get<IJsonBuilderElementData>();
             }
             catch (KeyNotFoundException ex)
             {
@@ -576,7 +592,12 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             BuildJavaScript(data, targetElementDataProvider, jsonObject, sessionId, sequence, supportsPromises, supportsFetch, new Uri(url), parameters);
         }
 
-        private Func<JavaScriptBuilderElementData> GetOrAddToData(IFlowData data)
+        /// <summary>
+        /// Delegates to <see cref="IFlowData.GetOrAdd{T}(string, Func{IPipeline, T})"/>.
+        /// </summary>
+        /// <param name="data">Flow data to operate on.</param>
+        /// <returns><see cref="JavaScriptBuilderElementData"/> to set <see cref="IJavaScriptBuilderElementData.JavaScript"/> into.</returns>
+        protected Func<JavaScriptBuilderElementData> GetOrAddToData(IFlowData data)
         {
             return () => (JavaScriptBuilderElementData)
                 data.GetOrAdd(
@@ -712,6 +733,54 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
             }
 
             elementData.JavaScript = minifiedContent;
+        }
+
+        /// <summary>
+        /// Build the JavaScript content and add it to the supplied
+        /// <see cref="IFlowData"/> instance.
+        /// </summary>
+        /// <param name="data">
+        /// The <see cref="IFlowData"/> instance to populate with the
+        /// resulting <see cref="JavaScriptBuilderElementData"/> 
+        /// and additional evidence source
+        /// </param>
+        /// <param name="jsonObject">
+        /// The JSON data object to include in the JavaScript.
+        /// </param>
+        /// <param name="sessionId">
+        /// The session Id to use in the JavaScript response.
+        /// </param>
+        /// <param name="sequence">
+        /// The sequence value to use in the JavaScript response.
+        /// </param>
+        /// <param name="supportsPromises">
+        /// True to build JavaScript that uses promises. False to
+        /// build JavaScript that does not use promises.
+        /// </param>
+        /// <param name="supportsFetch">
+        /// True to build JavaScript that makes use of the
+        /// fetch API. Otherwise, the template will fall back to using 
+        /// XMLHttpRequest.
+        /// </param>
+        /// <param name="url">
+        /// The callback URL for the JavaScript to send a request to
+        /// when it has new evidence values to supply.
+        /// </param>
+        /// <param name="parameters">The parameters to append to the URL</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the supplied flow data is null.
+        /// </exception>
+        protected void BuildJavaScript(
+            IFlowData data,
+            string jsonObject,
+            string sessionId,
+            int sequence,
+            bool supportsPromises,
+            bool supportsFetch,
+            Uri url,
+            string parameters)
+        {
+            BuildJavaScript(data, GetOrAddToData(data), jsonObject, sessionId, sequence, supportsPromises, supportsFetch, url, parameters);
         }
 
         /// <summary>
