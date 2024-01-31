@@ -270,12 +270,24 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
             return elementData;
         }
 
+
         /// <summary>
         /// Create and populate a JSON string from the specified data.
         /// </summary>
         /// <param name="data"></param>
         /// <param name="config">The configuration to use</param>
-        /// <param name="requireSequenceNumber">The configuration to use</param>
+        /// <returns>
+        /// A string containing the data in JSON format.
+        /// </returns>
+        protected string BuildJson(IFlowData data, PipelineConfig config)
+            => BuildJson(data, config, true);
+
+        /// <summary>
+        /// Create and populate a JSON string from the specified data.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="config">The configuration to use</param>
+        /// <param name="requireSequenceNumber">Whether to throw if sequence number was not found.</param>
         /// <returns>
         /// A string containing the data in JSON format.
         /// </returns>
