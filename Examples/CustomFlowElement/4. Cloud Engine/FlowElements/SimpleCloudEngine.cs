@@ -23,7 +23,7 @@
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
-using Examples.CloudEngine.Data;
+using Examples.CustomFlowElement.Data;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -35,11 +35,11 @@ namespace Examples.CloudEngine.FlowElements
 {
     //! [class]
     //! [constructor]
-    public class SimpleCloudEngine : CloudAspectEngineBase<IStarSignData>
+    public class SimpleCloudEngine : CloudAspectEngineBase<IStarSignAspectData>
     {
         public SimpleCloudEngine(
             ILogger<SimpleCloudEngine> logger,
-            Func<IPipeline, FlowElementBase<IStarSignData, IAspectPropertyMetaData>, IStarSignData> deviceDataFactory,
+            Func<IPipeline, FlowElementBase<IStarSignAspectData, IAspectPropertyMetaData>, IStarSignAspectData> deviceDataFactory,
             CloudRequestEngine engine)
             : base(logger, deviceDataFactory)
         {
@@ -62,10 +62,13 @@ namespace Examples.CloudEngine.FlowElements
             // It works from the cloud request data.
             new EvidenceKeyFilterWhitelist(new List<string>());
 
-        protected override void ProcessCloudEngine(IFlowData data, IStarSignData aspectData, string json)
+        protected override void ProcessCloudEngine(
+            IFlowData data,
+            IStarSignAspectData aspectData, 
+            string json)
         {
             // Cast aspectData to StarSignData so the 'setter' is available.
-            StarSignData starSignData = (StarSignData)aspectData;
+            var starSignData = (StarSignAspectData)aspectData;
             
             // Extract data from json to the aspectData instance.
             var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
@@ -73,7 +76,7 @@ namespace Examples.CloudEngine.FlowElements
             var starSign = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             JsonConvert.PopulateObject(dictionary["starsign"].ToString(), starSign);
             // Now get the values from the star sign results.
-            starSignData.StarSign = starSign["starsign"].ToString();
+            starSignData.Name = starSign["starsign"].ToString();
         }
     }
     //! [class]

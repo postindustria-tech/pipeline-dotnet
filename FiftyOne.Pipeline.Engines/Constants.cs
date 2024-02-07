@@ -21,7 +21,6 @@
  * ********************************************************************* */
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("FiftyOne.Pipeline.Engines.Tests")]
 [assembly: InternalsVisibleTo("FiftyOne.Pipeline.Engines.FiftyOne.Tests")]

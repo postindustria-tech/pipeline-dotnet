@@ -30,17 +30,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
+using Examples.CustomFlowElement.Data;
 
 namespace Examples.OnPremiseEngine.FlowElements
 {
     //! [class]
     //! [constructor]
-    public class SimpleOnPremiseEngine : OnPremiseAspectEngineBase<IStarSignData, IAspectPropertyMetaData>
+    public class SimpleOnPremiseEngine : OnPremiseAspectEngineBase<IStarSignDataOnPremise, IAspectPropertyMetaData>
     {
         public SimpleOnPremiseEngine(
             string dataFilePath,
-            ILogger<AspectEngineBase<IStarSignData, IAspectPropertyMetaData>> logger,
-            Func<IPipeline, FlowElementBase<IStarSignData, IAspectPropertyMetaData>, IStarSignData> aspectDataFactory,
+            ILogger<AspectEngineBase<IStarSignDataOnPremise, IAspectPropertyMetaData>> logger,
+            Func<IPipeline, FlowElementBase<IStarSignDataOnPremise, IAspectPropertyMetaData>, IStarSignDataOnPremise> aspectDataFactory,
             string tempDataFilePath)
             : base(logger, aspectDataFactory, tempDataFilePath)
         {
@@ -80,7 +81,7 @@ namespace Examples.OnPremiseEngine.FlowElements
         }
         //! [init]
 
-        // The IStarSignData will be stored with the key "starsign" in the FlowData.
+        // The IStarSignDataOnPremise will be stored with the key "starsign" in the FlowData.
         public override string ElementDataKey => "starsign";
 
         // The only item of evidence needed is "date-of-birth".
@@ -108,31 +109,17 @@ namespace Examples.OnPremiseEngine.FlowElements
             throw new NotImplementedException();
         }
 
-        protected override void ProcessEngine(IFlowData data, IStarSignData aspectData)
+        protected override void ProcessEngine(IFlowData data, IStarSignDataOnPremise aspectData)
         {
-            // Cast aspectData to AgeData so the 'setter' is available.
-            StarSignData starSignData = (StarSignData)aspectData;
-
-            if (data.TryGetEvidence("date-of-birth", out DateTime dateOfBirth))
+            if (data.TryGetEvidence("date-of-birth", out DateTime dob))
             {
                 // "date-of-birth" is there, so set the star sign.
-                var monthAndDay = new DateTime(1, dateOfBirth.Month, dateOfBirth.Day);
-                foreach (var starSign in _starSigns)
-                {
-                    if (monthAndDay > starSign.Start &&
-                        monthAndDay < starSign.End)
-                    {
-                        // The star sign has been found, so set it in the
-                        // results.
-                        starSignData.StarSign = starSign.Name;
-                        break;
-                    }
-                }
+                aspectData.Name = dob.GetStarSign(_starSigns).Name;
             }
             else
             {
                 // "date-of-birth" is not there, so set the star sign to unknown.
-                starSignData.StarSign = "Unknown";
+                aspectData.Name = "Unknown";
             }
         }
 

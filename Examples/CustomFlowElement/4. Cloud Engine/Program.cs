@@ -22,7 +22,7 @@
 
 using FiftyOne.Pipeline.CloudRequestEngine.FlowElements;
 using FiftyOne.Pipeline.Core.FlowElements;
-using Examples.CloudEngine.Data;
+using Examples.CustomFlowElement.Data;
 using Examples.CloudEngine.FlowElements;
 using System;
 using System.Net.Http;
@@ -64,7 +64,7 @@ namespace Examples.CloudEngine
                 .Process();
             // Now get the result of the processing.
             Console.WriteLine($"With a date of birth of {dob}, " +
-                $"your star sign is {flowData.Get<IStarSignData>().StarSign}.");
+                $"your star sign is {flowData.Get<IStarSignData>().Name}.");
             //! [usage]
         }
 

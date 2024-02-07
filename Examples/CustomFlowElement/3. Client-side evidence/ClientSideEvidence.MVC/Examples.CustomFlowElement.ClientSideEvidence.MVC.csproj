@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Web Integration\FiftyOne.Pipeline.Web\FiftyOne.Pipeline.Web.csproj" />
-    <ProjectReference Include="..\ClientSideEvidence.Shared\Examples.ClientSideEvidence.Shared.csproj" />
+    <ProjectReference Include="..\ClientSideEvidence.Shared\Examples.CustomFlowElement.ClientSideEvidence.Shared.csproj" />
   </ItemGroup>
 
 </Project>

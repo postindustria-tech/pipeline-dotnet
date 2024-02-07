@@ -11,6 +11,4 @@
     <ProjectReference Include="..\Math\FiftyOne.Pipeline.Math.csproj" />
   </ItemGroup>
 
-
-
 </Project>

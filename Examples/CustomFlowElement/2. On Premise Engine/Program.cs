@@ -56,7 +56,7 @@ namespace Examples.OnPremiseEngine
                     .Process();
                 // Now get the result of the processing.
                 Console.WriteLine($"With a date of birth of {dob}, " +
-                    $"your star sign is {flowData.Get<IStarSignData>().StarSign}.");
+                    $"your star sign is {flowData.Get<IStarSignDataOnPremise>().Name}.");
             }
             //! [usage]
         }

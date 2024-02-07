@@ -21,10 +21,6 @@
  * ********************************************************************* */
 
 using Examples.ClientSideEvidence.Shared;
-using FiftyOne.Pipeline.Core.FlowElements;
-using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
-using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
-using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -43,33 +39,34 @@ namespace Examples.ClientSideEvidence.MVC
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
+        // This method gets called by the runtime. Use this method to add
+        // services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<CookiePolicyOptions>(options =>
             {
-                // This lambda determines whether user consent for non-essential cookies is needed for a given request.
+                // This lambda determines whether user consent for
+                // non-essential cookies is needed for a given request.
                 options.CheckConsentNeeded = context => true;
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            // Add the builders for both the simple client side example, and
-            // the JavaScript bundler required for the client side code.
+            // Add the SimpleClientSideElementBuilder to the services
+            // collection so that the Pipeline creation process knows where to
+            // find the assembly when services.AddFiftyOne(Configuration) and
+            // app.UseFiftyOne() are called.
             services.AddSingleton<SimpleClientSideElementBuilder>();
-            services.AddSingleton<SequenceElementBuilder>();
-            services.AddSingleton<JsonBuilderElementBuilder>();
-            services.AddSingleton<JavaScriptBuilderElementBuilder>();
 
             // Add a pipeline builder using the configuration from appsettings.
-            services.AddFiftyOne<PipelineBuilder>(Configuration);
+            services.AddFiftyOne(Configuration);
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        // This method gets called by the runtime. Use this method to configure
+        // the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             // Use 51Degrees. This sets up the pipeline and everything needed
             // in accordance with the configuration.
-            app.UseFiftyOne();
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -78,6 +75,7 @@ namespace Examples.ClientSideEvidence.MVC
             {
                 app.UseExceptionHandler("/Home/Error");
             }
+            app.UseFiftyOne();
 
             app.UseStaticFiles();
             app.UseCookiePolicy();

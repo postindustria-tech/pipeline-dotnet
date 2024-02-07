@@ -8,13 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
+    <None Remove="starsigns.csv" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="starsigns.csv">
+    <Content Include="starsigns.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
+    <ProjectReference Include="..\Examples.CustomFlowElement.Data\Examples.CustomFlowElement.Data.csproj" />
   </ItemGroup>
 
 </Project>

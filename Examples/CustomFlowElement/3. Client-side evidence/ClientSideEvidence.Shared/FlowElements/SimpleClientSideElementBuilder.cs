@@ -21,10 +21,10 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
-using SimpleClientSideElement.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using FiftyOne.Pipeline.Core.Attributes;
+using Examples.ClientSideEvidence.Shared.Data;
 
 namespace Examples.ClientSideEvidence.Shared
 {
@@ -34,12 +34,12 @@ namespace Examples.ClientSideEvidence.Shared
     {
         private ILoggerFactory _loggerFactory;
 
-        private ILogger<StarSignData> _dataLogger;
+        private ILogger<StarSignDataClientSide> _dataLogger;
 
         public SimpleClientSideElementBuilder(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
-            _dataLogger = _loggerFactory.CreateLogger<StarSignData>();
+            _dataLogger = _loggerFactory.CreateLogger<StarSignDataClientSide>();
         }
 
         public SimpleClientSideElement Build()
@@ -50,10 +50,10 @@ namespace Examples.ClientSideEvidence.Shared
         }
 
         // This is the element data factory, and is called in the Process method of the element.
-        private IStarSignData CreateData(IPipeline pipeline, 
-            FlowElementBase<IStarSignData,IElementPropertyMetaData> element)
+        private IStarSignDataClientSide CreateData(IPipeline pipeline, 
+            FlowElementBase<IStarSignDataClientSide,IElementPropertyMetaData> element)
         {
-            return new StarSignData(_dataLogger, pipeline);
+            return new StarSignDataClientSide(_dataLogger, pipeline);
         }
     }
     //! [class]

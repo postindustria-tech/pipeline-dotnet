@@ -20,35 +20,23 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Web.Services;
 using Microsoft.AspNetCore.Mvc;
-using SimpleClientSideElement.Data;
 
 namespace Examples.ClientSideEvidence.MVC.Controllers
 {
     //! [usage]
     public class HomeController : Controller
     {
-        private IFlowDataProvider _flowDataProvider;
-
-        public HomeController(IFlowDataProvider flowDataProvider)
+        public HomeController()
         {
-            // The flow data provider is injected here, so it can be used to
-            // get a pre-processed flow data.
-            _flowDataProvider = flowDataProvider;
         }
 
         public IActionResult Index()
         {
-            // Get the flow data for this request.
-            var flowData = _flowDataProvider.GetFlowData();
-
-            // Set the message to be displayed in the view. The JavaScript is
-            // added in the view.
-            ViewData["message"] = $"With a date of birth of" +
-                $" {flowData.GetEvidence()["cookie.date-of-birth"]}," +
-                $" your star sign is" +
-                $" {flowData.Get<IStarSignData>().StarSign}.";
+            // Do nothing. All the work is done via JavaScript in the view and
+            // the 51Degrees endpoints add via
+            // services.AddFiftyOne(Configuration) and app.UseFiftyOne() in
+            // Startup.cs.
             return View();
         }
     }

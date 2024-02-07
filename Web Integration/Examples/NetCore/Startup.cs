@@ -112,13 +112,15 @@ namespace AspNetCore_Example
         {
             services.AddControllersWithViews();
 
-            // Add the MathElemenetBuilder to the services collection so that
-            // the Pipeline creation process knows where to find it.
+            // Add the MathElementBuilder to the services collection so that
+            // the Pipeline creation process knows where to find the assembly
+            // when services.AddFiftyOne(Configuration) and
+            // app.UseFiftyOne() are called.
             services.AddSingleton<MathElementBuilder>();
 
             // Call AddFiftyOne to add all the things the Pipeline will need
             // to the services collection and create it based on the supplied
-            // configruation.
+            // configuration.
             services.AddFiftyOne(Configuration);
         }
 

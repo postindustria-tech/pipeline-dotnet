@@ -74,7 +74,10 @@ public static class FiftyOneExtensions
         Func<IConfiguration, IPipelineBuilderFromConfiguration, IPipeline> pipelineFactory = null)
         where TBuilder : class, IPipelineBuilderFromConfiguration
     {
-        FiftyOneStartup.ConfigureServices<TBuilder>(services, configuration, pipelineFactory);
+        FiftyOneStartup.ConfigureServices<TBuilder>(
+            services, 
+            configuration, 
+            pipelineFactory);
     }
 
 

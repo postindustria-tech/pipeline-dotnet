@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\FiftyOne.Pipeline.Core\FiftyOne.Pipeline.Core.csproj" />
+    <ProjectReference Include="..\Examples.CustomFlowElement.Data\Examples.CustomFlowElement.Data.csproj" />
   </ItemGroup>
 
 </Project>

@@ -24,11 +24,33 @@
     ViewData["Title"] = "Home Page";
 }
 
-<!-- Add the 51Degrees core JavaScript. This contains the bundled JavaScript
-    from all elements in the pipeline, so will run the star sign JavaScript if
-    it is set. -->
-<script type="application/javascript" src="~/51Degrees.core.js"></script>
+<!--
+Add the 51Degrees core JavaScript. This contains the bundled JavaScript from 
+all elements in the pipeline, so will run the star sign JavaScript if it is 
+set. 
+-->
+<script type="application/javascript" src="~/51Degrees.core.js" async></script>
 
-<div class="row">
-    @ViewData["message"]
-</div>
+<script>
+
+    // The async JavaScript include won't have finished loading until the 
+    // onload event completes.
+    window.onload = function() {
+
+        // When FiftyOneDegrees(FOD) completes then display the date of birth
+        // and the star sign.
+        fod.complete(function (data) {
+            document.getElementById("starSignMessage").innerText =
+                "With a date of birth of '" + data.starsign.dob + 
+                "', your star sign is '" + data.starsign.name + "'.";
+        })
+    };
+
+</script>
+
+<!--
+Will display the words processing... until the fod.complete function is 
+executed. Used in tests to verify that the complete feature is working.
+Do not change the text value.
+-->
+<div class="row" id="starSignMessage">processing...</div>

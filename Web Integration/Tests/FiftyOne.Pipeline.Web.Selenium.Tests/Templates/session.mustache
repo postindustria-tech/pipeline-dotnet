@@ -1,0 +1,21 @@
+﻿<!DOCTYPE>
+<html>
+<head>
+    <!-- Needed to prevent the favicon being downloaded -->
+    <link rel="icon" href="data:,">
+    <title>Test Session Page</title>
+    <!-- The URL to the 51Degrees pipeline JavaScript being tested -->
+    <!-- Might not always be on the same host as the page -->
+    <script async src="{{javaScriptUrl}}"></script>
+</head>
+<body>
+    <script>
+        // Session id will be blank if the JavaScript does not load.
+        var sessionId = '';
+        window.onload = function () {
+            // Session id will be set from the fod object.
+            sessionId = fod.sessionId;
+        }
+    </script>
+</body>
+</html>

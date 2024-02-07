@@ -55,7 +55,7 @@ namespace Examples.CustomFlowElement
                 Console.WriteLine($"With a date of birth of " +
                     $"{dob.ToString("dd/MM/yyy")}" +
                     $", your star sign is " +
-                    $"{flowData.Get<IStarSignData>().StarSign}.");
+                    $"{flowData.Get<IStarSignData>().Name}.");
             }
             //! [usage]
         }

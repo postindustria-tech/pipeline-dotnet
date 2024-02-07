@@ -20,16 +20,16 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Core.FlowElements;
-using FiftyOne.Pipeline.Engines.Data;
 using Examples.OnPremiseEngine.Data;
+using FiftyOne.Pipeline.Core.FlowElements;
+using FiftyOne.Pipeline.Engines;
+using FiftyOne.Pipeline.Engines.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FiftyOne.Pipeline.Engines;
 
 namespace Examples.OnPremiseEngine.FlowElements
 {
@@ -41,12 +41,12 @@ namespace Examples.OnPremiseEngine.FlowElements
             IDataUpdateService dataUpdateService) : base(dataUpdateService)
         {
             _loggerFactory = loggerFactory;
-            _dataLogger = _loggerFactory.CreateLogger<StarSignData>();
+            _dataLogger = _loggerFactory.CreateLogger<StarSignDataOnPremise>();
         }
 
         private ILoggerFactory _loggerFactory;
 
-        private ILogger<StarSignData> _dataLogger;
+        private ILogger<StarSignDataOnPremise> _dataLogger;
 
         protected override SimpleOnPremiseEngine NewEngine(List<string> properties)
         {
@@ -64,11 +64,11 @@ namespace Examples.OnPremiseEngine.FlowElements
                 CreateData,
                 TempDir);
         }
-        public IStarSignData CreateData(
+        public IStarSignDataOnPremise CreateData(
             IPipeline pipeline,
-            FlowElementBase<IStarSignData, IAspectPropertyMetaData> aspectEngine)
+            FlowElementBase<IStarSignDataOnPremise, IAspectPropertyMetaData> aspectEngine)
         {
-            return new StarSignData(
+            return new StarSignDataOnPremise(
                 _dataLogger,
                 pipeline,
                 (SimpleOnPremiseEngine)aspectEngine,

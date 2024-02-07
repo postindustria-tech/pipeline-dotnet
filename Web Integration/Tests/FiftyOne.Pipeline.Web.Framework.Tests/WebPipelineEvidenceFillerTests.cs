@@ -5,8 +5,6 @@ using NSubstitute;
 using NSubstitute.ReceivedExtensions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Configuration;
 
 namespace FiftyOne.Pipeline.Web.Framework.Tests
 {

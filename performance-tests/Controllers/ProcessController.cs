@@ -20,10 +20,6 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using Microsoft.AspNetCore.Mvc;
-using FiftyOne.Pipeline.Math;
-using FiftyOne.Pipeline.Web.Services;
-
 namespace performance_tests.Controllers
 {
     [ApiController]

@@ -22,7 +22,7 @@
 
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
-using Examples.CloudEngine.Data;
+using Examples.CustomFlowElement.Data;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
 using Microsoft.Extensions.Logging;
@@ -35,7 +35,7 @@ namespace Examples.CloudEngine.FlowElements
     public class SimpleCloudEngineBuilder : CloudAspectEngineBuilderBase<SimpleCloudEngineBuilder, SimpleCloudEngine>
     {
         private ILoggerFactory _loggerFactory;
-        private ILogger<StarSignData> _dataLogger;
+        private ILogger<StarSignAspectData> _dataLogger;
         private CloudRequestEngine _engine;
 
         public SimpleCloudEngineBuilder(
@@ -43,7 +43,7 @@ namespace Examples.CloudEngine.FlowElements
             CloudRequestEngine engine)
         {
             _loggerFactory = loggerFactory;
-            _dataLogger = _loggerFactory.CreateLogger<StarSignData>();
+            _dataLogger = _loggerFactory.CreateLogger<StarSignAspectData>();
             _engine = engine;
         }
 
@@ -60,9 +60,11 @@ namespace Examples.CloudEngine.FlowElements
                 _engine);
         }
 
-        private IStarSignData CreateData(IPipeline pipeline, FlowElementBase<IStarSignData, IAspectPropertyMetaData> engine)
+        private IStarSignAspectData CreateData(
+            IPipeline pipeline, 
+            FlowElementBase<IStarSignAspectData, IAspectPropertyMetaData> engine)
         {
-            return new StarSignData(
+            return new StarSignAspectData(
                 _dataLogger,
                 pipeline,
                 (IAspectEngine)engine,

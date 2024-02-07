@@ -21,131 +21,129 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
-using SimpleClientSideElement.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using FiftyOne.Pipeline.Core.Data.Types;
+using Examples.CustomFlowElement.Data;
+using Examples.ClientSideEvidence.Shared.Data;
 
 namespace Examples.ClientSideEvidence.Shared
 {
     //! [class]
     //! [constructor]
-    public class SimpleClientSideElement : FlowElementBase<IStarSignData, IElementPropertyMetaData>
+    public class SimpleClientSideElement : 
+        FlowElementBase<IStarSignDataClientSide, IElementPropertyMetaData>
     {
         public SimpleClientSideElement(
-            ILogger<FlowElementBase<IStarSignData, IElementPropertyMetaData>> logger,
-            Func<IPipeline, FlowElementBase<IStarSignData, IElementPropertyMetaData>, 
-                IStarSignData> elementDataFactory)
+            ILogger<FlowElementBase<IStarSignDataClientSide, IElementPropertyMetaData>> 
+                logger,
+            Func<IPipeline, 
+                FlowElementBase<IStarSignDataClientSide, IElementPropertyMetaData>,
+                IStarSignDataClientSide> elementDataFactory)
             : base(logger, elementDataFactory)
         {
-            Init();
         }
         //! [constructor]
-
-        private IList<StarSign> _starSigns;
-
-        private static string[][] _starSignData = {
-            new string[3] {"Aries","21/03","19/04"},
-            new string[3] {"Taurus","20/04","20/05"},
-            new string[3] {"Gemini","21/05","20/06"},
-            new string[3] {"Cancer","21/06","22/07"},
-            new string[3] {"Leo","23/07","22/08"},
-            new string[3] {"Virgo","23/08","22/09"},
-            new string[3] {"Libra","23/09","22/10"},
-            new string[3] {"Scorpio","23/10","21/11"},
-            new string[3] {"Sagittarius","22/11","21/12"},
-            new string[3] {"Capricorn","22/12","19/01"},
-            new string[3] {"Aquarius","20/01","18/02"},
-            new string[3] {"Pisces","19/02","20/03"}
-        };
-
-        //! [init]
-        private void Init()
-        {
-            var starSigns = new List<StarSign>();
-            foreach (var starSign in _starSignData)
-            {
-                starSigns.Add(new StarSign(
-                    starSign[0],
-                    DateTime.Parse(starSign[1]),
-                    DateTime.Parse(starSign[2])));
-            }
-            _starSigns = starSigns;
-        }
-        //! [init]
-
-        // The IAgeData will be stored with the key "starsign" in the FlowData.
+       
+        /// <summary>
+        /// The date of birth will be stored with the key "starsign" in the 
+        /// FlowData. 
+        /// </summary>
         public override string ElementDataKey => "starsign";
 
-        // The only item of evidence needed is "date-of-birth".
+        /// <summary>
+        /// The only item of evidence needed is "date-of-birth". 
+        /// </summary>
         public override IEvidenceKeyFilter EvidenceKeyFilter =>
-            new EvidenceKeyFilterWhitelist(new List<string>() { "cookie.date-of-birth" });
+            new EvidenceKeyFilterWhitelist(new List<string>() 
+            { 
+                "cookie.date-of-birth" 
+            });
 
         public override IList<IElementPropertyMetaData> Properties =>
             new List<IElementPropertyMetaData>()
             {
                 // The properties which will be returned are "starsign" and the
-                // JavaScript to get the date of birth.
-                new ElementPropertyMetaData(this, "starsign", typeof(string), true),
-                new ElementPropertyMetaData(this, "dobjavascript", typeof(JavaScript), true)
+                // JavaScript to get the date of birth from the web browser.
+                new ElementPropertyMetaData(
+                    this, 
+                    "starsign", 
+                    typeof(string), 
+                    true),
+                new ElementPropertyMetaData(
+                    this, 
+                    "dobjavascript", 
+                    typeof(JavaScript), 
+                    true)
             };
 
         protected override void ProcessInternal(IFlowData data)
-        {
-            var monthAndDay = new DateTime(1, 1, 1);
+        { 
+            // This is a comment that signals to the JavaScript template that
+            // a call back function should replace the comment. Needed to
+            // ensure the fod.complete function is always called.
+            const string CALLBACK_COMMENT = 
+                "// 51D replace this comment with callback function.";
 
-            // Create a new IStarSignData, and cast to StarSignData so the 'setter' is available.
-            StarSignData starSignData = (StarSignData)data.GetOrAdd(ElementDataKey, CreateElementData);
+            // Must be prefixed with 51D_ to indicate that it's a special
+            // cookie used to persist data.
+            const string COOKIE_NAME = "51D_date-of-birth";
 
-            bool validDateOfBirth = false;
+            // When the cookies are processed by the pipeline they appear in
+            // the evidence as keys prefixed with cookie.
+            const string EVIDENCE_KEY =
+                FiftyOne.Pipeline.Core.Constants.EVIDENCE_COOKIE_PREFIX + 
+                FiftyOne.Pipeline.Core.Constants.EVIDENCE_SEPERATOR +
+                COOKIE_NAME;
 
-            if (data.TryGetEvidence("cookie.date-of-birth", out string dateString))
+            var dob = DateTime.MinValue;
+
+            // Create a new IStarSignData, and cast to StarSignData so the
+            // 'setter' is available.
+            var starSignData = (StarSignDataClientSide)data.GetOrAdd(
+                ElementDataKey, 
+                CreateElementData);
+
+            var validDob = false;
+            if (data.TryGetEvidence(EVIDENCE_KEY, out string value))
             {
                 // "date-of-birth" is there, so parse it.
-                string[] dateSections = dateString.Split('/');
-                try
-                {
-                    monthAndDay = new DateTime(
-                        1,
-                        int.Parse(dateSections[1]),
-                        int.Parse(dateSections[0]));
-                    validDateOfBirth = true;
-                }
-                catch (Exception)
-                {
-
-                }
+                validDob = DateTime.TryParse(value, out dob);
             }
-            if (validDateOfBirth)
+
+            if (validDob)
             {
+                // Include the source data in the response data to surface all
+                // the data in the same data structure. Input evidence doesn't
+                // get passed to client side data structures.
+                starSignData.DateOfBirth = dob;
+
                 // "date-of-birth" is valid, so set the star sign.
-                foreach (var starSign in _starSigns)
-                {
-                    if (monthAndDay > starSign.Start &&
-                        monthAndDay < starSign.End)
-                    {
-                        // The star sign has been found, so set it in the
-                        // results.
-                        starSignData.StarSign = starSign.Name;
-                        break;
-                    }
-                }
-                // No need to run the client side code again.
-                starSignData.DobJavaScript = new JavaScript("");
+                starSignData.Name = dob.GetStarSign().Name;
+
+                // Just the callback is needed to ensure the complete function
+                // is executed.
+                starSignData.DobJavaScript = null;
             }
             else
             {
-                // "date-of-birth" is not there, so set the star sign to unknown.
-                starSignData.StarSign = "Unknown";
+                // No value for the date of birth.
+                starSignData.DateOfBirth = null;
+
+                // "date-of-birth" is not there, so set the star sign to
+                // unknown.
+                starSignData.Name = "Unknown";
+
                 // Set the client side JavaScript to get the date of birth.
                 starSignData.DobJavaScript = new JavaScript(
-                "var dob = window.prompt('Enter your date of birth.','dd/mm/yyyy');" +
-                "if (dob != null) {" +
-                "document.cookie='date-of-birth='+dob;" +
-                "location.reload();" +
-                "}");
+                    "var dob = window.prompt(" +
+                    "'Enter your date of birth.'," +
+                    "'dd/mm/yyyy');" +
+                    "if (dob != null) {" +
+                    $"document.cookie='{COOKIE_NAME}='+dob;" +
+                    "}" + CALLBACK_COMMENT);
             }
         }
 
