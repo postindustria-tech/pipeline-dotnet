@@ -21,6 +21,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>51degrees,pipeline,data service,web</PackageTags>
     <NeutralLanguage>en</NeutralLanguage>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -50,6 +51,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\common-dotnet\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\Images\51d-logo.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>

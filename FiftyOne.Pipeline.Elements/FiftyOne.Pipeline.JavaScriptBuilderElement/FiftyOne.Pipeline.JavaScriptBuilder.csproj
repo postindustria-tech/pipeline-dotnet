@@ -23,9 +23,10 @@
     <RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
     <PackageIcon>51d-logo.png</PackageIcon>
     <PackageProjectUrl>https://51degrees.com</PackageProjectUrl>
-    <Description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains an element that produces JavaScript code that can be used to access Pipeline results in client-side code and provide additional evidence that is not available from the initial request to the web server.</Description>
+    <Description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains an element that produces JavaScript code used to access Pipeline results in client-side code and provide additional evidence that is not available from the initial request to the web server.</Description>
     <NeutralLanguage>en</NeutralLanguage>
     <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -34,6 +35,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\..\common-dotnet\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\..\Images\51d-logo.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
