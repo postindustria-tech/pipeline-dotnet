@@ -20,6 +20,8 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using Microsoft.AspNetCore.Mvc;
+
 namespace performance_tests.Controllers
 {
     [ApiController]
