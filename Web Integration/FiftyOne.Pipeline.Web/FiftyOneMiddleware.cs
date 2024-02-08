@@ -118,11 +118,13 @@ namespace FiftyOne.Pipeline.Web
             // Populate the request properties and store against the 
             // HttpContext.
             PipelineResultService.Process(context);
-            // Set HTTP headers in the response based on the results
-            // from the engines in the pipeline.
+
+            // Set HTTP headers in the response based on the results from the
+            // engines in the pipeline.
             HeaderService.SetHeaders(context);
-            // If 51Degrees JavaScript or JSON is being requested then serve it.
-            // Otherwise continue down the middleware Pipeline.
+
+            // If 51Degrees JavaScript or JSON is being requested then serve
+            // it. Otherwise continue down the middleware Pipeline.
             if (JsService.ServeJS(context) == false && 
                 JsService.ServeJson(context) == false)
             {

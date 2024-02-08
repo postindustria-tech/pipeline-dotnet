@@ -30,7 +30,8 @@ using System.Linq;
 namespace FiftyOne.Pipeline.Web.Selenium.Tests
 {
     /// <summary>
-    /// Checks the client side example.
+    /// Checks the client side 
+    /// <see cref="Examples.ClientSideEvidence.MVC.Startup"/> example.
     /// </summary>
     [TestClass]
     public class ClientSide
@@ -41,7 +42,7 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
         public static WebHostInstance _webHost;
 
         /// <summary>
-        /// The URLs that will be accessed when checking the session id.
+        /// The URLs that will be accessed when checking the alert and message.
         /// </summary>
         private static string _pageUrl;
 
@@ -50,9 +51,9 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
         {
             // Start the web host for the example using the configuration for
             // the example unaltered.
-            _webHost = SeleniumTestHelper.StartWebHost<Startup>(
-                (options) => {},
-                context.CancellationTokenSource);
+            _webHost = SeleniumTestHelper.StartLocalHost<Startup>(
+                (options) => { },
+                context.CancellationTokenSource.Token);
 
             // The page url to visit.
             _pageUrl = _webHost.ServerAddresses.Addresses.First();
@@ -61,8 +62,8 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
         [ClassCleanup]
         public static void ClassCleanup()
         {
-            // Stop the web host and trigger the stop token.
-            _webHost.Stop();
+            // Stop the web host.
+            _webHost.Stop().Wait();
         }
 
         [TestMethod]
@@ -75,11 +76,18 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
             DynamicDataDisplayNameDeclaringType = typeof(SeleniumTestHelper))]
         public void Test(Browser browser)
         {
-            browser.EnableNetwork();
-
+            // JavaScript to get the message.
             const string messageJs = 
                 "return document.getElementById(\"starSignMessage\").innerText";
 
+            // Date of birth to input.
+            const string dob = "01/01/2000";
+
+            // Expected message for the date of birth input.
+            const string expectedMessage =
+                "With a date of birth of '2000-01-01T00:00:00', your star " +
+                "sign is 'Capricorn'.";
+            
             // Act
 
             // Goto the test page.
@@ -89,22 +97,25 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
             var alert = browser.Wait.Until(ExpectedConditions.AlertIsPresent());
 
             // Enter the date of birth.
-            alert.SendKeys("01/01/2000");
+            alert.SendKeys(dob);
 
             // Press the OK button
             alert.Accept();
 
             // Wait until the processing is finished.
             browser.Wait.Until(webDriver =>
-            { 
+            {
                 var message = browser.Driver.ExecuteScript(messageJs);
                 return message.Equals("processing...") == false;
             });
 
             // Verify
 
+            // Check that the message is the expected one.
             var message = browser.Driver.ExecuteScript(messageJs) as string;
-            Console.WriteLine(message);
+            Assert.AreEqual(expectedMessage, message);
+
+            browser.Dispose();
         }
     }
 }

@@ -33,7 +33,7 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
     /// <summary>
     /// Common return class for the different browsers.
     /// </summary>
-    public class Browser
+    public class Browser : IDisposable
     {
         /// <summary>
         /// Common name of the browser to display in tests.
@@ -43,15 +43,40 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         /// <summary>
         /// Web driver
         /// </summary>
-        public WebDriver Driver { get; }
+        public WebDriver Driver
+        {
+            get
+            {
+                if (_driver == null)
+                {
+                    _driver = _driverFunc();
+                }
+                return _driver;
+            }
+        }
+        private WebDriver _driver;
+        private readonly Func<WebDriver> _driverFunc;
 
         /// <summary>
         /// Developer tools session
         /// </summary>
-        public DevToolsSession Session { get; }
+        public DevToolsSession Session
+        {
+            get
+            {
+                if (_session == null) 
+                {
+                    _session = _sessionFunc(Driver);
+                }
+                return _session;
+            }
+        }
+        private DevToolsSession _session;
+        private readonly Func<WebDriver, DevToolsSession> _sessionFunc;
 
         /// <summary>
-        /// Waiter for the browser driver set to 10 second timeout.
+        /// Waiter for the browser driver set to 10 second timeout. Nothing in
+        /// testing should take more than 10 seconds.
         /// </summary>
         public WebDriverWait Wait
         {
@@ -83,9 +108,15 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         public IEnumerable<IGrouping<string, DevToolsEventReceivedEventArgs>>
             GroupedNetworkEvents => NetworkEvents.GroupBy(i =>
                 {
-                    var id = i.EventData["request.id"];
+                    var id = i.EventData["requestId"];
                     return id == null ? null : id.Value<string>();
                 });
+
+        /// <summary>
+        /// The URLs that relate to the network events.
+        /// </summary>
+        public IEnumerable<Uri> RequestUrls => GroupedNetworkEvents.Select(i =>
+            i.GetRequestUrl());
 
         /// <summary>
         /// Constructor
@@ -93,20 +124,37 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         /// <param name="name">
         /// Common name of the browser to display in tests
         /// </param>
-        /// <param name="driver">
-        /// Driver
+        /// <param name="driverFunc">
+        /// Function that returns a web driver
         /// </param>
-        /// <param name="session">
-        /// Developer tools session
+        /// <param name="sessionFunc">
+        /// Function that takes a web driver and returns a dev tools session
         /// </param>
         public Browser(
             string name,
-            WebDriver driver,
-            DevToolsSession session)
+            Func<WebDriver> driverFunc,
+            Func<WebDriver, DevToolsSession> sessionFunc)
         {
             Name = name;
-            Driver = driver;
-            Session = session;
+            _driverFunc = driverFunc;
+            _sessionFunc = sessionFunc;
+        }
+
+        /// <summary>
+        /// Disposes of the session and driver if created.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_session != null)
+            {
+                _session.Dispose();
+                _session = null;
+            }
+            if (_driver != null)
+            {
+                _driver.Dispose();
+                _driver = null;
+            }
         }
 
         /// <summary>

@@ -49,12 +49,12 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
         /// Configuration key value pairs.
         /// </param>
         protected static void StartWebHost(
-            CancellationTokenSource stopSource,
+            CancellationToken stopToken,
             IEnumerable<KeyValuePair<string, string>> initialData = null)
         {
             // Start the web host to serve the 51degrees.core.js include used
             // in the test pages. Configures only the minimal flow elements.
-            _webHost = SeleniumTestHelper.StartWebHost<Startup>(
+            _webHost = SeleniumTestHelper.StartLocalHost<Startup>(
                 (options) => 
                 {
                     // Clear all configuration as not needed and might change
@@ -79,7 +79,7 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
                 
                     // Set the configuration.
                     options.AddInMemoryCollection(data);
-                }, stopSource);
+                }, stopToken);
         }
     }
 }

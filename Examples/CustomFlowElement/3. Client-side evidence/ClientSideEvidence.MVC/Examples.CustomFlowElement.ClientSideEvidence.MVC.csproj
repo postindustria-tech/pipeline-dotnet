@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -8,6 +8,16 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Web Integration\FiftyOne.Pipeline.Web\FiftyOne.Pipeline.Web.csproj" />
     <ProjectReference Include="..\ClientSideEvidence.Shared\Examples.CustomFlowElement.ClientSideEvidence.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- 
+  Needed to ensure when the project is used in a test the static assets are 
+  available  
+  -->
+  <ItemGroup>
+    <Content Update="wwwroot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

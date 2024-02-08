@@ -22,7 +22,6 @@
 
 using FiftyOne.Pipeline.Web.Common.Tests;
 using FiftyOne.Pipeline.Web.Selenium.Tests.Templates;
-using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenQA.Selenium.Support.UI;
 using System;
@@ -30,8 +29,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
-using static FiftyOne.Pipeline.Web.Common.Tests.SeleniumTestHelper;
 
 namespace FiftyOne.Pipeline.Web.Selenium.Tests
 {
@@ -62,7 +59,7 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
             // 51Degrees.core.js script in the configuration to the same value
             // as that used in the template page script.
             MinFlowElementsBase.StartWebHost(
-                context.CancellationTokenSource, 
+                context.CancellationTokenSource.Token,
                 new Dictionary<string, string>()
             {
                 ["PipelineOptions:Elements:1:BuildParameters:ObjectName"] =
@@ -84,15 +81,12 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
             _clientListener = TestHelpers.SimpleListener(
                 _pageUrl, 
                 testPage,
-                _webHost.StopSource.Token);
+                context.CancellationTokenSource.Token);
         }
 
         [ClassCleanup]
         public static void ClassCleanup()
         {
-            // Stop the web host and trigger the stop token.
-            _webHost.Stop();
-
             // Close the listener.
             _clientListener.Stop();
             while (_clientListener.IsListening)
@@ -101,6 +95,9 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
                 Thread.Sleep(1000);
             }
             _clientListener.Close();
+
+            // Stop the web host.
+            _webHost.Stop().Wait();
         }
 
         [TestMethod]
@@ -121,6 +118,8 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
                 String.IsNullOrWhiteSpace(sessionId),
                 "Session id must not be empty string");
             Console.WriteLine($"Session Id: {sessionId}");
+
+            browser.Dispose();
         }
 
         private string GotoPage(Browser browser)

@@ -23,14 +23,17 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json.Linq;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.DevTools;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
 using Stubble.Core.Builders;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -44,24 +47,26 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         /// <returns></returns>
         public static Browser Chrome()
         {
-            var chromeOptions = new ChromeOptions();
-            chromeOptions.AcceptInsecureCertificates = true;
-            chromeOptions.AddArgument("--headless");
-            try
-            {
-                var driver = new ChromeDriver(chromeOptions);
-                return new Browser(
-                    "Chrome",
-                    driver, 
-                    driver.GetDevToolsSession());
-            }
-            catch (WebDriverException)
-            {
-                Assert.Inconclusive(
-                    "Could not create a ChromeDriver, check " +
-                    "that the Chromium driver is installed");
-                return null;
-            }
+            return new Browser(
+                "Chrome",
+                () =>
+                {
+                    var chromeOptions = new ChromeOptions();
+                    chromeOptions.AcceptInsecureCertificates = true;
+                    chromeOptions.AddArgument("--headless");
+                    try
+                    {
+                        return new ChromeDriver(chromeOptions);
+                    }
+                    catch (WebDriverException)
+                    {
+                        Assert.Inconclusive(
+                            "Could not create a ChromeDriver, check " +
+                            "that the Chromium driver is installed");
+                        return null;
+                    }
+                },
+                (d) => ((ChromeDriver)d).GetDevToolsSession());
         }
 
         /// <summary>
@@ -70,24 +75,26 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         /// <returns></returns>
         public static Browser Edge()
         {
-            var edgeOptions = new EdgeOptions();
-            edgeOptions.AcceptInsecureCertificates = true;
-            edgeOptions.AddArgument("--headless");
-            try
-            {
-                var driver = new EdgeDriver(edgeOptions);
-                return new Browser(
-                    "Edge", 
-                    driver, 
-                    driver.GetDevToolsSession());
-            }
-            catch (WebDriverException)
-            {
-                Assert.Inconclusive(
-                    "Could not create a EdgeDriver, check " +
-                    "that the Edge driver is installed");
-                return null;
-            }
+            return new Browser(
+                "Edge",
+                () =>
+                {
+                    var edgeOptions = new EdgeOptions();
+                    edgeOptions.AcceptInsecureCertificates = true;
+                    edgeOptions.AddArgument("--headless");
+                    try
+                    {
+                        return new EdgeDriver(edgeOptions);
+                    }
+                    catch (WebDriverException)
+                    {
+                        Assert.Inconclusive(
+                            "Could not create a EdgeDriver, check " +
+                            "that the Edge driver is installed");
+                        return null;
+                    }
+                },
+                (d) => ((EdgeDriver)d).GetDevToolsSession());
         }
 
         /// <summary>
@@ -96,25 +103,27 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         /// <returns></returns>
         public static Browser Firefox()
         {
-            var firefoxOptions = new FirefoxOptions();
-            firefoxOptions.AcceptInsecureCertificates = true;
-            firefoxOptions.AddArgument("--headless");
-            firefoxOptions.EnableDevToolsProtocol = true;
-            try
-            {
-                var driver = new FirefoxDriver(firefoxOptions);
-                return new Browser(
-                    "Firefox", 
-                    driver, 
-                    driver.GetDevToolsSession());
-            }
-            catch (WebDriverException)
-            {
-                Assert.Inconclusive(
-                    "Could not create a FirefoxDriver, check " +
-                    "that the Firefox driver is installed");
-                return null;
-            }
+            return new Browser(
+                "Firefox",
+                () =>
+                {
+                    var firefoxOptions = new FirefoxOptions();
+                    firefoxOptions.AcceptInsecureCertificates = true;
+                    firefoxOptions.AddArgument("--headless");
+                    firefoxOptions.EnableDevToolsProtocol = true;
+                    try
+                    {
+                        return new FirefoxDriver(firefoxOptions);
+                    }
+                    catch (WebDriverException)
+                    {
+                        Assert.Inconclusive(
+                            "Could not create a FirefoxDriver, check " +
+                            "that the Firefox driver is installed");
+                        return null;
+                    }
+                },
+                (d) => ((FirefoxDriver)d).GetDevToolsSession());
         }
 
         /// <summary>
@@ -200,20 +209,46 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         /// might include adding PipelineOptions, or changing options ahead of 
         /// testing.
         /// </param>
-        public static WebHostInstance StartWebHost<T>(
+        /// <param name="stopSource">
+        /// Used when the web host is stopped and started to ensure it stops if
+        /// the test is canceled.
+        /// </param>
+        public static WebHostInstance StartLocalHost<T>(
             Action<IConfigurationBuilder> configurationBuilder,
-            CancellationTokenSource sourceToken) where T : class
+            CancellationToken stopToken) where T : class
         {
-            return new WebHostInstance(BuildWebHost<T>(
+            return new WebHostInstance(BuildLocalHost<T>(
                 new string[] { },
-                configurationBuilder), 
-                sourceToken);
+                configurationBuilder),
+                stopToken);
+        }
+
+        /// <summary>
+        /// Gets the request url from the enumerable of events. Only one URL 
+        /// should be found as the events must relate to a single request.
+        /// </summary>
+        /// <param name="events"></param>
+        /// <returns></returns>
+        public static Uri GetRequestUrl(
+            this IEnumerable<DevToolsEventReceivedEventArgs> events)
+        {
+            var value = events.Where(i =>
+                i.EventData.SelectToken("request.url") != null).Select(i =>
+                i.EventData.SelectToken("request.url")).Distinct().Single();
+            if (Uri.TryCreate(
+                value.Value<string>(), 
+                UriKind.Absolute, 
+                out var result))
+            {
+                return result;
+            }
+            return null;
         }
 
         /// <summary>
         /// Builds a web host ready to be run in a test with the configuration
         /// action used to modify the default configuration for the purposes
-        /// of the test.
+        /// of the test. A random free port is assigned to the web host.
         /// </summary>
         /// <typeparam name="T">
         /// Usually the startup class for the example used for the web host.
@@ -227,12 +262,24 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         /// testing.
         /// </param>
         /// <returns></returns>
-        private static IWebHost BuildWebHost<T>(
+        private static IWebHost BuildLocalHost<T>(
             string[] args,
             Action<IConfigurationBuilder> configurationBuilder) where T : class
         {
+            // Use a random free port for the HTTP endpoint.
+            var httpEndpoint = new Dictionary<string, string>
+            {
+                {
+                    "Kestrel:Endpoints:Http:Url",
+                    $"http://localhost:{TestHelpers.GetRandomUnusedPort()}"
+                }
+            };
+
             return Microsoft.AspNetCore.WebHost.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration(configurationBuilder)
+                .ConfigureAppConfiguration((options) =>
+                    // Set the HTTP endpoint
+                    options.AddInMemoryCollection(httpEndpoint))
                 .UseStartup<T>()
                 .Build();
         }

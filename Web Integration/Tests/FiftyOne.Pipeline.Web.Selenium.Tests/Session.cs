@@ -56,7 +56,8 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
         {
             // Start the web host to serve the 51degrees.core.js include used
             // in the test pages.
-            MinFlowElementsBase.StartWebHost(context.CancellationTokenSource);
+            MinFlowElementsBase.StartWebHost(
+                context.CancellationTokenSource.Token);
             
             // Start the web host that will contain the test page asset.
             var view = new Dictionary<string, string>()
@@ -75,15 +76,12 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
             _clientListener = TestHelpers.SimpleListener(
                 _pageUrls, 
                 testPage,
-                _webHost.StopSource.Token);
+                context.CancellationTokenSource.Token);
         }
 
         [ClassCleanup]
         public static void ClassCleanup()
         {
-            // Stop the web host and trigger the stop token.
-            _webHost.Stop();
-
             // Close the listener.
             _clientListener.Stop();
             while (_clientListener.IsListening)
@@ -92,6 +90,9 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
                 Thread.Sleep(1000);
             }
             _clientListener.Close();
+
+            // Stop the web host.
+            _webHost.Stop().Wait();
         }
 
         [TestMethod]
@@ -121,6 +122,8 @@ namespace FiftyOne.Pipeline.Web.Selenium.Tests
                 String.IsNullOrWhiteSpace(sessionId),
                 "Session id must not be empty string");
             Console.WriteLine($"Session Id: {sessionId}");
+
+            browser.Dispose();
         }
 
         private static void GotoPage(

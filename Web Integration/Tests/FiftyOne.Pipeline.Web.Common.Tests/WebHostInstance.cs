@@ -22,6 +22,7 @@
 
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,9 +31,9 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
     public class WebHostInstance
     {
         /// <summary>
-        /// Cancellation token used to stop the web host and listener.
+        /// Cancellation token used to stop the web host.
         /// </summary>
-        public readonly CancellationTokenSource StopSource;
+        public readonly CancellationToken StopToken;
 
         /// <summary>
         /// The web host running the JavaScript and Json endpoints.
@@ -40,14 +41,9 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         public IWebHost Host { get; private set; }
 
         /// <summary>
-        /// The task for the running web host.
-        /// </summary>
-        public Task Task { get; private set; }
-
-        /// <summary>
         /// The addresses that the web host is listening on.
         /// </summary>
-        public IServerAddressesFeature? ServerAddresses =>
+        public IServerAddressesFeature ServerAddresses =>
             Host.ServerFeatures.Get<IServerAddressesFeature>();
 
         /// <summary>
@@ -57,24 +53,19 @@ namespace FiftyOne.Pipeline.Web.Common.Tests
         /// <param name="stopSource"></param>
         public WebHostInstance(
             IWebHost host, 
-            CancellationTokenSource stopSource)
+            CancellationToken stopToken)
         {
             Host = host;
-            StopSource = stopSource;
-            Task = host.RunAsync(stopSource.Token);
+            StopToken = stopToken;
+            host.StartAsync(stopToken).Wait(stopToken);
         }
 
         /// <summary>
         /// Stops the web host and waits for it to shut down.
         /// </summary>
-        public void Stop()
+        public async Task Stop()
         {
-            // Stop the web host and any other task that uses the stop
-            // source.
-            StopSource.Cancel();
-
-            // Wait for the web host task to stop.
-            Task.Wait();
+            await Host.StopAsync(StopToken);
         }
     }
 }
