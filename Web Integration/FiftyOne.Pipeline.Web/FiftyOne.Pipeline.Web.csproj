@@ -28,7 +28,7 @@
     <!-- If these package references are updated or modified then don't forget to also 
 	     update the dependencies in the nuspec file in the parent directory. -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="6.0.26" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="6.0.27" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation">
       <Version>3.1.32</Version>
     </PackageReference>
@@ -37,9 +37,9 @@
     <!-- If these package references are updated or modified then don't forget to also 
 	     update the dependencies in the nuspec file in the parent directory. -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="6.0.26" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="6.0.27" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation">
-      <Version>6.0.26</Version>
+      <Version>6.0.27</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +47,8 @@
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Engines.FiftyOne\FiftyOne.Pipeline.Engines.FiftyOne.csproj" />
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Web.Shared\FiftyOne.Pipeline.Web.Shared.csproj" />
   </ItemGroup>
+  <ItemGroup />
+  <ItemGroup />
   <ItemGroup />
   <ItemGroup />
   <ItemGroup />
