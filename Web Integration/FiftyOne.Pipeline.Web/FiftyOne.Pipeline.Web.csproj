@@ -9,6 +9,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
     <PackageProjectUrl>https://51degrees.com</PackageProjectUrl>
+    <Description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains components that integrate the 51Degrees Pipeline API into ASP.NET and ASP.NET Core web projects.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -41,6 +43,12 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation">
       <Version>6.0.27</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\FiftyOne.Pipeline.Elements\FiftyOne.Pipeline.JavaScriptBuilderElement\FiftyOne.Pipeline.JavaScriptBuilder.csproj" />

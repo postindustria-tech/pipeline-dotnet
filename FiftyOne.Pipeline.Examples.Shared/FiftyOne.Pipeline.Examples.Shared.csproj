@@ -8,10 +8,6 @@
 	<!-- NuGet package properties -->
 	<PackageId>FiftyOne.Pipeline.Examples.Shared</PackageId>
 	<Title>Helper classes to assist with writing examples for the 51Degrees Pipeline API</Title>
-	<PackageDescription>
-		The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services.
-		The package contains helper classes to make writing examples easier.
-	</PackageDescription>
 	<Authors>51Degrees Engineering</Authors>
 	<PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
 	<PackageIconUrl>https://51degrees.com/portals/0/Logos/Square%20Logo.png?width=64</PackageIconUrl>
@@ -19,7 +15,16 @@
 	<PackageTags>51degrees,pipeline,data service</PackageTags>
 	<RepositoryUrl>https://github.com/51Degrees/pipeline-dotnet</RepositoryUrl>
 	<PackageProjectUrl>https://51degrees.com</PackageProjectUrl>
+	<Description>The 51Degrees Pipeline API provides a fast, modern architecture for consuming real-time digital data services. This package contains helper classes to make writing examples easier.</Description>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FiftyOne.Pipeline.Core\FiftyOne.Pipeline.Core.csproj" />
