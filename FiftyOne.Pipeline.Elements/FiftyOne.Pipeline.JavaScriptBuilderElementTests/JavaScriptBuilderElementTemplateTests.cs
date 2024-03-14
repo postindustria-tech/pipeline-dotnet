@@ -33,10 +33,15 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             </html>
             """
             );
-
             webApp.MapPost("/51dpipeline/json", () =>
                 "{}"
             );
+
+            webApp.Use((ctx, next) =>
+            {
+                ctx.Response.Headers["Access-Control-Allow-Origin"] = "*";
+                return next();
+            });
 
             webApp.Urls.Add(ClientServerUrl);
 
@@ -59,6 +64,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
 
         [TestMethod]
+        [Timeout(20000)]
         public void JavaScriptBuilderTemplate_VerifyInterception()
         {
             bool testDone = false;
@@ -67,7 +73,13 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                 testDone = true;
             };
             IJavaScriptExecutor js = Driver;
-            var q = js.ExecuteScript(BuildXHRJS($"{ClientServerUrl}/51dpipeline/json"));
+            var q = js.ExecuteScript(BuildXHRJS($"{ClientServerUrl}51dpipeline/json"));
+            while (!testDone)
+            {
+                DumpNewLogs();
+                Thread.Sleep(1000);
+            }
+            DumpNewLogs();
             Assert.IsTrue(testDone);
         }
 
@@ -133,17 +145,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
             //while (!completed)
             //{
-            //    bool hrPrinted = false;
-            //    var entries = Driver.Manage().Logs.GetLog(LogType.Browser);
-            //    foreach (var entry in entries)
-            //    {
-            //        if (!hrPrinted)
-            //        {
-            //            Console.WriteLine("----- ----- -----");
-            //            hrPrinted = true;
-            //        }
-            //        Console.WriteLine(entry.ToString());
-            //    }
+            //    DumpNewLogs();
             //    Thread.Sleep(1000);
             //}
 
@@ -151,6 +153,21 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             //Assert.IsNotNull(controlResult);
             //Assert.IsInstanceOfType<bool>(controlResult);
             //Assert.IsTrue((bool)controlResult);
+        }
+
+        private void DumpNewLogs()
+        {
+            bool hrPrinted = false;
+            var entries = Driver.Manage().Logs.GetLog(LogType.Browser);
+            foreach (var entry in entries)
+            {
+                if (!hrPrinted)
+                {
+                    Console.WriteLine("----- ----- -----");
+                    hrPrinted = true;
+                }
+                Console.WriteLine(entry.ToString());
+            }
         }
 
         [TestCleanup]
