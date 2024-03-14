@@ -43,6 +43,7 @@ using FiftyOne.Pipeline.Engines.TestHelpers;
 using System.Threading;
 using System.Net;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace FiftyOne.Pipeline.JavaScript.Tests
 {
@@ -489,6 +490,20 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             js.ExecuteScript($"{result.JavaScript}; window.testObj = testObj;");
         }
 
+        private static string BuildXHRJS(string dstUrl, string method = "POST", string postData = "dummy", bool acceptJson = false)
+        {
+            StringBuilder s = new();
+            s.Append("xhr = new XMLHttpRequest();");
+            s.Append($"xhr.open('{method}', '{dstUrl}', true);");
+            if (acceptJson)
+            {
+                s.Append("xmlhttp.setRequestHeader(\"Accept\", \"application/json;charset=UTF-8\");");
+            }
+            s.Append($"xhr.send('{postData}');");
+            return s.ToString();
+        }
+            
+
         [TestMethod]
         public void JavaScriptBuilder_VerifyInterception()
         {
@@ -498,8 +513,90 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                 testDone = true;
             };
             IJavaScriptExecutor js = _driver;
-            var q = js.ExecuteScript($"xhr = new XMLHttpRequest(); xhr.open('POST', '{ClientServerUrl}/51dpipeline/json', true); xhr.send('crabby');");
+            var q = js.ExecuteScript(BuildXHRJS($"{ClientServerUrl}/51dpipeline/json"));
             Assert.IsTrue(testDone);
+        }
+
+        [TestMethod]
+        //[Timeout(20000)]
+        public void JavaScriptBuilder_ValidateSetCookieBlockCall()
+        {
+            string propName = "javascriptalpha";
+            string propCode = "// begin\ndocument.cookie = \"51D_alpha=\" + 42;\nalpha_set = true;\n// end\n";
+            string testCode = "alpha_set";
+
+            JObject jsonData = new() {
+                { "device", new JObject { { propName, propCode } } },
+                { "javascriptProperties", new JArray { $"device.{propName}" } },
+            };
+
+            int firstColon = ClientServerUrl.IndexOf(":");
+            _javaScriptBuilderElement =
+                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                .SetMinify(false)
+                .SetProtocol(ClientServerUrl.Substring(0, firstColon))
+                .SetHost(ClientServerUrl.Substring(firstColon + 3))
+                .Build();
+            var flowData = new Mock<IFlowData>();
+            Configure(flowData, jsonData);
+
+            IJavaScriptBuilderElementData result = null;
+            flowData.Setup(d => d.GetOrAdd(
+                It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
+                It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
+                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
+                {
+                    result = f(flowData.Object.Pipeline);
+                    return result;
+                });
+
+            _javaScriptBuilderElement.Process(flowData.Object);
+
+            // JS aquired, now test
+
+            string postData = null;
+            bool completed = false;
+            _onRequestSent = e =>
+            {
+                if (e.RequestUrl.EndsWith("json"))
+                {
+                    postData = e.RequestPostData;
+                }
+                if (e.RequestUrl.EndsWith("completed"))
+                {
+                    completed = true;
+                }
+            };
+            string additionalCode
+                = "; fod.complete(function (data) { "
+                + BuildXHRJS($"{ClientServerUrl}/51dpipeline/completed")
+                + " });";
+
+            IJavaScriptExecutor js = _driver;
+            js.ExecuteScript(result.JavaScript + additionalCode);
+
+            Assert.IsNotNull(postData);
+
+            while(!completed)
+            {
+                bool hrPrinted = false;
+                var entries = _driver.Manage().Logs.GetLog(LogType.Browser);
+                foreach (var entry in entries)
+                {
+                    if (!hrPrinted)
+                    {
+                        Console.WriteLine("----- ----- -----");
+                        hrPrinted = true;
+                    }
+                    Console.WriteLine(entry.ToString());
+                }
+                Thread.Sleep(1000);
+            }
+
+            var controlResult = js.ExecuteScript(testCode);
+            Assert.IsNotNull(controlResult);
+            Assert.IsInstanceOfType<bool>(controlResult);
+            Assert.IsTrue((bool)controlResult);
         }
 
 
