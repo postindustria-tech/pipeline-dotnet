@@ -97,15 +97,20 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             Assert.IsTrue(testDone);
         }
 
-        [TestMethod]
+        [DataTestMethod]
         [Timeout(20000)]
-        public void JavaScriptBuilderTemplate_ValidateSetCookieBlockCall()
+        [DataRow("javascriptalpha", "", "\"51D_alpha=\" + 42", "", "51D_alpha=42")] // plain plus
+        [DataRow("javascriptbeta", "if(true){", "\"51D_beta=\" + 29", "}", "51D_beta=29")] // plus in block
+        [DataRow("gammajavascript", "", "\"51D_gamma=\" + \"zoomies\"", ", a=7", "51D_gamma=zoomies")] // plus in comma
+        [DataRow("kappajavascript", "let q = x => x(3); q(e => ", "\"51D_kappa=\" + e", ")", "51D_kappa=3")] // plus in lambda
+        [DataRow("omegajavascript", "let q = x => x(7); q(e => ", "`51D_omega=${e}`", ")", "51D_omega=7")] // template in lambda
+        public void JavaScriptBuilderTemplate_ValidateSetCookieBlockCall(
+            string propName,
+            string prefixJunk,
+            string propSetExpr,
+            string suffixJunk,
+            string expectedData)
         {
-            string propName = "javascriptalpha";
-            string prefixJunk = "";
-            string propSetExpr = "\"51D_alpha=\" + 42";
-            string suffixJunk = "";
-            string expectedData = "51D_alpha=42";
 
             string propSetFlag = $"{propName}_snippet_set_block_called_51d";
             string propCode =
