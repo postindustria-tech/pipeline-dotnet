@@ -102,14 +102,21 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilderTemplate_ValidateSetCookieBlockCall()
         {
             string propName = "javascriptalpha";
+            string prefixJunk = "";
+            string propSetExpr = "\"51D_alpha=\" + 42";
+            string suffixJunk = "";
+            string expectedData = "51D_alpha=42";
+
+            string propSetFlag = $"{propName}_snippet_set_block_called_51d";
             string propCode =
-                """
+                $"""
                 console.log("starting snippet");
-                document.cookie = "51D_alpha=" + 42;
-                window.alpha_set = true;
+                {prefixJunk}document.cookie = {propSetExpr}{suffixJunk}
+                ;
+                window.{propSetFlag} = true;
                 console.log("leaving snippet");
                 """;
-            string testCode = "return window.alpha_set;";
+            string testCode = $"return window.{propSetFlag};";
 
             jsonData = new() {
                 { "device", new JObject { { propName, propCode } } },
@@ -168,6 +175,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                 DumpNewLogs();
                 Thread.Sleep(1000);
             }
+            Assert.IsTrue(postData.Contains(expectedData), $"[{postData}] does not contain [{expectedData}]");
             while (!completed)
             {
                 DumpNewLogs();
