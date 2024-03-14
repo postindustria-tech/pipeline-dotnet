@@ -6,7 +6,6 @@ using FiftyOne.Pipeline.Core.Data;
 using Moq;
 using Newtonsoft.Json.Linq;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
-using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.Data;
 
 namespace FiftyOne.Pipeline.JavaScript.Tests
@@ -17,6 +16,8 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
         public ChromeDriver Driver { get; private set; }
         public INetwork Interceptor => Driver?.Manage().Network;
+
+        public ILoggerFactory LoggerFactory { get; private set; }
 
 
         private Mock<IJsonBuilderElement> _mockjsonBuilderElement;
@@ -30,6 +31,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             ClientServerUrl = $"http://localhost:{TestHttpListener.GetRandomUnusedPort()}/";
 
             var chromeOptions = new ChromeOptions();
+            chromeOptions.SetLoggingPreference(LogType.Browser, OpenQA.Selenium.LogLevel.Info);
             chromeOptions.AcceptInsecureCertificates = true;
             // run in headless mode.
             chromeOptions.AddArgument("--headless");
@@ -56,6 +58,8 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
             _elementDataMock = new Mock<IElementData>();
             _elementDataMock.Setup(ed => ed.AsDictionary()).Returns(new Dictionary<string, object>() { { "property", "thisIsAValue" } });
+
+            LoggerFactory = new LoggerFactory();
         }
 
         private void OnNetworkRequestSent(object sender, NetworkRequestSentEventArgs e)

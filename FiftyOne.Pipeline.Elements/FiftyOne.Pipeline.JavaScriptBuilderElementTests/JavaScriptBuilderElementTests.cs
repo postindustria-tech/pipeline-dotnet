@@ -27,7 +27,6 @@ using Moq;
 using Newtonsoft.Json.Linq;
 using FiftyOne.Pipeline.JsonBuilder.Data;
 using FiftyOne.Pipeline.JavaScriptBuilder.Data;
-using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
@@ -46,7 +45,6 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
     [TestClass]
     public class JavaScriptBuilderElementTests: JavaScriptBuilderElementTestsBase
     {
-        private ILoggerFactory _loggerFactory;
         private JavaScriptBuilderElement _javaScriptBuilderElement;
 
         private HttpClient httpClient;
@@ -73,8 +71,6 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
             // Navigate to the client site.
             Driver.Navigate().GoToUrl(ClientServerUrl);
-
-            _loggerFactory = new LoggerFactory();
         }
 
         /// <summary>
@@ -99,7 +95,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilderElement_JavaScript(bool minify, string key, string property, object value)
         {
             _javaScriptBuilderElement =
-                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                new JavaScriptBuilderElementBuilder(LoggerFactory)
                 .SetMinify(minify)
                 .Build();
 
@@ -140,7 +136,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilder_VerifySession()
         {
             _javaScriptBuilderElement =
-                new JavaScriptBuilderElementBuilder(_loggerFactory).SetMinify(false).Build();
+                new JavaScriptBuilderElementBuilder(LoggerFactory).SetMinify(false).Build();
             var flowData = new Mock<IFlowData>();
             Configure(flowData);
 
@@ -169,7 +165,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilder_VerifyFallbackResponse()
         {
             _javaScriptBuilderElement =
-                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                new JavaScriptBuilderElementBuilder(LoggerFactory)
                 .SetEndpoint("/json")
                 .Build();
 
@@ -177,7 +173,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
             flowData.Setup(d => d.Get<IJsonBuilderElementData>())
                 .Throws<KeyNotFoundException>();
-            var evidence = new Evidence(_loggerFactory.CreateLogger<Evidence>()); 
+            var evidence = new Evidence(LoggerFactory.CreateLogger<Evidence>()); 
             flowData.Setup(d => d.GetEvidence())
                 .Returns(evidence);
 
@@ -199,7 +195,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilder_VerifyUrl()
         {
             _javaScriptBuilderElement =
-                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                new JavaScriptBuilderElementBuilder(LoggerFactory)
                 .SetEndpoint("/json")
                 .Build();
             
@@ -234,7 +230,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilder_VerifyParameters(string userAgent, string lat, string lon)
         {
             _javaScriptBuilderElement =
-                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                new JavaScriptBuilderElementBuilder(LoggerFactory)
                 .SetEndpoint("/json")
                 .Build();
 
@@ -286,7 +282,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilderElement_Promise(ExceptionType exceptionThrownByPromiseProperty, bool exceptionExpected)
         {
             _javaScriptBuilderElement =
-                new JavaScriptBuilderElementBuilder(_loggerFactory).Build();
+                new JavaScriptBuilderElementBuilder(LoggerFactory).Build();
 
             var flowData = new Mock<IFlowData>();
             Configure(flowData);
@@ -368,7 +364,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilderElement_DelayExecution(bool minify)
         {
             _javaScriptBuilderElement = 
-                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                new JavaScriptBuilderElementBuilder(LoggerFactory)
                 .SetMinify(minify)
                 .Build();
             
@@ -419,7 +415,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         public void JavaScriptBuilder_VerifyObjName()
         {
             _javaScriptBuilderElement =
-                new JavaScriptBuilderElementBuilder(_loggerFactory)
+                new JavaScriptBuilderElementBuilder(LoggerFactory)
                 .SetEndpoint("/json")
                 .Build();
 
