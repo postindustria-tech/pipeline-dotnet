@@ -42,6 +42,7 @@ using System.Net.Http;
 using FiftyOne.Pipeline.Engines.TestHelpers;
 using System.Threading;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.JavaScript.Tests
 {
@@ -59,16 +60,19 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         private IList<IElementPropertyMetaData> _elementPropertyMetaDatas;
 
         private ChromeDriver _driver;
+        private INetwork _interceptor => _driver?.Manage().Network;
         private HttpClient httpClient;
         private string ClientServerUrl;
         private CancellationTokenSource clientServerTokenSource;
         private HttpListener clientServer;
 
+        private Action<NetworkRequestSentEventArgs> _onRequestSent = null;
+
         /// <summary>
         /// Initialise the test.
         /// </summary>
         [TestInitialize]
-        public void Init()
+        public async Task Init()
         {
             httpClient = new HttpClient();
 
@@ -95,6 +99,9 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                     "that the Chromium driver is installed");
             }
 
+            _interceptor.NetworkRequestSent += OnNetworkRequestSent;
+            await _interceptor.StartMonitoring();
+
             // Navigate to the client site.
             _driver.Navigate().GoToUrl(ClientServerUrl);
 
@@ -110,6 +117,9 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             _elementDataMock = new Mock<IElementData>();
             _elementDataMock.Setup(ed => ed.AsDictionary()).Returns(new Dictionary<string, object>() { { "property", "thisIsAValue" } });
         }
+
+        private void OnNetworkRequestSent(object sender, NetworkRequestSentEventArgs e)
+            => _onRequestSent?.Invoke(e);
 
         /// <summary>
         /// This method tests the accessors functionality of the JavaScript 
@@ -479,6 +489,19 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             js.ExecuteScript($"{result.JavaScript}; window.testObj = testObj;");
         }
 
+        [TestMethod]
+        public void JavaScriptBuilder_VerifyInterception()
+        {
+            bool testDone = false;
+            _onRequestSent = e => {
+                var p = e.RequestPostData;
+                testDone = true;
+            };
+            IJavaScriptExecutor js = _driver;
+            var q = js.ExecuteScript($"xhr = new XMLHttpRequest(); xhr.open('POST', '{ClientServerUrl}/51dpipeline/json', true); xhr.send('crabby');");
+            Assert.IsTrue(testDone);
+        }
+
 
         /// <summary>
         /// Test the JavaScript include by accessing the given property.
@@ -599,10 +622,11 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         /// Cleanup the RemoteWebDriver and http listener.
         /// </summary>
         [TestCleanup]
-        public void Cleanup()
+        public async Task Cleanup()
         {
             if (_driver != null)
             {
+                await _interceptor.StopMonitoring();
                 _driver.Quit();
             }
 
@@ -615,6 +639,8 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             }
             // Close the listener
             clientServer.Close();
+            // Ignore request monitoring events
+            _onRequestSent = null;
         }
     }
 }
