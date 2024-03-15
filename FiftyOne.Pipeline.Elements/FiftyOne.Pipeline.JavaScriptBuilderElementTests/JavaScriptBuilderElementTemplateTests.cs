@@ -278,7 +278,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             int cookieCount = Driver.Manage().Cookies.AllCookies.Count;
             if (cookieCount > 0)
             {
-                Assert.Inconclusive($"Detected cookies after script completion: {cookieCount}");
+                Assert.Fail($"Detected cookies after script completion: {cookieCount}");
             }
         }
 
