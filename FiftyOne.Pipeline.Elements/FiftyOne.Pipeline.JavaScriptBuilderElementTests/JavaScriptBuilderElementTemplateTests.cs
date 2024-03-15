@@ -50,6 +50,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             webApp.Use((ctx, next) =>
             {
                 ctx.Response.Headers["Access-Control-Allow-Origin"] = "*";
+                ctx.Response.Headers["Cache-Control"] = "no-store";
                 return next();
             });
 
@@ -111,46 +112,63 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             string suffixJunk,
             string expectedData)
         {
+            // ----- ----- PHASE 0. Preparation ----- -----
 
-            string propSetFlag = $"{propName}_snippet_set_block_called_51d";
-            string propCode =
-                $"""
-                console.log("starting snippet");
+            // Build code fragments
+
+            Func<string, string, string, string, string, (JObject json, string expectedData, string testCode)> BuildNewDataObject = (propName, prefixJunk, propSetExpr, suffixJunk, expectedData)
+                =>
+            {
+                string propSetFlag = $"{propName}_snippet_set_block_called_51d";
+                string propCode =
+                    $"""
+                console.log("starting snippet ({propName})");
                 {prefixJunk}document.cookie = {propSetExpr}{suffixJunk}
                 ;
                 window.{propSetFlag} = true;
-                console.log("leaving snippet");
+                console.log("leaving snippet ({propName})");
                 """;
-            string testCode = $"return window.{propSetFlag};";
+                string testCode = $"return window.{propSetFlag};";
 
-            jsonData = new() {
-                { "device", new JObject { { propName, propCode } } },
-                { "javascriptProperties", new JArray { $"device.{propName}" } },
+                return (
+                    new JObject {
+                        { "device", new JObject { { propName, propCode } } },
+                        { "javascriptProperties", new JArray { $"device.{propName}" } },
+                    },
+                    expectedData,
+                    testCode
+                );
             };
 
-            int firstColon = ClientServerUrl.IndexOf(":");
-            var _javaScriptBuilderElement =
-                new JavaScriptBuilderElementBuilder(LoggerFactory)
-                .SetMinify(false)
-                .SetProtocol(ClientServerUrl.Substring(0, firstColon))
-                .SetHost(ClientServerUrl.Substring(firstColon + 3))
-                .Build();
-            var flowData = new Mock<IFlowData>();
-            Configure(flowData, jsonData);
+            // Reusable blocks
 
-            IJavaScriptBuilderElementData result = null;
-            flowData.Setup(d => d.GetOrAdd(
-                It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
-                It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
-                .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
-                {
-                    result = f(flowData.Object.Pipeline);
-                    return result;
-                });
+            Func<JObject, string> BuildScript = (jsonData) =>
+            {
+                int firstColon = ClientServerUrl.IndexOf(":");
+                var javaScriptBuilderElement =
+                    new JavaScriptBuilderElementBuilder(LoggerFactory)
+                    .SetMinify(false)
+                    .SetProtocol(ClientServerUrl.Substring(0, firstColon))
+                    .SetHost(ClientServerUrl.Substring(firstColon + 3))
+                    .Build();
+                var flowData = new Mock<IFlowData>();
+                Configure(flowData, jsonData);
 
-            _javaScriptBuilderElement.Process(flowData.Object);
+                IJavaScriptBuilderElementData result = null;
+                flowData.Setup(d => d.GetOrAdd(
+                    It.IsAny<ITypedKey<IJavaScriptBuilderElementData>>(),
+                    It.IsAny<Func<IPipeline, IJavaScriptBuilderElementData>>()))
+                    .Returns<ITypedKey<IJavaScriptBuilderElementData>, Func<IPipeline, IJavaScriptBuilderElementData>>((k, f) =>
+                    {
+                        result = f(flowData.Object.Pipeline);
+                        return result;
+                    });
 
-            // JS aquired, now test
+                javaScriptBuilderElement.Process(flowData.Object);
+                return result.JavaScript;
+            };
+
+            // Completion testers
 
             string postData = null;
             bool completed = false;
@@ -159,47 +177,100 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                 if (e.RequestUrl.EndsWith("json"))
                 {
                     postData = e.RequestPostData;
+                    Console.WriteLine($"[POST DATA] > {postData}");
                 }
                 if (e.RequestUrl.EndsWith("completed"))
                 {
                     completed = true;
                 }
             };
+            Action<string> WaitAndValidatePostData = (expectedData) =>
+            {
+                while (postData == null)
+                {
+                    DumpNewLogs();
+                    Thread.Sleep(1000);
+                }
+                Assert.IsTrue(postData.Contains(expectedData), $"[{postData}] does not contain [{expectedData}]");
+            };
+            Action WaitAndValidateScriptCompletion = () => {
+                while (!completed)
+                {
+                    DumpNewLogs();
+                    Thread.Sleep(1000);
+                }
+            };
+            IJavaScriptExecutor js = Driver;
+            Action<string> WaitAndValidateSnippetCalled = (testCode) =>
+            {
+                while (true)
+                {
+                    var objResult = js.ExecuteScript(testCode);
+                    if (objResult is bool newResult)
+                    {
+                        Assert.IsTrue(newResult);
+                        break;
+                    }
+                    DumpNewLogs();
+                    Thread.Sleep(1000);
+                };
+            };
+
             string additionalCode
                 = "; window.onload = (e) => { fod.complete(function (data) { "
                 + BuildXHRJS($"{ClientServerUrl}51dpipeline/completed", acceptJson: true)
                 + " }); };";
 
-            fullJS = result.JavaScript + additionalCode;
+            // ----- ----- PHASE 1. Run script to set values ----- -----
+
+            Console.WriteLine(
+                """
+                ===== ===== ===== ===== =====
+                           PHASE 1
+                
+                """);
+
+            var mainData = BuildNewDataObject(propName, prefixJunk, propSetExpr, suffixJunk, expectedData);
+            jsonData = mainData.json;
+            fullJS = BuildScript(jsonData) + additionalCode;
+
             // Reload page to trigger script execution
             Driver.Manage().Cookies.DeleteAllCookies();
             Driver.Navigate().GoToUrl(ClientServerUrl);
 
-            while (postData == null)
-            {
-                DumpNewLogs();
-                Thread.Sleep(1000);
-            }
-            Assert.IsTrue(postData.Contains(expectedData), $"[{postData}] does not contain [{expectedData}]");
-            while (!completed)
-            {
-                DumpNewLogs();
-                Thread.Sleep(1000);
-            }
+            WaitAndValidatePostData(expectedData);
+            WaitAndValidateScriptCompletion();
+            WaitAndValidateSnippetCalled(mainData.testCode);
 
-            IJavaScriptExecutor js = Driver;
-            while (true)
-            {
-                var objResult = js.ExecuteScript(testCode);
-                if (objResult is bool newResult)
-                {
-                    Assert.IsTrue(newResult);
-                    break;
-                }
-                DumpNewLogs();
-                Thread.Sleep(1000);
-            };
+            // ----- ----- PHASE 2. Replace snippet code, check post data still contains saved value ----- -----
 
+            Console.WriteLine(
+                """
+                ===== ===== ===== ===== =====
+                           PHASE 2
+                
+                """);
+
+            var secondaryData = BuildNewDataObject("prop2javascript", "", "\"51D_prop2=\"+769", "", "51D_prop2=769");
+            jsonData = secondaryData.json;
+            postData = null;
+            completed = false;
+
+            string lastFullJS = fullJS;
+            fullJS = BuildScript(jsonData) + additionalCode;
+            Assert.AreNotEqual(lastFullJS, fullJS);
+
+            // Reload page to trigger script execution
+            Driver.Navigate().GoToUrl(ClientServerUrl);
+
+            WaitAndValidatePostData(secondaryData.expectedData);
+            WaitAndValidatePostData(mainData.expectedData);
+            WaitAndValidateScriptCompletion();
+            WaitAndValidateSnippetCalled(secondaryData.testCode);
+            Assert.IsNull(js.ExecuteScript(mainData.testCode));
+
+            // Check for no cookies
+            // TODO: Make more strict after template PR merge
             int cookieCount = Driver.Manage().Cookies.AllCookies.Count;
             if (cookieCount > 0)
             {
