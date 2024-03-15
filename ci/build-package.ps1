@@ -15,7 +15,12 @@ $Solutions = @("FiftyOne.CloudRequestEngine.sln", "FiftyOne.Pipeline.Elements.sl
 
 foreach($Solution in $Solutions){
 
-    ./dotnet/build-package-nuget.ps1 -RepoName $RepoName -Configuration "Release" -Version $Version -SolutionName $Solution -CodeSigningCert $Keys['CodeSigningCert'] -CodeSigningCertPassword $Keys['CodeSigningCertPassword'] -SearchPattern "^Project\(.*csproj"
+    ./dotnet/build-package-nuget.ps1 -RepoName $RepoName -Configuration "Release" -Version $Version -SolutionName $Solution -SearchPattern "^Project\(.*csproj" `
+        -CodeSigningKeyVaultUrl $Keys.CodeSigningKeyVaultUrl `
+        -CodeSigningKeyVaultClientId $Keys.CodeSigningKeyVaultClientId `
+        -CodeSigningKeyVaultTenantId $Keys.CodeSigningKeyVaultTenantId `
+        -CodeSigningKeyVaultClientSecret $Keys.CodeSigningKeyVaultClientSecret `
+        -CodeSigningKeyVaultCertificateName $Keys.CodeSigningKeyVaultCertificateName
 }
 
 # Now build the web package using the NuSpec file, as this is handled differently.
@@ -27,6 +32,11 @@ $WebSolutionPath = [IO.Path]::Combine($pwd, $RepoName, "FiftyOne.Pipeline.Web.sl
 ./environments/setup-msbuild.ps1
 ./dotnet/build-project-core.ps1 -RepoName $RepoName -ProjectDir $CorePath -Name $Name -Configuration "Release"
 ./dotnet/build-project-framework.ps1 -RepoName $RepoName -ProjectDir $WebSolutionPath -Name $Name -Configuration "Release" -Arch "Any CPU"
-./dotnet/build-package-nuspec.ps1 -RepoName $RepoName -Configuration "Release" -Version $Version -NuspecPath  $NuspecPath -CodeSigningCert $Keys['CodeSigningCert'] -CodeSigningCertPassword $Keys['CodeSigningCertPassword']
+./dotnet/build-package-nuspec.ps1 -RepoName $RepoName -Configuration "Release" -Version $Version -NuspecPath  $NuspecPath `
+    -CodeSigningKeyVaultUrl $Keys.CodeSigningKeyVaultUrl `
+    -CodeSigningKeyVaultClientId $Keys.CodeSigningKeyVaultClientId `
+    -CodeSigningKeyVaultTenantId $Keys.CodeSigningKeyVaultTenantId `
+    -CodeSigningKeyVaultClientSecret $Keys.CodeSigningKeyVaultClientSecret `
+    -CodeSigningKeyVaultCertificateName $Keys.CodeSigningKeyVaultCertificateName
 
 exit $LASTEXITCODE
