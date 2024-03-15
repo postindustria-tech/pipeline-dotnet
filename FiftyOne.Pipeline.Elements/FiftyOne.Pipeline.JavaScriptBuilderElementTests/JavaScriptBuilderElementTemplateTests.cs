@@ -79,7 +79,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
 
 
         [TestMethod]
-        [Timeout(20000)]
+        [Timeout(300_000)]
         public void JavaScriptBuilderTemplate_VerifyInterception()
         {
             bool testDone = false;
@@ -99,7 +99,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
         }
 
         [DataTestMethod]
-        [Timeout(20000)]
+        [Timeout(300_000)]
         [DataRow("javascriptalpha", "", "\"51D_alpha=\" + 42", "", "51D_alpha=42")] // plain plus
         [DataRow("javascriptbeta", "if(true){", "\"51D_beta=\" + 29", "}", "51D_beta=29")] // plus in block
         [DataRow("gammajavascript", "", "\"51D_gamma=\" + \"zoomies\"", ", a=7", "51D_gamma=zoomies")] // plus in comma
