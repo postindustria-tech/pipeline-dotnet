@@ -111,9 +111,13 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             bool[] useCookies = { true, false };
             return snippetFragments.SelectMany(snippet => useCookies.Select(use =>
             {
-                var args = new List<object>(snippet);
-                args.Append(use);
-                return args.ToArray();
+                var args = new object[snippet.Length + 1];
+                for(int i = 0; i < snippet.Length; ++i)
+                {
+                    args[i] = snippet[i];
+                }
+                args[snippet.Length] = use;
+                return args;
             }));
         }
 
@@ -278,14 +282,20 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             Assert.AreNotEqual(lastFullJS, fullJS);
 
             string extraCookie = "51D_saved_ext=829";
-            Driver.Manage().Cookies.AddCookie(new Cookie(extraCookie.Split("=")[0], extraCookie.Split("=")[1]));
+            if (enableCookies)
+            {
+                Driver.Manage().Cookies.AddCookie(new Cookie(extraCookie.Split("=")[0], extraCookie.Split("=")[1]));
+            }
 
             // Reload page to trigger script execution
             Driver.Navigate().GoToUrl(ClientServerUrl);
 
             WaitAndValidatePostData(secondaryData.expectedData);
             WaitAndValidatePostData(mainData.expectedData);
-            WaitAndValidatePostData(extraCookie);
+            if (enableCookies)
+            {
+                WaitAndValidatePostData(extraCookie);
+            }
             WaitAndValidateScriptCompletion();
             WaitAndValidateSnippetCalled(secondaryData.testCode);
             Assert.IsNull(js.ExecuteScript(mainData.testCode));
