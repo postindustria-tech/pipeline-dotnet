@@ -98,19 +98,35 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             Assert.IsTrue(testDone);
         }
 
-        [DataTestMethod]
+        public static IEnumerable<object[]> GetValidateSetCookieBlockData()
+        {
+            string[][] snippetFragments =
+            {
+                ["javascriptalpha", "", "\"51D_alpha=\" + 42", "", "51D_alpha=42"], // plain plus
+                ["javascriptbeta", "if(true){", "\"51D_beta=\" + 29", "}", "51D_beta=29"], // plus in block
+                ["gammajavascript", "", "\"51D_gamma=\" + \"zoomies\"", ", a=7", "51D_gamma=zoomies"], // plus in comma
+                ["kappajavascript", "let q = x => x(3); q(e => ", "\"51D_kappa=\" + e", ")", "51D_kappa=3"], // plus in lambda
+                ["omegajavascript", "let q = x => x(7); q(e => ", "`51D_omega=${e}`", ")", "51D_omega=7"], // template in lambda
+            };
+            bool[] useCookies = { true, false };
+            return snippetFragments.SelectMany(snippet => useCookies.Select(use =>
+            {
+                var args = new List<object>(snippet);
+                args.Append(use);
+                return args.ToArray();
+            }));
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(GetValidateSetCookieBlockData), DynamicDataSourceType.Method)]
         [Timeout(300_000)]
-        [DataRow("javascriptalpha", "", "\"51D_alpha=\" + 42", "", "51D_alpha=42")] // plain plus
-        [DataRow("javascriptbeta", "if(true){", "\"51D_beta=\" + 29", "}", "51D_beta=29")] // plus in block
-        [DataRow("gammajavascript", "", "\"51D_gamma=\" + \"zoomies\"", ", a=7", "51D_gamma=zoomies")] // plus in comma
-        [DataRow("kappajavascript", "let q = x => x(3); q(e => ", "\"51D_kappa=\" + e", ")", "51D_kappa=3")] // plus in lambda
-        [DataRow("omegajavascript", "let q = x => x(7); q(e => ", "`51D_omega=${e}`", ")", "51D_omega=7")] // template in lambda
         public void JavaScriptBuilderTemplate_ValidateSetCookieBlockCall(
             string propName,
             string prefixJunk,
             string propSetExpr,
             string suffixJunk,
-            string expectedData)
+            string expectedData,
+            bool enableCookies)
         {
             // ----- ----- PHASE 0. Preparation ----- -----
 
@@ -150,6 +166,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
                     .SetMinify(false)
                     .SetProtocol(ClientServerUrl.Substring(0, firstColon))
                     .SetHost(ClientServerUrl.Substring(firstColon + 3))
+                    .SetEnableCookies(enableCookies)
                     .Build();
                 var flowData = new Mock<IFlowData>();
                 Configure(flowData, jsonData);
@@ -276,7 +293,7 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             // Check for no cookies
             // TODO: Make more strict after template PR merge
             int cookieCount = Driver.Manage().Cookies.AllCookies.Count;
-            if (cookieCount > 0)
+            if (!enableCookies && cookieCount > 0)
             {
                 Assert.Inconclusive($"Detected cookies after script completion: {cookieCount}");
             }
