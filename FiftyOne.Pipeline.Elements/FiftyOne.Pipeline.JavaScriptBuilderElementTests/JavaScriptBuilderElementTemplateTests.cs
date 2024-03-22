@@ -111,9 +111,13 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             bool[] useCookies = { true, false };
             return snippetFragments.SelectMany(snippet => useCookies.Select(use =>
             {
-                var args = new List<object>(snippet);
-                args.Append(use);
-                return args.ToArray();
+                var args = new object[snippet.Length + 1];
+                for(int i = 0; i < snippet.Length; ++i)
+                {
+                    args[i] = snippet[i];
+                }
+                args[snippet.Length] = use;
+                return args;
             }));
         }
 
