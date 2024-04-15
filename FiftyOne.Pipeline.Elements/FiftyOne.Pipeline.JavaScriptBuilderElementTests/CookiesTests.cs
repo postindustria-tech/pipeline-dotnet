@@ -7,13 +7,8 @@ using FiftyOne.Pipeline.JavaScriptBuilder.FlowElement;
 using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.JavaScriptBuilderElementTests
 {
@@ -133,11 +128,15 @@ namespace FiftyOne.Pipeline.JavaScriptBuilderElementTests
             var cookieRegex = new Regex("document\\.cookie *= *");
             if (expectCookie)
             {
-                Assert.IsTrue(cookieRegex.IsMatch(javaScript));
+                Assert.IsTrue(
+                    cookieRegex.IsMatch(javaScript),
+                    "The original script to set cookies should not have been replaced.");
             }
             else
             {
-                Assert.IsFalse(cookieRegex.IsMatch(javaScript));
+                Assert.IsFalse(
+                    cookieRegex.IsMatch(javaScript),
+                    "The original script to set cookies should have been replaced.");
             }
         }
     }
