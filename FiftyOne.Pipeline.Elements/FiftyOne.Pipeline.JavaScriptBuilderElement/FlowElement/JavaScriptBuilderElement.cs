@@ -672,7 +672,17 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 objectName = objObjectName?.ToString() ?? ObjName;
             }
 
-            var ubdateEnabled = url != null &&
+            bool enableCookies = EnableCookies;
+            // Try and get the requested enable cookies option from evidence.
+            if (data.TryGetEvidence(Constants.EVIDENCE_ENABLE_COOKIES,
+                out object objEnableCookies))
+            {
+                enableCookies = objEnableCookies != null &&
+                    bool.TryParse(objEnableCookies.ToString(), out var boolEnableCookies) ?
+                    boolEnableCookies : EnableCookies;
+            }
+
+            var updateEnabled = url != null &&
                 url.AbsoluteUri.Length > 0;
 
             // This check won't be 100% fool-proof but it only needs to be 
@@ -689,8 +699,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 supportsFetch,
                 url,
                 parameters,
-                EnableCookies,
-                ubdateEnabled,
+                enableCookies,
+                updateEnabled,
                 hasDelayedProperties);
 
             string content = _stubble.Render(_template, javaScriptObj.AsDictionary());
