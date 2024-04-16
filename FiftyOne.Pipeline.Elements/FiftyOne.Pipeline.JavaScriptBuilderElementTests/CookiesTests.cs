@@ -125,17 +125,20 @@ namespace FiftyOne.Pipeline.JavaScriptBuilderElementTests
             }
 
             // Assert
-            var cookieRegex = new Regex("document\\.cookie *= *");
+            var cookieRegex = new Regex("document\\.cookie");
+            var matches = cookieRegex.Matches(javaScript);
             if (expectCookie)
             {
-                Assert.IsTrue(
-                    cookieRegex.IsMatch(javaScript),
+                Assert.AreEqual(
+                    2,
+                    matches.Count,
                     "The original script to set cookies should not have been replaced.");
             }
             else
             {
-                Assert.IsFalse(
-                    cookieRegex.IsMatch(javaScript),
+                Assert.AreEqual(
+                    1,
+                    matches.Count,
                     "The original script to set cookies should have been replaced.");
             }
         }
