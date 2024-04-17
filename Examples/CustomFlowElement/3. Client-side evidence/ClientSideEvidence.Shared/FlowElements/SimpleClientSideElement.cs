@@ -69,8 +69,8 @@ namespace Examples.ClientSideEvidence.Shared
             {
                 starSigns.Add(new StarSign(
                     starSign[0],
-                    DateTime.Parse(starSign[1]),
-                    DateTime.Parse(starSign[2])));
+                    DateTime.ParseExact(starSign[1], "dd/MM", null),
+                    DateTime.ParseExact(starSign[2], "dd/MM", null)));
             }
             _starSigns = starSigns;
         }
