@@ -51,6 +51,13 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder
             "fod-js-object-name";
 
         /// <summary>
+        /// The suffix used when the <see cref="JavaScriptBuilderElement"/> 
+        /// 'enable cookies' parameter is supplied as evidence.
+        /// </summary>
+        public const string EVIDENCE_ENABLE_COOKIES_SUFFIX =
+            "fod-js-enable-cookies";
+
+        /// <summary>
         /// The complete key to be used when the 
         /// <see cref="JavaScriptBuilderElement"/> 'object name' 
         /// parameter is supplied as part of the query 
@@ -60,6 +67,17 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder
             Core.Constants.EVIDENCE_QUERY_PREFIX +
             Core.Constants.EVIDENCE_SEPERATOR +
             EVIDENCE_OBJECT_NAME_SUFFIX;
+
+        /// <summary>
+        /// The complete key to be used when the 
+        /// <see cref="JavaScriptBuilderElement"/> 'enable cookies' 
+        /// parameter is supplied as part of the query 
+        /// string.
+        /// </summary>
+        public const string EVIDENCE_ENABLE_COOKIES =
+            Core.Constants.EVIDENCE_QUERY_PREFIX +
+            Core.Constants.EVIDENCE_SEPERATOR +
+            EVIDENCE_ENABLE_COOKIES_SUFFIX;
 
         /// <summary>
         /// The key to access the embedded resource that contains the 
