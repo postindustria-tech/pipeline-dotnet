@@ -200,7 +200,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
                 new List<string>() {
                     Constants.EVIDENCE_HOST_KEY,
                     Core.Constants.EVIDENCE_PROTOCOL,
-                    Constants.EVIDENCE_OBJECT_NAME
+                    Constants.EVIDENCE_OBJECT_NAME,
+                    Constants.EVIDENCE_ENABLE_COOKIES
                 });
 
             _properties = new List<IElementPropertyMetaData>()
