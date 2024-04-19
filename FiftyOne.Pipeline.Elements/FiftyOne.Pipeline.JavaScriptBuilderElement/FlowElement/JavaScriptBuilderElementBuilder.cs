@@ -64,8 +64,8 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// </summary>
         protected string ObjName { get; private set; } = Constants.BUILDER_DEFAULT_OBJECT_NAME;
         /// <summary>
-        /// If set to false, the JavaScript will automatically delete
-        /// any cookies prefixed with 51D_
+        /// If set to false, the JavaScript will not populateany cookies, and will instead use
+        /// session storage.
         /// </summary>
         protected bool EnableCookies { get; private set; } = Constants.BUILDER_DEFAULT_ENABLE_COOKIES;
 
@@ -90,6 +90,9 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
         /// <summary>
         /// Set whether the client JavaScript stored results of client side
         /// processing in cookies.
+        /// This can also be set per request, using the "query.fod-js-enable-cookies"
+        /// evidence key.
+        /// For more details on personal data policy, see http://51degrees.com/terms/client-services-privacy-policy/
         /// </summary>
         /// <param name="enableCookies">Should enable cookies?</param>
         /// <returns></returns>
