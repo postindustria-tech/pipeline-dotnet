@@ -690,68 +690,48 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </returns>
         private static List<MethodInfo> GetMethods(string methodName,
             IEnumerable<MethodInfo> methods)
+            => FindPotentialMethods(methodName.ToUpperInvariant(), methods)
+            .Where(potentialMethods => potentialMethods != null && potentialMethods.Any())
+            .Select(Enumerable.ToList)
+            .FirstOrDefault();
+
+        private static IEnumerable<IEnumerable<MethodInfo>> FindPotentialMethods(string upperMethodName,
+            IEnumerable<MethodInfo> methods)
         {
-            int tries = 0;
-            List<MethodInfo> matchingMethods = null;
-            string upperMethodName = methodName.ToUpperInvariant();
+            // First try and find a method that matches the
+            // supplied name exactly.
 
-            while (tries < 3 && matchingMethods == null)
+            yield return methods.Where(m => m.Name.ToUpperInvariant() == upperMethodName);
+
+            // Next, try and find a method that matches the
+            // supplied name with 'set' added to the start.
+
+            string tempName = "SET" + upperMethodName;
+            yield return methods.Where(m => m.Name.ToUpperInvariant() == tempName);
+
+            // Finally, see if there is a method that has an
+            // AlternateNameAttribute with a matching name.
+
+            yield return methods.Where(method =>
             {
-                IEnumerable<MethodInfo> potentialMethods = null;
-
-                switch (tries)
+                try
                 {
-                    case 0:
-                        // First try and find a method that matches the
-                        // supplied name exactly.
-                        potentialMethods = methods.Where(m => 
-                            m.Name.ToUpperInvariant() == upperMethodName);
-                        break;
-                    case 1:
-                        // Next, try and find a method that matches the
-                        // supplied name with 'set' added to the start.
-                        string tempName = "SET" + upperMethodName;
-                        potentialMethods = methods.Where(m => 
-                            m.Name.ToUpperInvariant() == tempName);
-                        break;
-                    case 2:
-                        // Finally, see if there is a method that has an
-                        // AlternateNameAttribute with a matching name.
-                        List<MethodInfo> tempMethods = new List<MethodInfo>();
-                        foreach (var method in methods)
-                        {
-                            try
-                            {
-                                var attributes = method.GetCustomAttributes<AlternateNameAttribute>();
-                                if (attributes.Any(a => a.Name.ToUpperInvariant() == upperMethodName))
-                                {
-                                    tempMethods.Add(method);
-                                }
-                                else if (attributes.Any(
-                                    a => a.Name.ToUpperInvariant() ==
-                                    "SET" + upperMethodName))
-                                {
-                                    tempMethods.Add(method);
-                                }
-                            }
-                            catch (NotSupportedException) { }
-                            catch (TypeLoadException) { }
-                        }
-                        potentialMethods = tempMethods;
-                        break;
-                    default:
-                        break;
+                    var attributes = method.GetCustomAttributes<AlternateNameAttribute>();
+                    if (attributes.Any(a => a.Name.ToUpperInvariant() == upperMethodName))
+                    {
+                        return true;
+                    }
+                    if (attributes.Any(
+                        a => a.Name.ToUpperInvariant() ==
+                        "SET" + upperMethodName))
+                    {
+                        return true;
+                    }
                 }
-
-                if (potentialMethods != null && potentialMethods.Any())
-                {
-                    matchingMethods = potentialMethods.ToList();
-                }
-
-                tries++;
-            }
-
-            return matchingMethods;
+                catch (NotSupportedException) { }
+                catch (TypeLoadException) { }
+                return false;
+            });
         }
 
         /// <summary>
