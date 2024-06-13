@@ -29,7 +29,6 @@ using FiftyOne.Pipeline.Core.Tests.HelperClasses;
 using FiftyOne.Pipeline.Core.Tests.HelperClasses.CompositeConfig;
 using FiftyOne.Pipeline.Engines.Services;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
