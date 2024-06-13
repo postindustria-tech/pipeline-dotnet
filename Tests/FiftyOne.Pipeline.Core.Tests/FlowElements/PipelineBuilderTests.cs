@@ -26,8 +26,10 @@ using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Core.Services;
 using FiftyOne.Pipeline.Core.Tests.HelperClasses;
+using FiftyOne.Pipeline.Core.Tests.HelperClasses.CompositeConfig;
 using FiftyOne.Pipeline.Engines.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
@@ -578,6 +580,61 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
             // Pass the configuration to the builder to create the pipeline.
             var pipeline = new PipelineBuilder(_loggerFactory, services.Object)
                 .BuildFromConfiguration(opts);
+        }
+
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_Composite_ThroughExtensions()
+        {
+            var element = new ElementOptions()
+            {
+                BuilderName = "CompositeConfigElement"
+            };
+            element.BuildParameters.Add("Number", 42);
+            element.BuildParameters.Add("Text", "dummy");
+
+            // Create the configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                element
+            };
+
+            var pipeline = _builder.BuildFromConfiguration(opts);
+            var builtElement = pipeline.GetElement<CompositeConfigElement>();
+            Assert.AreEqual(42, builtElement.Number);
+            Assert.AreEqual("dummy", builtElement.Text);
+        }
+
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_Composite_NoValues()
+        {
+            var element = new ElementOptions()
+            {
+                BuilderName = "CompositeConfigElement"
+            };
+
+            // Create the configuration object.
+            PipelineOptions opts = new PipelineOptions();
+            opts.Elements = new List<ElementOptions>
+            {
+                element
+            };
+
+            var pipeline = _builder.BuildFromConfiguration(opts);
+            var builtElement = pipeline.GetElement<CompositeConfigElement>();
+            Assert.AreEqual(0, builtElement.Number);
+            Assert.IsNull(builtElement.Text);
+        }
+
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_Composite_BuilderControl()
+        {
+            var builtElement = new CompositeConfigElementBuilder()
+                .SetNumber(88888888)
+                .SetText("Lucky")
+                .Build() as CompositeConfigElement;
+            Assert.AreEqual(88888888, builtElement.Number);
+            Assert.AreEqual("Lucky", builtElement.Text);
         }
 
         /// <summary>
