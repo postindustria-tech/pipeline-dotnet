@@ -752,11 +752,24 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             });
         }
 
+        private static IEnumerable<Assembly> GetRelevantAssemblies(Type extendedType)
+        {
+            for (Type nextType = extendedType; nextType != null; nextType = nextType.BaseType)
+            {
+                yield return nextType.Assembly;
+            }
+            foreach (var iface in extendedType.GetInterfaces())
+            {
+                yield return iface.Assembly;
+            }
+        }
+
         private static IEnumerable<MethodInfo> GetExtensionMethods(Type extendedType)
         {
             const BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-            var allExtensionMethods = extendedType.Assembly
-                .GetTypes()
+            var allExtensionMethods = GetRelevantAssemblies(extendedType)
+                .Distinct()
+                .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => type.IsSealed && !type.IsGenericType && !type.IsNested)
                 .SelectMany(type => type.GetMethods(bindingFlags))
                 .Where(method => method.IsDefined(typeof(ExtensionAttribute)));
