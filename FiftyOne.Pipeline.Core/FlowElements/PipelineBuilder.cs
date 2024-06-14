@@ -30,6 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace FiftyOne.Pipeline.Core.FlowElements
@@ -526,7 +527,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             {
                 // Check if the build parameter corresponds to a method
                 // on the builder.
-                var methods = GetMethods(parameter.Key, builderType.GetMethods());
+                var methods = GetMethods(parameter.Key, builderType);
                 if (methods == null)
                 {
                     // If not then add the parameter to the list of parameters
@@ -545,13 +546,14 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                         // The parameter corresponds to a method on the builder
                         // so get the parameters associated with that method.
                         var methodParams = method.GetParameters();
-                        if (methodParams.Length != 1)
+                        var extensionMethodOffset = method.IsDefined(typeof(ExtensionAttribute)) ? 1 : 0;
+                        if (methodParams.Length != extensionMethodOffset + 1)
                         {
                             throw new PipelineConfigurationException(
                                 $"Method '{method.Name}' on builder " +
                                 $"'{builderType.FullName}' for " +
                                 $"{elementConfigLocation} takes " +
-                                $"{(methodParams.Length == 0 ? "no parameters " : "more than one parameter. ")}" +
+                                $"{(methodParams.Length == extensionMethodOffset ? "no parameters " : "more than one parameter. ")}" +
                                 $"This is not supported.");
                         }
                         // Call any methods which relate to the build parameters
@@ -610,7 +612,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             object builderInstance,
             string elementConfigLocation)
         {
-            var paramType = method.GetParameters()[0].ParameterType;
+            var isExtensionMethod = method.IsDefined(typeof(ExtensionAttribute));
+            var paramType = method.GetParameters()[isExtensionMethod ? 1 : 0].ParameterType;
             string expectedTypeMessage =
                     $"Method '{method.Name}' on builder " +
                     $"'{builderType.FullName}' for " +
@@ -667,7 +670,14 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 
             // Invoke the method on the builder, passing the parameter
             // value that was defined in the configuration.
-            method.Invoke(builderInstance, new object[] { paramValue });
+            if (isExtensionMethod)
+            {
+                method.Invoke(null, new object[] { builderInstance, paramValue });
+            }
+            else
+            {
+                method.Invoke(builderInstance, new object[] { paramValue });
+            }
         }
 
         /// <summary>
@@ -681,77 +691,104 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// 3. An alternate name, as defined by an 
         /// <see cref="AlternateNameAttribute"/>
         /// </param>
-        /// <param name="methods">
-        /// The list of methods to try and find a match in.
+        /// <param name="builderType">
+        /// The builder type to try and find a matches for.
         /// </param>
         /// <returns>
         /// The <see cref="MethodInfo"/> of the matching method or null if no
         /// match could be found.
+        /// (Note: This might be an extension method)
         /// </returns>
-        private static List<MethodInfo> GetMethods(string methodName,
+        private static List<MethodInfo> GetMethods(string methodName, Type builderType)
+            => FindMethodSources(builderType).Select(sources
+                => FindPotentialMethods(methodName.ToUpperInvariant(), sources)
+                    .Where(potentialMethods => potentialMethods != null && potentialMethods.Any())
+                    .Select(Enumerable.ToList)
+                    .FirstOrDefault())
+                .FirstOrDefault(methods => methods != null);
+
+        private static IEnumerable<IEnumerable<MethodInfo>> FindMethodSources(Type builderType)
+        {
+            yield return builderType.GetMethods();
+            yield return GetExtensionMethods(builderType);
+        }
+
+        private static IEnumerable<IEnumerable<MethodInfo>> FindPotentialMethods(string upperMethodName,
             IEnumerable<MethodInfo> methods)
         {
-            int tries = 0;
-            List<MethodInfo> matchingMethods = null;
-            string upperMethodName = methodName.ToUpperInvariant();
+            // First try and find a method that matches the
+            // supplied name exactly.
 
-            while (tries < 3 && matchingMethods == null)
+            yield return methods.Where(m => m.Name.ToUpperInvariant() == upperMethodName);
+
+            // Next, try and find a method that matches the
+            // supplied name with 'set' added to the start.
+
+            string tempName = "SET" + upperMethodName;
+            yield return methods.Where(m => m.Name.ToUpperInvariant() == tempName);
+
+            // Finally, see if there is a method that has an
+            // AlternateNameAttribute with a matching name.
+
+            yield return methods.Where(method =>
             {
-                IEnumerable<MethodInfo> potentialMethods = null;
-
-                switch (tries)
+                try
                 {
-                    case 0:
-                        // First try and find a method that matches the
-                        // supplied name exactly.
-                        potentialMethods = methods.Where(m => 
-                            m.Name.ToUpperInvariant() == upperMethodName);
-                        break;
-                    case 1:
-                        // Next, try and find a method that matches the
-                        // supplied name with 'set' added to the start.
-                        string tempName = "SET" + upperMethodName;
-                        potentialMethods = methods.Where(m => 
-                            m.Name.ToUpperInvariant() == tempName);
-                        break;
-                    case 2:
-                        // Finally, see if there is a method that has an
-                        // AlternateNameAttribute with a matching name.
-                        List<MethodInfo> tempMethods = new List<MethodInfo>();
-                        foreach (var method in methods)
+                    var attributes = method.GetCustomAttributes<AlternateNameAttribute>();
+                    if (attributes.Any(a => a.Name.ToUpperInvariant() == upperMethodName))
+                    {
+                        return true;
+                    }
+                    if (attributes.Any(
+                        a => a.Name.ToUpperInvariant() ==
+                        "SET" + upperMethodName))
+                    {
+                        return true;
+                    }
+                }
+                catch (NotSupportedException) { }
+                catch (TypeLoadException) { }
+                return false;
+            });
+        }
+
+        private static IEnumerable<MethodInfo> GetExtensionMethods(Type extendedType)
+        {
+            const BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+            var allExtensionMethods = extendedType.Assembly
+                .GetTypes()
+                .Where(type => type.IsSealed && !type.IsGenericType && !type.IsNested)
+                .SelectMany(type => type.GetMethods(bindingFlags))
+                .Where(method => method.IsDefined(typeof(ExtensionAttribute)));
+            foreach (var method in allExtensionMethods)
+            {
+                var callParams = method.GetParameters();
+                if (callParams[0].ParameterType.IsAssignableFrom(extendedType))
+                {
+                    yield return method;
+                    continue;
+                }
+                if (method.IsGenericMethod && method.GetGenericArguments().Contains(callParams[0].ParameterType))
+                {
+                    if (method.GetGenericArguments().Length == 1)
+                    {
+                        MethodInfo specializedMethod = null;
+                        try
                         {
-                            try
-                            {
-                                var attributes = method.GetCustomAttributes<AlternateNameAttribute>();
-                                if (attributes.Any(a => a.Name.ToUpperInvariant() == upperMethodName))
-                                {
-                                    tempMethods.Add(method);
-                                }
-                                else if (attributes.Any(
-                                    a => a.Name.ToUpperInvariant() ==
-                                    "SET" + upperMethodName))
-                                {
-                                    tempMethods.Add(method);
-                                }
-                            }
-                            catch (NotSupportedException) { }
-                            catch (TypeLoadException) { }
+                            specializedMethod = method.MakeGenericMethod(extendedType);
                         }
-                        potentialMethods = tempMethods;
-                        break;
-                    default:
-                        break;
+                        catch (ArgumentException)
+                        {
+                            // nop -- type extended by method is incompatible with builder type.
+                        }
+                        if (specializedMethod != null)
+                        {
+                            yield return specializedMethod;
+                        }
+                    }
+                    continue;
                 }
-
-                if (potentialMethods != null && potentialMethods.Any())
-                {
-                    matchingMethods = potentialMethods.ToList();
-                }
-
-                tries++;
             }
-
-            return matchingMethods;
         }
 
         /// <summary>
