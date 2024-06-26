@@ -3,6 +3,13 @@
 ![51Degrees](https://raw.githubusercontent.com/51Degrees/common-ci/main/images/logo/360x67.png "Data rewards the curious") **Pipeline API**
 
 [Developer Documentation](https://51degrees.com/pipeline-dotnet/index.html?utm_source=github&utm_medium=repository&utm_content=documentation&utm_campaign=dotnet-open-source "developer documentation")
+| NuGet | Package | NuGet | Package |
+| --- | --- | --- | --- |
+| [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.CloudRequestEngine.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.CloudRequestEngine) | CloudRequestEngine | [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.Examples.Shared.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.Examples.Shared) | Examples.Shared |
+| [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.Core.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.Core) | Core | [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.JavaScriptBuilder.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.JavaScriptBuilder) | JavaScriptBuilder |
+| [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.Engines.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.Engines) | Engines | [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.JsonBuilder.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.JsonBuilder) | JsonBuilder |
+| [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.Engines.FiftyOne.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.Engines.FiftyOne) | Engines.FiftyOne | [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.Web.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.Web) | Web |
+| [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.Engines.TestHelpers.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.Engines.TestHelpers) | Engines.TestHelpers | [![NuGet](https://img.shields.io/nuget/v/FiftyOne.Pipeline.Web.Shared.svg)](https://www.nuget.org/packages/FiftyOne.Pipeline.Web.Shared) | Web.Shared |
 
 ## Introduction
 
