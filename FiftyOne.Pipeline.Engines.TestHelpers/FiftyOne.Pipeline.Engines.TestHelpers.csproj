@@ -26,11 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Moq" Version="4.20.70" />
+    <ProjectReference Include="..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FiftyOne.Pipeline.Engines\FiftyOne.Pipeline.Engines.csproj" />
+    <PackageReference Include="Moq" Version="4.20.71" />
   </ItemGroup>
 
 </Project>
