@@ -132,7 +132,7 @@ namespace FiftyOne.Pipeline.Engines.Data
         /// </exception>
         public override string ToString()
         {
-            return Value?.ToString() ?? "NULL";
+            return HasValue ? Value.ToString() : "NULL";
         }
 
         /// <summary>
