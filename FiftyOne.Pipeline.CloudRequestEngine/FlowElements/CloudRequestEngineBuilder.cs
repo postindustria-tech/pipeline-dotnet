@@ -30,6 +30,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
@@ -45,9 +46,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
     {
         #region Private Properties
 
-        private ILoggerFactory _loggerFactory;
-        private ILogger<CloudRequestData> _dataLogger;
-        private HttpClient _httpClient;
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger<CloudRequestData> _dataLogger;
+        private readonly HttpClient _httpClient;
+        private readonly CancellationToken? _stopToken;
 
         // Note - Defaults for these fields are set in the Build method.
         private string _dataEndpoint = "";
@@ -72,12 +74,18 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="httpClient">
         /// HttpClient instance used to make http requests
         /// </param>
+        /// <param name="stopToken">
+        /// Used to cancel HTTP requests that are in progress. Usually the
+        /// application's cancellation token. 
+        /// </param>
         public CloudRequestEngineBuilder(
             ILoggerFactory loggerFactory,
-            HttpClient httpClient)
+            HttpClient httpClient,
+            CancellationToken? stopToken = null)
         {
             _loggerFactory = loggerFactory;
             _httpClient = httpClient;
+            _stopToken = stopToken;
             _dataLogger = _loggerFactory.CreateLogger<CloudRequestData>();
         }
 
@@ -268,7 +276,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 throw new PipelineConfigurationException(
                     Messages.ExceptionResourceKeyNeeded);
             }
-
             return new CloudRequestEngine(
                 _loggerFactory.CreateLogger<CloudRequestEngine>(),
                 CreateAspectData,
@@ -280,7 +287,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 _evidenceKeysEndpoint,
                 _timeout,
                 properties,
-                _cloudRequestOrigin);
+                _cloudRequestOrigin,
+                _stopToken);
         }
     }
 }

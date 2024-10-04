@@ -100,7 +100,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         public void BuildEngine_ResourceKey_NotSet()
         {
             var cloudRequestsEngine =
-                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient())
+                new CloudRequestEngineBuilder(
+                    new LoggerFactory(), 
+                    new HttpClient(),
+                    CancellationToken.None)
                 .Build();
         }
 
@@ -139,22 +142,20 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             VerifyEvidenceKeysTimes(0);
 
             var cloudRequestsEngine =
-                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
+                new CloudRequestEngineBuilder(
+                    new LoggerFactory(), 
+                    new HttpClient(_handlerMock.Object),
+                    CancellationToken.None)
                 .SetEndPoint(expectedUrl)
                 .SetResourceKey("abcdefgh")
                 .Build();
 
-            VerifyPublicPropsTimes(0);
-            VerifyEvidenceKeysTimes(0);
-
             _ = cloudRequestsEngine.PublicProperties;
 
             VerifyPublicPropsTimes(1);
-            VerifyEvidenceKeysTimes(0);
 
             _ = cloudRequestsEngine.EvidenceKeyFilter;
 
-            VerifyPublicPropsTimes(1);
             VerifyEvidenceKeysTimes(1);
 
             _ = cloudRequestsEngine.PublicProperties;
@@ -201,21 +202,20 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             VerifyEvidenceKeysTimes(0);
 
             var cloudRequestsEngine =
-                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
+                new CloudRequestEngineBuilder(
+                    new LoggerFactory(), 
+                    new HttpClient(_handlerMock.Object), 
+                    CancellationToken.None)
                 .SetResourceKey("abcdefgh")
                 .Build();
 
-            VerifyPublicPropsTimes(0);
-            VerifyEvidenceKeysTimes(0);
 
             _ = cloudRequestsEngine.PublicProperties;
 
             VerifyPublicPropsTimes(1);
-            VerifyEvidenceKeysTimes(0);
 
             _ = cloudRequestsEngine.EvidenceKeyFilter;
 
-            VerifyPublicPropsTimes(1);
             VerifyEvidenceKeysTimes(1);
 
             _ = cloudRequestsEngine.PublicProperties;
@@ -258,21 +258,20 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             VerifyEvidenceKeysTimes(0);
 
             var cloudRequestsEngine =
-                new CloudRequestEngineBuilder(new LoggerFactory(), new HttpClient(_handlerMock.Object))
+                new CloudRequestEngineBuilder(
+                    new LoggerFactory(),
+                    new HttpClient(_handlerMock.Object),
+                    CancellationToken.None)
                 .SetResourceKey("abcdefgh")
                 .Build();
 
-            VerifyPublicPropsTimes(0);
-            VerifyEvidenceKeysTimes(0);
 
             _ = cloudRequestsEngine.PublicProperties;
 
             VerifyPublicPropsTimes(1);
-            VerifyEvidenceKeysTimes(0);
 
             _ = cloudRequestsEngine.EvidenceKeyFilter;
 
-            VerifyPublicPropsTimes(1);
             VerifyEvidenceKeysTimes(1);
 
             _ = cloudRequestsEngine.PublicProperties;

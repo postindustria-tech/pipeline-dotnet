@@ -72,7 +72,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
             );
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -126,7 +129,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var loggerFactory = new TestLoggerFactory();
 
-            var engine = new CloudRequestEngineBuilder(loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                loggerFactory, 
+                _httpClient, 
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -216,7 +222,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var loggerFactory = new TestLoggerFactory();
 
-            var engine = new CloudRequestEngineBuilder(loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                loggerFactory, 
+                _httpClient, 
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -363,7 +372,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 }";
             ConfigureMockedClient(r => true);
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey("key")
                 .Build();
 
@@ -401,7 +413,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
             );
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -459,7 +474,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             Exception exception = null;
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -502,7 +520,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
             );
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -559,7 +580,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
             );
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -596,7 +620,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             ConfigureMockedClient(_ => true);
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -630,7 +657,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             ConfigureMockedClient(_ => true);
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -698,7 +728,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             ConfigureMockedClient(r => true);
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey("key")
                 .Build();
 
@@ -727,7 +760,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             _jsonResponse = @"{ ""device"": { ""ismobile"": true } }";
             ConfigureMockedClient(r => true);
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
             .SetResourceKey(resourceKey)
             .SetCacheSize(10)
             .SetCacheHitOrMiss(true)
@@ -769,7 +805,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             _jsonResponse = @"{ ""device"": { ""ismobile"": true } }";
             ConfigureMockedClient(r => true);
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
             .SetResourceKey(resourceKey)
             .SetCacheSize(10)
             .SetCacheHitOrMiss(true)
@@ -870,7 +909,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             _jsonResponse = @"{ ""device"": { ""ismobile"": true } }";
             ConfigureMockedClient(r => true);
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
             .SetResourceKey(resourceKey)
             .SetCacheSize(10)
             .SetCacheHitOrMiss(true)
@@ -946,7 +988,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         {
             string resourceKey = "resource_key";
 
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, new HttpClient())
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                new HttpClient(),
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -975,7 +1020,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             Exception exception = null;
 
             ConfigureMockedClient(r => true, true);
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory,
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -1012,7 +1060,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             string userAgent = "iPhone";
 
             ConfigureMockedClient(r => true, true);
-            var engine = new CloudRequestEngineBuilder(_loggerFactory, _httpClient)
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory, 
+                _httpClient,
+                CancellationToken.None)
                 .SetResourceKey(resourceKey)
                 .Build();
 
