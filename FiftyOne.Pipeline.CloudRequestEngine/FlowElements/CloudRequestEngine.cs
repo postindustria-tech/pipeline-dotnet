@@ -263,19 +263,20 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         {
             get
             {
-                if (_stopToken != null)
-                {
-                    _evidenceKeyFilterTask.Wait(_stopToken.Value);
-                }
-                else
-                {
-                    _evidenceKeyFilterTask.Wait();
-                }
-                if (_evidenceKeyFilterTask.Status == TaskStatus.RanToCompletion)
+                try
                 {
                     _evidenceKeyFilter = _evidenceKeyFilterTask.Result;
-                } else
+                }
+                catch (AggregateException ex)
                 {
+                    if (ex.InnerException is CloudRequestException cloudException)
+                    {
+                        throw new CloudRequestException(
+                            cloudException.Message,
+                            cloudException.HttpStatusCode,
+                            cloudException.ResponseHeaders,
+                            ex);
+                    }
                     _evidenceKeyFilter = new EvidenceKeyFilterWhitelist(
                         new List<string>(0));
                     Logger?.LogWarning(
@@ -302,20 +303,20 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         public IReadOnlyDictionary<string, ProductMetaData> PublicProperties {
             get
             {
-                if (_stopToken != null)
-                    {
-                        _publicPropertiesTask.Wait(_stopToken.Value);
-                    }
-                    else
-                    {
-                        _publicPropertiesTask.Wait();
-                    }
-                if (_publicPropertiesTask.Status == TaskStatus.RanToCompletion)
+                try
                 {
                     _publicProperties = _publicPropertiesTask.Result;
                 }
-                else
+                catch (AggregateException ex)
                 {
+                    if (ex.InnerException is CloudRequestException cloudException)
+                    {
+                        throw new CloudRequestException(
+                            cloudException.Message,
+                            cloudException.HttpStatusCode,
+                            cloudException.ResponseHeaders,
+                            ex);
+                    }
                     _publicProperties = 
                         new Dictionary<string, ProductMetaData>(0);
                     Logger?.LogWarning(
