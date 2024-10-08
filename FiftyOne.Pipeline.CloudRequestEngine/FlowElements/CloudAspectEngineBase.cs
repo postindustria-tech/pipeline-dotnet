@@ -247,9 +247,21 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// with the relevant property meta-data.
         /// False if something has gone wrong.
         /// </returns>
+        /// <exception cref="PropertiesNotYetLoadedException">
+        /// <see cref="ICloudRequestEngine.PublicProperties"/> 
+        /// is a
+        /// <see cref="IFailableLazyResult"/>
+        /// with
+        /// <see cref="IFailableLazyResult.MayBeSaved"/> == false
+        /// (i.e. the result is a temporary fallback and may not be cached)
+        /// </exception>
         private bool LoadAspectProperties(ICloudRequestEngine engine)
         {
             var dictionary = engine.PublicProperties;
+            if ((dictionary as IFailableLazyResult)?.MayBeSaved == false)
+            {
+                throw new PropertiesNotYetLoadedException("Can not save properties from a temporary fallback result.");
+            }
 
             if (dictionary != null &&
                 dictionary.Count > 0 &&
