@@ -49,7 +49,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<CloudRequestData> _dataLogger;
         private readonly HttpClient _httpClient;
-        private readonly CancellationToken? _stopToken;
 
         // Note - Defaults for these fields are set in the Build method.
         private string _dataEndpoint = "";
@@ -85,7 +84,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         {
             _loggerFactory = loggerFactory;
             _httpClient = httpClient;
-            _stopToken = stopToken;
             _dataLogger = _loggerFactory.CreateLogger<CloudRequestData>();
         }
 
@@ -276,6 +274,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 throw new PipelineConfigurationException(
                     Messages.ExceptionResourceKeyNeeded);
             }
+
             return new CloudRequestEngine(
                 _loggerFactory.CreateLogger<CloudRequestEngine>(),
                 CreateAspectData,
@@ -287,8 +286,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 _evidenceKeysEndpoint,
                 _timeout,
                 properties,
-                _cloudRequestOrigin,
-                _stopToken);
+                _cloudRequestOrigin);
         }
     }
 }

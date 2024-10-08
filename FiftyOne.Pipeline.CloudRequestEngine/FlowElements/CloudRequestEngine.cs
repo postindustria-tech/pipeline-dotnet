@@ -21,6 +21,8 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Throttling;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
@@ -65,11 +67,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private string _evidenceKeysEndpoint;
         private string _cloudRequestOrigin;
 
-        /// <summary>
-        /// Used to cancel HTTP requests that are in progress. Usually the
-        /// application's cancellation token. 
-        /// </summary>
-        private CancellationToken? _stopToken;
+        private readonly IFailThrottlingStrategy _failThrottlingStrategy
+            = new NoRetryStrategy(); // TODO: Move to constructor
 
         /// <summary>
         /// Not currently used.
@@ -124,10 +123,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// The value to use for the Origin header when making requests 
         /// to cloud.
         /// </param>
-        /// <param name="stopToken">
-        /// Used to cancel HTTP requests that are in progress. Usually the
-        /// application's cancellation token. 
-        /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
         /// </exception>
@@ -143,8 +138,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             string evidenceKeysEndpoint,
             int timeout,
             List<string> requestedProperties,
-            string cloudRequestOrigin = null,
-            CancellationToken? stopToken = null)
+            string cloudRequestOrigin = null)
             : base(logger, aspectDataFactory)
         {
             if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
@@ -158,7 +152,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 _evidenceKeysEndpoint = evidenceKeysEndpoint;
                 _requestedProperties = requestedProperties;
                 _cloudRequestOrigin = cloudRequestOrigin;
-                _stopToken = stopToken;
 
                 _httpClient = httpClient;
                 if (timeout > 0)
@@ -190,24 +183,23 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 // Start the tasks to get the evidence keys and the public
                 // properties from the cloud service. If the stop token is
                 // not provided then warn via logging.
-                if (stopToken != null && stopToken.HasValue)
-                {
-                    _evidenceKeyFilterTask = Task.Run(() => 
-                        GetCloudEvidenceKeys(), 
-                        stopToken.Value);
-                    _publicPropertiesTask = Task.Run(() => 
-                        GetCloudProperties(), 
-                        stopToken.Value);
-                }
-                else
-                {
-                    _evidenceKeyFilterTask = Task.Run(() => 
-                        GetCloudEvidenceKeys());
-                    _publicPropertiesTask = Task.Run(() => 
-                        GetCloudProperties());
-                    Logger?.LogWarning(
-                        $"Parameter '{nameof(stopToken)}' should not be null");
-                }
+
+                _lazyEvidenceKeyFilter = new LazyFailable<IEvidenceKeyFilter>(
+                    GetCloudEvidenceKeys,
+                    new EvidenceKeyFilterWhitelist(
+                        Enumerable.Empty<string>()),
+                    _failThrottlingStrategy);
+                _lazyEvidenceKeyFilter.OnMainFuncException += e => Logger?.LogWarning(
+                        "Could not fetch evidence key filter from '{0}'",
+                        _evidenceKeysEndpoint);
+
+                _lazyPublicProperties = new LazyFailable<IReadOnlyDictionary<string, ProductMetaData>>(
+                    GetCloudProperties,
+                    new Dictionary<string, ProductMetaData>(0),
+                    _failThrottlingStrategy);
+                _lazyPublicProperties.OnMainFuncException += e => Logger?.LogWarning(
+                    "Could not fetch public properties from '{0}'",
+                    _propertiesEndpoint);
             }
             catch (Exception ex)
             {
@@ -240,14 +232,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// A task that is started in the constructor and when complete returns
         /// the instance of IEvidenceKeyFilter.
         /// </summary>
-        private Task<IEvidenceKeyFilter> _evidenceKeyFilterTask;
+        private LazyFailable<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
 
         /// <summary>
         /// A task that is started in the constructor and when complete returns
         /// the instance of IReadOnlyDictionary{string, ProductMetaData}.
         /// </summary>
-        private Task<IReadOnlyDictionary<string, ProductMetaData>> 
-            _publicPropertiesTask;
+        private LazyFailable<IReadOnlyDictionary<string, ProductMetaData>>
+            _lazyPublicProperties;
 
         /// <summary>
         /// A filter object that indicates the evidence keys that can be used 
@@ -265,7 +257,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 try
                 {
-                    _evidenceKeyFilter = _evidenceKeyFilterTask.Result;
+                    return _lazyEvidenceKeyFilter
+                        .GetValueAsync(CancellationToken.None)
+                        .Result;
                 }
                 catch (AggregateException ex)
                 {
@@ -277,16 +271,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             cloudException.ResponseHeaders,
                             ex);
                     }
-                    _evidenceKeyFilter = new EvidenceKeyFilterWhitelist(
-                        new List<string>(0));
-                    Logger?.LogWarning(
-                        "Could not fetch evidence key filter from '{0}'",
-                        _evidenceKeysEndpoint);
+                    return _lazyEvidenceKeyFilter.FallbackValue;
                 }
-                return _evidenceKeyFilter;
             }
         }
-        private IEvidenceKeyFilter _evidenceKeyFilter;
 
         /// <summary>
         /// A collection of the properties that the cloud service can
@@ -305,7 +293,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 try
                 {
-                    _publicProperties = _publicPropertiesTask.Result;
+                    return _lazyPublicProperties
+                        .GetValueAsync(CancellationToken.None)
+                        .Result;
                 }
                 catch (AggregateException ex)
                 {
@@ -317,16 +307,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             cloudException.ResponseHeaders,
                             ex);
                     }
-                    _publicProperties = 
-                        new Dictionary<string, ProductMetaData>(0);
-                    Logger?.LogWarning(
-                        "Could not fetch public properties from '{0}'",
-                        _propertiesEndpoint);
+                    return _lazyPublicProperties.FallbackValue;
                 }
-                return _publicProperties;
             }
         }
-        private IReadOnlyDictionary<string, ProductMetaData> _publicProperties;
 
         /// <summary>
         /// Send evidence to the cloud and get back a JSON result.
@@ -355,7 +339,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
             aspectData.ProcessStarted = true;
 
+
             string jsonResult = string.Empty;
+            if (!_failThrottlingStrategy.MayTryNow())
+            {
+                // TODO: Confirm outcome (?)
+                aspectData.JsonResponse = jsonResult;
+                return;
+            }
 
             using (var content = GetContent(data))
             using (var requestMessage =
@@ -644,8 +635,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 try
                 {
                     jsonResult = ProcessResponse(AddCommonHeadersAndSend(
-                        requestMessage,
-                        _stopToken ?? default));
+                        requestMessage, 
+                        CancellationToken.None));
                 }
                 catch (Exception ex)
                 {
@@ -688,7 +679,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     // Note - Don't check for error messages in the response
                     // as it is a flat JSON array.
                     jsonResult = ProcessResponse(
-                        AddCommonHeadersAndSend(requestMessage, _stopToken ?? default), false);
+                        AddCommonHeadersAndSend(requestMessage, CancellationToken.None), false);
                 }
                 catch (Exception ex)
                 {
