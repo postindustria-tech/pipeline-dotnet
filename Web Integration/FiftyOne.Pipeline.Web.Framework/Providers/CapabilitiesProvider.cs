@@ -20,6 +20,8 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
+using FiftyOne.Pipeline.Core.Data;
+using FiftyOne.Pipeline.Core.Exceptions;
 using System;
 using System.Web;
 using System.Web.Configuration;
@@ -79,9 +81,22 @@ namespace FiftyOne.Pipeline.Web.Framework.Providers
                 // Since it doesn't exist yet, it creates it and ends up doing all the
                 // processing for no reason at all.
                 return baseCaps;
-            }            
-            
-            var flowData = WebPipeline.Process(request);
+            }
+
+            IFlowData flowData;
+            try
+            {
+                flowData = WebPipeline.Process(request);
+            }
+            catch (AggregateException ex)
+            {
+                if (ex.InnerException is PipelineTemporarilyUnavailableException)
+                {
+                    return baseCaps;
+                }
+                throw;
+            }
+
             if (flowData != null)
             {
                 // A provider is present so 51Degrees can be used to override

@@ -279,7 +279,14 @@ namespace FiftyOne.Pipeline.Web.Framework
                 }
 
                 // Process the evidence and return the result
-                flowData.Process(GetCancellationTokenForRequest(request));
+                try
+                {
+                    flowData.Process(GetCancellationTokenForRequest(request));
+                }
+                catch (PipelineTemporarilyUnavailableException)
+                {
+                    throw;
+                }
 
                 if (GetInstance().SetHeaderPropertiesEnabled &&
                     request.RequestContext.HttpContext.ApplicationInstance != null)
@@ -293,8 +300,21 @@ namespace FiftyOne.Pipeline.Web.Framework
             {
                 if (!GetInstance().Pipeline.SuppressProcessExceptions)
                 {
-                    if (ex is AggregateException) { throw; }
-                    throw new AggregateException(ex);
+                    Exception ex2 = null;
+                    try
+                    {
+                        flowData.Dispose();
+                    }
+                    catch (Exception ex3)
+                    {
+                        ex2 = ex3;
+                    }
+                    if (ex2 is null)
+                    {
+                        if (ex is AggregateException) { throw; }
+                        throw new AggregateException(ex);
+                    }
+                    throw new AggregateException(new Exception[] { ex, ex2 });
                 }
             }
 

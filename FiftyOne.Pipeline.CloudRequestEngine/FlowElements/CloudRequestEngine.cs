@@ -346,9 +346,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             string jsonResult = string.Empty;
             if (!_failThrottlingStrategy.MayTryNow())
             {
-                // TODO: Confirm outcome (?)
-                aspectData.JsonResponse = jsonResult;
-                return;
+                throw new CloudRequestEngineTemporarilyUnavailableException(
+                    "Sending requests to cloud server"
+                    + " is temporarily restricted"
+                    + " due to recent failures.");
             }
 
             using (var content = GetContent(data))
