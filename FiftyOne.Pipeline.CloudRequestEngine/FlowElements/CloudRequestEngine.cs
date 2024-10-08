@@ -200,6 +200,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 _lazyPublicProperties.OnMainFuncException += e => Logger?.LogWarning(
                     "Could not fetch public properties from '{0}'",
                     _propertiesEndpoint);
+
+                _ = _lazyEvidenceKeyFilter.GetValueAsync(CancellationToken.None);
+                _ = _lazyPublicProperties.GetValueAsync(CancellationToken.None);
             }
             catch (Exception ex)
             {
