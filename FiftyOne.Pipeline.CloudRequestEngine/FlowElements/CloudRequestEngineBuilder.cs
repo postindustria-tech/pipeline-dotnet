@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Throttling;
 using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
@@ -59,6 +60,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private string _licenseKey = Constants.LICENSE_KEY_DEFAULT;
         private string _cloudRequestOrigin = Constants.CLOUD_REQUEST_ORIGIN_DEFAULT;
         private int _timeout = Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS;
+        private int _recoveryMilliseconds = 0;
 
         #endregion
 
@@ -194,6 +196,18 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         }
 
         /// <summary>
+        /// For how long to disallow server calls after failure.
+        /// </summary>
+        /// <param name="recoveryMilliseconds"></param>
+        /// <returns></returns>
+        [DefaultValue(0)]
+        public CloudRequestEngineBuilder SetRecoveryMilliseconds(int recoveryMilliseconds)
+        {
+            _recoveryMilliseconds = recoveryMilliseconds;
+            return this;
+        }
+
+        /// <summary>
         /// The value to set for the Origin header when making requests
         /// to the cloud service.
         /// This is used by the cloud service to check that the request
@@ -275,18 +289,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     Messages.ExceptionResourceKeyNeeded);
             }
 
+            var failThrottlingStrategy 
+                = (_recoveryMilliseconds > 0)
+                ? new SimpleThrottlingStrategy(_recoveryMilliseconds)
+                : (IFailThrottlingStrategy)new NoThrottlingStrategy();
+
             return new CloudRequestEngine(
                 _loggerFactory.CreateLogger<CloudRequestEngine>(),
                 CreateAspectData,
                 _httpClient,
-                _dataEndpoint,
-                _resourceKey,
-                _licenseKey,
-                _propertiesEndpoint,
-                _evidenceKeysEndpoint,
+                new CloudRequestEngine.EndpointsAndKeys
+                {
+                    DataEndpoint = _dataEndpoint,
+                    ResourceKey = _resourceKey,
+                    LicenseKey = _licenseKey,
+                    PropertiesEndpoint = _propertiesEndpoint,
+                    EvidenceKeysEndpoint = _evidenceKeysEndpoint,
+                    CloudRequestOrigin = _cloudRequestOrigin,
+                    RequestedProperties = properties,
+                },
                 _timeout,
-                properties,
-                _cloudRequestOrigin);
+                failThrottlingStrategy);
         }
     }
 }
