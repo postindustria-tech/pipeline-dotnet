@@ -284,22 +284,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 // properties from the cloud service. If the stop token is
                 // not provided then warn via logging.
 
-                _lazyEvidenceKeyFilter = new LazyFailable<IEvidenceKeyFilter>(
-                    GetCloudEvidenceKeys,
-                    new EvidenceKeyFilterWhitelist(
-                        Enumerable.Empty<string>()),
-                    _failThrottlingStrategy);
-                _lazyEvidenceKeyFilter.OnMainFuncException += e => Logger?.LogWarning(
-                        "Could not fetch evidence key filter from '{0}'",
-                        _endpointsAndKeys.EvidenceKeysEndpoint);
-
-                _lazyPublicProperties = new LazyFailable<IReadOnlyDictionary<string, ProductMetaData>>(
-                    GetCloudProperties,
-                    new Dictionary<string, ProductMetaData>(0),
-                    _failThrottlingStrategy);
-                _lazyPublicProperties.OnMainFuncException += e => Logger?.LogWarning(
-                    "Could not fetch public properties from '{0}'",
-                    _endpointsAndKeys.PropertiesEndpoint);
+                _lazyEvidenceKeyFilter 
+                    = new AsyncLazyFailable<IEvidenceKeyFilter>(
+                        GetCloudEvidenceKeys);
+                _lazyPublicProperties 
+                    = new AsyncLazyFailable<IReadOnlyDictionary<string, ProductMetaData>>(
+                        GetCloudProperties);
 
                 _ = _lazyEvidenceKeyFilter.GetValueAsync(CancellationToken.None);
                 _ = _lazyPublicProperties.GetValueAsync(CancellationToken.None);
@@ -335,13 +325,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// A task that is started in the constructor and when complete returns
         /// the instance of IEvidenceKeyFilter.
         /// </summary>
-        private LazyFailable<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
+        private AsyncLazyFailable<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
 
         /// <summary>
         /// A task that is started in the constructor and when complete returns
         /// the instance of IReadOnlyDictionary{string, ProductMetaData}.
         /// </summary>
-        private LazyFailable<IReadOnlyDictionary<string, ProductMetaData>>
+        private AsyncLazyFailable<IReadOnlyDictionary<string, ProductMetaData>>
             _lazyPublicProperties;
 
         /// <summary>
@@ -366,6 +356,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 }
                 catch (AggregateException ex)
                 {
+                    Logger?.LogWarning(
+                        "Could not fetch evidence key filter from '{0}'",
+                        _endpointsAndKeys.EvidenceKeysEndpoint);
                     if (ex.InnerException is CloudRequestException cloudException)
                     {
                         throw new CloudRequestException(
@@ -374,7 +367,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             cloudException.ResponseHeaders,
                             ex);
                     }
-                    return _lazyEvidenceKeyFilter.FallbackValue;
+                    return new EvidenceKeyFilterWhitelist(
+                        Enumerable.Empty<string>());
                 }
             }
         }
@@ -402,6 +396,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 }
                 catch (AggregateException ex)
                 {
+                    Logger?.LogWarning(
+                        "Could not fetch public properties from '{0}'",
+                        _endpointsAndKeys.PropertiesEndpoint);
                     if (ex.InnerException is CloudRequestException cloudException)
                     {
                         throw new CloudRequestException(
@@ -410,7 +407,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             cloudException.ResponseHeaders,
                             ex);
                     }
-                    return _lazyPublicProperties.FallbackValue;
+                    return new Dictionary<string, ProductMetaData>(0);
                 }
             }
         }
@@ -444,13 +441,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
 
             string jsonResult = string.Empty;
-            if (!_failThrottlingStrategy.MayTryNow())
-            {
-                throw new CloudRequestEngineTemporarilyUnavailableException(
-                    "Sending requests to cloud server"
-                    + " is temporarily restricted"
-                    + " due to recent failures.");
-            }
+            ThrowIfStillRecovering();
 
             using (var content = GetContent(data))
             using (var requestMessage =
@@ -468,6 +459,17 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
 
             aspectData.JsonResponse = jsonResult;
+        }
+
+        private void ThrowIfStillRecovering()
+        {
+            if (!_failThrottlingStrategy.MayTryNow())
+            {
+                throw new CloudRequestEngineTemporarilyUnavailableException(
+                    "Sending requests to cloud server"
+                    + " is temporarily restricted"
+                    + " due to recent failures.");
+            }
         }
 
         /// <summary>
@@ -821,6 +823,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
+            ThrowIfStillRecovering();
             if (string.IsNullOrEmpty(_endpointsAndKeys.CloudRequestOrigin) == false &&
                 (request.Headers.Contains(Constants.ORIGIN_HEADER_NAME) == false ||
                 request.Headers.GetValues(Constants.ORIGIN_HEADER_NAME).Contains(
@@ -851,11 +854,24 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 return _httpClient.SendAsync(request, cancellationToken).Result;
             }
-            catch (AggregateException ex)
+            catch (AggregateException httpException)
             {
+                Exception strategyException = null;
+                try
+                {
+                    _failThrottlingStrategy.RecordFailure();
+                }
+                catch (Exception ex2)
+                {
+                    strategyException = ex2;
+                }
+                AggregateException effectiveException
+                    = (strategyException is null)
+                    ? httpException
+                    : new AggregateException(httpException, strategyException);
                 throw new CloudRequestException(
                     Messages.ExceptionCloudResponseFailure,
-                    ex);
+                    effectiveException);
             }
         } 
     }

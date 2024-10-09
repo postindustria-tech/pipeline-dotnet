@@ -1,125 +1,123 @@
-﻿using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Throttling;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.TaskWaitingCancellation;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling
 {
-    internal class LazyFailable<T>
+    /// <summary>
+    /// Uses the provided throwing delegate 
+    /// to evaluate the value on demand.
+    /// 
+    /// Once the delegate succeeds, the result
+    /// is saved for further use
+    /// without re-evaluation.
+    /// 
+    /// At most one task calling to the delegate
+    /// will exist at any given time.
+    /// 
+    /// External calls will be made to await
+    /// for the active task to finish or fail.
+    /// 
+    /// If no saved result exists yet,
+    /// and no active task evaluates the delegate,
+    /// a single new task will be created.
+    /// </summary>
+    /// <typeparam name="TResult">
+    /// Type of the value returned to the caller.
+    /// </typeparam>
+    public class AsyncLazyFailable<TResult>
     {
-        public readonly T FallbackValue;
-        public event Action<Exception> OnMainFuncException;
-
-        private readonly Func<T> _mainFunc;
-        private readonly IFailThrottlingStrategy _failThrottlingStrategy;
-
+        private readonly Func<TResult> _mainFunc;
         private readonly object _taskLock = new object();
-        private Task<T> _activeTask;
-        private T _result;
-        private bool _hasResult;
+        private Task<TResult> _activeTask;
+        private TResult _result;
 
-        public LazyFailable(
-            Func<T> mainFunc, 
-            T fallbackValue,
-            IFailThrottlingStrategy failThrottlingStrategy)
+        // volatile:
+        // - written after _result
+        // - read before _result
+        // see https://learn.microsoft.com/en-us/archive/msdn-magazine/2012/december/csharp-the-csharp-memory-model-in-theory-and-practice
+        private volatile bool _hasResult;
+
+        /// <summary>
+        /// Designated constructor.
+        /// </summary>
+        /// <param name="mainFunc">
+        /// Delegate to evaluate the value on demand.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="mainFunc"/>
+        /// is null.
+        /// </exception>
+        public AsyncLazyFailable(Func<TResult> mainFunc)
         {
             if (mainFunc is null)
             {
                 throw new ArgumentNullException(nameof(mainFunc));
             }
-            if (failThrottlingStrategy is null)
-            {
-                throw new ArgumentNullException(nameof(failThrottlingStrategy));
-            }
             _mainFunc = mainFunc;
-            FallbackValue = fallbackValue;
-            _failThrottlingStrategy = failThrottlingStrategy;
         }
 
-        public async Task<T> GetValueAsync(CancellationToken token)
+        /// <summary>
+        /// Get the result or fallback value.
+        /// </summary>
+        /// <param name="token">
+        /// Trip to cancel waiting for the
+        /// current evaluation of the delegate to finish.
+        /// </param>
+        /// <returns>
+        /// Saved result if delegate evaluated successfully.
+        /// </returns>
+        /// <exception cref="OperationCanceledException">
+        /// <paramref name="token"/> was tripped.
+        /// </exception>
+        public async Task<TResult> GetValueAsync(CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
+            // volatile read, can’t be reordered with subsequent operations
             if (_hasResult)
             {
                 return _result;
             }
-            if (GetOrBuildActiveTask() is Task<T> activeTask)
+            var activeTask = GetOrBuildActiveTask();
+            if (activeTask.IsCompleted)
             {
-                if (activeTask.IsCompleted)
-                {
-                    return activeTask.Result;
-                }
-                return await TaskWithCancellation(activeTask, token);
+                return activeTask.Result;
             }
-            return FallbackValue;
+            return await activeTask.WithCancellation(token);
         }
 
-        private Task<T> GetOrBuildActiveTask()
+        private Task<TResult> GetOrBuildActiveTask()
         {
             lock (_taskLock)
             {
-                if (_activeTask is object)
+                if (_activeTask is object) // i.e. is not null
                 {
                     return _activeTask;
                 }
-                if (!_failThrottlingStrategy.MayTryNow())
-                {
-                    return null;
-                }
-                _activeTask = Task.Run(TryGetNewValue);
-                return _activeTask;
+                return _activeTask = Task.Run(TryGetNewValue);
             }
         }
 
-        private T TryGetNewValue()
+        private TResult TryGetNewValue()
         {
             try
             {
                 _result = _mainFunc();
+
+                // volatile write, can’t be reordered with prior operations
                 _hasResult = true;
+
                 return _result;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                _failThrottlingStrategy.RecordFailure();
                 lock (_taskLock)
                 {
                     _activeTask = null;
                 }
-                try
-                {
-                    OnMainFuncException?.Invoke(e);
-                }
-                catch
-                {
-                    // nop -- do not report errors on reporting callback
-                }
                 throw;
-            }
-        }
-
-        // modified from
-        // https://stackoverflow.com/a/73207811
-        // i.e.
-        // https://github.com/davidfowl/AspNetCoreDiagnosticScenarios/blob/master/AsyncGuidance.md#cancelling-uncancellable-operations
-        private static async Task<R> TaskWithCancellation<R>(Task<R> task, CancellationToken cancellationToken)
-        {
-            var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            // This disposes the registration as soon as one of the tasks trigger
-            using (cancellationToken.Register(state =>
-            {
-                ((TaskCompletionSource<object>)state).TrySetResult(null);
-            },
-            tcs))
-            {
-                var resultTask = await Task.WhenAny(task, tcs.Task);
-                if (resultTask == tcs.Task)
-                {
-                    // Operation cancelled
-                    throw new OperationCanceledException(cancellationToken);
-                }
-
-                return await task;
             }
         }
     }
