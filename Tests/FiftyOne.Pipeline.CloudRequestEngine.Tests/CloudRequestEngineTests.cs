@@ -703,6 +703,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 }
             }
         }
+
         [TestMethod]
         public void ValidateErrorHandling_RetryAfterNotJson_WithinRecovery()
         {
@@ -771,6 +772,74 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                         Assert.IsInstanceOfType<PipelineTemporarilyUnavailableException>(
                             ex.InnerException);
                     }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ValidateErrorHandling_RetryAfterNotJson_AfterRecovery()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+
+            ConfigureMockedClient(_ => true);
+
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory,
+                _httpClient)
+                .SetResourceKey(resourceKey)
+                .SetRecoveryMilliseconds(100)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var defaultResponses = new string[]
+                {
+                    _jsonResponse,
+                    _evidenceKeysResponse,
+                    _accessiblePropertiesResponse,
+                };
+
+                _jsonResponse = "Status code: 404, '*json' method not found";
+                _jsonResponseStatus = HttpStatusCode.NotFound;
+
+                _evidenceKeysResponse = "Status code: 404, '*evidencekeys' method not found";
+                _evidenceKeysResponseStatus = HttpStatusCode.NotFound;
+
+                _accessiblePropertiesResponse = "Status code: 404, '*accessibleproperties' method not found";
+                _accessiblePropertiesResponseStatus = HttpStatusCode.NotFound;
+
+                using (var flowData = pipeline.CreateFlowData())
+                {
+                    flowData.AddEvidence("query.User-Agent", userAgent);
+                    try
+                    {
+                        flowData.Process();
+                        Assert.Fail("Expected exception did not occur");
+                    }
+                    catch (AggregateException)
+                    {
+                        // nop
+                    }
+                }
+
+                Thread.Sleep(millisecondsTimeout: 200);
+
+                _jsonResponse = defaultResponses[0];
+                _jsonResponseStatus = HttpStatusCode.OK;
+
+                _evidenceKeysResponse = defaultResponses[1];
+                _evidenceKeysResponseStatus = HttpStatusCode.OK;
+
+                _accessiblePropertiesResponse = defaultResponses[2];
+                _accessiblePropertiesResponseStatus = HttpStatusCode.OK;
+
+                using (var flowData = pipeline.CreateFlowData())
+                {
+                    flowData.AddEvidence("query.User-Agent", userAgent);
+                    flowData.Process();
+                    var result = flowData.GetFromElement(engine).JsonResponse;
+                    Assert.AreEqual("{'device':{'value':'1'}}", result);
                 }
             }
         }
