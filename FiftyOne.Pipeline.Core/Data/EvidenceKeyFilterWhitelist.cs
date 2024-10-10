@@ -76,7 +76,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// The list of evidence keys that is filter will include.
         /// By default, all keys will have the same order of precedence.
         /// </param>
-        public EvidenceKeyFilterWhitelist(IEnumerable<string> inclusionList)
+        public EvidenceKeyFilterWhitelist(List<string> inclusionList)
         {
             PopulateFromList(inclusionList);
         }
@@ -92,7 +92,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Comparator to use when comparing the keys.
         /// </param>
         public EvidenceKeyFilterWhitelist(
-            IEnumerable<string> inclusionList,
+            List<string> inclusionList,
             IEqualityComparer<string> comparer)
         {
             _comparer = comparer;
@@ -109,7 +109,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// The order of precedence of each key is given by the value of
         /// the key/value pair.
         /// </param>
-        public EvidenceKeyFilterWhitelist(IReadOnlyDictionary<string, int> inclusionList)
+        public EvidenceKeyFilterWhitelist(Dictionary<string, int> inclusionList)
         {
             PopulateFromDictionary(inclusionList);
         }
@@ -126,7 +126,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// Comparator to use when comparing the keys.
         /// </param>
         public EvidenceKeyFilterWhitelist(
-            IReadOnlyDictionary<string, int> inclusionList,
+            Dictionary<string, int> inclusionList,
             IEqualityComparer<string> comparer)
         {
             _comparer = comparer;
@@ -134,12 +134,12 @@ namespace FiftyOne.Pipeline.Core.Data
         }
 
 
-        private void PopulateFromList(IEnumerable<string> inclusionList)
+        private void PopulateFromList(List<string> inclusionList)
         {
             _inclusionList = inclusionList.ToDictionary(w => w, w => 0, _comparer);
         }
 
-        private void PopulateFromDictionary(IReadOnlyDictionary<string, int> inclusionList)
+        private void PopulateFromDictionary(Dictionary<string, int> inclusionList)
         {
             _inclusionList = inclusionList.ToDictionary(w => w.Key, w => w.Value, _comparer);
         }
