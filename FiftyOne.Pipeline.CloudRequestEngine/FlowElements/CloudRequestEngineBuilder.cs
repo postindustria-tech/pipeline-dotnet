@@ -75,14 +75,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="httpClient">
         /// HttpClient instance used to make http requests
         /// </param>
-        /// <param name="stopToken">
-        /// Used to cancel HTTP requests that are in progress. Usually the
-        /// application's cancellation token. 
-        /// </param>
         public CloudRequestEngineBuilder(
             ILoggerFactory loggerFactory,
-            HttpClient httpClient,
-            CancellationToken? stopToken = null)
+            HttpClient httpClient)
         {
             _loggerFactory = loggerFactory;
             _httpClient = httpClient;

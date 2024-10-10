@@ -74,8 +74,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -131,8 +130,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 loggerFactory, 
-                _httpClient, 
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -224,8 +222,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 loggerFactory, 
-                _httpClient, 
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -374,8 +371,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey("key")
                 .Build();
 
@@ -415,8 +411,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -476,8 +471,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -522,8 +516,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -582,8 +575,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -622,8 +614,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -659,8 +650,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -730,8 +720,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey("key")
                 .Build();
 
@@ -762,8 +751,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
             .SetResourceKey(resourceKey)
             .SetCacheSize(10)
             .SetCacheHitOrMiss(true)
@@ -807,8 +795,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
             .SetResourceKey(resourceKey)
             .SetCacheSize(10)
             .SetCacheHitOrMiss(true)
@@ -911,8 +898,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
             .SetResourceKey(resourceKey)
             .SetCacheSize(10)
             .SetCacheHitOrMiss(true)
@@ -990,8 +976,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                new HttpClient(),
-                CancellationToken.None)
+                new HttpClient())
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -1022,8 +1007,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             ConfigureMockedClient(r => true, true);
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory,
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 
@@ -1062,8 +1046,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             ConfigureMockedClient(r => true, true);
             var engine = new CloudRequestEngineBuilder(
                 _loggerFactory, 
-                _httpClient,
-                CancellationToken.None)
+                _httpClient)
                 .SetResourceKey(resourceKey)
                 .Build();
 

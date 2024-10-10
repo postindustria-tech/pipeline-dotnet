@@ -102,8 +102,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             var cloudRequestsEngine =
                 new CloudRequestEngineBuilder(
                     new LoggerFactory(), 
-                    new HttpClient(),
-                    CancellationToken.None)
+                    new HttpClient())
                 .Build();
         }
 
@@ -144,8 +143,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             var cloudRequestsEngine =
                 new CloudRequestEngineBuilder(
                     new LoggerFactory(), 
-                    new HttpClient(_handlerMock.Object),
-                    CancellationToken.None)
+                    new HttpClient(_handlerMock.Object))
                 .SetEndPoint(expectedUrl)
                 .SetResourceKey("abcdefgh")
                 .Build();
@@ -204,8 +202,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             var cloudRequestsEngine =
                 new CloudRequestEngineBuilder(
                     new LoggerFactory(), 
-                    new HttpClient(_handlerMock.Object), 
-                    CancellationToken.None)
+                    new HttpClient(_handlerMock.Object))
                 .SetResourceKey("abcdefgh")
                 .Build();
 
@@ -260,8 +257,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             var cloudRequestsEngine =
                 new CloudRequestEngineBuilder(
                     new LoggerFactory(),
-                    new HttpClient(_handlerMock.Object),
-                    CancellationToken.None)
+                    new HttpClient(_handlerMock.Object))
                 .SetResourceKey("abcdefgh")
                 .Build();
 
