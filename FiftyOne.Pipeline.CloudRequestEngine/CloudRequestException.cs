@@ -33,7 +33,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
     /// </summary>
     public class CloudRequestException : PipelineException
     {
-        private IReadOnlyDictionary<string, string> _responseHeaders;
+        private Dictionary<string, string> _responseHeaders;
 
         /// <summary>
         /// The HTTP status code from the response.
@@ -95,7 +95,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// <param name="innerException"></param>
         public CloudRequestException(string message,
             int httpStatusCode,
-            IReadOnlyDictionary<string, string> responseHeaders,
+            Dictionary<string, string> responseHeaders,
             Exception innerException) : base(message, innerException)
         {
             HttpStatusCode = httpStatusCode;
