@@ -532,25 +532,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             CloudRequestException cloudException,
             Exception newInnerException)
         {
-            Dictionary<string, string> responseHeaders;
-            if (cloudException.ResponseHeaders is IDictionary<string, string> oldHeaders)
-            {
-                if (oldHeaders is Dictionary<string, string> oldHeadersDic)
-                {
-                    responseHeaders = oldHeadersDic;
-                } 
-                else
-                {
-                    responseHeaders = new Dictionary<string, string>(oldHeaders);
-                }
-            } else
-            {
-                responseHeaders = null;
-            }
             return new CloudRequestException(
                             cloudException.Message,
                             cloudException.HttpStatusCode,
-                            responseHeaders,
+                            cloudException.ResponseHeaders,
                             newInnerException);
         }
 
