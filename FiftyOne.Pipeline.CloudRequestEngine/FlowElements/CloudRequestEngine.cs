@@ -285,14 +285,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 // not provided then warn via logging.
 
                 _lazyEvidenceKeyFilter 
-                    = new AsyncLazyFailable<IEvidenceKeyFilter>(
-                        GetCloudEvidenceKeys);
+                    = new Lazy<IEvidenceKeyFilter>(
+                        GetCloudEvidenceKeys,
+                        LazyThreadSafetyMode.PublicationOnly);
                 _lazyPublicProperties 
-                    = new AsyncLazyFailable<IReadOnlyDictionary<string, ProductMetaData>>(
-                        GetCloudProperties);
-
-                _ = _lazyEvidenceKeyFilter.GetValueAsync(CancellationToken.None);
-                _ = _lazyPublicProperties.GetValueAsync(CancellationToken.None);
+                    = new Lazy<IReadOnlyDictionary<string, ProductMetaData>>(
+                        GetCloudProperties,
+                        LazyThreadSafetyMode.PublicationOnly);
             }
             catch (Exception ex)
             {
@@ -325,13 +324,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// A task that is started in the constructor and when complete returns
         /// the instance of IEvidenceKeyFilter.
         /// </summary>
-        private AsyncLazyFailable<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
+        private Lazy<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
 
         /// <summary>
         /// A task that is started in the constructor and when complete returns
         /// the instance of IReadOnlyDictionary{string, ProductMetaData}.
         /// </summary>
-        private AsyncLazyFailable<IReadOnlyDictionary<string, ProductMetaData>>
+        private Lazy<IReadOnlyDictionary<string, ProductMetaData>>
             _lazyPublicProperties;
 
         /// <summary>
@@ -350,9 +349,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 try
                 {
-                    return _lazyEvidenceKeyFilter
-                        .GetValueAsync(CancellationToken.None)
-                        .Result;
+                    if (_lazyEvidenceKeyFilter.IsValueCreated)
+                    {
+                        return _lazyEvidenceKeyFilter.Value;
+                    }
+                    lock (_lazyEvidenceKeyFilter)
+                    {
+                        return _lazyEvidenceKeyFilter.Value;
+                    }
                 }
                 catch (AggregateException ex)
                 {
@@ -389,9 +393,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 try
                 {
-                    return _lazyPublicProperties
-                        .GetValueAsync(CancellationToken.None)
-                        .Result;
+                    if (_lazyPublicProperties.IsValueCreated)
+                    {
+                        return _lazyPublicProperties.Value;
+                    }
+                    lock (_lazyPublicProperties)
+                    {
+                        return _lazyPublicProperties.Value;
+                    }
                 }
                 catch (AggregateException ex)
                 {

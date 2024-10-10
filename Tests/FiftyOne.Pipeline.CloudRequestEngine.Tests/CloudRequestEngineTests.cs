@@ -637,9 +637,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 Assert.AreEqual(ex.HttpStatusCode, 404, "Status code should be 404");
                 Assert.IsNotNull(ex.ResponseHeaders, "Response headers not populated");
                 Assert.IsNotNull(ex.InnerException, "Inner exception not populated");
-                Assert.IsInstanceOfType<AggregateException>(ex.InnerException, $"Inner (depth 1) exception is not an instance of {nameof(AggregateException)}");
-                Assert.IsInstanceOfType<CloudRequestException>(ex.InnerException.InnerException, $"Inner (depth 2) exception is not an instance of {nameof(CloudRequestException)}");
-                Assert.IsInstanceOfType<JsonReaderException>(ex.InnerException.InnerException.InnerException, $"Inner (depth 3) exception is not an instance of {nameof(JsonReaderException)}");
+                Assert.IsInstanceOfType<JsonReaderException>(ex.InnerException, $"Inner exception is not an instance of {nameof(JsonReaderException)}");
                 throw;
             }
         }
