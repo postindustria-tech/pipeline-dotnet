@@ -24,7 +24,6 @@ using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Core.TypedMap;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace FiftyOne.Pipeline.Core.Data
 {
@@ -127,22 +126,6 @@ namespace FiftyOne.Pipeline.Core.Data
         /// populate the aspect data values.
         /// </summary>
         void Process();
-
-        /// <summary>
-        /// Use the pipeline to process this FlowData instance and 
-        /// populate the aspect data values.
-        /// </summary>
-        /// <param name="cancellationToken">
-        /// Token to cancel processing.
-        /// Can be retrieved by flow elements from
-        /// <see cref="ProcessingCancellationToken"/>.
-        /// </param>
-        void Process(CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Token passed into <see cref="Process(CancellationToken)"/>.
-        /// </summary>
-        CancellationToken ProcessingCancellationToken { get; }
 
         /// <summary>
         /// Add the specified evidence to the FlowData
