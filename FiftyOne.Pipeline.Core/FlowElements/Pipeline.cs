@@ -127,16 +127,16 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         {
             get
             {
-                if (_evidenceKeyFilter is null)
+                if(_evidenceKeyFilter == null)
                 {
                     lock (_evidenceKeyFilterLock)
                     {
-                        if (_evidenceKeyFilter is null)
+                        if (_evidenceKeyFilter == null)
                         {
                             var evidenceKeyFilter = 
                                 new EvidenceKeyFilterAggregator();
                             foreach (var filter in _flowElements.Select(e => 
-                                e.EvidenceKeyFilter)) // may throw!
+                                e.EvidenceKeyFilter))
                             {
                                 evidenceKeyFilter.AddFilter(filter);
                             }
