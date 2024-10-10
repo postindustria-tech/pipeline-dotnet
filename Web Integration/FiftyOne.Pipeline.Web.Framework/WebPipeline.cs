@@ -279,7 +279,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                 // Process the evidence and return the result
                 try
                 {
-                    flowData.Process();
+                    flowData.Process(GetCancellationTokenForRequest(request));
                 }
                 catch (AggregateException ex)
                 {
@@ -337,6 +337,22 @@ namespace FiftyOne.Pipeline.Web.Framework
             }
 
             return flowData;
+        }
+
+        private static CancellationToken GetCancellationTokenForRequest(HttpRequest httpRequest)
+        {
+            var timedOutToken = httpRequest.TimedOutToken;
+            try
+            {
+                return CancellationTokenSource.CreateLinkedTokenSource(
+                    timedOutToken,
+                    httpRequest.RequestContext.HttpContext.Response.ClientDisconnectedToken)
+                    .Token;
+            }
+            catch (PlatformNotSupportedException)
+            {
+                return timedOutToken;
+            }
         }
 
         /// <summary>

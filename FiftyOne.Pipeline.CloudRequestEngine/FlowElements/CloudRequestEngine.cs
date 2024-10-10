@@ -466,7 +466,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
                 requestMessage.Content = content;
                 jsonResult = AmendSendAndProcess(
-                    requestMessage,
+                    requestMessage, 
+                    data.ProcessingCancellationToken,
                     checkForErrorMessages: true);
             }
 
@@ -486,13 +487,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
         private string AmendSendAndProcess(
             HttpRequestMessage request,
+            CancellationToken cancellationToken,
             bool checkForErrorMessages)
         {
             try
             {
                 return ProcessResponse(
                     AddCommonHeadersAndSend(
-                        request),
+                        request,
+                        cancellationToken),
                     checkForErrorMessages);
             }
             catch (Exception mainException)
@@ -821,6 +824,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 {
                     jsonResult = AmendSendAndProcess(
                         requestMessage,
+                        CancellationToken.None,
                         checkForErrorMessages: true);
                 }
                 catch (Exception ex)
@@ -864,7 +868,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     // Note - Don't check for error messages in the response
                     // as it is a flat JSON array.
                     jsonResult = AmendSendAndProcess(
-                        requestMessage,
+                        requestMessage, 
+                        CancellationToken.None,
                         checkForErrorMessages: false);
                 }
                 catch (Exception ex)
@@ -893,11 +898,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="request">
         /// The request to send
         /// </param>
+        /// <param name="cancellationToken">
+        /// Token to cancel HTTP request.
+        /// </param>
         /// <returns>
         /// The response
         /// </returns>
         private HttpResponseMessage AddCommonHeadersAndSend(
-            HttpRequestMessage request)
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
             ThrowIfStillRecovering();
             if (string.IsNullOrEmpty(_endpointsAndKeys.CloudRequestOrigin) == false &&
@@ -907,7 +916,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 request.Headers.Add(Constants.ORIGIN_HEADER_NAME, _endpointsAndKeys.CloudRequestOrigin);
             }
-            return SendRequestAsync(request);
+            return SendRequestAsync(request, cancellationToken);
         }
 
         /// <summary>
@@ -916,15 +925,19 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="request">
         /// The request to send
         /// </param>
+        /// <param name="cancellationToken">
+        /// Token to cancel HTTP request.
+        /// </param>
         /// <returns>
         /// The response
         /// </returns>
         private HttpResponseMessage SendRequestAsync(
-            HttpRequestMessage request)
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
             try
             {
-                return _httpClient.SendAsync(request).Result;
+                return _httpClient.SendAsync(request, cancellationToken).Result;
             }
             catch (AggregateException httpException)
             {
