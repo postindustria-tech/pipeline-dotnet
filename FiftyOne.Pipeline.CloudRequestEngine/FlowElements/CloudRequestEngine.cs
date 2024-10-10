@@ -870,7 +870,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 catch (Exception ex)
                 {
                     Logger?.LogError(ErrorMessage(), ex);
-                    return null;
+                    throw;
                 }
             }
 
