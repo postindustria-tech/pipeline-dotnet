@@ -320,14 +320,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         public override string ElementDataKey => "cloud-response";
 
         /// <summary>
-        /// A task that is started in the constructor and when complete returns
-        /// the instance of IEvidenceKeyFilter.
+        /// Responsible for initializing IEvidenceKeyFilter
+        /// only once.
         /// </summary>
         private Lazy<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
 
         /// <summary>
-        /// A task that is started in the constructor and when complete returns
-        /// the instance of IReadOnlyDictionary{string, ProductMetaData}.
+        /// Responsible for initializing IReadOnlyDictionary{string, ProductMetaData}
+        /// only once.
         /// </summary>
         private Lazy<IReadOnlyDictionary<string, ProductMetaData>>
             _lazyPublicProperties;
@@ -341,6 +341,11 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <exception cref="CloudRequestException">
         /// Thrown if there is an error from the cloud service or
         /// there is no data in the response.
+        /// </exception>
+        /// <exception cref="CloudRequestEngineTemporarilyUnavailableException">
+        /// <see cref="IFailThrottlingStrategy"/> 
+        /// temporarily suppresses further requests
+        /// due to recent error.
         /// </exception>
         public override IEvidenceKeyFilter EvidenceKeyFilter 
         {
@@ -376,12 +381,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// populate in the JSON response.
         /// Keyed on property name.
         /// </summary>
-        /// <remarks>
-        /// Returns null if the task has not finished.
-        /// </remarks>
         /// <exception cref="CloudRequestException">
         /// Thrown if there is an error from the cloud service or
         /// there is no data in the response.
+        /// </exception>
+        /// <exception cref="CloudRequestEngineTemporarilyUnavailableException">
+        /// <see cref="IFailThrottlingStrategy"/> 
+        /// temporarily suppresses further requests
+        /// due to recent error.
         /// </exception>
         public IReadOnlyDictionary<string, ProductMetaData> PublicProperties {
             get
@@ -422,6 +429,11 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <exception cref="CloudRequestException">
         /// Thrown if there is an error from the cloud service or
         /// there is no data in the response.
+        /// </exception>
+        /// <exception cref="CloudRequestEngineTemporarilyUnavailableException">
+        /// <see cref="IFailThrottlingStrategy"/> 
+        /// temporarily suppresses further requests
+        /// due to recent error.
         /// </exception>
         protected override void ProcessEngine(
             IFlowData data, 
