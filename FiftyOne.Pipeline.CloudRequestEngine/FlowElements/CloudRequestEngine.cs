@@ -498,13 +498,17 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             catch (Exception mainException)
             {
                 Exception strategyException = null;
-                try
+                if (!(mainException
+                    is CloudRequestEngineTemporarilyUnavailableException))
                 {
-                    _failThrottlingStrategy.RecordFailure();
-                }
-                catch (Exception ex)
-                {
-                    strategyException = ex;
+                    try
+                    {
+                        _failThrottlingStrategy.RecordFailure();
+                    }
+                    catch (Exception ex)
+                    {
+                        strategyException = ex;
+                    }
                 }
 
                 if (strategyException is null)
@@ -808,6 +812,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </exception>
         private IReadOnlyDictionary<string, ProductMetaData> GetCloudProperties()
         {
+            ThrowIfStillRecovering();
             var jsonResult = string.Empty;
             Func<string> ErrorMessage = () => 
                 "Failed to retrieve available properties " +
@@ -851,6 +856,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </returns>
         private IEvidenceKeyFilter GetCloudEvidenceKeys()
         {
+            ThrowIfStillRecovering();
             var jsonResult = string.Empty;
             Func<string> ErrorMessage = () => 
                 "Failed to retrieve evidence keys " +
@@ -928,22 +934,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
             catch (AggregateException httpException)
             {
-                Exception strategyException = null;
-                try
-                {
-                    _failThrottlingStrategy.RecordFailure();
-                }
-                catch (Exception ex2)
-                {
-                    strategyException = ex2;
-                }
-                AggregateException effectiveException
-                    = (strategyException is null)
-                    ? httpException
-                    : new AggregateException(httpException, strategyException);
                 throw new CloudRequestException(
                     Messages.ExceptionCloudResponseFailure,
-                    effectiveException);
+                    httpException);
             }
         }
     }
