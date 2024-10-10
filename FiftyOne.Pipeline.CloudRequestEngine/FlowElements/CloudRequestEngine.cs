@@ -365,11 +365,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                         _endpointsAndKeys.EvidenceKeysEndpoint);
                     if (ex.InnerException is CloudRequestException cloudException)
                     {
-                        throw new CloudRequestException(
-                            cloudException.Message,
-                            cloudException.HttpStatusCode,
-                            cloudException.ResponseHeaders,
-                            ex);
+                        throw ResurfaceCloudException(cloudException, ex);
                     }
                     throw;
                 }
@@ -409,11 +405,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                         _endpointsAndKeys.PropertiesEndpoint);
                     if (ex.InnerException is CloudRequestException cloudException)
                     {
-                        throw new CloudRequestException(
-                            cloudException.Message,
-                            cloudException.HttpStatusCode,
-                            cloudException.ResponseHeaders,
-                            ex);
+                        throw ResurfaceCloudException(cloudException, ex);
                     }
                     throw;
                 }
@@ -462,8 +454,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 }
 
                 requestMessage.Content = content;
-                jsonResult = ProcessResponse(
-                    AddCommonHeadersAndSend(requestMessage, data.ProcessingCancellationToken));
+                jsonResult = AmendSendAndProcess(
+                    requestMessage, 
+                    data.ProcessingCancellationToken,
+                    checkForErrorMessages: true);
             }
 
             aspectData.JsonResponse = jsonResult;
@@ -478,6 +472,60 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     + " is temporarily restricted"
                     + " due to recent failures.");
             }
+        }
+
+        private string AmendSendAndProcess(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken,
+            bool checkForErrorMessages)
+        {
+            try
+            {
+                return ProcessResponse(
+                    AddCommonHeadersAndSend(
+                        request,
+                        cancellationToken),
+                    checkForErrorMessages);
+            }
+            catch (Exception mainException)
+            {
+                Exception strategyException = null;
+                try
+                {
+                    _failThrottlingStrategy.RecordFailure();
+                }
+                catch (Exception ex)
+                {
+                    strategyException = ex;
+                }
+
+                if (strategyException is null)
+                {
+                    throw;
+                }
+
+                AggregateException mergedException 
+                    = new AggregateException(mainException, strategyException);
+                var originalCloudException
+                    = (mainException as CloudRequestException)
+                    ?? (mainException.InnerException as CloudRequestException);
+                if (originalCloudException is null)
+                {
+                    throw mergedException;
+                }
+                throw ResurfaceCloudException(originalCloudException, mergedException);
+            }
+        }
+
+        private CloudRequestException ResurfaceCloudException(
+            CloudRequestException cloudException,
+            Exception newInnerException)
+        {
+            return new CloudRequestException(
+                            cloudException.Message,
+                            cloudException.HttpStatusCode,
+                            cloudException.ResponseHeaders,
+                            newInnerException);
         }
 
         /// <summary>
@@ -748,9 +796,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 try
                 {
-                    jsonResult = ProcessResponse(AddCommonHeadersAndSend(
-                        requestMessage, 
-                        CancellationToken.None));
+                    jsonResult = AmendSendAndProcess(
+                        requestMessage,
+                        CancellationToken.None,
+                        checkForErrorMessages: true);
                 }
                 catch (Exception ex)
                 {
@@ -792,8 +841,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 {
                     // Note - Don't check for error messages in the response
                     // as it is a flat JSON array.
-                    jsonResult = ProcessResponse(
-                        AddCommonHeadersAndSend(requestMessage, CancellationToken.None), false);
+                    jsonResult = AmendSendAndProcess(
+                        requestMessage, 
+                        CancellationToken.None,
+                        checkForErrorMessages: false);
                 }
                 catch (Exception ex)
                 {
@@ -881,6 +932,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     Messages.ExceptionCloudResponseFailure,
                     effectiveException);
             }
-        } 
+        }
     }
 }
