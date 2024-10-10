@@ -367,8 +367,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             cloudException.ResponseHeaders,
                             ex);
                     }
-                    return new EvidenceKeyFilterWhitelist(
-                        Enumerable.Empty<string>());
+                    throw;
                 }
             }
         }
@@ -407,7 +406,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                             cloudException.ResponseHeaders,
                             ex);
                     }
-                    return new Dictionary<string, ProductMetaData>(0);
+                    throw;
                 }
             }
         }

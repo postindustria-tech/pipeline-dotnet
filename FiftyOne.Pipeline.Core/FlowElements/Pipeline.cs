@@ -127,7 +127,6 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         {
             get
             {
-                IEvidenceKeyFilter tempResult = null;
                 if (_evidenceKeyFilter is null)
                 {
                     lock (_evidenceKeyFilterLock)
@@ -137,22 +136,15 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                             var evidenceKeyFilter = 
                                 new EvidenceKeyFilterAggregator();
                             foreach (var filter in _flowElements.Select(e => 
-                                e.EvidenceKeyFilter))
+                                e.EvidenceKeyFilter)) // may throw!
                             {
                                 evidenceKeyFilter.AddFilter(filter);
                             }
-                            if ((evidenceKeyFilter as IFailableLazyResult)?.MayBeSaved == false)
-                            {
-                                tempResult = evidenceKeyFilter;
-                            }
-                            else
-                            {
-                                _evidenceKeyFilter = evidenceKeyFilter;
-                            }
+                            _evidenceKeyFilter = evidenceKeyFilter;
                         }
                     }
                 }
-                return _evidenceKeyFilter ?? tempResult;
+                return _evidenceKeyFilter;
             }
         }
 
