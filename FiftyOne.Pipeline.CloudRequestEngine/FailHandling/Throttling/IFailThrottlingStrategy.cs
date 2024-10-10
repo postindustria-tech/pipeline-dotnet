@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Throttling
+﻿namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Throttling
 {
     /// <summary>
     /// Controls when to suspend requests

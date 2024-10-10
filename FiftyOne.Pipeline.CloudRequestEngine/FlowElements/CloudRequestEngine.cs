@@ -21,7 +21,6 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
-using FiftyOne.Pipeline.CloudRequestEngine.FailHandling;
 using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Throttling;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;

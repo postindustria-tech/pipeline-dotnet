@@ -31,7 +31,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Threading;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
