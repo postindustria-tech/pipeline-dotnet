@@ -290,13 +290,13 @@ namespace FiftyOne.Pipeline.Web.Framework
             catch (Exception ex)
             {
                 var shouldSuppress 
-                    = GetInstance().Pipeline.SuppressProcessExceptions 
-                    || 
-                    (
-                    ex is AggregateException 
-                    &&
-                    ex.InnerException is PipelineTemporarilyUnavailableException
-                    );
+                    // Suppress all ?
+                    = GetInstance().Pipeline.SuppressProcessExceptions
+                    // thrown by `EvidenceKeyFilter` ?
+                    || ex is PipelineTemporarilyUnavailableException
+                    // thrown by `Process` ?
+                    || (ex is AggregateException 
+                    && ex.InnerException is PipelineTemporarilyUnavailableException);
                 if (!shouldSuppress)
                 {
                     Exception ex2 = null;
