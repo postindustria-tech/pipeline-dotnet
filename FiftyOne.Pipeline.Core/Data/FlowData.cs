@@ -307,6 +307,10 @@ namespace FiftyOne.Pipeline.Core.Data
         /// <exception cref="ObjectDisposedException">
         /// Thrown if the Pipeline has already been disposed.
         /// </exception>
+        /// <exception cref="OperationCanceledException">
+        /// Thrown if <paramref name="cancellationToken"/> tripped
+        /// before execution started.
+        /// </exception>
         /// <param name="cancellationToken">
         /// Token to cancel processing.
         /// Can be retrieved by flow elements from
@@ -314,6 +318,7 @@ namespace FiftyOne.Pipeline.Core.Data
         /// </param>
         public void Process(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_processed)
             {
                 throw new PipelineException(Messages.ExceptionFlowDataAlreadyProcessed);
