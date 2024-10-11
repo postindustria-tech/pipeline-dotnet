@@ -278,34 +278,7 @@ namespace FiftyOne.Pipeline.Web.Framework
                 }
 
                 // Process the evidence and return the result
-                try
-                {
-                    flowData.Process(GetCancellationTokenForRequest(request));
-                }
-                catch (AggregateException ex)
-                {
-                    if (ex.InnerException 
-                        is PipelineTemporarilyUnavailableException temporaryException)
-                    {
-                        // Resurface inner exception.
-                        //
-                        // The outer handler (below)
-                        // will re-wrap it up into AggregateException
-                        // of depth 1.
-                        // (both if Dispose succeeds or fails)
-                        //
-                        // this prevents potential double-nesting:
-                        // - AggregateException
-                        //   + AggregateException <- the one just caught from `Process`
-                        //     * PipelineTemporarilyUnavailableException <- to be resurfaced
-                        //   + Exception <- thrown by `flowData.Dispose()` below
-
-                        throw new PipelineTemporarilyUnavailableException(
-                            temporaryException.Message,
-                            ex);
-                    }
-                    throw;
-                }
+                flowData.Process(GetCancellationTokenForRequest(request));
 
                 if (GetInstance().SetHeaderPropertiesEnabled &&
                     request.RequestContext.HttpContext.ApplicationInstance != null)
@@ -317,7 +290,15 @@ namespace FiftyOne.Pipeline.Web.Framework
             } 
             catch (Exception ex)
             {
-                if (!GetInstance().Pipeline.SuppressProcessExceptions)
+                var shouldSuppress 
+                    // Suppress all ?
+                    = GetInstance().Pipeline.SuppressProcessExceptions
+                    // thrown by `EvidenceKeyFilter` ?
+                    || ex is PipelineTemporarilyUnavailableException
+                    // thrown by `Process` ?
+                    || (ex is AggregateException 
+                    && ex.InnerException is PipelineTemporarilyUnavailableException);
+                if (!shouldSuppress)
                 {
                     Exception ex2 = null;
                     try
