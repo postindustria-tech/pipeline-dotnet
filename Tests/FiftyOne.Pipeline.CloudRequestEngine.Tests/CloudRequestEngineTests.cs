@@ -48,14 +48,24 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 
         private Uri expectedUri = new Uri("https://cloud.51degrees.com/api/v4/json");
 
-        private string _jsonResponse = "{'device':{'value':'1'}}";
-        private HttpStatusCode _jsonResponseStatus = HttpStatusCode.OK;
-        private string _evidenceKeysResponse = "['query.User-Agent']";
-        private HttpStatusCode _evidenceKeysResponseStatus = HttpStatusCode.OK;
-        private string _accessiblePropertiesResponse =
-            "{'Products': {'device': {'DataTier': 'tier','Properties': [{'Name': 'value','Type': 'String','Category': 'Device'}]}}}";
-        private HttpStatusCode _accessiblePropertiesResponseStatus = HttpStatusCode.OK;
+        private string _jsonResponse;
+        private HttpStatusCode _jsonResponseStatus;
+        private string _evidenceKeysResponse;
+        private HttpStatusCode _evidenceKeysResponseStatus;
+        private string _accessiblePropertiesResponse;
+        private HttpStatusCode _accessiblePropertiesResponseStatus;
 
+        [TestInitialize]
+        public void Setup()
+        {
+            _jsonResponse = "{'device':{'value':'1'}}";
+            _jsonResponseStatus = HttpStatusCode.OK;
+            _evidenceKeysResponse = "['query.User-Agent']";
+            _evidenceKeysResponseStatus = HttpStatusCode.OK;
+            _accessiblePropertiesResponse =
+                "{'Products': {'device': {'DataTier': 'tier','Properties': [{'Name': 'value','Type': 'String','Category': 'Device'}]}}}";
+            _accessiblePropertiesResponseStatus = HttpStatusCode.OK;
+        }
 
         /// <summary>
         /// Test cloud request engine adds correct information to post request
@@ -936,6 +946,81 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
             }
         }
 
+        [TestMethod]
+        public void ProcessWithToken_NotCancelled()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+
+            ConfigureMockedClient(
+                _ => true,
+                responseDelay: TimeSpan.FromMilliseconds(500));
+
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory,
+                _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData.AddEvidence("query.User-Agent", userAgent);
+                var tokenSource = new CancellationTokenSource();
+
+                flowData.Process(tokenSource.Token);
+
+                var result = flowData.GetFromElement(engine).JsonResponse;
+                Assert.AreEqual("{'device':{'value':'1'}}", result);
+            }
+        }
+
+        [TestMethod]
+        public void ProcessWithToken_Cancelled()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+
+            ConfigureMockedClient(
+                _ => true, 
+                responseDelay: TimeSpan.FromMilliseconds(500));
+
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory,
+                _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData.AddEvidence("query.User-Agent", userAgent);
+                var tokenSource = new CancellationTokenSource();
+                try
+                {
+                    Task.Run(() =>
+                    {
+                        Thread.Sleep(200);
+                        tokenSource.Cancel();
+                    });
+                    flowData.Process(tokenSource.Token);
+                    Assert.Fail("Expected exception did not occur");
+                }
+                catch (AggregateException e)
+                when (
+                e.InnerException is CloudRequestException
+                &&
+                e.InnerException.InnerException
+                is AggregateException
+                &&
+                e.InnerException.InnerException.InnerException
+                is TaskCanceledException)
+                {
+                    // nop
+                }
+            }
+        }
+
         /// <summary>
         /// Verify that the 'DelayExecution' and 'EvidenceProperties'
         /// properties are populated correctly by the CloudRequestEngine.
@@ -1305,7 +1390,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         /// </summary>
         private void ConfigureMockedClient(
             Func<HttpRequestMessage, bool> expectedJsonParameters,
-            bool throwExceptionOnJsonRequest = false)
+            bool throwExceptionOnJsonRequest = false,
+            TimeSpan? responseDelay = null)
         {
             // ARRANGE
             _handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
@@ -1329,12 +1415,18 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 setup.Returns(task);
             } 
             else 
-            { 
-               // Prepare the expected response of the mocked http call
-               setup.ReturnsAsync(() => new HttpResponseMessage()
-                {
-                    StatusCode = _jsonResponseStatus,
-                    Content = new StringContent(_jsonResponse),
+            {
+                // Prepare the expected response of the mocked http call
+                setup.ReturnsAsync(() => {
+                    if (responseDelay != null)
+                    {
+                        Thread.Sleep((int)responseDelay.Value.TotalMilliseconds);
+                    }
+                    return new HttpResponseMessage()
+                    {
+                        StatusCode = _jsonResponseStatus,
+                        Content = new StringContent(_jsonResponse),
+                    };
                 })
                .Verifiable();
             }
@@ -1350,10 +1442,16 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                   ItExpr.IsAny<CancellationToken>()
                )
                // prepare the expected response of the mocked http call
-               .ReturnsAsync(() => new HttpResponseMessage()
-               {
-                   StatusCode = _evidenceKeysResponseStatus,
-                   Content = new StringContent(_evidenceKeysResponse),
+               .ReturnsAsync(() => {
+                    if (responseDelay != null)
+                    {
+                        Thread.Sleep((int)responseDelay.Value.TotalMilliseconds);
+                    }
+                    return new HttpResponseMessage()
+                    {
+                        StatusCode = _evidenceKeysResponseStatus,
+                        Content = new StringContent(_evidenceKeysResponse),
+                    };
                })
                .Verifiable();
             // Set up the accessibleproperties response.
@@ -1367,10 +1465,16 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                   ItExpr.IsAny<CancellationToken>()
                )
                // prepare the expected response of the mocked http call
-               .ReturnsAsync(() => new HttpResponseMessage()
-               {
-                   StatusCode = _accessiblePropertiesResponseStatus,
-                   Content = new StringContent(_accessiblePropertiesResponse),
+               .ReturnsAsync(() => {
+                    if (responseDelay != null)
+                    {
+                        Thread.Sleep((int)responseDelay.Value.TotalMilliseconds);
+                    }
+                    return new HttpResponseMessage()
+                    {
+                        StatusCode = _accessiblePropertiesResponseStatus,
+                        Content = new StringContent(_accessiblePropertiesResponse),
+                    };
                })
                .Verifiable();
 
