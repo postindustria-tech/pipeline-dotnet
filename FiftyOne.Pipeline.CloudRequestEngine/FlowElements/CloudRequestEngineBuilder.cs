@@ -21,7 +21,8 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
-using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Throttling;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Recovery;
 using FiftyOne.Pipeline.Core.Attributes;
 using FiftyOne.Pipeline.Core.Exceptions;
 using FiftyOne.Pipeline.Core.FlowElements;
@@ -285,8 +286,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
             var failThrottlingStrategy 
                 = (_recoveryMilliseconds > 0)
-                ? new SimpleThrottlingStrategy(_recoveryMilliseconds)
-                : (IFailThrottlingStrategy)new NoThrottlingStrategy();
+                ? new SimpleRecoveryStrategy(_recoveryMilliseconds)
+                : (IRecoveryStrategy)new InstantRecoveryStrategy();
 
             return new CloudRequestEngine(
                 _loggerFactory.CreateLogger<CloudRequestEngine>(),
@@ -303,7 +304,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     RequestedProperties = properties,
                 },
                 _timeout,
-                failThrottlingStrategy);
+                new SimpleFailHandler(failThrottlingStrategy));
         }
     }
 }

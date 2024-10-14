@@ -1,5 +1,6 @@
 
-using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Throttling;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.ExceptionCaching;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Recovery;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading;
 
@@ -8,101 +9,125 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
     [TestClass]
     public class ThrottlingStrategyTests
     {
-        #region NoThrottlingStrategy
+        #region InstantRecoveryStrategy
 
         [TestMethod]
-        public void NoThrottlingStrategyShouldReturnTrue()
+        public void InstantRecoveryStrategyShouldReturnTrue()
         {
-            IFailThrottlingStrategy strategy = new NoThrottlingStrategy();
+            IRecoveryStrategy strategy = new InstantRecoveryStrategy();
 
-            Assert.IsTrue(strategy.MayTryNow(), 
-                $"{nameof(NoThrottlingStrategy)}.{nameof(IFailThrottlingStrategy.MayTryNow)}"
+            Assert.IsTrue(strategy.MayTryNow(out var cachedException), 
+                $"{nameof(InstantRecoveryStrategy)}.{nameof(IRecoveryStrategy.MayTryNow)}"
                 + " should return true.");
+            Assert.IsNull(cachedException,
+                $"{nameof(cachedException)} is not null.");
         }
 
         [TestMethod]
-        public void NoThrottlingStrategyShouldReturnTrueAfterFailure()
+        public void InstantRecoveryStrategyShouldReturnTrueAfterFailure()
         {
-            IFailThrottlingStrategy strategy = new NoThrottlingStrategy();
+            IRecoveryStrategy strategy = new InstantRecoveryStrategy();
 
-            strategy.RecordFailure();
+            var ex = new CachedException(new System.Exception("dummy exception"));
 
-            Assert.IsTrue(strategy.MayTryNow(),
-                $"{nameof(NoThrottlingStrategy)}.{nameof(IFailThrottlingStrategy.MayTryNow)}"
+            strategy.RecordFailure(ex);
+
+            Assert.IsTrue(strategy.MayTryNow(out var ex2),
+                $"{nameof(InstantRecoveryStrategy)}.{nameof(IRecoveryStrategy.MayTryNow)}"
                 + " should return true.");
+            Assert.IsNull(ex2,
+                $"{nameof(ex2)} is not null.");
         }
 
         #endregion
 
-        #region NoRetryStrategy
+        #region NoRecoveryStrategy
 
         [TestMethod]
-        public void NoRetryStrategyShouldReturnTrue()
+        public void NoRecoveryStrategyShouldReturnTrue()
         {
-            IFailThrottlingStrategy strategy = new NoRetryStrategy();
+            IRecoveryStrategy strategy = new NoRecoveryStrategy();
 
-            Assert.IsTrue(strategy.MayTryNow(),
-                $"{nameof(NoRetryStrategy)}.{nameof(IFailThrottlingStrategy.MayTryNow)}"
+            Assert.IsTrue(strategy.MayTryNow(out var cachedException),
+                $"{nameof(NoRecoveryStrategy)}.{nameof(IRecoveryStrategy.MayTryNow)}"
                 + " should return true.");
+            Assert.IsNull(cachedException,
+                $"{nameof(cachedException)} is not null.");
         }
 
         [TestMethod]
-        public void NoRetryStrategyShouldReturnTrueAfterFailure()
+        public void NoRecoveryStrategyShouldReturnTrueAfterFailure()
         {
-            IFailThrottlingStrategy strategy = new NoRetryStrategy();
+            IRecoveryStrategy strategy = new NoRecoveryStrategy();
 
-            strategy.RecordFailure();
+            var ex = new CachedException(new System.Exception("dummy exception"));
 
-            Assert.IsFalse(strategy.MayTryNow(),
-                $"{nameof(NoRetryStrategy)}.{nameof(IFailThrottlingStrategy.MayTryNow)}"
+            strategy.RecordFailure(ex);
+
+            Assert.IsFalse(strategy.MayTryNow(out var ex2),
+                $"{nameof(NoRecoveryStrategy)}.{nameof(IRecoveryStrategy.MayTryNow)}"
                 + " should return false.");
+            Assert.AreSame(ex, ex2,
+                "The returned exception is a different object.");
         }
 
         #endregion
 
-        #region SimpleThrottlingStrategy
+        #region SimpleRecoveryStrategy
 
         [TestMethod]
-        public void SimpleThrottlingStrategyShouldReturnTrue()
+        public void SimpleRecoveryStrategyShouldReturnTrue()
         {
-            IFailThrottlingStrategy strategy 
-                = new SimpleThrottlingStrategy(recoveryMilliseconds: 3000);
+            IRecoveryStrategy strategy 
+                = new SimpleRecoveryStrategy(recoveryMilliseconds: 3000);
 
-            Assert.IsTrue(strategy.MayTryNow(),
-                $"{nameof(SimpleThrottlingStrategy)}.{nameof(IFailThrottlingStrategy.MayTryNow)}"
+            Assert.IsTrue(strategy.MayTryNow(out var cachedException),
+                $"{nameof(SimpleRecoveryStrategy)}.{nameof(IRecoveryStrategy.MayTryNow)}"
                 + " should return true.");
+            Assert.IsNull(cachedException,
+                $"{nameof(cachedException)} is not null.");
         }
 
         [TestMethod]
-        public void SimpleThrottlingStrategyShouldReturnFalseAfterFailure()
+        public void SimpleRecoveryStrategyShouldReturnFalseAfterFailure()
         {
-            IFailThrottlingStrategy strategy 
-                = new SimpleThrottlingStrategy(recoveryMilliseconds: 5000);
+            IRecoveryStrategy strategy 
+                = new SimpleRecoveryStrategy(recoveryMilliseconds: 5000);
 
-            strategy.RecordFailure();
+            var ex = new CachedException(new System.Exception("dummy exception"));
 
-            Assert.IsFalse(strategy.MayTryNow(),
-                $"{nameof(SimpleThrottlingStrategy)}.{nameof(IFailThrottlingStrategy.MayTryNow)}"
+            strategy.RecordFailure(ex);
+
+            Assert.IsFalse(strategy.MayTryNow(out var ex2),
+                $"{nameof(SimpleRecoveryStrategy)}.{nameof(IRecoveryStrategy.MayTryNow)}"
                 + " should return false.");
+            Assert.AreSame(ex, ex2,
+                "The returned exception is a different object.");
         }
 
         [TestMethod]
-        public void SimpleThrottlingStrategyShouldReturnTrueAfterRecovery()
+        public void SimpleRecoveryStrategyShouldReturnTrueAfterRecovery()
         {
-            IFailThrottlingStrategy strategy 
-                = new SimpleThrottlingStrategy(recoveryMilliseconds: 100);
+            IRecoveryStrategy strategy 
+                = new SimpleRecoveryStrategy(recoveryMilliseconds: 100);
 
-            strategy.RecordFailure();
+            var ex = new CachedException(new System.Exception("dummy exception"));
 
-            Assert.IsFalse(strategy.MayTryNow(),
-                $"{nameof(SimpleThrottlingStrategy)}.{nameof(IFailThrottlingStrategy.MayTryNow)}"
+            strategy.RecordFailure(ex);
+
+            Assert.IsFalse(strategy.MayTryNow(out var ex2),
+                $"{nameof(SimpleRecoveryStrategy)}.{nameof(IRecoveryStrategy.MayTryNow)}"
                 + " should return false before failure.");
+            Assert.AreSame(ex, ex2,
+                "The returned exception is a different object.");
 
             Thread.Sleep(millisecondsTimeout: 200);
 
-            Assert.IsTrue(strategy.MayTryNow(),
-                $"{nameof(SimpleThrottlingStrategy)}.{nameof(IFailThrottlingStrategy.MayTryNow)}"
+            Assert.IsTrue(strategy.MayTryNow(out var ex3),
+                $"{nameof(SimpleRecoveryStrategy)}.{nameof(IRecoveryStrategy.MayTryNow)}"
                 + " should return true after recovery.");
+            Assert.IsNull(ex3,
+                $"{nameof(ex3)} is not null.");
         }
 
         #endregion
