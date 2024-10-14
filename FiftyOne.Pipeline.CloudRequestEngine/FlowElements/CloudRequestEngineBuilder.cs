@@ -60,6 +60,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private string _licenseKey = Constants.LICENSE_KEY_DEFAULT;
         private string _cloudRequestOrigin = Constants.CLOUD_REQUEST_ORIGIN_DEFAULT;
         private int _timeout = Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS;
+        private int _failuresToEnterRecovery = Constants.CLOUD_REQUEST_FAILURES_TO_ENTER_RECOVERY_DEFAULT;
+        private int _failuresWindowSeconds = Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS;
         private int _recoveryMilliseconds = 0;
 
         #endregion
@@ -191,6 +193,50 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         }
 
         /// <summary>
+        /// Number of failures to occur within
+        /// 
+        /// for CloudRequestEngine to temporarily stop sending requests.
+        /// </summary>
+        /// <param name="failuresToEnterRecovery"></param>
+        /// <returns></returns>
+        [DefaultValue(Constants.CLOUD_REQUEST_FAILURES_TO_ENTER_RECOVERY_DEFAULT)]
+        public CloudRequestEngineBuilder SetFailuresToEnterRecovery(
+            int failuresToEnterRecovery)
+        {
+            if (failuresToEnterRecovery < Constants.CLOUD_REQUEST_FAILURES_TO_ENTER_RECOVERY_MIN
+                || failuresToEnterRecovery > Constants.CLOUD_REQUEST_FAILURES_TO_ENTER_RECOVERY_MAX)
+            {
+                throw new ArgumentOutOfRangeException(
+                        nameof(failuresToEnterRecovery),
+                        $"{nameof(failuresToEnterRecovery)} must be within"
+                        + $" {Constants.CLOUD_REQUEST_FAILURES_TO_ENTER_RECOVERY_MIN} and"
+                        + $" {Constants.CLOUD_REQUEST_FAILURES_TO_ENTER_RECOVERY_MAX} (both inclusive)."
+                        + $" Received: {failuresToEnterRecovery}.");
+            }
+            _failuresToEnterRecovery = failuresToEnterRecovery;
+            return this;
+        }
+
+        /// <summary>
+        /// Timeout in seconds for the request to the endpoint.
+        /// </summary>
+        /// <param name="failuresWindowSeconds"></param>
+        /// <returns></returns>
+        [DefaultValue(Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS)]
+        public CloudRequestEngineBuilder SetFailuresWindowSeconds(
+            int failuresWindowSeconds)
+        {
+            if ((_failuresWindowSeconds = failuresWindowSeconds) <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(failuresWindowSeconds),
+                    $"{nameof(failuresWindowSeconds)} must be positive,"
+                    + $" Received: {failuresWindowSeconds}.");
+            }
+            return this;
+        }
+
+        /// <summary>
         /// For how long to disallow server calls after failure.
         /// </summary>
         /// <param name="recoveryMilliseconds"></param>
@@ -304,7 +350,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     RequestedProperties = properties,
                 },
                 _timeout,
-                new SimpleFailHandler(failThrottlingStrategy));
+                new WindowedFailHandler(
+                    failThrottlingStrategy,
+                    _failuresToEnterRecovery,
+                    TimeSpan.FromSeconds(_failuresWindowSeconds)));
         }
     }
 }

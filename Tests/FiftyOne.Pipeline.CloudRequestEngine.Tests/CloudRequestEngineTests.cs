@@ -716,6 +716,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 _httpClient)
                 .SetResourceKey(resourceKey)
                 .SetRecoveryMilliseconds(100)
+                .SetFailuresToEnterRecovery(1)
                 .Build();
 
             using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
@@ -788,6 +789,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 _httpClient)
                 .SetResourceKey(resourceKey)
                 .SetRecoveryMilliseconds(100)
+                .SetFailuresToEnterRecovery(1)
                 .Build();
 
             using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
@@ -859,6 +861,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 _httpClient)
                 .SetResourceKey(resourceKey)
                 .SetRecoveryMilliseconds(300)
+                .SetFailuresToEnterRecovery(1)
                 .Build();
 
             using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
