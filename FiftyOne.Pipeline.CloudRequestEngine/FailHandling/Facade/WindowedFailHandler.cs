@@ -44,11 +44,27 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade
             Active,
 
             /// <summary>
+            /// Last strategy's decision was 'allow'.
+            /// Queue is filled and a signal to the strategy was sent.
+            /// </summary>
+            QueueFilled,
+
+            /// <summary>
             /// Last strategy's decision was 'deny'.
-            /// Wait for 
+            /// Wait for active requests to die off.
             /// </summary>
             ShuttingDown,
+
+            /// <summary>
+            /// Last strategy's decision was 'deny'.
+            /// Wait for it to return 'allow'.
+            /// </summary>
             WaitingForGreenLight,
+
+            /// <summary>
+            /// Last strategy's decision was 'allow' (after recovery).
+            /// If some request succeeds -- reset the strategy.
+            /// </summary>
             WaitingForReset,
         }
         private State _state;
@@ -141,6 +157,16 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade
                             goto case State.Active;
 
                         case State.Active:
+                            // strategy disallowed a request 
+                            // after allowing the previous one
+                            // while the queue hasn't filled up (?)
+                            //
+                            // probably a race condition.
+                            //
+                            // ignore the not-yet-full queue.
+                            goto case State.QueueFilled;
+
+                        case State.QueueFilled:
                             _state
                                 = (_requestsInProgress > 0)
 
@@ -168,6 +194,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade
 
                     case State.WaitingForReset:
                         // nop -- already re-trying
+                        break;
+
+                    case State.QueueFilled:
+                        // strategy either ignored the full queue (?)
+                        // or did not yet receive the signal
+                        // due to race condition.
+                        //
+                        // nop -- keep allowing until further notice.
                         break;
 
                     case State.ShuttingDown:
@@ -218,6 +252,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade
                             shouldReset = true;
                             break;
 
+                        case State.QueueFilled:
                         case State.Active:
                             // nop -- no change needed.
                             break;
@@ -245,9 +280,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade
                                 _ = _failures.Dequeue();
                             }
                             exToRecord = UpdateFailures(cachedException);
-                            // state is not updated.
+                            // state is not updated here.
                             // wait for strategy
                             // to disallow some requests first.
+                            break;
+
+                        case State.QueueFilled:
+                            // nop -- already sent a signal to the strategy.
                             break;
 
                         case State.ShuttingDown:
@@ -293,7 +332,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade
                 var entry = _failures.Peek();
                 if (entry.DateTime < tooLongAgo)
                 {
-                    _failures.Dequeue();
+                    _ = _failures.Dequeue();
                 } 
                 else
                 {
