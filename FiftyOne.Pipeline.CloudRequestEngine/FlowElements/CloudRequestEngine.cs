@@ -21,7 +21,8 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
-using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Throttling;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Recovery;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Engines.Data;
@@ -112,14 +113,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         }
         private readonly EndpointsAndKeys _endpointsAndKeys;
 
-        private readonly IFailThrottlingStrategy _failThrottlingStrategy;
+        private readonly IFailHandler _failHandler;
 
         /// <summary>
         /// Deprecated constructor.
         /// Use the one with
         /// <see cref="EndpointsAndKeys"/>
         /// and
-        /// <see cref="IFailThrottlingStrategy"/>.
+        /// <see cref="IRecoveryStrategy"/>.
         /// </summary>
         /// <param name="logger">
         /// The logger for this instance
@@ -197,7 +198,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                       RequestedProperties = requestedProperties,
                   },
                   timeout,
-                  new NoThrottlingStrategy())
+                  new SimpleFailHandler(new InstantRecoveryStrategy()))
         { }
 
 
@@ -222,14 +223,19 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="timeout">
         /// The timeout for HTTP requests in seconds.
         /// </param>
-        /// <param name="failThrottlingStrategy">
+        /// <param name="failHandler">
         /// Controls when to suspend requests
         /// due to recent query failures.
         /// You can pick
-        /// <see cref="NoThrottlingStrategy"/>,
-        /// <see cref="NoRetryStrategy"/>
+        /// <see cref="InstantRecoveryStrategy"/>,
+        /// <see cref="NoRecoveryStrategy"/>
         /// or
-        /// <see cref="SimpleThrottlingStrategy"/>.
+        /// <see cref="SimpleRecoveryStrategy"/>
+        /// and wrap them in
+        /// <see cref="SimpleFailHandler"/>
+        /// or provide your own implementation of
+        /// <see cref="IFailHandler"/>
+        /// .
         /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if a required parameter is null.
@@ -241,14 +247,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             HttpClient httpClient,
             EndpointsAndKeys endpointsAndKeys,
             int timeout,
-            IFailThrottlingStrategy failThrottlingStrategy)
+            IFailHandler failHandler)
             : base(logger, aspectDataFactory)
         {
             if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
-            if (failThrottlingStrategy == null) throw new ArgumentNullException(nameof(failThrottlingStrategy));
+            if ((_failHandler = failHandler) is null) 
+                throw new ArgumentNullException(nameof(failHandler));
 
             _endpointsAndKeys = endpointsAndKeys;
-            _failThrottlingStrategy = failThrottlingStrategy;
 
             try
             {
@@ -343,7 +349,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// there is no data in the response.
         /// </exception>
         /// <exception cref="CloudRequestEngineTemporarilyUnavailableException">
-        /// <see cref="IFailThrottlingStrategy"/> 
+        /// <see cref="IRecoveryStrategy"/> 
         /// temporarily suppresses further requests
         /// due to recent error.
         /// </exception>
@@ -386,7 +392,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// there is no data in the response.
         /// </exception>
         /// <exception cref="CloudRequestEngineTemporarilyUnavailableException">
-        /// <see cref="IFailThrottlingStrategy"/> 
+        /// <see cref="IRecoveryStrategy"/> 
         /// temporarily suppresses further requests
         /// due to recent error.
         /// </exception>
@@ -431,7 +437,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// there is no data in the response.
         /// </exception>
         /// <exception cref="CloudRequestEngineTemporarilyUnavailableException">
-        /// <see cref="IFailThrottlingStrategy"/> 
+        /// <see cref="IRecoveryStrategy"/> 
         /// temporarily suppresses further requests
         /// due to recent error.
         /// </exception>
@@ -476,12 +482,16 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
         private void ThrowIfStillRecovering()
         {
-            if (!_failThrottlingStrategy.MayTryNow())
+            try
+            {
+                _failHandler.ThrowIfStillRecovering();
+            }
+            catch (Exception ex)
             {
                 throw new CloudRequestEngineTemporarilyUnavailableException(
                     "Sending requests to cloud server"
                     + " is temporarily restricted"
-                    + " due to recent failures.");
+                    + " due to recent failures.", ex);
             }
         }
 
@@ -492,43 +502,28 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         {
             try
             {
-                return ProcessResponse(
-                    AddCommonHeadersAndSend(
-                        request,
-                        cancellationToken),
-                    checkForErrorMessages);
-            }
-            catch (Exception mainException)
-            {
-                Exception strategyException = null;
-                if (!(mainException
-                    is CloudRequestEngineTemporarilyUnavailableException))
+                using (var requestScope = _failHandler.MakeAttemptScope())
                 {
                     try
                     {
-                        _failThrottlingStrategy.RecordFailure();
+                        return ProcessResponse(
+                            AddCommonHeadersAndSend(
+                                request,
+                                cancellationToken),
+                            checkForErrorMessages);
                     }
                     catch (Exception ex)
+                    when (!(ex is CloudRequestEngineTemporarilyUnavailableException))
                     {
-                        strategyException = ex;
+                        requestScope.RecordFailure(ex);
+                        throw;
                     }
                 }
-
-                if (strategyException is null)
-                {
-                    throw;
-                }
-
-                AggregateException mergedException 
-                    = new AggregateException(mainException, strategyException);
-                var originalCloudException
-                    = (mainException as CloudRequestException)
-                    ?? (mainException.InnerException as CloudRequestException);
-                if (originalCloudException is null)
-                {
-                    throw mergedException;
-                }
-                throw ResurfaceCloudException(originalCloudException, mergedException);
+            }
+            catch (AggregateException ex)
+            when (ex.InnerException is CloudRequestException originalCloudException)
+            {
+                throw ResurfaceCloudException(originalCloudException, ex);
             }
         }
 

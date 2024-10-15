@@ -725,7 +725,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 _loggerFactory,
                 _httpClient)
                 .SetResourceKey(resourceKey)
-                .SetRecoveryMilliseconds(100)
+                .SetRecoverySeconds(0.1)
+                .SetFailuresToEnterRecovery(1)
                 .Build();
 
             using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
@@ -797,7 +798,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 _loggerFactory,
                 _httpClient)
                 .SetResourceKey(resourceKey)
-                .SetRecoveryMilliseconds(100)
+                .SetRecoverySeconds(0.1)
+                .SetFailuresToEnterRecovery(1)
                 .Build();
 
             using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
@@ -868,7 +870,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                 _loggerFactory,
                 _httpClient)
                 .SetResourceKey(resourceKey)
-                .SetRecoveryMilliseconds(300)
+                .SetRecoverySeconds(0.3)
+                .SetFailuresToEnterRecovery(1)
                 .Build();
 
             using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
