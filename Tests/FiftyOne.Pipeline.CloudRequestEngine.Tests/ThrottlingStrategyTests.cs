@@ -79,7 +79,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         public void SimpleRecoveryStrategyShouldReturnTrue()
         {
             IRecoveryStrategy strategy 
-                = new SimpleRecoveryStrategy(recoveryMilliseconds: 3000);
+                = new SimpleRecoveryStrategy(recoverySeconds: 3);
 
             Assert.IsTrue(strategy.MayTryNow(out var cachedException),
                 $"{nameof(SimpleRecoveryStrategy)}.{nameof(IRecoveryStrategy.MayTryNow)}"
@@ -92,7 +92,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         public void SimpleRecoveryStrategyShouldReturnFalseAfterFailure()
         {
             IRecoveryStrategy strategy 
-                = new SimpleRecoveryStrategy(recoveryMilliseconds: 5000);
+                = new SimpleRecoveryStrategy(recoverySeconds: 5);
 
             var ex = new CachedException(new System.Exception("dummy exception"));
 
@@ -109,7 +109,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
         public void SimpleRecoveryStrategyShouldReturnTrueAfterRecovery()
         {
             IRecoveryStrategy strategy 
-                = new SimpleRecoveryStrategy(recoveryMilliseconds: 100);
+                = new SimpleRecoveryStrategy(recoverySeconds: 0.1);
 
             var ex = new CachedException(new System.Exception("dummy exception"));
 

@@ -62,7 +62,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private int _timeout = Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS;
         private int _failuresToEnterRecovery = Constants.CLOUD_REQUEST_FAILURES_TO_ENTER_RECOVERY_DEFAULT;
         private int _failuresWindowSeconds = Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS;
-        private int _recoveryMilliseconds = 0;
+        private double _recoverySeconds = 0;
 
         #endregion
 
@@ -239,12 +239,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <summary>
         /// For how long to disallow server calls after failure.
         /// </summary>
-        /// <param name="recoveryMilliseconds"></param>
+        /// <param name="recoverySeconds"></param>
         /// <returns></returns>
         [DefaultValue(0)]
-        public CloudRequestEngineBuilder SetRecoveryMilliseconds(int recoveryMilliseconds)
+        public CloudRequestEngineBuilder SetRecoverySeconds(double recoverySeconds)
         {
-            _recoveryMilliseconds = recoveryMilliseconds;
+            _recoverySeconds = recoverySeconds;
             return this;
         }
 
@@ -331,8 +331,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             }
 
             var failThrottlingStrategy 
-                = (_recoveryMilliseconds > 0)
-                ? new SimpleRecoveryStrategy(_recoveryMilliseconds)
+                = (_recoverySeconds > 0)
+                ? new SimpleRecoveryStrategy(_recoverySeconds)
                 : (IRecoveryStrategy)new InstantRecoveryStrategy();
 
             return new CloudRequestEngine(

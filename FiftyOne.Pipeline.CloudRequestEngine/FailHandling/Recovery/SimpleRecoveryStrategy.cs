@@ -5,14 +5,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Recovery
 {
     /// <summary>
     /// Disallows calling the server for
-    /// <see cref="RecoveryMilliseconds"/>.
+    /// <see cref="RecoverySeconds"/>.
     /// </summary>
     public class SimpleRecoveryStrategy : IRecoveryStrategy
     {
         /// <summary>
         /// For how long to disallow server calls after failure.
         /// </summary>
-        public readonly double RecoveryMilliseconds;
+        public readonly double RecoverySeconds;
 
         private CachedException _exception = null;
         private DateTime _recoveryDateTime = DateTime.MinValue;
@@ -21,12 +21,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Recovery
         /// <summary>
         /// Designated constructor.
         /// </summary>
-        /// <param name="recoveryMilliseconds">
+        /// <param name="recoverySeconds">
         /// For how long to disallow server calls after failure.
         /// </param>
-        public SimpleRecoveryStrategy(double recoveryMilliseconds)
+        public SimpleRecoveryStrategy(double recoverySeconds)
         {
-            RecoveryMilliseconds = recoveryMilliseconds;
+            RecoverySeconds = recoverySeconds;
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Recovery
         /// </param>
         public void RecordFailure(CachedException cachedException)
         {
-            var newRecoveryTime = cachedException.DateTime.AddMilliseconds(RecoveryMilliseconds);
+            var newRecoveryTime = cachedException.DateTime.AddSeconds(RecoverySeconds);
             lock (_lock)
             {
                 _exception = cachedException;
