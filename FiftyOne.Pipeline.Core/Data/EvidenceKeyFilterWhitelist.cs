@@ -82,6 +82,37 @@ namespace FiftyOne.Pipeline.Core.Data
         }
 
         /// <summary>
+        /// Backwards compatible constructor
+        /// The filter will be case-insensitive. For a case-sensitive filter
+        /// use the overload that takes an <see cref="IEqualityComparer{T}"/>.
+        /// </summary>
+        /// <param name="inclusionList">
+        /// The list of evidence keys that is filter will include.
+        /// By default, all keys will have the same order of precedence.
+        /// </param>
+        public EvidenceKeyFilterWhitelist(List<string> inclusionList) :
+            this((IEnumerable<string>)inclusionList) 
+        { 
+        }
+
+        /// <summary>
+        /// Backwards compatible constructor
+        /// </summary>
+        /// <param name="inclusionList">
+        /// The list of evidence keys that is filter will include.
+        /// By default, all keys will have the same order of precedence.
+        /// </param>
+        /// <param name="comparer">
+        /// Comparator to use when comparing the keys.
+        /// </param>
+        public EvidenceKeyFilterWhitelist(
+            List<string> inclusionList,
+            IEqualityComparer<string> comparer)
+            : this((IEnumerable<string>)inclusionList, comparer)
+        {
+        }
+
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="inclusionList">
@@ -115,6 +146,21 @@ namespace FiftyOne.Pipeline.Core.Data
         }
 
         /// <summary>
+        /// Backwards compatible constructor
+        /// The filter will be case-insensitive. For a case-sensitive filter
+        /// use the overload that takes an <see cref="IEqualityComparer{T}"/>.
+        /// </summary>
+        /// <param name="inclusionList">
+        /// The dictionary of evidence keys that is filter will include.
+        /// The order of precedence of each key is given by the value of
+        /// the key/value pair.
+        /// </param>
+        public EvidenceKeyFilterWhitelist(Dictionary<string, int> inclusionList)
+            : this((IReadOnlyDictionary<string, int>)inclusionList)
+        {
+        }
+
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="inclusionList">
@@ -131,6 +177,24 @@ namespace FiftyOne.Pipeline.Core.Data
         {
             _comparer = comparer;
             PopulateFromDictionary(inclusionList);
+        }
+
+        /// <summary>
+        /// Backwards compatible constructor
+        /// </summary>
+        /// <param name="inclusionList">
+        /// The dictionary of evidence keys that is filter will include.
+        /// The order of precedence of each key is given by the value of
+        /// the key/value pair.
+        /// </param>
+        /// <param name="comparer">
+        /// Comparator to use when comparing the keys.
+        /// </param>
+        public EvidenceKeyFilterWhitelist(
+            Dictionary<string, int> inclusionList,
+            IEqualityComparer<string> comparer)
+            : this((IReadOnlyDictionary<string, int>)inclusionList, comparer)
+        {
         }
 
 
