@@ -62,7 +62,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         private int _timeout = Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS;
         private int _failuresToEnterRecovery = Constants.CLOUD_REQUEST_FAILURES_TO_ENTER_RECOVERY_DEFAULT;
         private int _failuresWindowSeconds = Constants.CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS;
-        private double _recoverySeconds = 0;
+        private double _recoverySeconds = Constants.CLOUD_REQUEST_RECOVERY_SECONDS_DEFAULT;
 
         #endregion
 
@@ -241,7 +241,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// </summary>
         /// <param name="recoverySeconds"></param>
         /// <returns></returns>
-        [DefaultValue(0)]
+        [DefaultValue(Constants.CLOUD_REQUEST_RECOVERY_SECONDS_DEFAULT)]
         public CloudRequestEngineBuilder SetRecoverySeconds(double recoverySeconds)
         {
             _recoverySeconds = recoverySeconds;
