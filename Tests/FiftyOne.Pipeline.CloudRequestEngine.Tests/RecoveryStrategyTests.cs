@@ -7,7 +7,7 @@ using System.Threading;
 namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
 {
     [TestClass]
-    public class ThrottlingStrategyTests
+    public class RecoveryStrategyTests
     {
         #region InstantRecoveryStrategy
 
