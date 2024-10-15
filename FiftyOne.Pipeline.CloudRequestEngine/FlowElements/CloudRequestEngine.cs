@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling;
 using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade;
 using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Recovery;
 using FiftyOne.Pipeline.Core.Data;
@@ -36,6 +37,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
@@ -290,18 +292,35 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 // not provided then warn via logging.
 
                 _lazyEvidenceKeyFilter 
-                    = new Lazy<IEvidenceKeyFilter>(
-                        GetCloudEvidenceKeys,
-                        LazyThreadSafetyMode.PublicationOnly);
+                    = new AsyncLazyFailable<IEvidenceKeyFilter>(
+                        GetCloudEvidenceKeys);
                 _lazyPublicProperties 
-                    = new Lazy<IReadOnlyDictionary<string, ProductMetaData>>(
-                        GetCloudProperties,
-                        LazyThreadSafetyMode.PublicationOnly);
+                    = new AsyncLazyFailable<IReadOnlyDictionary<string, ProductMetaData>>(
+                        GetCloudProperties);
+
+                _ = Task.Run(RequestLazyProps);
             }
             catch (Exception ex)
             {
                 Logger?.LogCritical(ex, $"Error creating {this.GetType().Name}");
                 throw;
+            }
+        }
+
+        private void RequestLazyProps()
+        {
+            var source = new CancellationTokenSource();
+            var evidenceKeyFilterTask = _lazyEvidenceKeyFilter.GetValueAsync(source.Token);
+            var publicPropertiesTask = _lazyPublicProperties.GetValueAsync(source.Token);
+
+            source.Cancel();
+            try
+            {
+                Task.WaitAll(evidenceKeyFilterTask, publicPropertiesTask);
+            }
+            catch
+            {
+                // nop -- the outcome is irrelevant
             }
         }
 
@@ -329,13 +348,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// Responsible for initializing IEvidenceKeyFilter
         /// only once.
         /// </summary>
-        private Lazy<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
+        private AsyncLazyFailable<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
 
         /// <summary>
         /// Responsible for initializing IReadOnlyDictionary{string, ProductMetaData}
         /// only once.
         /// </summary>
-        private Lazy<IReadOnlyDictionary<string, ProductMetaData>>
+        private AsyncLazyFailable<IReadOnlyDictionary<string, ProductMetaData>>
             _lazyPublicProperties;
 
         /// <summary>
@@ -359,14 +378,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 try
                 {
-                    if (_lazyEvidenceKeyFilter.IsValueCreated)
-                    {
-                        return _lazyEvidenceKeyFilter.Value;
-                    }
-                    lock (_lazyEvidenceKeyFilter)
-                    {
-                        return _lazyEvidenceKeyFilter.Value;
-                    }
+                    return _lazyEvidenceKeyFilter
+                        .GetValueAsync(CancellationToken.None)
+                        .Result;
                 }
                 catch (AggregateException ex)
                 {
@@ -401,14 +415,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 try
                 {
-                    if (_lazyPublicProperties.IsValueCreated)
-                    {
-                        return _lazyPublicProperties.Value;
-                    }
-                    lock (_lazyPublicProperties)
-                    {
-                        return _lazyPublicProperties.Value;
-                    }
+                    return _lazyPublicProperties
+                        .GetValueAsync(CancellationToken.None)
+                        .Result;
                 }
                 catch (AggregateException ex)
                 {
