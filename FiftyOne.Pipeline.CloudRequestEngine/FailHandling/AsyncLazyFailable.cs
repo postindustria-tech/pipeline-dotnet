@@ -31,6 +31,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling
         private readonly Func<TResult> _mainFunc;
         private readonly object _taskLock = new object();
         private Task<TResult> _activeTask;
+        private Task _errorHandlingTask;
         private TResult _result;
 
         // volatile:
@@ -90,41 +91,49 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling
 
         private Task<TResult> GetOrBuildActiveTask()
         {
-            Task<TResult> createdTask;
             lock (_taskLock)
             {
                 if (_activeTask is object) // i.e. is not null
                 {
                     return _activeTask;
                 }
-                createdTask = _activeTask = Task.Run(TryGetNewValue);
+                _activeTask = Task.Run(_mainFunc);
+                _errorHandlingTask = ConsumeActiveTaskFailure(_activeTask);
+                return _activeTask;
             }
-            _ = WatchForActiveTaskFailure(createdTask); // fire and forget
-            return createdTask;
         }
 
         private TResult TryGetNewValue()
         {
-            _result = _mainFunc();
-
-            // volatile write, can’t be reordered with prior operations
-            _hasResult = true;
-
-            return _result;
-        }
-
-        private async Task WatchForActiveTaskFailure(Task<TResult> mainTask)
-        {
             try
             {
-                await mainTask;
+                _result = _mainFunc();
+
+                // volatile write, can’t be reordered with prior operations
+                _hasResult = true;
+
+                return _result;
             }
             catch
             {
                 lock (_taskLock)
                 {
                     _activeTask = null;
+                    _errorHandlingTask = null;
                 }
+                throw;
+            }
+        }
+
+        private async Task ConsumeActiveTaskFailure(Task<TResult> mainTask)
+        {
+            try
+            {
+                _ = await mainTask;
+            }
+            catch
+            {
+                // nop -- just consume the failure
             }
         }
     }
