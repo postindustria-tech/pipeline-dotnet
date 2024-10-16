@@ -86,11 +86,11 @@ namespace FiftyOne.Pipeline.Web.Services
             // Store the FlowData in the HttpContext
             context.Items.Add(Constants.HTTPCONTEXT_FLOWDATA, flowData);
 
-            // Extract the required pieces of evidence from the request
-            _evidenceService.AddEvidenceFromRequest(flowData, context.Request);
-
             try
             {
+                // Extract the required pieces of evidence from the request
+                _evidenceService.AddEvidenceFromRequest(flowData, context.Request);
+
                 // Start processing the data
                 flowData.Process();
             }
