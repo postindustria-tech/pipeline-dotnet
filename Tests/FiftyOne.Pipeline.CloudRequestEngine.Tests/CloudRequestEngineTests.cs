@@ -111,6 +111,48 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.Tests
                ItExpr.IsAny<CancellationToken>()
             );
         }
+        [TestMethod]
+        public void Process_Slow()
+        {
+            string resourceKey = "resource_key";
+            string userAgent = "iPhone";
+            ConfigureMockedClient(r =>
+                r.Content.ReadAsStringAsync().Result.Contains($"resource={resourceKey}") // content contains resource key
+                && r.Content.ReadAsStringAsync().Result.Contains($"User-Agent={userAgent}") // content contains licenseKey
+                ,
+                responseDelay: TimeSpan.FromMilliseconds(300)
+            );
+
+            var engine = new CloudRequestEngineBuilder(
+                _loggerFactory,
+                _httpClient)
+                .SetResourceKey(resourceKey)
+                .Build();
+
+            using (var pipeline = new PipelineBuilder(_loggerFactory).AddFlowElement(engine).Build())
+            {
+                var data = pipeline.CreateFlowData();
+                data.AddEvidence("query.User-Agent", userAgent);
+
+                data.Process();
+
+                var result = data.GetFromElement(engine).JsonResponse;
+                Assert.AreEqual("{'device':{'value':'1'}}", result);
+
+                dynamic obj = JValue.Parse(result);
+                Assert.AreEqual(1, (int)obj.device.value);
+            }
+
+            _handlerMock.Protected().Verify(
+               "SendAsync",
+               Times.Exactly(1), // we expected a single external request
+               ItExpr.Is<HttpRequestMessage>(req =>
+                  req.Method == HttpMethod.Post  // we expected a POST request
+                  && req.RequestUri == expectedUri // to this uri
+               ),
+               ItExpr.IsAny<CancellationToken>()
+            );
+        }
 
         /// <summary>
         /// Test cloud request engine adds correct information to post request
