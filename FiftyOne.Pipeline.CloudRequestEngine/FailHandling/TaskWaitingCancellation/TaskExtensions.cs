@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.TaskWaitingCancellation
 {
     /// <summary>
-    /// Task extension using implementation from
+    /// Task extension using implementation based on
     /// https://stackoverflow.com/a/73207811
     /// i.e.
     /// https://github.com/davidfowl/AspNetCoreDiagnosticScenarios/blob/master/AsyncGuidance.md#cancelling-uncancellable-operations
@@ -43,7 +43,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.TaskWaitingCancellat
                 throw new OperationCanceledException();
             }
 
-            return await task;
+            return task.GetAwaiter().GetResult();
         }
     }
 }
