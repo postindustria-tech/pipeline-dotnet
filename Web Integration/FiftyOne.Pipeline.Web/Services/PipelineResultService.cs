@@ -92,7 +92,7 @@ namespace FiftyOne.Pipeline.Web.Services
                 _evidenceService.AddEvidenceFromRequest(flowData, context.Request);
 
                 // Start processing the data
-                flowData.Process();
+                flowData.Process(context.RequestAborted);
             }
             catch (Exception ex) 
             when (ex is PipelineTemporarilyUnavailableException
