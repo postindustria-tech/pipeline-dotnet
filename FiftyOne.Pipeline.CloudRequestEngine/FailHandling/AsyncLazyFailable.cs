@@ -97,7 +97,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling
                 {
                     return _activeTask;
                 }
-                _activeTask = Task.Run(_mainFunc);
+                _activeTask = Task.Run(TryGetNewValue);
                 _errorHandlingTask = ConsumeActiveTaskFailure(_activeTask);
                 return _activeTask;
             }
