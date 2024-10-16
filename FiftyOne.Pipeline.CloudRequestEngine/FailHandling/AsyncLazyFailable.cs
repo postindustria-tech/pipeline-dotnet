@@ -90,34 +90,41 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling
 
         private Task<TResult> GetOrBuildActiveTask()
         {
+            Task<TResult> createdTask;
             lock (_taskLock)
             {
                 if (_activeTask is object) // i.e. is not null
                 {
                     return _activeTask;
                 }
-                return _activeTask = Task.Run(TryGetNewValue);
+                createdTask = _activeTask = Task.Run(TryGetNewValue);
             }
+            _ = WatchForActiveTaskFailure(createdTask); // fire and forget
+            return createdTask;
         }
 
         private TResult TryGetNewValue()
         {
+            _result = _mainFunc();
+
+            // volatile write, can’t be reordered with prior operations
+            _hasResult = true;
+
+            return _result;
+        }
+
+        private async Task WatchForActiveTaskFailure(Task<TResult> mainTask)
+        {
             try
             {
-                _result = _mainFunc();
-
-                // volatile write, can’t be reordered with prior operations
-                _hasResult = true;
-
-                return _result;
+                await mainTask;
             }
-            catch (Exception)
+            catch
             {
                 lock (_taskLock)
                 {
                     _activeTask = null;
                 }
-                throw;
             }
         }
     }
