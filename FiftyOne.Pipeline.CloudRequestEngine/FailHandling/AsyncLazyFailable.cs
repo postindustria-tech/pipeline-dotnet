@@ -72,21 +72,21 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling
         /// <exception cref="OperationCanceledException">
         /// <paramref name="token"/> was tripped.
         /// </exception>
-        public async Task<TResult> GetValueAsync(CancellationToken token)
+        public Task<TResult> GetValueAsync(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
             // volatile read, can’t be reordered with subsequent operations
             if (_hasResult)
             {
-                return _result;
+                return Task.FromResult(_result);
             }
             var activeTask = GetOrBuildActiveTask();
             if (activeTask.IsCompleted)
             {
-                return activeTask.Result;
+                return activeTask;
             }
-            return await activeTask.WithCancellation(token);
+            return activeTask.WithCancellation(token);
         }
 
         private Task<TResult> GetOrBuildActiveTask()

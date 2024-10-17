@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.TaskWaitingCancellation
 {
     /// <summary>
-    /// Task extension using implementation based on
+    /// Task extension derived from
     /// https://stackoverflow.com/a/73207811
     /// i.e.
     /// https://github.com/davidfowl/AspNetCoreDiagnosticScenarios/blob/master/AsyncGuidance.md#cancelling-uncancellable-operations
@@ -31,19 +31,36 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FailHandling.TaskWaitingCancellat
         /// <exception cref="OperationCanceledException">
         /// Token was tripped before task finished.
         /// </exception>
-        public static async Task<T> WithCancellation<T>(this Task<T> task, CancellationToken cancellationToken)
+        public static Task<T> WithCancellation<T>(
+            this Task<T> task,
+            CancellationToken cancellationToken)
         {
-            // There's no way to dispose of the registration
-            var delayTask = Task.Delay(-1, cancellationToken);
+            // Source to cancel `Delay` task
+            // as soon as awaited result is available
+            // (even if external token never cancels).
+            var delayCancellationSource = new CancellationTokenSource();
+            var mergedSource = CancellationTokenSource.CreateLinkedTokenSource(
+                delayCancellationSource.Token,
+                cancellationToken);
 
-            var resultTask = await Task.WhenAny(task, delayTask);
-            if (resultTask == delayTask)
+            var delayTask = Task.Delay(-1, mergedSource.Token);
+            return Task.Run(() =>
             {
-                // Operation cancelled
-                throw new OperationCanceledException();
-            }
-
-            return task.GetAwaiter().GetResult();
+                try
+                {
+                    var resultTask = Task.WhenAny(task, delayTask).Result;
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        // Operation cancelled
+                        throw new OperationCanceledException();
+                    }
+                    return task.GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    delayCancellationSource.Cancel();
+                }
+            });
         }
     }
 }
