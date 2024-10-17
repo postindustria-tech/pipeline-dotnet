@@ -94,13 +94,9 @@ namespace FiftyOne.Pipeline.Web.Services
                 // Start processing the data
                 flowData.Process(context.RequestAborted);
             }
-            catch (Exception ex) 
-            when (ex is PipelineTemporarilyUnavailableException
-            || (ex is AggregateException
-            && ex.InnerException is PipelineTemporarilyUnavailableException))
-            {
-                // nop -- just suppress thrown error
-            }
+            catch (PipelineTemporarilyUnavailableException) { }
+            catch (AggregateException ex) 
+            when (ex.InnerException is PipelineTemporarilyUnavailableException) { }
         }
     }
 }
