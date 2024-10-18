@@ -33,12 +33,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
     /// </summary>
     public class CloudRequestException : PipelineException
     {
-        private IReadOnlyDictionary<string, string> _responseHeaders;
+        private readonly IReadOnlyDictionary<string, string> _responseHeaders;
+        private readonly int _httpStatusCode;
 
         /// <summary>
         /// The HTTP status code from the response.
         /// </summary>
-        public int HttpStatusCode { get; private set; }
+        public int HttpStatusCode => _httpStatusCode;
 
         /// <summary>
         /// All HTTP headers that were present in the response.
@@ -50,7 +51,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// </summary>
         public CloudRequestException()
         {
-            _responseHeaders = new Dictionary<string, string>();
+            _responseHeaders = new Dictionary<string, string>(0);
         }
 
         /// <summary>
@@ -59,7 +60,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// <param name="message"></param>
         public CloudRequestException(string message) : base(message)
         {
-            _responseHeaders = new Dictionary<string, string>();
+            _responseHeaders = new Dictionary<string, string>(0);
         }
 
         /// <summary>
@@ -69,7 +70,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// <param name="innerException"></param>
         public CloudRequestException(string message, Exception innerException) : base(message, innerException)
         {
-            _responseHeaders = new Dictionary<string, string>();
+            _responseHeaders = new Dictionary<string, string>(0);
         }
 
         /// <summary>
@@ -79,10 +80,24 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// <param name="httpStatusCode"></param>
         /// <param name="responseHeaders"></param>
         public CloudRequestException(string message, 
-            int httpStatusCode, 
+            int httpStatusCode,
+            IReadOnlyDictionary<string, string> responseHeaders) : base(message)
+        {
+            _httpStatusCode = httpStatusCode;
+            _responseHeaders = responseHeaders;
+        }
+
+        /// <summary>
+        /// Backwards compatible constructor
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="httpStatusCode"></param>
+        /// <param name="responseHeaders"></param>
+        public CloudRequestException(string message,
+            int httpStatusCode,
             Dictionary<string, string> responseHeaders) : base(message)
         {
-            HttpStatusCode = httpStatusCode;
+            _httpStatusCode = httpStatusCode;
             _responseHeaders = responseHeaders;
         }
 
@@ -98,7 +113,23 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
             IReadOnlyDictionary<string, string> responseHeaders,
             Exception innerException) : base(message, innerException)
         {
-            HttpStatusCode = httpStatusCode;
+            _httpStatusCode = httpStatusCode;
+            _responseHeaders = responseHeaders;
+        }
+
+        /// <summary>
+        /// Backwards compatible constructor
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="httpStatusCode"></param>
+        /// <param name="responseHeaders"></param>
+        /// <param name="innerException"></param>
+        public CloudRequestException(string message,
+            int httpStatusCode,
+            Dictionary<string, string> responseHeaders,
+            Exception innerException) : base(message, innerException)
+        {
+            _httpStatusCode = httpStatusCode;
             _responseHeaders = responseHeaders;
         }
     }
