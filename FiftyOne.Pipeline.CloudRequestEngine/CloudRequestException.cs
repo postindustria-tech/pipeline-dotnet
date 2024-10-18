@@ -44,14 +44,14 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// <summary>
         /// All HTTP headers that were present in the response.
         /// </summary>
-        public IReadOnlyDictionary<string, string> ResponseHeaders => _responseHeaders;
+        public IReadOnlyDictionary<string, string> ResponseHeaders
+            => _responseHeaders ?? new Dictionary<string, string>(0);
 
         /// <summary>
         /// Constructor
         /// </summary>
         public CloudRequestException()
         {
-            _responseHeaders = new Dictionary<string, string>(0);
         }
 
         /// <summary>
@@ -60,7 +60,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// <param name="message"></param>
         public CloudRequestException(string message) : base(message)
         {
-            _responseHeaders = new Dictionary<string, string>(0);
         }
 
         /// <summary>
@@ -70,7 +69,6 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// <param name="innerException"></param>
         public CloudRequestException(string message, Exception innerException) : base(message, innerException)
         {
-            _responseHeaders = new Dictionary<string, string>(0);
         }
 
         /// <summary>
