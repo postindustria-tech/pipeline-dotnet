@@ -96,7 +96,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// <summary>
         /// Default timeout when calling cloud service with CloudRequestEngine.
         /// </summary>
-        public const int CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS = 100;
+        public const int CLOUD_REQUEST_TIMEOUT_DEFAULT_SECONDS = 2;
 
         /// <summary>
         /// Default recovery period for CloudRequestEngine
