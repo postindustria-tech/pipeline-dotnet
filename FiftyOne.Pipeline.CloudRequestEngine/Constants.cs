@@ -122,5 +122,12 @@ namespace FiftyOne.Pipeline.CloudRequestEngine
         /// </summary>
         public const int CLOUD_REQUEST_FAILURES_TO_ENTER_RECOVERY_DEFAULT = 10;
 
+        /// <summary>
+        /// Default time period in seconds within which a number of
+        /// failed requests should reach `FailuresToEnterRecovery`
+        /// for CloudRequestEngine to enter "recovery period"
+        /// </summary>
+        public const int CLOUD_REQUEST_FAILURES_WINDOW_SECONDS_DEFAULT = 100;
+
     }
 }
