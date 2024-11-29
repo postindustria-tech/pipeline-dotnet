@@ -21,6 +21,7 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.CloudRequestEngine.Data;
+using FiftyOne.Pipeline.CloudRequestEngine.FailHandling;
 using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Facade;
 using FiftyOne.Pipeline.CloudRequestEngine.FailHandling.Recovery;
 using FiftyOne.Pipeline.Core.Data;
@@ -36,6 +37,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
@@ -290,18 +292,35 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 // not provided then warn via logging.
 
                 _lazyEvidenceKeyFilter 
-                    = new Lazy<IEvidenceKeyFilter>(
-                        GetCloudEvidenceKeys,
-                        LazyThreadSafetyMode.PublicationOnly);
+                    = new AsyncLazyFailable<IEvidenceKeyFilter>(
+                        GetCloudEvidenceKeys);
                 _lazyPublicProperties 
-                    = new Lazy<IReadOnlyDictionary<string, ProductMetaData>>(
-                        GetCloudProperties,
-                        LazyThreadSafetyMode.PublicationOnly);
+                    = new AsyncLazyFailable<IReadOnlyDictionary<string, ProductMetaData>>(
+                        GetCloudProperties);
+
+                _ = Task.Run(RequestLazyProps);
             }
             catch (Exception ex)
             {
                 Logger?.LogCritical(ex, $"Error creating {this.GetType().Name}");
                 throw;
+            }
+        }
+
+        private void RequestLazyProps()
+        {
+            var source = new CancellationTokenSource();
+            var evidenceKeyFilterTask = _lazyEvidenceKeyFilter.GetValueAsync(source.Token);
+            var publicPropertiesTask = _lazyPublicProperties.GetValueAsync(source.Token);
+
+            source.Cancel();
+            try
+            {
+                Task.WaitAll(evidenceKeyFilterTask, publicPropertiesTask);
+            }
+            catch
+            {
+                // nop -- the outcome is irrelevant
             }
         }
 
@@ -329,13 +348,13 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// Responsible for initializing IEvidenceKeyFilter
         /// only once.
         /// </summary>
-        private Lazy<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
+        private AsyncLazyFailable<IEvidenceKeyFilter> _lazyEvidenceKeyFilter;
 
         /// <summary>
         /// Responsible for initializing IReadOnlyDictionary{string, ProductMetaData}
         /// only once.
         /// </summary>
-        private Lazy<IReadOnlyDictionary<string, ProductMetaData>>
+        private AsyncLazyFailable<IReadOnlyDictionary<string, ProductMetaData>>
             _lazyPublicProperties;
 
         /// <summary>
@@ -359,14 +378,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 try
                 {
-                    if (_lazyEvidenceKeyFilter.IsValueCreated)
-                    {
-                        return _lazyEvidenceKeyFilter.Value;
-                    }
-                    lock (_lazyEvidenceKeyFilter)
-                    {
-                        return _lazyEvidenceKeyFilter.Value;
-                    }
+                    return _lazyEvidenceKeyFilter
+                        .GetValueAsync(CancellationToken.None)
+                        .Result;
                 }
                 catch (AggregateException ex)
                 {
@@ -401,14 +415,9 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 try
                 {
-                    if (_lazyPublicProperties.IsValueCreated)
-                    {
-                        return _lazyPublicProperties.Value;
-                    }
-                    lock (_lazyPublicProperties)
-                    {
-                        return _lazyPublicProperties.Value;
-                    }
+                    return _lazyPublicProperties
+                        .GetValueAsync(CancellationToken.None)
+                        .Result;
                 }
                 catch (AggregateException ex)
                 {
@@ -472,7 +481,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
                 requestMessage.Content = content;
                 jsonResult = AmendSendAndProcess(
-                    requestMessage,
+                    requestMessage, 
+                    data.ProcessingCancellationToken,
                     checkForErrorMessages: true);
             }
 
@@ -496,6 +506,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 
         private string AmendSendAndProcess(
             HttpRequestMessage request,
+            CancellationToken cancellationToken,
             bool checkForErrorMessages)
         {
             try
@@ -506,7 +517,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     {
                         return ProcessResponse(
                             AddCommonHeadersAndSend(
-                                request),
+                                request,
+                                cancellationToken),
                             checkForErrorMessages);
                     }
                     catch (Exception ex)
@@ -528,25 +540,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             CloudRequestException cloudException,
             Exception newInnerException)
         {
-            Dictionary<string, string> responseHeaders;
-            if (cloudException.ResponseHeaders is IDictionary<string, string> oldHeaders)
-            {
-                if (oldHeaders is Dictionary<string, string> oldHeadersDic)
-                {
-                    responseHeaders = oldHeadersDic;
-                } 
-                else
-                {
-                    responseHeaders = new Dictionary<string, string>(oldHeaders);
-                }
-            } else
-            {
-                responseHeaders = null;
-            }
             return new CloudRequestException(
                             cloudException.Message,
                             cloudException.HttpStatusCode,
-                            responseHeaders,
+                            cloudException.ResponseHeaders,
                             newInnerException);
         }
 
@@ -821,6 +818,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                 {
                     jsonResult = AmendSendAndProcess(
                         requestMessage,
+                        CancellationToken.None,
                         checkForErrorMessages: true);
                 }
                 catch (Exception ex)
@@ -865,7 +863,8 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     // Note - Don't check for error messages in the response
                     // as it is a flat JSON array.
                     jsonResult = AmendSendAndProcess(
-                        requestMessage,
+                        requestMessage, 
+                        CancellationToken.None,
                         checkForErrorMessages: false);
                 }
                 catch (Exception ex)
@@ -894,11 +893,15 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="request">
         /// The request to send
         /// </param>
+        /// <param name="cancellationToken">
+        /// Token to cancel HTTP request.
+        /// </param>
         /// <returns>
         /// The response
         /// </returns>
         private HttpResponseMessage AddCommonHeadersAndSend(
-            HttpRequestMessage request)
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
             ThrowIfStillRecovering();
             if (string.IsNullOrEmpty(_endpointsAndKeys.CloudRequestOrigin) == false &&
@@ -908,7 +911,7 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
             {
                 request.Headers.Add(Constants.ORIGIN_HEADER_NAME, _endpointsAndKeys.CloudRequestOrigin);
             }
-            return SendRequestAsync(request);
+            return SendRequestAsync(request, cancellationToken);
         }
 
         /// <summary>
@@ -917,15 +920,19 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
         /// <param name="request">
         /// The request to send
         /// </param>
+        /// <param name="cancellationToken">
+        /// Token to cancel HTTP request.
+        /// </param>
         /// <returns>
         /// The response
         /// </returns>
         private HttpResponseMessage SendRequestAsync(
-            HttpRequestMessage request)
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
             try
             {
-                return _httpClient.SendAsync(request).Result;
+                return _httpClient.SendAsync(request, cancellationToken).Result;
             }
             catch (AggregateException httpException)
             {
