@@ -38,6 +38,9 @@ namespace FiftyOne.Pipeline.JavaScriptBuilder.FlowElement
     /// </summary>
     public class JavaScriptBuilderElementBuilder
     {
+        /// <summary>
+        /// Logger factory that may be reused in descendants to produce a distinct logger.
+        /// </summary>
         protected ILoggerFactory _loggerFactory;
         private ILogger<JavaScriptBuilderElementData> _dataLogger; 
 
