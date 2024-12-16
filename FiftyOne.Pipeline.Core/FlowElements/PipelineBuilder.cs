@@ -142,7 +142,6 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                         ParallelEnqueueElement(
                             FlowElements,
                             elementOptions,
-                            $"element {index}",
                             (int)index);
                     }
                     else
@@ -420,14 +419,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The <see cref="ElementOptions"/> instance to use when creating
         /// the <see cref="ParallelElements"/>.
         /// </param>
-        /// <param name="elementLocation">
-        /// The index of the element within the <see cref="PipelineOptions"/>.
-        /// </param>
         /// <param name="elementIndex"></param>
         private void ParallelEnqueueElement(
             List<IFlowElement> elements,
             ElementOptions elementOptions,
-            string elementLocation,
             int elementIndex)
         {
             // Element contains further sub elements, this is not allowed.
