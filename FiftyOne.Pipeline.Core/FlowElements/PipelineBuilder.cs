@@ -64,7 +64,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The <see cref="ILoggerFactory"/> to use when creating logger
         /// instances.
         /// </param>
-        public PipelineBuilder(ILoggerFactory loggerFactory) 
+        public PipelineBuilder(ILoggerFactory loggerFactory)
             : base(loggerFactory)
         {
             GetAvailableElementBuilders();
@@ -81,7 +81,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// Collection of services which contain builder instances for the
         /// required elements.
         /// </param>
-        public PipelineBuilder(ILoggerFactory loggerFactory, 
+        public PipelineBuilder(ILoggerFactory loggerFactory,
             IServiceProvider services)
             : this(loggerFactory)
         {
@@ -122,21 +122,26 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             try
             {
                 // Create element builders in parallel
-                var flowElementQueue = new ConcurrentQueue<IFlowElement>(); 
-                Parallel.ForEach(options.Elements, (elementOptions =>
+                var flowElementQueue = new ConcurrentQueue<IFlowElement>();
+                Parallel.ForEach(options.Elements, 
+                    new ParallelOptions()
+                    {
+                        MaxDegreeOfParallelism = Environment.ProcessorCount / 2
+                    },
+                    (elementOptions =>
                 {
                     if (elementOptions.SubElements != null &&
                         elementOptions.SubElements.Count > 0)
                     {
                         // The configuration has sub elements so create
                         // a ParallelElements instance.
-                        AddParallelElementsToList(flowElementQueue, elementOptions, counter);
+                        ParallelEnqueueElement(flowElementQueue, elementOptions, counter);
                     }
                     else
                     {
                         // The configuration has no sub elements so create
                         // a flow element.
-                        AddElementToList(flowElementQueue, elementOptions,
+                        EnqueueElement(flowElementQueue, elementOptions,
                             $"element {counter}");
                     }
                     Interlocked.Increment(ref counter);
@@ -144,7 +149,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 
                 // Add created builders to flow elements
                 FlowElements.AddRange(flowElementQueue);
-                
+
                 // Process any additional parameters for the pipeline
                 // builder itself.
                 ProcessBuildParameters(
@@ -181,35 +186,35 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()
 #if DEBUG
                 // Exclude VisualStudio assemblies
-                .Where(a => !a.FullName.StartsWith("Microsoft.VisualStudio", 
+                .Where(a => !a.FullName.StartsWith("Microsoft.VisualStudio",
                     StringComparison.OrdinalIgnoreCase))
 #endif
                 )
-            {
-                // Exclude dynamic assemblies
-                if (assembly.IsDynamic == false)
                 {
-                    try
+                    // Exclude dynamic assemblies
+                    if (assembly.IsDynamic == false)
                     {
+                        try
+                        {
                         _elementBuilders.AddRange(assembly.GetTypes()
-                            .Where(t => t.GetMethods()
-                                // ..method called 'Build'..
-                                .Any(m => m.Name == "Build" &&
-                                // ..where the return type is or implements IFlowElement
-                                (m.ReturnType == typeof(IFlowElement) ||
+                                .Where(t => t.GetMethods()
+                                    // ..method called 'Build'..
+                                    .Any(m => m.Name == "Build" &&
+                                    // ..where the return type is or implements IFlowElement
+                                    (m.ReturnType == typeof(IFlowElement) ||
                                 m.ReturnType.GetInterfaces().Contains(typeof(IFlowElement)))))
                         .ToList());
-                    }
-                    // Catch type load exceptions when assembly can't be loaded 
-                    // and log a warning. 
-                    catch (ReflectionTypeLoadException ex)
-                    {
-                        if (Logger.IsEnabled(LogLevel.Debug))
+                        }
+                        // Catch type load exceptions when assembly can't be loaded 
+                        // and log a warning. 
+                        catch (ReflectionTypeLoadException ex)
                         {
-                            Logger.LogDebug(ex, $"Failed to get Types for {assembly.FullName}", null);
+                            if (Logger.IsEnabled(LogLevel.Debug))
+                            {
+                                Logger.LogDebug(ex, $"Failed to get Types for {assembly.FullName}", null);
+                            }
                         }
                     }
-                }
             }
         }
 
@@ -229,7 +234,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The string description of the element's location within the 
         /// <see cref="PipelineOptions"/> instance.
         /// </param>
-        private void AddElementToList(
+        private void EnqueueElement(
             ConcurrentQueue<IFlowElement> elements,
             ElementOptions elementOptions,
             string elementLocation)
@@ -409,7 +414,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <param name="elementIndex">
         /// The index of the element within the <see cref="PipelineOptions"/>.
         /// </param>
-        private void AddParallelElementsToList(
+        private void ParallelEnqueueElement(
             ConcurrentQueue<IFlowElement> elements,
             ElementOptions elementOptions,
             int elementIndex)
@@ -440,7 +445,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 }
                 else
                 {
-                    AddElementToList(parallelElements, subElement,
+                    EnqueueElement(parallelElements, subElement,
                         $"element {subCounter} in element {elementIndex}");
                 }
                 subCounter++;
