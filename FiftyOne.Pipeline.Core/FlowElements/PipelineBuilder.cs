@@ -27,11 +27,14 @@ using FiftyOne.Pipeline.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.Core.FlowElements
 {
@@ -118,25 +121,30 @@ namespace FiftyOne.Pipeline.Core.FlowElements
 
             try
             {
-                foreach (var elementOptions in options.Elements)
+                // Create element builders in parallel
+                var flowElementQueue = new ConcurrentQueue<IFlowElement>(); 
+                Parallel.ForEach(options.Elements, (elementOptions =>
                 {
                     if (elementOptions.SubElements != null &&
                         elementOptions.SubElements.Count > 0)
                     {
                         // The configuration has sub elements so create
                         // a ParallelElements instance.
-                        AddParallelElementsToList(FlowElements, elementOptions, counter);
+                        AddParallelElementsToList(flowElementQueue, elementOptions, counter);
                     }
                     else
                     {
                         // The configuration has no sub elements so create
                         // a flow element.
-                        AddElementToList(FlowElements, elementOptions,
+                        AddElementToList(flowElementQueue, elementOptions,
                             $"element {counter}");
                     }
-                    counter++;
-                }
+                    Interlocked.Increment(ref counter);
+                }));
 
+                // Add created builders to flow elements
+                FlowElements.AddRange(flowElementQueue);
+                
                 // Process any additional parameters for the pipeline
                 // builder itself.
                 ProcessBuildParameters(
@@ -222,7 +230,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// <see cref="PipelineOptions"/> instance.
         /// </param>
         private void AddElementToList(
-            List<IFlowElement> elements,
+            ConcurrentQueue<IFlowElement> elements,
             ElementOptions elementOptions,
             string elementLocation)
         {
@@ -384,7 +392,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             }
 
             // Add the element to the list.
-            elements.Add(element);
+            elements.Enqueue(element);
         }
 
         /// <summary>
@@ -402,7 +410,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The index of the element within the <see cref="PipelineOptions"/>.
         /// </param>
         private void AddParallelElementsToList(
-            List<IFlowElement> elements,
+            ConcurrentQueue<IFlowElement> elements,
             ElementOptions elementOptions,
             int elementIndex)
         {
@@ -416,7 +424,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     $"SubElements and other settings values. " +
                     $"This is invalid");
             }
-            List<IFlowElement> parallelElements = new List<IFlowElement>();
+            var parallelElements = new ConcurrentQueue<IFlowElement>();
 
             // Iterate through the sub elements, creating them and
             // adding them to the list.
@@ -443,7 +451,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             var parallelInstance = new ParallelElements(
                 LoggerFactory.CreateLogger<ParallelElements>(),
                 parallelElements.ToArray());
-            elements.Add(parallelInstance);
+            elements.Enqueue(parallelInstance);
         }
 
         /// <summary>
