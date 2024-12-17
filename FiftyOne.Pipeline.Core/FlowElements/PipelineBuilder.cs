@@ -117,11 +117,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // Clear the list of flow elements ready to be populated
             // from the configuration options.
             FlowElements.Clear();
-
             try
             {
                 var tempElementDict = 
-                    new ConcurrentDictionary<int, List<IFlowElement>>();
+                    new ConcurrentDictionary<int, IFlowElement>();
                 // Create elements in parallel. The index is declared in
                 // the foreach so that the order of elements is preserved. 
                 // the index is passed down to the point of inserting the
@@ -129,7 +128,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 Parallel.ForEach(options.Elements, 
                     new ParallelOptions()
                     {
-                        MaxDegreeOfParallelism = Environment.ProcessorCount / 2
+                        MaxDegreeOfParallelism = 
+                        Environment.ProcessorCount / 2
                     },
                     (elementOptions, state, index)  =>
                 {
@@ -168,7 +168,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 FlowElements
                     .AddRange(tempElementDict
                         .OrderBy(kvp => kvp.Key)
-                        .SelectMany(kvp => kvp.Value));
+                        .Select(kvp => kvp.Value));
 
                 // Process any additional parameters for the pipeline
                 // builder itself.
@@ -265,7 +265,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </param>
         /// <param name="elementIndex"></param>
         private void EnqueueElement(
-            ConcurrentDictionary<int, List<IFlowElement>> elements,
+            ConcurrentDictionary<int, IFlowElement> elements,
             ElementOptions elementOptions,
             string elementLocation,
             int elementIndex)
@@ -428,15 +428,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             }
 
             // Add the element to the list.
-            if (elements.ContainsKey(elementIndex)){
-                elements[elementIndex].Add(element);
-            }
-            else
-            {
                 elements.TryAdd(
                    elementIndex,
-                   new List<IFlowElement>() { element });
-            }
+                    element);
         }
 
         /// <summary>
@@ -452,7 +446,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </param>
         /// <param name="elementIndex"></param>
         private void ParallelEnqueueElement(
-            ConcurrentDictionary<int, List<IFlowElement>> elements,
+            ConcurrentDictionary<int, IFlowElement> elements,
             ElementOptions elementOptions,
             int elementIndex)
         {
@@ -468,7 +462,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             }
 
             var parallelElements = 
-                new ConcurrentDictionary<int, List<IFlowElement>>();
+                new ConcurrentDictionary<int, IFlowElement>();
 
             // Iterate through the sub elements, creating them and
             // adding them to the list.
@@ -488,7 +482,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                         parallelElements,
                         subElement,
                         $"element {subCounter} in element {elementIndex}",
-                        elementIndex);
+                        subCounter);
                 }
                 subCounter++;
             }
@@ -497,10 +491,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // elements.
             var parallelInstance = new ParallelElements(
                 LoggerFactory.CreateLogger<ParallelElements>(),
-                parallelElements.Values.SelectMany(i => i).ToArray());
+                parallelElements.Values.ToArray());
             elements.TryAdd(
-                elementIndex,
-                new List<IFlowElement>() { parallelInstance });
+                elementIndex, parallelInstance);
         }
 
         /// <summary>
