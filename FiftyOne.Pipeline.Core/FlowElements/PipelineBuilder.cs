@@ -121,7 +121,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             try
             {
                 var tempElementDict = 
-                    new ConcurrentDictionary<int, IFlowElement>();
+                    new ConcurrentDictionary<int, List<IFlowElement>>();
                 // Create elements in parallel. The index is declared in
                 // the foreach so that the order of elements is preserved. 
                 // the index is passed down to the point of inserting the
@@ -133,25 +133,33 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     },
                     (elementOptions, state, index)  =>
                 {
-                    if (elementOptions.SubElements != null &&
-                        elementOptions.SubElements.Count > 0)
+                    try
                     {
-                        // The configuration has sub elements so create
-                        // a ParallelElements instance.
-                        ParallelEnqueueElement(
-                            tempElementDict,
-                            elementOptions,
-                            (int)index);
-                    }
-                    else
+                        if (elementOptions.SubElements != null &&
+                            elementOptions.SubElements.Count > 0)
+                        {
+                            // The configuration has sub elements so create
+                            // a ParallelElements instance.
+                            ParallelEnqueueElement(
+                                tempElementDict,
+                                elementOptions,
+                                (int)index);
+                        }
+                        else
+                        {
+                            // The configuration has no sub elements so create
+                            // a flow element.
+                            EnqueueElement(
+                                tempElementDict,
+                                elementOptions,
+                                $"element {index}",
+                                (int)index);
+                        }
+                    } 
+                    catch(Exception)
                     {
-                        // The configuration has no sub elements so create
-                        // a flow element.
-                        EnqueueElement(
-                            tempElementDict,
-                            elementOptions,
-                            $"element {index}",
-                            (int)index);
+                        state.Stop();
+                        throw;
                     }
                 });
 
@@ -160,7 +168,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 FlowElements
                     .AddRange(tempElementDict
                         .OrderBy(kvp => kvp.Key)
-                        .Select(kvp => kvp.Value));
+                        .SelectMany(kvp => kvp.Value));
 
                 // Process any additional parameters for the pipeline
                 // builder itself.
@@ -170,11 +178,20 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     this,
                     "pipeline");
             }
-            catch (PipelineConfigurationException ex)
+            // Paralell foreach aggregates the exceptions.
+            catch (AggregateException ex)
             {
-                Logger.LogCritical(ex, Messages.MessagePipelineCreationFailed);
-                throw;
+                if(ex.InnerExceptions.Count > 1)
+                {
+                    throw ex;
+                } 
+                else
+                {
+                    Logger.LogCritical(ex, Messages.MessagePipelineCreationFailed);
+                    throw ex.InnerException;
+                }
             }
+         
             // As the elements are all created within the builder, the user
             // will not be handling disposal so make sure the pipeline is
             // configured to do so.
@@ -248,7 +265,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </param>
         /// <param name="elementIndex"></param>
         private void EnqueueElement(
-            ConcurrentDictionary<int, IFlowElement> elements,
+            ConcurrentDictionary<int, List<IFlowElement>> elements,
             ElementOptions elementOptions,
             string elementLocation,
             int elementIndex)
@@ -411,7 +428,15 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             }
 
             // Add the element to the list.
-            elements.TryAdd(elementIndex, element);
+            if (elements.ContainsKey(elementIndex)){
+                elements[elementIndex].Add(element);
+            }
+            else
+            {
+                elements.TryAdd(
+                   elementIndex,
+                   new List<IFlowElement>() { element });
+            }
         }
 
         /// <summary>
@@ -427,7 +452,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// </param>
         /// <param name="elementIndex"></param>
         private void ParallelEnqueueElement(
-            ConcurrentDictionary<int, IFlowElement> elements,
+            ConcurrentDictionary<int, List<IFlowElement>> elements,
             ElementOptions elementOptions,
             int elementIndex)
         {
@@ -442,7 +467,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     $"This is invalid");
             }
 
-            var parallelElements = new ConcurrentDictionary<int, IFlowElement>();
+            var parallelElements = 
+                new ConcurrentDictionary<int, List<IFlowElement>>();
 
             // Iterate through the sub elements, creating them and
             // adding them to the list.
@@ -471,8 +497,10 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // elements.
             var parallelInstance = new ParallelElements(
                 LoggerFactory.CreateLogger<ParallelElements>(),
-                parallelElements.Values.ToArray());
-            elements.TryAdd(elementIndex, parallelInstance);
+                parallelElements.Values.SelectMany(i => i).ToArray());
+            elements.TryAdd(
+                elementIndex,
+                new List<IFlowElement>() { parallelInstance });
         }
 
         /// <summary>
