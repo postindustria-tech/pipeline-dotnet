@@ -427,10 +427,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     $"'IFlowElement' for {elementLocation}");
             }
 
-            // Add the element to the list.
-                elements.TryAdd(
-                   elementIndex,
-                    element);
+            elements.TryAdd(elementIndex,element);
         }
 
         /// <summary>
@@ -492,8 +489,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             var parallelInstance = new ParallelElements(
                 LoggerFactory.CreateLogger<ParallelElements>(),
                 parallelElements.Values.ToArray());
-            elements.TryAdd(
-                elementIndex, parallelInstance);
+
+            elements.TryAdd(elementIndex, parallelInstance);
         }
 
         /// <summary>
