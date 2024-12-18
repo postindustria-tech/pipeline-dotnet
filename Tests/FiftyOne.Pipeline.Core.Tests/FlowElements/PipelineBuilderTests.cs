@@ -34,6 +34,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Xml.Linq;
 
 namespace FiftyOne.Pipeline.Core.Tests.FlowElements
 {
@@ -260,6 +261,62 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         }
 
         /// <summary>
+        /// Test that the Pipeline builder works when setting an optional
+        /// parameter using the full method name
+        /// </summary>
+        [TestMethod]
+        public void PipelineBuilder_BuildFromConfiguration_ParallelElements()
+        {
+            var multiplyElement = new ElementOptions()
+            {
+                BuilderName = "MultiplyByElement"
+            };
+            multiplyElement.BuildParameters.Add("Multiple", "3");
+
+            // Create the element that holds the elements that
+            // will be run in parallel.
+            var parentElement = new ElementOptions()
+            {
+            };
+            parentElement.SubElements.Add(new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            });
+            parentElement.SubElements.Add(multiplyElement);
+
+            // Create the configuration object.
+            PipelineOptions options = new PipelineOptions();
+            options.Elements = new List<ElementOptions>
+            {
+                parentElement
+            };
+
+            // Pass the configuration to the builder to create the pipeline.
+            var pipeline = _builder.BuildFromConfiguration(options);
+            // Get the elements
+            var splitterElement = pipeline.GetElement<ListSplitterElement>();
+            var multiplyByElement = pipeline.GetElement<MultiplyByElement>();
+
+            // Create, populate and process flow data.
+            using (var flowData = pipeline.CreateFlowData())
+            {
+                flowData
+                    .AddEvidence(splitterElement.EvidenceKeys[0], "1,2,abc")
+                    .AddEvidence(multiplyByElement.EvidenceKeys[0], 25)
+                    .Process();
+
+                // Get the results and verify them.
+                var splitterData = flowData.GetFromElement(splitterElement);
+                var multiplyByData = flowData.GetFromElement(multiplyByElement);
+
+                Assert.AreEqual("1", splitterData.Result[0]);
+                Assert.AreEqual("2", splitterData.Result[1]);
+                Assert.AreEqual("abc", splitterData.Result[2]);
+                Assert.AreEqual(75, multiplyByData.Result);
+            }
+        }
+
+        /// <summary>
         /// Test that the Pipeline builder throws the expected exception
         /// when the specified class exists but is not used for building
         /// IFlowElements
@@ -453,54 +510,53 @@ namespace FiftyOne.Pipeline.Core.Tests.FlowElements
         /// parameter using the full method name
         /// </summary>
         [TestMethod]
-        public void PipelineBuilder_BuildFromConfiguration_ParallelElements()
+        public void PipelineBuilder_BuildFromConfiguration_OrderPreserved()
         {
+            var requiredServiceElement = new ElementOptions()
+            {
+                BuilderName = "RequiredServiceElement"
+            };
+
+            var listElement = new ElementOptions()
+            {
+                BuilderName = "ListSplitterElement"
+            };
+            listElement.BuildParameters.Add("Delimiters", new List<string>() { "|", "," });
+
+            // Create the configuration object.
             var multiplyElement = new ElementOptions()
             {
                 BuilderName = "MultiplyByElement"
             };
             multiplyElement.BuildParameters.Add("Multiple", "3");
 
-            // Create the element that holds the elements that
-            // will be run in parallel.
-            var parentElement = new ElementOptions()
+            var compositeConfigElement = new ElementOptions()
             {
+                BuilderName = "CompositeConfigElement"
             };
-            parentElement.SubElements.Add(new ElementOptions()
-            {
-                BuilderName = "ListSplitterElement"
-            });
-            parentElement.SubElements.Add(multiplyElement);
 
             // Create the configuration object.
             PipelineOptions options = new PipelineOptions();
             options.Elements = new List<ElementOptions>
             {
-                parentElement
+                compositeConfigElement,
+                requiredServiceElement,
+                listElement,
+                multiplyElement
             };
 
             // Pass the configuration to the builder to create the pipeline.
             var pipeline = _builder.BuildFromConfiguration(options);
-            // Get the elements
-            var splitterElement = pipeline.GetElement<ListSplitterElement>();
-            var multiplyByElement = pipeline.GetElement<MultiplyByElement>();
 
-            // Create, populate and process flow data.
-            using (var flowData = pipeline.CreateFlowData())
+            // Check the flow elements are in the correct order 
+            for(int i = 0; i < pipeline.FlowElements.Count; i++)
             {
-                flowData
-                    .AddEvidence(splitterElement.EvidenceKeys[0], "1,2,abc")
-                    .AddEvidence(multiplyByElement.EvidenceKeys[0], 25)
-                    .Process();
-
-                // Get the results and verify them.
-                var splitterData = flowData.GetFromElement(splitterElement);
-                var multiplyByData = flowData.GetFromElement(multiplyByElement);
-
-                Assert.AreEqual("1", splitterData.Result[0]);
-                Assert.AreEqual("2", splitterData.Result[1]);
-                Assert.AreEqual("abc", splitterData.Result[2]);
-                Assert.AreEqual(75, multiplyByData.Result);
+                var flowElementName = pipeline
+                    .FlowElements[i]
+                    .GetType()
+                    .Name;
+                var configElementName = options.Elements[i].BuilderName;
+                Assert.AreEqual(flowElementName, configElementName);
             }
         }
 

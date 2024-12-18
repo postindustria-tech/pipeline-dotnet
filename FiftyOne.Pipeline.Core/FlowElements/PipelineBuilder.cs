@@ -27,11 +27,14 @@ using FiftyOne.Pipeline.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FiftyOne.Pipeline.Core.FlowElements
 {
@@ -61,7 +64,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The <see cref="ILoggerFactory"/> to use when creating logger
         /// instances.
         /// </param>
-        public PipelineBuilder(ILoggerFactory loggerFactory) 
+        public PipelineBuilder(ILoggerFactory loggerFactory)
             : base(loggerFactory)
         {
             GetAvailableElementBuilders();
@@ -78,7 +81,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// Collection of services which contain builder instances for the
         /// required elements.
         /// </param>
-        public PipelineBuilder(ILoggerFactory loggerFactory, 
+        public PipelineBuilder(ILoggerFactory loggerFactory,
             IServiceProvider services)
             : this(loggerFactory)
         {
@@ -114,28 +117,58 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // Clear the list of flow elements ready to be populated
             // from the configuration options.
             FlowElements.Clear();
-            int counter = 0;
-
             try
             {
-                foreach (var elementOptions in options.Elements)
+                var tempElementDict = 
+                    new ConcurrentDictionary<int, IFlowElement>();
+                // Create elements in parallel. The index is declared in
+                // the foreach so that the order of elements is preserved. 
+                // the index is passed down to the point of inserting the
+                // the element into the dictionary.
+                Parallel.ForEach(options.Elements, 
+                    new ParallelOptions()
+                    {
+                        MaxDegreeOfParallelism = 
+                        Environment.ProcessorCount / 2
+                    },
+                    (elementOptions, state, index)  =>
                 {
-                    if (elementOptions.SubElements != null &&
-                        elementOptions.SubElements.Count > 0)
+                    try
                     {
-                        // The configuration has sub elements so create
-                        // a ParallelElements instance.
-                        AddParallelElementsToList(FlowElements, elementOptions, counter);
-                    }
-                    else
+                        if (elementOptions.SubElements != null &&
+                            elementOptions.SubElements.Count > 0)
+                        {
+                            // The configuration has sub elements so create
+                            // a ParallelElements instance.
+                            ParallelEnqueueElement(
+                                tempElementDict,
+                                elementOptions,
+                                (int)index);
+                        }
+                        else
+                        {
+                            // The configuration has no sub elements so create
+                            // a flow element.
+                            EnqueueElement(
+                                tempElementDict,
+                                elementOptions,
+                                $"element {index}",
+                                (int)index);
+                        }
+                    } 
+                    catch(Exception)
                     {
-                        // The configuration has no sub elements so create
-                        // a flow element.
-                        AddElementToList(FlowElements, elementOptions,
-                            $"element {counter}");
+                        state.Stop();
+                        throw;
                     }
-                    counter++;
-                }
+                });
+
+                // order the dictionary so the elements are in the correct
+                // order and then add the values to FlowElements.
+                FlowElements
+                    .AddRange(tempElementDict
+                        .OrderBy(kvp => kvp.Key)
+                        .Select(kvp => kvp.Value));
 
                 // Process any additional parameters for the pipeline
                 // builder itself.
@@ -145,11 +178,20 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     this,
                     "pipeline");
             }
-            catch (PipelineConfigurationException ex)
+            // Paralell foreach aggregates the exceptions.
+            catch (AggregateException ex)
             {
-                Logger.LogCritical(ex, Messages.MessagePipelineCreationFailed);
-                throw;
+                if(ex.InnerExceptions.Count > 1)
+                {
+                    throw ex;
+                } 
+                else
+                {
+                    Logger.LogCritical(ex, Messages.MessagePipelineCreationFailed);
+                    throw ex.InnerException;
+                }
             }
+         
             // As the elements are all created within the builder, the user
             // will not be handling disposal so make sure the pipeline is
             // configured to do so.
@@ -173,35 +215,35 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()
 #if DEBUG
                 // Exclude VisualStudio assemblies
-                .Where(a => !a.FullName.StartsWith("Microsoft.VisualStudio", 
+                .Where(a => !a.FullName.StartsWith("Microsoft.VisualStudio",
                     StringComparison.OrdinalIgnoreCase))
 #endif
                 )
-            {
-                // Exclude dynamic assemblies
-                if (assembly.IsDynamic == false)
                 {
-                    try
+                    // Exclude dynamic assemblies
+                    if (assembly.IsDynamic == false)
                     {
+                        try
+                        {
                         _elementBuilders.AddRange(assembly.GetTypes()
-                            .Where(t => t.GetMethods()
-                                // ..method called 'Build'..
-                                .Any(m => m.Name == "Build" &&
-                                // ..where the return type is or implements IFlowElement
-                                (m.ReturnType == typeof(IFlowElement) ||
+                                .Where(t => t.GetMethods()
+                                    // ..method called 'Build'..
+                                    .Any(m => m.Name == "Build" &&
+                                    // ..where the return type is or implements IFlowElement
+                                    (m.ReturnType == typeof(IFlowElement) ||
                                 m.ReturnType.GetInterfaces().Contains(typeof(IFlowElement)))))
                         .ToList());
-                    }
-                    // Catch type load exceptions when assembly can't be loaded 
-                    // and log a warning. 
-                    catch (ReflectionTypeLoadException ex)
-                    {
-                        if (Logger.IsEnabled(LogLevel.Debug))
+                        }
+                        // Catch type load exceptions when assembly can't be loaded 
+                        // and log a warning. 
+                        catch (ReflectionTypeLoadException ex)
                         {
-                            Logger.LogDebug(ex, $"Failed to get Types for {assembly.FullName}", null);
+                            if (Logger.IsEnabled(LogLevel.Debug))
+                            {
+                                Logger.LogDebug(ex, $"Failed to get Types for {assembly.FullName}", null);
+                            }
                         }
                     }
-                }
             }
         }
 
@@ -221,10 +263,12 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The string description of the element's location within the 
         /// <see cref="PipelineOptions"/> instance.
         /// </param>
-        private void AddElementToList(
-            List<IFlowElement> elements,
+        /// <param name="elementIndex"></param>
+        private void EnqueueElement(
+            ConcurrentDictionary<int, IFlowElement> elements,
             ElementOptions elementOptions,
-            string elementLocation)
+            string elementLocation,
+            int elementIndex)
         {
             // Check that a builder name is set
             if (string.IsNullOrEmpty(elementOptions.BuilderName))
@@ -383,8 +427,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     $"'IFlowElement' for {elementLocation}");
             }
 
-            // Add the element to the list.
-            elements.Add(element);
+            elements.TryAdd(elementIndex,element);
         }
 
         /// <summary>
@@ -398,11 +441,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         /// The <see cref="ElementOptions"/> instance to use when creating
         /// the <see cref="ParallelElements"/>.
         /// </param>
-        /// <param name="elementIndex">
-        /// The index of the element within the <see cref="PipelineOptions"/>.
-        /// </param>
-        private void AddParallelElementsToList(
-            List<IFlowElement> elements,
+        /// <param name="elementIndex"></param>
+        private void ParallelEnqueueElement(
+            ConcurrentDictionary<int, IFlowElement> elements,
             ElementOptions elementOptions,
             int elementIndex)
         {
@@ -416,7 +457,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     $"SubElements and other settings values. " +
                     $"This is invalid");
             }
-            List<IFlowElement> parallelElements = new List<IFlowElement>();
+
+            var parallelElements = 
+                new ConcurrentDictionary<int, IFlowElement>();
 
             // Iterate through the sub elements, creating them and
             // adding them to the list.
@@ -432,8 +475,11 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 }
                 else
                 {
-                    AddElementToList(parallelElements, subElement,
-                        $"element {subCounter} in element {elementIndex}");
+                    EnqueueElement(
+                        parallelElements,
+                        subElement,
+                        $"element {subCounter} in element {elementIndex}",
+                        subCounter);
                 }
                 subCounter++;
             }
@@ -442,8 +488,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // elements.
             var parallelInstance = new ParallelElements(
                 LoggerFactory.CreateLogger<ParallelElements>(),
-                parallelElements.ToArray());
-            elements.Add(parallelInstance);
+                parallelElements.Values.ToArray());
+
+            elements.TryAdd(elementIndex, parallelInstance);
         }
 
         /// <summary>
