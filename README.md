@@ -27,7 +27,7 @@ Visual Studio 2022 or later is recommended. Although Visual Studio Code can be u
 The Pipeline projects are written in C# and target .NET Standard 2.0.3
 The Web integration multi-targets the following:
     - .NET Core 3.1
-    - .NET Core 6.0
+    - .NET Core 8.0
     - .NET Framework 4.6.2
 
 The [tested versions](https://51degrees.com/documentation/_info__tested_versions.html) page shows the .NET versions that we currently test against. The software may run fine against other versions, but additional caution should be applied.
