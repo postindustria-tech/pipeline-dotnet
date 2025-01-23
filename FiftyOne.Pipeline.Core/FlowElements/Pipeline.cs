@@ -183,14 +183,73 @@ namespace FiftyOne.Pipeline.Core.FlowElements
         public bool SuppressProcessExceptions => _suppressProcessExceptions;
 
         /// <summary>
-        /// Get a read only list of the flow elements that are part of this 
-        /// pipeline.
+        /// Get a read only list of the flow elements that are part of 
+        /// this pipeline.
         /// </summary>
+        /// <remarks>
+        /// If there are no <see cref="ParallelElements"/> in the flow 
+        /// elements then this method simply returns the the internal
+        /// <see cref="_flowElements"/> list. If not then the flow 
+        /// elements in instances of ParallelElements are included.
+        /// </remarks>
+        /// <remarks>
+        /// Instances of ParallelElements are never included.
+        /// </remarks>
+        /// <remarks>
+        /// The double check lock could be removed if a 'Complete'
+        /// method were added to the pipeline. This method 
+        /// would indicate that the pipeline would have completed all of 
+        /// its set up tasks and FlowElements would be in a static state.
+        /// </remarks>
         public IReadOnlyList<IFlowElement> FlowElements
         {
             get
             {
-                return new ReadOnlyCollection<IFlowElement>(_flowElements);
+                if (_allPublicFlowElements == null)
+                {
+                    lock(_flowElementsLock)
+                    {
+                        if (_allPublicFlowElements == null)
+                        {
+                            _allPublicFlowElements =
+                                GetAllPublicFlowElements();
+                        }
+                    }
+                }
+                return _allPublicFlowElements;
+            }
+        }
+        private readonly object _flowElementsLock = new object();
+        private IReadOnlyList<IFlowElement> _allPublicFlowElements;
+
+        private IReadOnlyList<IFlowElement> GetAllPublicFlowElements()
+        {
+            if (_flowElements.Any(i =>
+                i is ParallelElements))
+            {
+                var result = new List<IFlowElement>();
+                var queue = new Queue<IFlowElement>(_flowElements);
+                while (queue.Count > 0)
+                {
+                    var element = queue.Dequeue();
+                    if (element is ParallelElements elements)
+                    {
+                        foreach (var child in 
+                            elements.FlowElements)
+                        {
+                            queue.Enqueue(child);
+                        }
+                    }
+                    else if (element.GetType().IsPublic)
+                    {
+                        result.Add(element);
+                    }
+                }
+                return result.AsReadOnly();
+            }
+            else
+            {
+                return _flowElements;
             }
         }
 
