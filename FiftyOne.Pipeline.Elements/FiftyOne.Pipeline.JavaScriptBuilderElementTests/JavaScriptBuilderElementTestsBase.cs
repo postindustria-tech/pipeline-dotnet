@@ -59,6 +59,12 @@ namespace FiftyOne.Pipeline.JavaScript.Tests
             chromeOptions.AddArgument("--headless");
             try
             {
+                var options = new ChromeOptions();
+
+                // Temporarily set the devtools version to 127 as 
+                // Webdriver package is not quite ready for Chrome 132 
+                // that was recently updated on some runners on CI
+                options.AddAdditionalOption("devtoolsProtocolVersion", "127"); 
                 Driver = new ChromeDriver(chromeOptions);
             }
             catch (WebDriverException)
