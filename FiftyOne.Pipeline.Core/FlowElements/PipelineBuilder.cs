@@ -128,7 +128,7 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 Parallel.ForEach(options.Elements, 
                     new ParallelOptions()
                     {
-                        MaxDegreeOfParallelism = 
+                        MaxDegreeOfParallelism =
                         Environment.ProcessorCount / 2
                     },
                     (elementOptions, state, index)  =>
@@ -155,11 +155,15 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                                 $"element {index}",
                                 (int)index);
                         }
-                    } 
-                    catch(Exception)
+                    }
+                    catch (Exception ex)
                     {
                         state.Stop();
-                        throw;
+
+                        throw new PipelineConfigurationException(
+                            BuildInformativeErrorMessage(
+                            elementOptions,
+                            ex));
                     }
                 });
 
@@ -200,6 +204,44 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // Build and return the pipeline using the list of flow elements
             // that have been created from the configuration options.
             return Build();
+        }
+
+        /// <summary>
+        /// Creates an Error message, displaying more detailed information
+        /// about the configuration that failed.
+        /// </summary>
+        /// <remarks>
+        /// Replace any null or String.Empty values with a message
+        /// informing the user. 
+        /// </remarks>
+        private static string BuildInformativeErrorMessage(
+            ElementOptions elementOptions,
+            Exception ex)
+        {
+            var sb = new StringBuilder();
+            // Make sure previous error messages are wiped.
+            sb.Clear();
+            sb.AppendLine("Configuration failed to build.");
+
+            var builderName = elementOptions.BuilderName ??
+                "BuilderName not set";
+            var subElementBuilderNames = 
+                (elementOptions.SubElements == null || 
+                elementOptions.SubElements.Count == 0)
+                ?  "No SubElements" 
+                :  String.Join(",", elementOptions.SubElements                  
+                    .Select(i => i.BuilderName));
+
+            var innerException = ex.InnerException != null ?
+                ex.InnerException.Message :
+                "No Inner Exception.";
+
+            sb.Append("BuilderName: ");
+            sb.AppendLine(elementOptions.BuilderName);
+            sb.Append("SubElement Builder Names: ");
+            sb.AppendLine(subElementBuilderNames);
+            sb.AppendLine(innerException);
+            return sb.ToString();
         }
 
         /// <summary>
@@ -343,7 +385,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             // build methods based on our parameters then throw an exception.
             var possibleBuildMethods = buildMethods.Where(m =>
                 m.GetParameters().Length == buildParameterList.Count &&
-                m.GetParameters().All(p => buildParameterList.Contains(p.Name.ToUpperInvariant())));
+                m.GetParameters().All(p => buildParameterList
+                .Contains(p.Name.ToUpperInvariant())));
 
             StringBuilder buildSignatures = new StringBuilder();
             buildSignatures.AppendLine();
@@ -365,9 +408,11 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                     // 1. public
                     // 2. have a single parameter
                     .Where(m => m.IsPublic && m.GetParameters().Length == 1
-                        && m.DeclaringType.Name.ToUpperInvariant().Contains("BUILDER")))
+                        && m.DeclaringType.Name
+                        .ToUpperInvariant().Contains("BUILDER")))
                 {
-                    methodSignatures.AppendLine($"{method.Name} ({method.GetParameters()[0].GetType().Name})");
+                    methodSignatures.AppendLine($"{method.Name} " +
+                        $"({method.GetParameters()[0].GetType().Name})");
                 }
                 throw new PipelineConfigurationException(
                     $"Builder '{builderType.FullName}' for " +
@@ -400,7 +445,8 @@ namespace FiftyOne.Pipeline.Core.FlowElements
             foreach (var parameterInfo in buildMethod.GetParameters())
             {
                 var paramType = parameterInfo.ParameterType;
-                object paramValue = caseInsensitiveParameters[parameterInfo.Name.ToUpperInvariant()];
+                object paramValue = caseInsensitiveParameters[parameterInfo
+                    .Name.ToUpperInvariant()];
                 if (paramType != typeof(string))
                 {
                     paramValue = ParseToType(paramType,
@@ -413,7 +459,9 @@ namespace FiftyOne.Pipeline.Core.FlowElements
                 parameters.Add(paramValue);
             }
             // Call the build method with the parameters we set up above.
-            object result = buildMethod.Invoke(builderInstance, parameters.ToArray());
+            object result = buildMethod.Invoke(
+                builderInstance,
+                parameters.ToArray());
             if (result == null)
             {
                 throw new PipelineConfigurationException(
