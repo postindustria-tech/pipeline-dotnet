@@ -30,7 +30,7 @@ using static FiftyOne.Pipeline.Core.Utils.TypeNameHelper;
 namespace FiftyOne.Pipeline.Core.Tests.Utils;
 
 [TestClass]
-public class TypeNameHelperTest
+public class TypeNameHelperTests
 {
     [TestMethod]
     public void TypeNameHelper_GetPrettyTypeName_Int()
