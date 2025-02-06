@@ -45,17 +45,10 @@
         "BuildMethod": "dotnet"
     },
     {
-        "Image": "macos-13",
+        "Image": "macos-latest",
         "Name": "macos_AnyCPU_Release",
         "Configuration": "CoreRelease",
         "Arch": "Any CPU",
         "BuildMethod": "dotnet",
-    },
-    {
-        "Image": "macos-13",
-        "Name": "macos_AnyCPU_Debug",
-        "Configuration": "CoreDebug",
-        "Arch": "Any CPU",
-        "BuildMethod": "dotnet"
     }
 ]
