@@ -495,7 +495,10 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             List,
             APV_String,
             APV_JavaScript,
-            APV_List
+            APV_List,
+            Weighted_String,
+            APV_Weighted_String,
+            APV_Weighted_List,
         }
         public static IEnumerable<object[]> SerializationTestGenerator()
         {
@@ -560,11 +563,17 @@ carriage return and new line
             expectedValue = expectedValue.Replace(@"\r", @"");
             expectedValue = valueOfProperty == null ? expectedValue : $"\"{expectedValue}\"";
 
+            const ushort rawWeighting = 42;
+
             // Create the object to be serialized
             switch (typeToBeTested)
             {
                 case TypeToBeTested.String:
                     valueInDict = valueOfProperty;
+                    break;
+                case TypeToBeTested.Weighted_String:
+                    valueInDict = new WeightedValue<string>(rawWeighting, valueOfProperty);
+                    expectedValue = $@"{{""{nameof(IWeightedValue<string>.RawWeighting).ToLower()}"": {rawWeighting},""{nameof(IWeightedValue<string>.Value).ToLower()}"": {expectedValue}}}";
                     break;
                 case TypeToBeTested.JavaScript:
                     valueInDict = new JavaScript(valueOfProperty);
@@ -585,6 +594,18 @@ carriage return and new line
                     valueInDict = new AspectPropertyValue<IReadOnlyList<string>>(new List<string>() { valueOfProperty });
                     expectedValue = $@"[
                       {expectedValue}
+                    ]";
+                    break;
+                case TypeToBeTested.APV_Weighted_String:
+                    valueInDict = new AspectPropertyValue<WeightedValue<string>>(new WeightedValue<string>(rawWeighting, valueOfProperty));
+                    expectedValue = $@"{{""{nameof(IWeightedValue<string>.RawWeighting).ToLower()}"": {rawWeighting},""{nameof(IWeightedValue<string>.Value).ToLower()}"": {expectedValue}}}";
+                    break;
+                case TypeToBeTested.APV_Weighted_List:
+                    valueInDict = new AspectPropertyValue<IReadOnlyList<WeightedValue<string>>>(new List<WeightedValue<string>>() { 
+                        new WeightedValue<string>(rawWeighting, valueOfProperty),
+                    });
+                    expectedValue = $@"[
+                      {{""{nameof(IWeightedValue<string>.RawWeighting).ToLower()}"": {rawWeighting},""{nameof(IWeightedValue<string>.Value).ToLower()}"": {expectedValue}}}
                     ]";
                     break;
                 default:
