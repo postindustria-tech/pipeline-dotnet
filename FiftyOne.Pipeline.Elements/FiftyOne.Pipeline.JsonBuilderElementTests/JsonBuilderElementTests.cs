@@ -20,27 +20,28 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.JsonBuilder;
-using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using FiftyOne.Pipeline.Core.Data;
 using FiftyOne.Pipeline.Core.Data.Types;
 using FiftyOne.Pipeline.Core.FlowElements;
 using FiftyOne.Pipeline.Core.TypedMap;
 using FiftyOne.Pipeline.Engines.Data;
+using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.Engines.FlowElements;
 using FiftyOne.Pipeline.Engines.Services;
+using FiftyOne.Pipeline.Engines.TestHelpers;
+using FiftyOne.Pipeline.JsonBuilder;
 using FiftyOne.Pipeline.JsonBuilder.Data;
+using FiftyOne.Pipeline.JsonBuilder.FlowElement;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using FiftyOne.Pipeline.Engines.TestHelpers;
-using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
-using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Linq;
+using System.Net;
 using System.Text;
 
 namespace FiftyOne.Pipeline.JsonBuilderElementTests
@@ -498,7 +499,11 @@ namespace FiftyOne.Pipeline.JsonBuilderElementTests
             APV_List,
             Weighted_String,
             APV_Weighted_String,
-            APV_Weighted_List,
+            APV_Weighted_String_List,
+            IPAddress,
+            Weighted_IP,
+            APV_Weighted_IP,
+            APV_Weighted_IP_List,
         }
         public static IEnumerable<object[]> SerializationTestGenerator()
         {
@@ -520,10 +525,27 @@ carriage return and new line
 ",
                 "{ \"json\": [ \"text\", \"abc\" ] }"
             };
+            List<string> ipPropertyValues = new() {
+                null,
+                "127.0.0.1",
+                "8.8.8.8",
+                "2001:4b10:bbc::2",
+                "2001:4860:4860::8888",
+                "2001:cafe:cafe:cafe:cafe:cafe:cafe:cafe",
+                "2001:beef:beef:beef:beef:beef:beef:beef",
+            };
 
             foreach (var type in Enum.GetValues(typeof(TypeToBeTested)))
             {
-                foreach (var value in propertyValues)
+                List<string> valuesSrc = type switch
+                {
+                    TypeToBeTested.IPAddress => ipPropertyValues,
+                    TypeToBeTested.Weighted_IP => ipPropertyValues,
+                    TypeToBeTested.APV_Weighted_IP => ipPropertyValues,
+                    TypeToBeTested.APV_Weighted_IP_List => ipPropertyValues,
+                    _ => propertyValues,
+                };
+                foreach (var value in valuesSrc)
                 {
                     yield return new object[] { value, (TypeToBeTested)type };
                 }
@@ -600,9 +622,32 @@ carriage return and new line
                     valueInDict = new AspectPropertyValue<WeightedValue<string>>(new WeightedValue<string>(rawWeighting, valueOfProperty));
                     expectedValue = $@"{{""{nameof(IWeightedValue<string>.RawWeighting).ToLower()}"": {rawWeighting},""{nameof(IWeightedValue<string>.Value).ToLower()}"": {expectedValue}}}";
                     break;
-                case TypeToBeTested.APV_Weighted_List:
+                case TypeToBeTested.APV_Weighted_String_List:
                     valueInDict = new AspectPropertyValue<IReadOnlyList<WeightedValue<string>>>(new List<WeightedValue<string>>() { 
                         new WeightedValue<string>(rawWeighting, valueOfProperty),
+                    });
+                    expectedValue = $@"[
+                      {{""{nameof(IWeightedValue<string>.RawWeighting).ToLower()}"": {rawWeighting},""{nameof(IWeightedValue<string>.Value).ToLower()}"": {expectedValue}}}
+                    ]";
+                    break;
+                case TypeToBeTested.IPAddress:
+                    valueInDict = !(valueOfProperty is null) ? IPAddress.Parse(valueOfProperty) : null;
+                    break;
+                case TypeToBeTested.Weighted_IP:
+                    valueInDict = new WeightedValue<IPAddress>(rawWeighting, !(valueOfProperty is null) ? IPAddress.Parse(valueOfProperty) : null);
+                    expectedValue = $@"{{""{nameof(IWeightedValue<string>.RawWeighting).ToLower()}"": {rawWeighting},""{nameof(IWeightedValue<string>.Value).ToLower()}"": {expectedValue}}}";
+                    break;
+                case TypeToBeTested.APV_Weighted_IP:
+                    valueInDict = new List<WeightedValue<IPAddress>>{
+                        new WeightedValue<IPAddress>(rawWeighting, !(valueOfProperty is null) ? IPAddress.Parse(valueOfProperty) : null),
+                    };
+                    expectedValue = $@"[
+                      {{""{nameof(IWeightedValue<string>.RawWeighting).ToLower()}"": {rawWeighting},""{nameof(IWeightedValue<string>.Value).ToLower()}"": {expectedValue}}}
+                    ]";
+                    break;
+                case TypeToBeTested.APV_Weighted_IP_List:
+                    valueInDict = new AspectPropertyValue<IReadOnlyList<WeightedValue<IPAddress>>>(new List<WeightedValue<IPAddress>>() {
+                        new WeightedValue<IPAddress>(rawWeighting, !(valueOfProperty is null) ? IPAddress.Parse(valueOfProperty) : null),
                     });
                     expectedValue = $@"[
                       {{""{nameof(IWeightedValue<string>.RawWeighting).ToLower()}"": {rawWeighting},""{nameof(IWeightedValue<string>.Value).ToLower()}"": {expectedValue}}}
