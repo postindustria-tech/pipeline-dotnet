@@ -128,7 +128,9 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         private static JsonConverter[] JSON_CONVERTERS = new JsonConverter[]
         {
             new JavaScriptConverter(),
-            new AspectPropertyValueConverter()
+            new AspectPropertyValueConverter(),
+            new IPAddressValueConverter(),
+            new WeightedValueConverter(),
         };
 
         /// <summary>
@@ -350,11 +352,14 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
         {
             StringBuilder valueAsString = new StringBuilder();
             
-            if (obj.GetType() != typeof(string) &&
-                typeof(IEnumerable).IsAssignableFrom(obj.GetType()))
+            if (obj is string stringObj)
+            {
+                valueAsString.Append($"'{stringObj}'");
+            }
+            else if (obj is IEnumerable enumerableObj)
             {
                 valueAsString.AppendLine("[");
-                foreach (var item in obj as IEnumerable)
+                foreach (var item in enumerableObj)
                 {
                     valueAsString.Append(new String(' ', indent * 2));
                     valueAsString.AppendLine($"{GetObjectAsString(item, indent + 1)}, ");
@@ -362,10 +367,33 @@ namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
                 valueAsString.Append(new String(' ', (indent - 1) * 2));
                 valueAsString.Append("]");
             }
-            else if (typeof(KeyValuePair<string, object>).IsAssignableFrom(obj.GetType()))
+            else if (obj is KeyValuePair<string, object> kvp)
             {
-                var kvp = (KeyValuePair<string, object>)obj;
                 valueAsString.Append($"'{kvp.Key}' = {GetObjectAsString(kvp.Value, indent + 1)}");
+            }
+            else if (!(obj is null) && obj.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IWeightedValue<>)))
+            {
+                var wProp = obj.GetType().GetProperty(nameof(IWeightedValue<string>.RawWeighting)).GetValue(obj);
+                var vProp = obj.GetType().GetProperty(nameof(IWeightedValue<string>.Value)).GetValue(obj);
+                valueAsString.Append('{');
+
+                valueAsString.Append(new String(' ', indent * 2));
+                valueAsString.Append('\'');
+                valueAsString.Append(nameof(IWeightedValue<string>.RawWeighting));
+                valueAsString.Append('\'');
+                valueAsString.Append("' = ");
+                valueAsString.Append(wProp.ToString());
+                valueAsString.AppendLine(", ");
+
+                valueAsString.Append(new String(' ', indent * 2));
+                valueAsString.Append('\'');
+                valueAsString.Append(nameof(IWeightedValue<string>.Value));
+                valueAsString.Append('\'');
+                valueAsString.Append("' = ");
+                valueAsString.AppendLine(GetObjectAsString(vProp, indent + 1));
+
+                valueAsString.Append(new String(' ', (indent - 1) * 2));
+                valueAsString.Append('}');
             }
             else
             {
