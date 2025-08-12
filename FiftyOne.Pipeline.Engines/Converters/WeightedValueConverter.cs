@@ -21,14 +21,12 @@
  * ********************************************************************* */
 
 using FiftyOne.Pipeline.Core.Data;
-using FiftyOne.Pipeline.Engines.Data;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
-using System.Net;
 using System.Collections.Generic;
 
-namespace FiftyOne.Pipeline.JsonBuilder.Converters
+namespace FiftyOne.Pipeline.Engines.Converters
 {
     /// <summary>
     /// A <see cref="JsonConverter"/> that converts 
@@ -55,6 +53,8 @@ namespace FiftyOne.Pipeline.JsonBuilder.Converters
         /// </returns>
         public override bool CanConvert(Type objectType)
             => objectType.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IWeightedValue<>));
+
+        private readonly string TypeValue = typeof(IWeightedValue<>).Name;
 
         /// <summary>
         /// Convert the data from the given reader.
@@ -102,6 +102,10 @@ namespace FiftyOne.Pipeline.JsonBuilder.Converters
 
             serializer.Serialize(writer, new Dictionary<string, object>
             {
+                {
+                    Constants.TypeKey,
+                    TypeValue
+                },
                 { 
                     nameof(IWeightedValue<string>.RawWeighting),
                     value.GetType().GetProperty(nameof(IWeightedValue<string>.RawWeighting)).GetValue(value)

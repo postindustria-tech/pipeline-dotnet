@@ -38,6 +38,7 @@ using System.Collections.Concurrent;
 using Newtonsoft.Json.Serialization;
 using FiftyOne.Pipeline.Engines.FiftyOne.FlowElements;
 using FiftyOne.Pipeline.Engines;
+using FiftyOne.Pipeline.Engines.Converters;
 
 namespace FiftyOne.Pipeline.JsonBuilder.FlowElement
 {

@@ -20,12 +20,15 @@
  * such notice(s) shall fulfill the requirements of that article.
  * ********************************************************************* */
 
-using FiftyOne.Pipeline.Engines.Data;
+using FiftyOne.Pipeline.Core.Data;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using System;
+using System.Collections.Generic;
 using System.Net;
 
-namespace FiftyOne.Pipeline.JsonBuilder.Converters
+namespace FiftyOne.Pipeline.Engines.Converters
 {
     /// <summary>
     /// A <see cref="JsonConverter"/> that converts 
@@ -37,7 +40,7 @@ namespace FiftyOne.Pipeline.JsonBuilder.Converters
         /// If true then this converter can be used for reading as well
         /// as writing JSON.
         /// </summary>
-        public override bool CanRead => false;
+        public override bool CanRead => true;
 
         /// <summary>
         /// Returns true if the converter can convert objects of the 
@@ -54,6 +57,9 @@ namespace FiftyOne.Pipeline.JsonBuilder.Converters
         {
             return typeof(IPAddress).IsAssignableFrom(objectType);
         }
+
+        private readonly string TypeValue = typeof(IPAddress).Name;
+        private readonly string ValueKey = "value";
 
         /// <summary>
         /// Convert the data from the given reader.
@@ -75,7 +81,43 @@ namespace FiftyOne.Pipeline.JsonBuilder.Converters
         /// </returns>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            throw new NotImplementedException();
+            var token = JToken.Load(reader) as JObject;
+            if (token is null)
+            {
+                throw new JsonSerializationException($"Failed to confirm object type ({TypeValue}) -- missing '{Constants.TypeKey}'.");
+            }
+            var typeToken = token[Constants.TypeKey];
+            if (typeToken is null)
+            {
+                throw new JsonSerializationException($"Failed to confirm object type ({TypeValue}) -- '{Constants.TypeKey}' is missing.");
+            }
+            if (typeToken.Type != JTokenType.String)
+            {
+                throw new JsonSerializationException($"Failed to confirm object type ({TypeValue}) -- '{Constants.TypeKey}' is not a string -- {typeToken.Type}.");
+            }
+            var typeString = (string)typeToken;
+            if (typeString != TypeValue)
+            {
+                throw new JsonSerializationException($"Invalid object type {TypeValue} -- '{Constants.TypeKey}' = '{typeString}'.");
+            }
+            var valueToken = token[ValueKey];
+            if (valueToken is null)
+            {
+                throw new JsonSerializationException($"Failed to get '{ValueKey}'.");
+            }
+            if (valueToken.Type != JTokenType.String)
+            {
+                throw new JsonSerializationException($"Failed to get '{ValueKey}' -- not a string -- {valueToken.Type}.");
+            }
+            var valueString = (string)valueToken;
+            try
+            {
+                return IPAddress.Parse(valueString);
+            }
+            catch (FormatException ex)
+            {
+                throw new JsonSerializationException("Failed to parse IP address.", ex);
+            }
         }
 
         /// <summary>
@@ -100,7 +142,17 @@ namespace FiftyOne.Pipeline.JsonBuilder.Converters
             if (serializer == null) throw new ArgumentNullException(nameof(serializer));
 
             var v = value as IPAddress;
-            serializer.Serialize(writer, v?.ToString());
+            serializer.Serialize(writer, new Dictionary<string, object>
+            {
+                {
+                    Constants.TypeKey,
+                    TypeValue
+                },
+                {
+                    ValueKey,
+                    v?.ToString()
+                },
+            });
         }
     }
 }
