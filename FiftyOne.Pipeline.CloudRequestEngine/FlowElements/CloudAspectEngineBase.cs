@@ -33,6 +33,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 
 namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
 {
@@ -579,6 +580,10 @@ namespace FiftyOne.Pipeline.CloudRequestEngine.FlowElements
                     return typeof(JavaScript);
                 case "Double":
                     return typeof(double);
+                case "Single":
+                    return typeof(float);
+                case "IPAddress":
+                    return typeof(IPAddress);
                 case "Array":
                 default:
                     throw new PipelineException(string.Format(
